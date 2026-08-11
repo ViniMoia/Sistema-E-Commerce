@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #DDAF02;
+  --secondary: #050505;
+  --bg-deep: var(--secondary);
+  --text-main: #e5e5e5;
+}
+
+html, body {
+  background-color: var(--bg-deep) !important;
+  color: var(--text-main) !important;
+  font-family: 'Urbanist', 'Roboto', 'Inter', sans-serif !important;
+  scroll-behavior: smooth;
+}
+
+/* Keyframe Animations */
+@keyframes slideUpBlur {
+  0% { opacity: 0; transform: translateY(30px); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; filter: blur(10px); }
+  100% { opacity: 1; filter: blur(0px); }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%) skewX(-15deg); }
+  to { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes spin-gradient {
+  100% { transform: rotate(360deg); }
+}
+
+/* Animation Classes */
+.animate-in {
+  animation: slideUpBlur 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Interactive Flashlight Card */
+.flashlight-card {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+
+.flashlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0px;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(221, 175, 2, 0.15),
+    transparent 40%
+  );
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.flashlight-card:hover::before {
+  opacity: 1;
+}
+
+.flashlight-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -15px rgba(221, 175, 2, 0.15);
+  border-color: rgba(221, 175, 2, 0.3);
+}
+
+/* Premium Shimmer Button */
+.btn-shimmer-wrap {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 1px;
+  outline: none;
+}
+
+.btn-shimmer-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -1000%;
+  background: conic-gradient(from 0deg, transparent 0 340deg, var(--primary) 360deg);
+  animation: spin-gradient 2s linear infinite;
+}
+
+.btn-shimmer-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border-radius: 9999px;
+  width: 100%;
+  padding: 1rem 2rem;
+}
+
+.btn-shimmer-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transform: skewX(-15deg);
+  pointer-events: none;
+}
+
+.btn-shimmer-wrap:hover .btn-shimmer-effect {
+  opacity: 1;
+  animation: shimmer 1.5s infinite;
+}

@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Loja {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String
+  coverImageUrl String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User[]
+  orders        Order[]
+  products      Product[]
+  primaryColor    String?   @default("#DDAF02")
+  secondaryColor  String?   @default("#050505")
+  customDomain    String?   @unique
+  // PIX e WhatsApp configuration
+  pixKey          String?   // Chave PIX (CPF, CNPJ, email, telefone ou aleatória)
+  pixKeyType      String?   // Tipo: CPF, CNPJ, EMAIL, TELEFONE, ALEATORIA
+  whatsappNumber  String?   // Número do WhatsApp para contato
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  name               String               @db.VarChar(150)
+  email              String               @db.VarChar(255)
+  password           String               @db.VarChar(255)
+  phone              String?              @db.VarChar(20)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  avatarImageUrl     String?
+  role               String               @default("CUSTOMER")
+  emailVerified      DateTime?
+  resetToken         String?
+  resetTokenExpires  DateTime?
+  status             UserStatus           @default(ACTIVE)
+  lojaID             String
+  loja               Loja                 @relation(fields: [lojaID], references: [id])
+  products           Product[]
+  addresses          Address[]
+  carts              Cart[]
+  defaultAddressId   String?              @unique
+  defaultAddress     Address?             @relation("UserDefaultAddress", fields: [defaultAddressId], references: [id])
+  sessions           Session[]
+  orders             Order[]
+  auditLogsAsTarget  AuditLog[]           @relation("AuditTarget")
+  auditLogsAsActor   AuditLog[]           @relation("AuditActor")
+  OrderStatusHistory OrderStatusHistory[]
+
+  @@unique([email, lojaID])
+  @@index([email])
+  @@index([lojaID])
+  @@index([defaultAddressId])
+}
+
+model Address {
+  id             String   @id @default(uuid())
+  cep            String
+  state          String
+  city           String
+  district       String
+  street         String
+  number         String
+  complement     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userID], references: [id])
+  userID         String
+  defaultForUser User?    @relation("UserDefaultAddress")
+  orders         Order[]
+  orderId        String?  @unique
+
+  @@index([userID])
+}
+
+model Product {
+  id              String            @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  imageUrl        String
+  galleryUrls     String[]          @default([])
+  stock           Int
+  lojaID          String
+  loja            Loja              @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  userID          String
+  user            User              @relation(fields: [userID], references: [id], onDelete: Cascade)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  cartItem        CartItem[]
+  productVariants ProductVariants[]
+  orderItems      OrderItem[]
+
+  @@index([lojaID])
+  @@index([createdAt])
+}
+
+model ProductVariants {
+  id         String      @id @default(uuid())
+  ProductID  String
+  product    Product     @relation(fields: [ProductID], references: [id], onDelete: Cascade)
+  size       String
+  color      String
+  stock      Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  cartItem   CartItem[]
+  orderItems OrderItem[]
+
+  @@index([ProductID])
+}
+
+model Cart {
+  id           String     @id @default(uuid())
+  userID       String
+  user         User       @relation(fields: [userID], references: [id], onDelete: Cascade)
+  items        CartItem[]
+  status       CartStatus @default(ACTIVE)
+  shippingCost Float?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userID])
+  @@index([status])
+}
+
+model CartItem {
+  id          String          @id @default(uuid())
+  cartID      String
+  cart        Cart            @relation(fields: [cartID], references: [id], onDelete: Cascade)
+  productID   String
+  product     Product         @relation(fields: [productID], references: [id], onDelete: Cascade)
+  variantID   String
+  variant     ProductVariants @relation(fields: [variantID], references: [id], onDelete: Cascade)
+  quantity    Int
+  productName String
+  price       Float
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  color       String
+  size        String
+  imageUrl    String
+
+  @@unique([cartID, variantID])
+}
+
+enum CartStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  PENDING
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  SELLER
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Order Management ────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryType {
+  DELIVERY
+  PICKUP
+}
+
+model Order {
+  id                 String               @id @default(uuid())
+  orderNumber        Int                  @unique @default(autoincrement())
+  userID             String
+  user               User                 @relation(fields: [userID], references: [id])
+  addressID          String?
+  lojaID             String
+  loja               Loja                 @relation(fields: [lojaID], references: [id])
+  address            Address?             @relation(fields: [addressID], references: [id])
+  status             OrderStatus          @default(PENDING)
+  deliveryType       DeliveryType
+  trackingCode       String?
+  adminNotes         String?
+  paymentMethod      String?
+  pixKeyUsed         String?              // Chave PIX usada no pagamento (para histórico)
+  freightValue       Decimal?
+  subtotal           Decimal              @db.Decimal(10, 2)
+  shippingCost       Decimal              @default(0) @db.Decimal(10, 2)
+  total              Decimal              @db.Decimal(10, 2)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  items              OrderItem[]
+  statusHistory      OrderStatusHistory[]
+}
+
+model OrderItem {
+  id                String           @id @default(uuid())
+  orderId           String
+  order             Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String?
+  product           Product?         @relation(fields: [productId], references: [id])
+  name              String
+  quantity          Int
+  price             Decimal          @db.Decimal(10, 2)
+  color             String?
+  size              String?
+  createdAt         DateTime         @default(now())
+  variant           ProductVariants? @relation(fields: [productVariantsId], references: [id])
+  productVariantsId String?
+
+  @@unique([orderId, productId])
+  @@index([productId])
+}
+
+model OrderStatusHistory {
+  id            String      @id @default(cuid())
+  orderId       String
+  order         Order       @relation(fields: [orderId], references: [id])
+  status        OrderStatus
+  performedById String
+  performedBy   User        @relation(fields: [performedById], references: [id])
+  ipAddress     String?
+  createdAt     DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+model FreightRule {
+  id        String   @id @default(cuid())
+  lojaID    String
+  cityName  String
+  value     Decimal
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([lojaID, cityName])
+}
+
+// ─── Audit Logging ───────────────────────────────────────────────
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  action        String
+  targetId      String
+  target        User     @relation("AuditTarget", fields: [targetId], references: [id])
+  actorId       String
+  actor         User     @relation("AuditActor", fields: [actorId], references: [id])
+  entity        String
+  entityId      String
+  previousValue Json?
+  newValue      Json?
+  ipAddress     String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([targetId])
+  @@index([actorId])
+}
