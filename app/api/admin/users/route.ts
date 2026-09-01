@@ -12,8 +12,8 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || undefined;
     const cursor = searchParams.get('cursor') || undefined;
     
-    // O listCustomers do admin.service.ts lista todos os usuários (sem restrição de cargo)
-    const result = await listCustomers({ search, cursor });
+    // O listCustomers do admin.service.ts lista os usuários pertencentes à loja do admin
+    const result = await listCustomers({ lojaID: auth.user.lojaID, search, cursor });
     
     return ok(result);
   } catch (error) {

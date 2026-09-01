@@ -5,28 +5,31 @@ import { getOrderById, updateOrderStatus } from "@/services/order.service";
 import { handleOrderError } from "@/lib/order-errors";
 import { OrderStatus } from "@prisma/client";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 const updateOrderSchema = z.object({
   status: z.nativeEnum(OrderStatus),
 });
 
-export async function GET(_req: Request, { params }: RouteContext) {
-  const guard = await requireAuth();
+export async function GET(req: Request, context: RouteContext) {
+  const guard = await requireAuth(req);
   if (guard instanceof NextResponse) return guard;
 
+  const params = await context.params;
   try {
     const order = await getOrderById(params.id);
 
-    // Access control: customers can only view their own orders.
-    // ADMINs can view any order.
-    // The service itself doesn't carry requestingUserId — this check lives here
-    // because it's a simple ownership assertion, not a business rule.
-    if (
-      guard.user.role !== "ADMIN" &&
-      order.userID !== guard.user.id
-    ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Controle de Acesso em Nível de Objeto (BOLA/IDOR - TEN-002):
+    // - ADMINs só podem visualizar pedidos de sua própria loja
+    // - CUSTOMERs só podem visualizar pedidos que lhes pertencem
+    if (guard.user.role === "ADMIN") {
+      if (order.lojaID !== guard.user.lojaID) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+    } else {
+      if (order.userID !== guard.user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     return NextResponse.json(order, { status: 200 });
@@ -35,9 +38,11 @@ export async function GET(_req: Request, { params }: RouteContext) {
   }
 }
 
-export async function PATCH(req: Request, { params }: RouteContext) {
-  const guard = await requireAdmin();
+export async function PATCH(req: Request, context: RouteContext) {
+  const guard = await requireAdmin(req);
   if (guard instanceof NextResponse) return guard;
+
+  const params = await context.params;
 
   let body: unknown;
   try {
@@ -55,13 +60,20 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   }
 
   try {
-    await updateOrderStatus({
+    const result = await updateOrderStatus({
       orderId: params.id,
       newStatus: parsed.data.status,
       performedById: guard.user.id,
+      lojaID: guard.user.lojaID,
     });
 
-    // Return the updated order so the client doesn't need a second request
+    if (result.success === false) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: result.code === "NOT_FOUND" ? 404 : 422 }
+      );
+    }
+
     const order = await getOrderById(params.id);
     return NextResponse.json(order, { status: 200 });
   } catch (error) {

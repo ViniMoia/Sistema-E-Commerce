@@ -29,7 +29,7 @@ async function getActiveCart(userID: string) {
 }
 
 export async function getCart(userID: string) {
-  return await prisma.cart.findFirst({
+  const cart = await prisma.cart.findFirst({
     where: {
       userID,
       status: "ACTIVE",
@@ -40,13 +40,24 @@ export async function getCart(userID: string) {
           product: {
             select: {
               lojaID: true,
-              loja: { select: { slug: true } }
-            }
-          }
-        }
+              loja: { select: { slug: true } },
+            },
+          },
+        },
       },
     },
   });
+
+  if (!cart) return null;
+
+  return {
+    ...cart,
+    shippingCost: cart.shippingCost ? Number(cart.shippingCost) : null,
+    items: cart.items.map((item) => ({
+      ...item,
+      price: Number(item.price),
+    })),
+  };
 }
 
 export async function addToCart(

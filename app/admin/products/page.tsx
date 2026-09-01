@@ -229,6 +229,13 @@ export default function AdminProductsPage() {
 
                   {/* Actions */}
                   <div className="shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link
+                      href={`/admin/products/${product.id}/edit`}
+                      className="p-2 rounded-lg text-zinc-400 hover:text-[#DDAF02] hover:bg-[#DDAF02]/10 transition-colors"
+                      title="Editar produto"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Link>
                     <button
                       onClick={() => setDeleteTarget(product)}
                       className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"

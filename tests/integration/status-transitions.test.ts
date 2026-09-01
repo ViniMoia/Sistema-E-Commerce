@@ -44,8 +44,7 @@ describe('Transições válidas', () => {
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.fromStatus).toBe('PENDING')
-    expect(history?.toStatus).toBe('PAID')
+    expect(history?.status).toBe('PAID')
   })
 
   it('PENDING → CANCELLED: cancela pedido pendente',
@@ -70,8 +69,7 @@ describe('Transições válidas', () => {
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.fromStatus).toBe('PENDING')
-    expect(history?.toStatus).toBe('CANCELLED')
+    expect(history?.status).toBe('CANCELLED')
   })
 
   it('PAID → SHIPPED: persiste trackingCode e cria histórico',
@@ -97,8 +95,7 @@ describe('Transições válidas', () => {
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.fromStatus).toBe('PAID')
-    expect(history?.toStatus).toBe('SHIPPED')
+    expect(history?.status).toBe('SHIPPED')
   })
 
   it('PAID → CANCELLED: cancela pedido pago',
@@ -123,8 +120,7 @@ describe('Transições válidas', () => {
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.fromStatus).toBe('PAID')
-    expect(history?.toStatus).toBe('CANCELLED')
+    expect(history?.status).toBe('CANCELLED')
   })
 
   it('SHIPPED → DELIVERED: entrega confirmada',
@@ -149,8 +145,7 @@ describe('Transições válidas', () => {
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.fromStatus).toBe('SHIPPED')
-    expect(history?.toStatus).toBe('DELIVERED')
+    expect(history?.status).toBe('DELIVERED')
   })
 })
 

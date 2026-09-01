@@ -4,7 +4,7 @@ import { createTestCustomer, createTestOrder, createTestOrderItem } from '@/test
 import { startQueryProfiler } from '@/tests/helpers/query-profiler'
 import { listCustomers, getCustomerMetrics } from '@/lib/services/customer.service'
 import { listOrdersForAdmin } from '@/lib/services/order.service'
-import { Prisma, Role, UserStatus, OrderStatus, DeliveryType } from '@prisma/client'
+import { Prisma, UserStatus, OrderStatus, DeliveryType } from '@prisma/client'
 
 const TARGETS = {
   listCustomers: 100,
@@ -41,7 +41,7 @@ describe('Performance de queries de métricas', () => {
           name: `Cliente ${i}`,
           email: `cliente-perf-${i}@test.com`,
           password: 'test123456',
-          role: Role.CUSTOMER,
+          role: 'CUSTOMER',
           status: UserStatus.ACTIVE,
           lojaID: TEST_LOJA_ID
         })
@@ -202,7 +202,8 @@ describe('Performance de queries de métricas', () => {
       const orders = await listOrdersForAdmin({ lojaID: TEST_LOJA_ID })
       const report = profiler.stop()
 
-      expect(orders.length).toBeGreaterThan(0)
+      const count = 'data' in orders ? orders.data.length : (orders as any[]).length
+      expect(count).toBeGreaterThan(0)
       expect(report.totalDuration).toBeLessThan(TARGETS.listOrders)
     })
   })

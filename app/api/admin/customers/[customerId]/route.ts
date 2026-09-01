@@ -6,13 +6,14 @@ import { NextRequest } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { customerId: string } }
+  props: { params: Promise<{ customerId: string }> }
 ) {
   const auth = await requireAdmin(request);
   if (auth instanceof Response) {
     return auth;
   }
 
+  const params = await props.params;
   const result = customerIdSchema.safeParse(params);
   if (!result.success) {
     return err('ID do cliente inválido.', 400);

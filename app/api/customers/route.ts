@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const customers = await listCustomers({});
+    const customers = await listCustomers({ lojaID: auth.user.lojaID });
     return ok(customers);
   } catch (error) {
     console.error("[CUSTOMERS_GET]", error);

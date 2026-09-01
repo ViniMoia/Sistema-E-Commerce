@@ -41,25 +41,57 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-interface ProductFormProps {
-  lojaID: string;
+interface ProductInitialData {
+  id?: string;
+  name: string;
+  description: string;
+  price: number | string | { toNumber?: () => number };
+  imageUrl: string;
+  stock: number;
+  galleryUrls?: string[];
+  productVariants?: Array<{
+    id?: string;
+    size: string;
+    color: string;
+    stock: number;
+  }>;
 }
 
-export function ProductForm({ lojaID }: ProductFormProps) {
+interface ProductFormProps {
+  lojaID: string;
+  productId?: string;
+  initialData?: ProductInitialData | null;
+}
+
+export function ProductForm({ lojaID, productId, initialData }: ProductFormProps) {
+  const isEditing = Boolean(productId);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
+  const formattedInitialPrice = initialData?.price
+    ? typeof initialData.price === "object" && typeof initialData.price.toNumber === "function"
+      ? initialData.price.toNumber()
+      : Number(initialData.price)
+    : 0;
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      imageUrl: "",
-      stock: 0,
-      variants: [{ size: "", color: "", stock: 0 }],
-      galleryUrls: [],
+      name: initialData?.name ?? "",
+      description: initialData?.description ?? "",
+      price: formattedInitialPrice,
+      imageUrl: initialData?.imageUrl ?? "",
+      stock: initialData?.stock ?? 0,
+      variants:
+        initialData?.productVariants && initialData.productVariants.length > 0
+          ? initialData.productVariants.map((v) => ({
+              size: v.size,
+              color: v.color,
+              stock: v.stock,
+            }))
+          : [{ size: "", color: "", stock: 0 }],
+      galleryUrls: initialData?.galleryUrls?.map((url) => ({ url })) ?? [],
     },
   });
 
@@ -76,23 +108,29 @@ export function ProductForm({ lojaID }: ProductFormProps) {
   async function onSubmit(data: ProductFormValues) {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
+      const url = isEditing ? `/api/products/${productId}` : "/api/products";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          galleryUrls: data.galleryUrls?.map(g => g.url) || [],
+          galleryUrls: data.galleryUrls?.map((g) => g.url) || [],
           lojaID,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Falha ao salvar produto");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Falha ao salvar produto");
       }
 
       toast({
         title: "Sucesso!",
-        description: "Produto cadastrado com sucesso.",
+        description: isEditing
+          ? "Produto atualizado com sucesso."
+          : "Produto cadastrado com sucesso.",
       });
 
       router.push("/admin/products");
@@ -101,7 +139,12 @@ export function ProductForm({ lojaID }: ProductFormProps) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível cadastrar o produto.",
+        description:
+          error instanceof Error
+            ? error.message
+            : isEditing
+            ? "Não foi possível atualizar o produto."
+            : "Não foi possível cadastrar o produto.",
       });
     } finally {
       setIsLoading(false);
@@ -358,6 +401,8 @@ export function ProductForm({ lojaID }: ProductFormProps) {
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Salvando...
                   </>
+                ) : isEditing ? (
+                  "Salvar Alterações"
                 ) : (
                   "Cadastrar Produto"
                 )}

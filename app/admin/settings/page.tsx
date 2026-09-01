@@ -16,7 +16,22 @@ export default function AdminSettingsPage() {
     primaryColor: string | null;
     secondaryColor: string | null;
     customDomain: string | null;
+    // Frete
+    originCep: string | null;
+    originState: string | null;
+    originCity: string | null;
+    originDistrict: string | null;
+    originStreet: string | null;
+    originNumber: string | null;
+    originComplement: string | null;
+    enableCorreios: boolean;
+    correiosContractCode: string | null;
+    correiosPassword: string | null;
+    enablePickup: boolean;
+    enableNoFreight: boolean;
+    additionalDays: number;
   } | null>(null);
+
   const [submitLoading, setSubmitLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -39,23 +54,69 @@ export default function AdminSettingsPage() {
       }
 
       const data = await res.json();
-      setSettings(data || {
-        name: '',
-        slug: '',
-        description: '',
-        coverImageUrl: '',
-        pixKey: null,
-        pixKeyType: null,
-        whatsappNumber: null,
-        primaryColor: '#DDAF02',
-        secondaryColor: '#050505',
-        customDomain: null
-      });
+      setSettings(
+        data || {
+          name: '',
+          slug: '',
+          description: '',
+          coverImageUrl: '',
+          pixKey: null,
+          pixKeyType: null,
+          whatsappNumber: null,
+          primaryColor: '#DDAF02',
+          secondaryColor: '#050505',
+          customDomain: null,
+          originCep: null,
+          originState: null,
+          originCity: null,
+          originDistrict: null,
+          originStreet: null,
+          originNumber: null,
+          originComplement: null,
+          enableCorreios: true,
+          correiosContractCode: null,
+          correiosPassword: null,
+          enablePickup: true,
+          enableNoFreight: true,
+          additionalDays: 0,
+        }
+      );
       setLoading(false);
     } catch (err) {
       console.error('[ADMIN_SETTINGS_LOAD_ERROR]', err);
       setErrorMessage('Erro ao carregar configurações');
       setLoading(false);
+    }
+  };
+
+  const handleCepOriginChange = async (cepValue: string) => {
+    const clean = cepValue.replace(/\D/g, '');
+    const formatted = clean.length > 5 ? `${clean.slice(0, 5)}-${clean.slice(5)}` : clean;
+
+    setSettings((prev) => (prev ? { ...prev, originCep: formatted } : prev));
+
+    if (clean.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.erro) {
+            setSettings((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    originState: data.uf || prev.originState,
+                    originCity: data.localidade || prev.originCity,
+                    originDistrict: data.bairro || prev.originDistrict,
+                    originStreet: data.logradouro || prev.originStreet,
+                  }
+                : prev
+            );
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -72,17 +133,24 @@ export default function AdminSettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: settings.name,
-          slug: settings.slug,
-          description: settings.description,
-          coverImageUrl: settings.coverImageUrl,
+          ...settings,
           pixKey: settings.pixKey === '' ? null : settings.pixKey,
           pixKeyType: settings.pixKeyType === '' ? null : settings.pixKeyType,
           whatsappNumber: settings.whatsappNumber === '' ? null : settings.whatsappNumber,
           primaryColor: settings.primaryColor === '' ? null : settings.primaryColor,
           secondaryColor: settings.secondaryColor === '' ? null : settings.secondaryColor,
-          customDomain: settings.customDomain === '' ? null : settings.customDomain
-        })
+          customDomain: settings.customDomain === '' ? null : settings.customDomain,
+          originCep: settings.originCep === '' ? null : settings.originCep,
+          originState: settings.originState === '' ? null : settings.originState,
+          originCity: settings.originCity === '' ? null : settings.originCity,
+          originDistrict: settings.originDistrict === '' ? null : settings.originDistrict,
+          originStreet: settings.originStreet === '' ? null : settings.originStreet,
+          originNumber: settings.originNumber === '' ? null : settings.originNumber,
+          originComplement: settings.originComplement === '' ? null : settings.originComplement,
+          correiosContractCode: settings.correiosContractCode === '' ? null : settings.correiosContractCode,
+          correiosPassword: settings.correiosPassword === '' ? null : settings.correiosPassword,
+          additionalDays: Number(settings.additionalDays) || 0,
+        }),
       });
 
       if (res.ok) {
@@ -101,41 +169,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleClearSettings = async () => {
-    if (!confirm('Deseja realmente apagar os dados de Pix e contato de sua loja? (Nome, slug e tema serão mantidos)')) return;
-    
-    setSubmitLoading(true);
-    setSuccessMessage(null);
-    setErrorMessage(null);
-
-    try {
-      const res = await fetch('/api/loja/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...settings,
-          pixKey: null,
-          pixKeyType: null,
-          whatsappNumber: null
-        })
-      });
-
-      if (res.ok) {
-        const updated = await res.json();
-        setSuccessMessage('Configurações de contato apagadas com sucesso!');
-        setSettings(updated);
-      } else {
-        const errorData = await res.json().catch(() => null);
-        setErrorMessage(errorData?.error || 'Falha ao apagar configurações');
-      }
-    } catch (err) {
-      console.error('[ADMIN_SETTINGS_CLEAR_ERROR]', err);
-      setErrorMessage('Erro ao apagar configurações');
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -147,393 +180,250 @@ export default function AdminSettingsPage() {
     );
   }
 
-  if (errorMessage && !settings) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
-        <div className="text-center">
-          <p className="text-red-500">{errorMessage}</p>
-          <Button 
-            variant="outline"
-            onClick={() => window.location.href = '/admin'}
-            className="mt-4"
-          >
-            Voltar ao Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#050505]">
-      {/* Gemini-inspired header with subtle animations */}
-      <header className="fixed inset-0 z-[0] pointer-events-none">
-        <div className="absolute inset-0">
-          <div className="relative h-full bg-[radial-gradient(800px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.03),transparent_40%)]" 
-               onMouseMove={e => {
-                 const rect = e.currentTarget.getBoundingClientRect();
-                 const x = e.clientX - rect.left;
-                 const y = e.clientY - rect.top;
-                 (e.currentTarget as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-                 (e.currentTarget as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
-               }}
-          >
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.01),rgba(255,255,255,0))] 
-                                 pointer-events-none" />
-          </div>
+    <div className="min-h-screen bg-[#050505] text-neutral-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Configurações da Loja</h1>
+          <p className="text-sm text-neutral-400 mt-1">
+            Gerencie identidade, recebimentos PIX, contatos e logística de fretes da sua loja.
+          </p>
         </div>
-      </header>
 
-      {/* Main content */}
-      <div className="relative z-[10] min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pb-12">
-        {!settings && (
-          <div className="text-center">
-            <p className="text-yellow-500">Carregando configurações da loja...</p>
+        {successMessage && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+            <p className="text-emerald-400 font-medium text-sm">{successMessage}</p>
           </div>
         )}
+
+        {errorMessage && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+            <p className="text-red-400 font-medium text-sm">{errorMessage}</p>
+          </div>
+        )}
+
         {settings && (
-          <form onSubmit={handleSubmit} className="w-full max-w-[600px] space-y-6 bg-zinc-950/80 p-8 rounded-2xl border border-white/5 backdrop-blur-md">
-
-            {/* Title */}
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Configurações da Loja
+          <form onSubmit={handleSubmit} className="space-y-8 bg-zinc-950 p-6 sm:p-8 rounded-2xl border border-white/5">
+            {/* SEÇÃO 1: IDENTIDADE */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#DDAF02] border-b border-white/10 pb-2">
+                1. Identidade & Visual
               </h2>
-              <p className="text-sm text-neutral-400">
-                Personalize a identidade de marca, visual, contatos e chaves PIX de sua loja
-              </p>
-            </div>
-
-            {/* Success Message */}
-            {successMessage && (
-              <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-4">
-                <p className="text-primary font-medium">{successMessage}</p>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {errorMessage && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-4">
-                <p className="text-red-400 font-medium">{errorMessage}</p>
-              </div>
-            )}
-
-            {/* --- SEÇÃO IDENTIDADE --- */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest border-b border-white/5 pb-2">Identidade</h3>
-              
-              {/* Nome da Loja */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Nome da Loja
-                </label>
-                <input
-                  type="text"
-                  value={settings.name ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, name: e.target.value} : settings)}
-                  placeholder="Nome de sua empresa"
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  required
-                  disabled={submitLoading}
-                />
-              </div>
-
-              {/* Slug da Loja */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Slug (Subdomínio)
-                </label>
-                <input
-                  type="text"
-                  value={settings.slug ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')} : settings)}
-                  placeholder="ex: minha-loja"
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  required
-                  disabled={submitLoading}
-                />
-              </div>
-
-              {/* Descrição */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Descrição (SEO)
-                </label>
-                <textarea
-                  value={settings.description ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, description: e.target.value} : settings)}
-                  placeholder="Uma breve descrição sobre sua loja para as buscas do Google"
-                  rows={2}
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  disabled={submitLoading}
-                />
-              </div>
-
-              {/* URL da Logomarca */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Logotipo / URL da Imagem
-                </label>
-                <input
-                  type="text"
-                  value={settings.coverImageUrl ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, coverImageUrl: e.target.value} : settings)}
-                  placeholder="Link público para imagem da logomarca"
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  disabled={submitLoading}
-                />
-              </div>
-            </div>
-
-            {/* --- SEÇÃO ESTILO & DESIGN --- */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest border-b border-white/5 pb-2">Estilo & Layout</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {/* Cor Primária */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                    Cor Primária (Hex)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={settings.primaryColor || '#DDAF02'}
-                      onChange={(e) => setSettings(prev => prev ? {...prev, primaryColor: e.target.value} : settings)}
-                      className="h-12 w-12 rounded-lg bg-[#050505]/50 border border-neutral-700/50 p-1 cursor-pointer"
-                      disabled={submitLoading}
-                    />
+                  <label className="text-xs text-neutral-300">Nome da Loja</label>
+                  <input
+                    type="text"
+                    value={settings.name ?? ''}
+                    onChange={(e) => setSettings((p) => (p ? { ...p, name: e.target.value } : p))}
+                    className="w-full px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-300">Slug (Subdomínio)</label>
+                  <input
+                    type="text"
+                    value={settings.slug ?? ''}
+                    onChange={(e) =>
+                      setSettings((p) => (p ? { ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') } : p))
+                    }
+                    className="w-full px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SEÇÃO 2: LOGÍSTICA & FRETE */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#DDAF02] border-b border-white/10 pb-2">
+                2. Logística & Configurações de Frete (Origem e Transportadoras)
+              </h2>
+
+              {/* CEP de Origem e Endereço de Saída */}
+              <div className="p-4 bg-neutral-900/60 rounded-xl border border-white/5 space-y-4">
+                <h3 className="text-xs font-semibold text-neutral-200">Endereço de Origem (De onde saem os pacotes)</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-neutral-400">CEP de Saída (Origem)</label>
                     <input
                       type="text"
-                      value={settings.primaryColor || '#DDAF02'}
-                      onChange={(e) => setSettings(prev => prev ? {...prev, primaryColor: e.target.value} : settings)}
-                      placeholder="#HEX"
-                      maxLength={7}
-                      className={`flex-1 px-3 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                               text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                               focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                               ${submitLoading ? 'opacity-70' : ''}`}
-                      disabled={submitLoading}
+                      value={settings.originCep ?? ''}
+                      onChange={(e) => handleCepOriginChange(e.target.value)}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-neutral-400">Cidade</label>
+                    <input
+                      type="text"
+                      value={settings.originCity ?? ''}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, originCity: e.target.value } : p))}
+                      className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-neutral-400">Estado (UF)</label>
+                    <input
+                      type="text"
+                      value={settings.originState ?? ''}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, originState: e.target.value } : p))}
+                      className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Cor Secundária */}
-                <div className="space-y-1">
-                  <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                    Cor Secundária (Fundo)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={settings.secondaryColor || '#050505'}
-                      onChange={(e) => setSettings(prev => prev ? {...prev, secondaryColor: e.target.value} : settings)}
-                      className="h-12 w-12 rounded-lg bg-[#050505]/50 border border-neutral-700/50 p-1 cursor-pointer"
-                      disabled={submitLoading}
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-xs text-neutral-400">Rua / Logradouro</label>
                     <input
                       type="text"
-                      value={settings.secondaryColor || '#050505'}
-                      onChange={(e) => setSettings(prev => prev ? {...prev, secondaryColor: e.target.value} : settings)}
-                      placeholder="#HEX"
-                      maxLength={7}
-                      className={`flex-1 px-3 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                               text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                               focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                               ${submitLoading ? 'opacity-70' : ''}`}
-                      disabled={submitLoading}
+                      value={settings.originStreet ?? ''}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, originStreet: e.target.value } : p))}
+                      className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-neutral-400">Número</label>
+                    <input
+                      type="text"
+                      value={settings.originNumber ?? ''}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, originNumber: e.target.value } : p))}
+                      className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Domínio Personalizado */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Domínio Customizado
-                </label>
-                <input
-                  type="text"
-                  value={settings.customDomain ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, customDomain: e.target.value} : settings)}
-                  placeholder="ex: www.minhaloja.com.br"
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  disabled={submitLoading}
-                />
+              {/* Opções de Serviços de Frete */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Correios */}
+                <div className="p-4 bg-neutral-900/60 rounded-xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">Integração Correios (SEDEX & PAC)</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.enableCorreios}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, enableCorreios: e.target.checked } : p))}
+                      className="h-4 w-4 rounded accent-[#DDAF02] cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-400">
+                    Calcula automaticamente preços e prazos oficiais dos Correios para o cliente no checkout.
+                  </p>
+                </div>
+
+                {/* Retirada na Loja */}
+                <div className="p-4 bg-neutral-900/60 rounded-xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">Permitir Retirada no Balcão</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.enablePickup}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, enablePickup: e.target.checked } : p))}
+                      className="h-4 w-4 rounded accent-[#DDAF02] cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-400">
+                    Permite ao cliente optar por buscar o pedido na loja física sem custo de frete (R$ 0,00).
+                  </p>
+                </div>
+
+                {/* Sem Frete / WhatsApp */}
+                <div className="p-4 bg-neutral-900/60 rounded-xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">Permitir &quot;Frete a Combinar&quot;</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.enableNoFreight}
+                      onChange={(e) => setSettings((p) => (p ? { ...p, enableNoFreight: e.target.checked } : p))}
+                      className="h-4 w-4 rounded accent-[#DDAF02] cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-400">
+                    Permite ao cliente fechar o pedido sem escolher frete, combinando o envio diretamente pelo WhatsApp.
+                  </p>
+                </div>
+
+                {/* Dias Adicionais de Manuseio */}
+                <div className="p-4 bg-neutral-900/60 rounded-xl border border-white/5 space-y-3">
+                  <label className="block font-semibold text-sm">Prazo Adicional de Expedição (Dias)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={settings.additionalDays}
+                    onChange={(e) =>
+                      setSettings((p) => (p ? { ...p, additionalDays: parseInt(e.target.value, 10) || 0 } : p))
+                    }
+                    className="w-full px-4 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-sm"
+                  />
+                  <p className="text-xs text-neutral-400">
+                    Dias adicionados à estimativa dos Correios para tempo de separação e embalagem.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* --- SEÇÃO PAGAMENTO --- */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest border-b border-white/5 pb-2">Recebimento PIX</h3>
-              
-              {/* PIX Key Section */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Chave PIX
-                </label>
-                <div className="relative">
+            {/* SEÇÃO 3: PIX & CONTATO */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#DDAF02] border-b border-white/10 pb-2">
+                3. Recebimento PIX & Contato
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-300">Chave PIX</label>
                   <input
                     type="text"
                     value={settings.pixKey ?? ''}
-                    onChange={(e) => setSettings(prev => prev ? {...prev, pixKey: e.target.value} : settings)}
-                    placeholder="Digite sua chave PIX"
-                    className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                             text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                             focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                             ${submitLoading ? 'opacity-70' : ''}`}
-                    disabled={submitLoading}
+                    onChange={(e) => setSettings((p) => (p ? { ...p, pixKey: e.target.value } : p))}
+                    className="w-full px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm"
+                    placeholder="Chave PIX"
                   />
-                  {settings.pixKey && (
-                    <button
-                      type="button"
-                      onClick={() => setSettings(prev => prev ? {...prev, pixKey: ''} : settings)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center 
-                               text-neutral-400 hover:text-primary transition-colors"
-                      disabled={submitLoading}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                      </svg>
-                    </button>
-                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-300">Tipo de Chave</label>
+                  <select
+                    value={settings.pixKeyType ?? ''}
+                    onChange={(e) => setSettings((p) => (p ? { ...p, pixKeyType: e.target.value } : p))}
+                    className="w-full px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="CPF">CPF</option>
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="EMAIL">E-mail</option>
+                    <option value="TELEFONE">Telefone</option>
+                    <option value="ALEATORIA">Aleatória</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-neutral-300">WhatsApp de Atendimento</label>
+                  <input
+                    type="text"
+                    value={settings.whatsappNumber ?? ''}
+                    onChange={(e) => setSettings((p) => (p ? { ...p, whatsappNumber: e.target.value } : p))}
+                    className="w-full px-4 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm"
+                    placeholder="(00) 00000-0000"
+                  />
                 </div>
               </div>
-
-              {/* PIX Key Type Section */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Tipo da Chave PIX
-                </label>
-                <select
-                  value={settings.pixKeyType ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, pixKeyType: e.target.value} : settings)}
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  disabled={submitLoading}
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="CPF">CPF</option>
-                  <option value="CNPJ">CNPJ</option>
-                  <option value="EMAIL">E-mail</option>
-                  <option value="TELEFONE">Telefone</option>
-                  <option value="ALEATORIA">Chave Aleatória</option>
-                </select>
-              </div>
             </div>
 
-            {/* --- SEÇÃO CONTATO --- */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest border-b border-white/5 pb-2">Contato</h3>
-              
-              {/* WhatsApp Number Section */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-primary font-mono tracking-[0.25em] uppercase block">
-                  Número do WhatsApp
-                </label>
-                <input
-                  type="tel"
-                  value={settings.whatsappNumber ?? ''}
-                  onChange={(e) => setSettings(prev => prev ? {...prev, whatsappNumber: e.target.value} : settings)}
-                  placeholder="(DDD) 9XXXX-XXXX"
-                  className={`w-full px-4 py-3 bg-[#050505]/50 border border-neutral-700/50 rounded-xl 
-                           text-neutral-100 placeholder:text-neutral-400 focus:outline-none 
-                           focus:ring-2 focus:ring-primary/55 focus:border-primary transition-all
-                           ${submitLoading ? 'opacity-70' : ''}`}
-                  disabled={submitLoading}
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            {/* Ações */}
+            <div className="pt-4 flex justify-end gap-3 border-t border-white/10">
               <Button
                 type="submit"
-                disabled={submitLoading || !settings}
-                className="w-full bg-primary hover:opacity-90 text-zinc-950 text-base py-6 font-semibold 
-                         shadow-[0_0_20px_rgba(221,175,2,0.3)] transition-all flex items-center justify-center group"
+                disabled={submitLoading}
+                className="bg-[#DDAF02] hover:bg-[#DDAF02]/90 text-neutral-950 font-bold px-8 py-3 rounded-xl shadow-[0_0_20px_rgba(221,175,2,0.3)]"
               >
-                {submitLoading ? (
-                  <>
-                    <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="none" d="M4 12a8 8 0 018-8v8z" strokeWidth="4"></path>
-                    </svg>
-                    Atualizando...
-                  </>
-                ) : (
-                  <>
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21.02L12 17.77L5.82 21.02l-5-4.87L6.91 9.27l9.19-6.26Z"></path>
-                    </svg>
-                    Salvar
-                  </>
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleClearSettings}
-                disabled={submitLoading || !settings || (!settings.pixKey && !settings.whatsappNumber)}
-                variant="outline"
-                className="w-full border-red-500/20 hover:border-red-500/50 hover:bg-red-500/10 text-red-400 text-base py-6 font-semibold transition-all flex items-center justify-center group bg-transparent"
-              >
-                {submitLoading ? (
-                  <>
-                    <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="none" d="M4 12a8 8 0 018-8v8z" strokeWidth="4"></path>
-                    </svg>
-                    Limpando...
-                  </>
-                ) : (
-                  <>
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Apagar Contatos
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Back to Dashboard */}
-            <div className="mt-6 text-center">
-              <Button 
-                variant="outline"
-                onClick={() => window.location.href = '/admin'}
-                className="text-neutral-400 hover:text-white"
-              >
-                Voltar ao Dashboard
+                {submitLoading ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
             </div>
           </form>
         )}
       </div>
-
-      {/* Footer */}
-      <footer className="relative z-[10] border-t border-white/10 py-6">
-        <div className="container mx-auto px-6 text-center text-sm text-neutral-500">
-          © 2026 Painel Admin. Todos os direitos reservados.
-        </div>
-      </footer>
     </div>
   );
 }

@@ -7,9 +7,10 @@ import { getLojaBySlug } from "@/lib/services/loja.service";
  */
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  props: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const params = await props.params;
     const { slug } = params;
 
     if (!slug) {

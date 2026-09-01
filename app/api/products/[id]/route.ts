@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import * as productService from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validators/product";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── Error → HTTP status map ──────────────────────────────────────────────────
 const SERVICE_ERRORS: Record<string, number> = {
@@ -22,8 +22,9 @@ function handleServiceError(error: unknown): NextResponse {
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }
 
-export async function GET(_req: Request, { params }: RouteContext) {
+export async function GET(_req: Request, context: RouteContext) {
   try {
+    const params = await context.params;
     const product = await productService.getProductById(params.id);
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
@@ -31,11 +32,12 @@ export async function GET(_req: Request, { params }: RouteContext) {
   }
 }
 
-export async function PUT(request: Request, { params }: RouteContext) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const guard = await requireAdmin();
     if (guard instanceof NextResponse) return guard;
 
+    const params = await context.params;
     let body: unknown;
     try {
       body = await request.json();
@@ -51,19 +53,22 @@ export async function PUT(request: Request, { params }: RouteContext) {
       );
     }
 
-    const product = await productService.updateProduct(params.id, parsed.data);
+    // Passa o lojaID do admin autenticado para impedir alteração cross-tenant (TEN-002)
+    const product = await productService.updateProduct(params.id, parsed.data, guard.user.lojaID);
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
     return handleServiceError(error);
   }
 }
 
-export async function DELETE(_req: Request, { params }: RouteContext) {
+export async function DELETE(_req: Request, context: RouteContext) {
   try {
     const guard = await requireAdmin();
     if (guard instanceof NextResponse) return guard;
 
-    await productService.deleteProduct(params.id);
+    const params = await context.params;
+    // Passa o lojaID do admin autenticado para impedir deleção cross-tenant (TEN-002)
+    await productService.deleteProduct(params.id, guard.user.lojaID);
 
     // 204 No Content — body must be empty
     return new NextResponse(null, { status: 204 });

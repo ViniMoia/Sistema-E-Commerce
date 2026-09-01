@@ -17,11 +17,32 @@ async function test(url, label) {
 }
 
 async function main() {
-  const directUrl = 'postgresql://postgres.hzewcqjjiglwpohdsjmq:AWDsxf%401423@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require';
-  const poolerUrl = 'postgresql://postgres.hzewcqjjiglwpohdsjmq:AWDsxf%401423@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require';
-  const d = await test(directUrl, 'DIRECT (port 5432)');
-  const p = await test(poolerUrl, 'POOLER (port 6543)');
-  console.log(`\n=== FINAL: Direct=${d ? 'OK' : 'FAIL'} | Pooler=${p ? 'OK' : 'FAIL'} ===`);
+  const directUrl = process.env.DIRECT_URL;
+  const poolerUrl = process.env.DATABASE_URL;
+
+  if (!directUrl && !poolerUrl) {
+    console.error('ERRO: Nenhuma variável de conexão configurada (DIRECT_URL ou DATABASE_URL).');
+    console.error('Configure as variáveis de ambiente antes de executar este teste.');
+    process.exit(1);
+  }
+
+  let d = false;
+  let p = false;
+
+  if (directUrl) {
+    d = await test(directUrl, 'DIRECT (DIRECT_URL)');
+  } else {
+    console.log('\n=== DIRECT (DIRECT_URL) não configurada, pulando ===');
+  }
+
+  if (poolerUrl) {
+    p = await test(poolerUrl, 'POOLER (DATABASE_URL)');
+  } else {
+    console.log('\n=== POOLER (DATABASE_URL) não configurada, pulando ===');
+  }
+
+  console.log(`\n=== FINAL: Direct=${d ? 'OK' : (directUrl ? 'FAIL' : 'N/A')} | Pooler=${p ? 'OK' : (poolerUrl ? 'FAIL' : 'N/A')} ===`);
   process.exit(d || p ? 0 : 1);
 }
 main();
+

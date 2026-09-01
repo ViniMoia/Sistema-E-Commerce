@@ -7,6 +7,7 @@ const cartItemSchema = z.object({
   price: z.number().positive(),
   color: z.string().optional(),
   size: z.string().optional(),
+  variantId: z.string().optional(),
 })
 
 const customerSchema = z.object({
@@ -31,9 +32,14 @@ export const createOrderSchema = z.object({
   customer: customerSchema,
   items: z.array(cartItemSchema).min(1),
   address: addressSchema.optional(),
-  deliveryType: z.enum(['DELIVERY', 'PICKUP']),
+  deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']),
   freightValue: z.number().nonnegative().optional(),
+  shippingCost: z.number().nonnegative().optional(),
+  shippingProvider: z.string().optional(),
+  shippingServiceName: z.string().optional(),
+  shippingEstimatedDays: z.number().int().nonnegative().optional(),
   pixKey: z.string().optional(),
+  pointsToRedeem: z.number().int().nonnegative().optional(),
 })
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>

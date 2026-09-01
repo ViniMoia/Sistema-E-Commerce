@@ -1,0 +1,257 @@
+================================================================================
+                    RELATÓRIO DE ARQUITETURA DE SOFTWARE
+                             PROJETO E-COMMERCE
+================================================================================
+Data de Emissão: 27 de Agosto de 2026
+Versão da Análise: 1.0.0
+Escopo: Arquitetura, Bases Estruturais, Qualidades do Sistema e Boas Práticas
+================================================================================
+
+--------------------------------------------------------------------------------
+1. SUMÁRIO EXECUTIVO E VISÃO GERAL
+--------------------------------------------------------------------------------
+O presente sistema consiste em uma plataforma de comércio eletrônico full-stack,
+moderna e multi-inquilino (Multi-Tenant), desenvolvida sobre o ecossistema Next.js
+(App Router) com TypeScript, Prisma ORM e banco de dados PostgreSQL.
+
+A plataforma foi concebida para atender múltiplos lojistas (tenants) em uma única
+infraestrutura compartilhada de código e banco de dados, garantindo isolamento
+lógico estrito de dados, alta segurança contra ataques contemporâneos de API
+(como BOLA/IDOR, Session Fixation e Cross-Tenant Data Leaks), cálculo monetário
+estritamente autoritativo no backend, transações ACID para consistência de estoque
+e pedidos, além de observabilidade e auditoria granular.
+
+Destaques Arquiteturais Centrais:
+  • Multi-Tenancy Dinâmico com estratégia Fail-Closed.
+  • Checkout Autoritativo com Idempotência Transacional e Baixa de Estoque Atômica.
+  • Máquina de Estados Finita para o Ciclo de Vida dos Pedidos.
+  • Camada de Autenticação Segura baseada em Sessões Opacas Criptográficas (256-bit).
+  • Defesa em Profundidade (Rate Limiting, Sanitização de DTOs, RBAC e Zod Validators).
+  • Observabilidade Estruturada em JSON e Trilha de Auditoria (Audit Logging).
+  • Ampla Suíte de Testes Automatizados (Unitários, Integração e Carga).
+
+
+--------------------------------------------------------------------------------
+2. STACK TECNOLÓGICA E MATRIZ DE COMPONENTES
+--------------------------------------------------------------------------------
+• Core Runtime & Framework:
+    - Node.js / Next.js 16.3.1 (React 18, App Router, Route Handlers, Server Components)
+    - TypeScript 5.x (Strict Typing em toda a aplicação)
+
+• Persistência & Modelagem de Dados:
+    - Prisma ORM 5.22.0
+    - PostgreSQL (com suporte a conexões diretas e pooling via Supabase/PgBouncer)
+    - Tipos decimais de alta precisão (Prisma.Decimal @db.Decimal(10,2))
+
+• Interface de Usuário & Estilização:
+    - Tailwind CSS 3.4.1 + PostCSS
+    - Radix UI Primitives (Acessibilidade WAI-ARIA nativa: Dialog, Select, Avatar, etc.)
+    - Lucide React (Iconografia vetorial consistente)
+    - Sonner (Notificações contextuais em tempo real)
+
+• Estado do Cliente & Formulários:
+    - Zustand 5.0 (Gerenciamento de estado global leve e desacoplado para carrinho)
+    - React Hook Form 7.75 + @hookform/resolvers
+    - Zod 4.4.3 (Validação estática e em tempo de execução de esquemas de dados)
+
+• Segurança & Criptografia:
+    - bcryptjs 3.0.3 (Hashing unidirecional com salt)
+    - Node Crypto (Identificadores de sessão aleatórios de 256 bits via randomBytes)
+    - Cookies HTTP-Only, SameSite=Lax, Secure em produção
+
+• Garantia de Qualidade & Testes:
+    - Vitest 4.1.6 (Runner de testes ultrarrápido para unitários, integração e carga)
+
+
+--------------------------------------------------------------------------------
+3. ARQUITETURA EM CAMADAS (LAYERED ARCHITECTURE)
+--------------------------------------------------------------------------------
+A base de código segue uma separação rigorosa de responsabilidades organizada nas
+seguintes camadas lógicas:
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ 1. CAMADA DE APRESENTAÇÃO & ENTRADA (Presentation / Route Handlers)      │
+  │    - app/ (Páginas, Layouts, Server Components e Client Components)      │
+  │    - app/api/* (RESTful API Handlers: pedidos, clientes, auth, frete)    │
+  └──────────────────────────────────┬───────────────────────────────────────┘
+                                     │
+  ┌──────────────────────────────────▼───────────────────────────────────────┐
+  │ 2. CAMADA DE GUARDS, MIDDLEWARES & CONTROLE DE ACESSO                    │
+  │    - middleware.ts (Interceptação perimetral de rotas protegidas)        │
+  │    - lib/auth/guards.ts (requireAuth, requireAdmin, requireTenant)        │
+  │    - lib/rate-limit.ts (Limitação de taxa por IP/rota - HTTP 429)        │
+  │    - lib/validators/* (Validação de payload com Zod)                     │
+  └──────────────────────────────────┬───────────────────────────────────────┘
+                                     │
+  ┌──────────────────────────────────▼───────────────────────────────────────┐
+  │ 3. CAMADA DE DOMÍNIO & SERVIÇOS DE NEGÓCIO (Business Domain Services)    │
+  │    - services/checkout.service.ts (Pipeline de checkout autoritativo)    │
+  │    - services/order.service.ts (Transições de status e consultas)        │
+  │    - services/customer.service.ts (Métricas RFM e perfis de clientes)    │
+  │    - services/admin.service.ts, loja.service.ts, freight.service.ts      │
+  └──────────────────────────────────┬───────────────────────────────────────┘
+                                     │
+  ┌──────────────────────────────────▼───────────────────────────────────────┐
+  │ 4. CAMADA DE INFRAESTRUTURA & UTILITÁRIOS TRANSVERSAIS                   │
+  │    - lib/tenant.ts (Resolução e normalização de host multi-tenant)       │
+  │    - lib/session.ts (Ciclo de vida e invalidação de sessões)             │
+  │    - lib/cache.ts (Cache particionado por lojaID)                        │
+  │    - lib/logger.ts (Logging estruturado JSON com metadados)              │
+  │    - lib/prisma.ts (Singleton do cliente de banco de dados)              │
+  └──────────────────────────────────┬───────────────────────────────────────┘
+                                     │
+  ┌──────────────────────────────────▼───────────────────────────────────────┐
+  │ 5. CAMADA DE PERSISTÊNCIA (Database / Storage)                           │
+  │    - PostgreSQL Database (Esquema relacional íntegro via Prisma)         │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+4. BASES ESTRUTURAIS DO SISTEMA
+--------------------------------------------------------------------------------
+
+4.1. MODELO MULTI-TENANT ISOLADO & ESTRATÉGIA FAIL-CLOSED
+  • Identificação de Tenant via Host Header:
+    A infraestrutura inspeciona o cabeçalho 'host' ou 'x-forwarded-host',
+    higieniza a string contra Host Injection e resolve a loja correspondente por
+    slug de plataforma, subdomínio ou customDomain verificado.
+  • Política Fail-Closed:
+    Diferente de sistemas vulneráveis que utilizam "fallback permissivo" para a
+    primeira loja encontrada no banco, o sistema rejeita terminantemente requisições
+    de domínios desconhecidos em produção (retornando HTTP 404), eliminando riscos
+    de contaminação cruzada.
+  • Chaves Únicas e Índices Compostos:
+    Os modelos possuem unicidade e índices indexados com `lojaID` (ex: [email, lojaID],
+    [lojaID, status], [lojaID, createdAt], [lojaID, cityName]), garantindo consultas
+    otimizadas e impossibilidade de colisão entre lojas distintas.
+  • Cache Tenant-Aware:
+    O cache em memória (`lib/cache.ts`) prefixa obrigatoriamente todas as chaves com
+    o padrão `tenant:{lojaID}:{resource}:{identifier}`, além de prover métodos para
+    invalidação seletiva por tenant (`invalidateTenant(lojaID)`).
+
+4.2. PIPELINE DE CHECKOUT AUTORITATIVO & IDEMPOTÊNCIA
+  • Cálculo 100% Autoritativo de Preço e Frete:
+    O cliente (frontend) envia apenas os identificadores de produto/variante e
+    quantidades desejadas. O backend consulta diretamente o banco de dados dentro de
+    uma transação ACID, recupera os preços oficiais, aplica as regras de frete da loja
+    e calcula o total com precisão decimal (`Prisma.Decimal`).
+  • Chave de Idempotência (`idempotencyKey`):
+    O modelo `Order` registra uma chave única de idempotência. Se o usuário reenviar
+    a mesma requisição (devido a instabilidade de rede ou cliques duplos), o sistema
+    retorna instantaneamente o pedido já gerado, impedindo cobranças e baixas duplicadas.
+  • Baixa Atômica de Estoque:
+    A validação e decremento de estoque do produto principal e de suas variantes
+    ocorrem dentro da mesma transação `$transaction`, prevenindo condições de corrida
+    (race conditions) e overselling.
+
+4.3. MÁQUINA DE ESTADOS FINITA (FSM) DE PEDIDOS
+  • Transições Válidas Estritas:
+      - PENDING   ──► PAID | CANCELLED
+      - PAID      ──► SHIPPED | CANCELLED
+      - SHIPPED   ──► DELIVERED
+      - DELIVERED ──► (Estado Final)
+      - CANCELLED ──► (Estado Final)
+  • Regras de Reversão e Estoque:
+    Ao transicionar para `PAID`, a disponibilidade das variantes é revalidada e
+    debitada. Ao transicionar de `PAID` para `CANCELLED`, o estoque é estornado
+    automaticamente de forma atômica (`increment`), preservando a consistência contábil.
+
+4.4. ARQUITETURA DE SEGURANÇA E DEFESA EM PROFUNDIDADE
+  • Autenticação por Sessão Opaca (DB-Backed Session):
+    Identificadores de sessão aleatórios de alta entropia (256-bit crypto hex),
+    armazenados na tabela `Session` com expiração rígida de 7 dias e invalidação
+    reativa na requisição.
+  • Defesa Contra Session Fixation:
+    Toda nova autenticação/criação de sessão invalida e destrói expressamente no
+    banco qualquer cookie de sessão pré-existente antes de emitir um novo token.
+  • Sanitização de DTOs (`SafeUserDTO`):
+    Mecanismo centralizado que expurga senhas criptografadas, tokens de reset e dados
+    internos antes que qualquer objeto de usuário seja devolvido à camada de visualização.
+  • Proteção BOLA/IDOR (Broken Object Level Authorization):
+    Todas as consultas administrativas e de clientes filtram explicitamente pelo
+    `lojaID` do contexto e pelo `userID` do requisitante.
+  • Rate Limiting em Memória:
+    Proteção perimetral contra força bruta e ataques de negação de serviço, retornando
+    código HTTP 429 com cabeçalhos padrão (`Retry-After`, `X-RateLimit-*`).
+
+
+--------------------------------------------------------------------------------
+5. QUALIDADES DO SISTEMA (ATRIBUTOS DE QUALIDADE / NFRs)
+--------------------------------------------------------------------------------
+
+┌──────────────────────┬─────────────────────────────────────────────────────────┐
+│ Atributo de Qualidade│ Como o Sistema Assegura                                 │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 1. Consistência e    │ Transações ACID via Prisma (`$transaction`), cálculos   │
+│    Integridade       │ monetários autoritativos em Decimal e máquina de estados│
+│                      │ finita formal para status de pedidos.                   │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 2. Segurança         │ Sessões opacas 256-bit, RBAC estrito (ADMIN, CUSTOMER), │
+│    Cibernética       │ sanitização de DTOs, proteção contra BOLA/IDOR e        │
+│                      │ resolução de tenant Fail-Closed.                        │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 3. Observabilidade   │ Logger estruturado em JSON com injeção de contexto      │
+│    & Auditoria       │ (tenantId, userId, action) e tabela `AuditLog` para     │
+│                      │ rastreabilidade de todas as alterações críticas.        │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 4. Performance e     │ Paginação eficiente baseada em cursor (take/cursor/skip)│
+│    Escalabilidade    │ em pedidos e clientes; Cache tenant-aware em memória e  │
+│                      │ consultas otimizadas por índices compostos.             │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 5. Modularidade e    │ Desacoplamento entre rotas HTTP, serviços de domínio,   │
+│    Manutenibilidade  │ esquemas Zod e camada de persistência. Código limpo e   │
+│                      │ fortemente tipado em TypeScript.                        │
+├──────────────────────┼─────────────────────────────────────────────────────────┤
+│ 6. Testabilidade     │ Cobertura completa de testes automatizados com Vitest,  │
+│                      │ abrangendo testes unitários, testes de integração de    │
+│                      │ transições e cenários de carga concorrente.             │
+└──────────────────────┴─────────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+6. MODELO DE DADOS E RELACIONAMENTOS (PRISMA SCHEMA)
+--------------------------------------------------------------------------------
+A base relacional é modelada com 12 entidades fundamentais interconectadas:
+
+  • Loja: Entidade raiz do inquilino (slug, identidade visual, customDomain, PIX).
+  • User: Usuários do sistema vinculados ao tenant (ADMIN, CUSTOMER, SELLER).
+  • Address: Endereços normalizados vinculados ao usuário e associados a pedidos.
+  • Product & ProductVariants: Catálogo de produtos com suporte a cor, tamanho e estoque.
+  • Cart & CartItem: Carrinho de compras persistente por usuário.
+  • Order & OrderItem: Pedidos de venda com número sequencial, subtotal, frete e itens.
+  • OrderStatusHistory: Linha do tempo imutável de alterações de status com autor e IP.
+  • FreightRule: Tabela dinâmica de precificação de frete por cidade e loja.
+  • AuditLog: Trilha de auditoria genérica de ações administrativas e alterações de estado.
+  • Session: Sessões ativas com expiração automática.
+
+
+--------------------------------------------------------------------------------
+7. PRONTIDÃO PARA EVOLUÇÃO (ROADMAP & EXTENSIBILIDADE)
+--------------------------------------------------------------------------------
+O projeto demonstra excelente maturidade arquitetural e facilidade para expansão:
+
+  1. Integração com Gateways de Pagamento (Fase A do Roadmap):
+     - A estrutura transacional do `checkout.service.ts` e as validações via Zod
+       estão preparadas para receber chamadas de APIs de pagamento externas
+       (ex: Stripe, Mercado Pago, Pagar.me) e processamento via Webhooks assíncronos.
+  2. Gestão Avançada de Estoque (Fase B do Roadmap):
+     - Os modelos já suportam variantes granulares de estoque e o pipeline atômico
+       permite acoplar alertas de baixo estoque e histórico de movimentação.
+  3. Escalabilidade Horizontal Serverless:
+     - O sistema pode transicionar suavemente do cache/rate-limit em memória local
+       para Redis/Upstash compartilhado caso seja implantado em múltiplos nós
+       serverless distribuídos.
+
+
+--------------------------------------------------------------------------------
+8. CONCLUSÃO E DIAGNÓSTICO
+--------------------------------------------------------------------------------
+O sistema avaliado apresenta um padrão de engenharia de software de alto nível.
+Destaca-se pela adoção consistente de boas práticas de segurança defensiva, isolamento
+multi-tenant seguro e integridade transacional de ponta a ponta. A separação em camadas
+e a suíte de testes garantem manutenibilidade, robustez operacional e segurança para
+evoluções futuras.
+
+================================================================================
+                        FIM DO RELATÓRIO ARQUITETURAL
+================================================================================

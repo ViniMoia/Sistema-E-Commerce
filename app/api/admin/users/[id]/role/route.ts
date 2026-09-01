@@ -7,7 +7,7 @@ const updateRoleSchema = z.object({
   role: z.enum(["ADMIN", "CUSTOMER"]),
 });
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 const SERVICE_ERRORS: Record<string, number> = {
   USER_NOT_FOUND: 404,
@@ -44,11 +44,12 @@ function handleServiceError(error: unknown): NextResponse {
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }
 
-export async function PATCH(req: Request, { params }: RouteContext) {
+export async function PATCH(req: Request, context: RouteContext) {
   try {
-    const session = await requireAdmin();
+    const session = await requireAdmin(req);
     if (session instanceof NextResponse) return session;
 
+    const params = await context.params;
     const body = await req.json().catch(() => null);
     if (!body) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

@@ -1,0 +1,153 @@
+================================================================================
+MANUAL DO USUARIO E GUIA DE OPERACAO
+PROGRAMA DE FIDELIDADE & BONIFICACAO POR PONTOS
+================================================================================
+
+Destinado a: Lojistas, Administradores da Loja e Equipe de Atendimento
+Objetivo: Orientar sobre o funcionamento, configuracao e operacao do modulo de pontos
+
+--------------------------------------------------------------------------------
+1. COMO FUNCIONA O PROGRAMA DE PONTOS?
+--------------------------------------------------------------------------------
+
+O Programa de Fidelidade permite bonificar seus clientes automaticamente a cada compra
+paga no seu e-commerce, incentivando a recorrencia e o aumento do ticket medio.
+
+* Como o cliente ganha pontos (Acumulo):
+  - Ao realizar uma compra e ter o pagamento confirmado, o cliente acumula pontos
+    proporcionais ao valor gasto nos produtos.
+  - Regra Padrao: A cada R$ 1,00 gasto = 0,5 ponto (Ex: R$ 1.000,00 = 500 pontos).
+
+* Como o cliente usa os pontos (Resgate):
+  - Na tela de Checkout (Finalizacao da Compra), o cliente podera escolher usar seus
+    pontos acumulados para abater no valor dos produtos.
+  - Regra Padrao: 1 ponto = R$ 0,05 de desconto (Ex: 500 pontos = R$ 25,00 de desconto).
+
+* O que acontece se o pedido for cancelado?
+  - Se o cliente cancelou um pedido que usou pontos, os pontos sao devolvidos a carteira dele.
+  - Se o pedido que gerou pontos for cancelado ou estornado, os pontos ganhos sao removidos.
+
+--------------------------------------------------------------------------------
+2. ACESSANDO O PAINEL DE FIDELIDADE (ADMINISTRADOR)
+--------------------------------------------------------------------------------
+
+1. Faca login com sua conta de Administrador no painel de controle.
+2. No menu lateral esquerdo, clique na opcao "Fidelidade & Pontos" (ou acesse diretamente
+   o endereco /admin/fidelidade).
+3. Voce vera o painel dividido em 4 Indicadores Principais e 3 Abas de Gestao.
+
+--------------------------------------------------------------------------------
+3. INDICADORES FINANCEIROS E METRICAS (DASHBOARD)
+--------------------------------------------------------------------------------
+
+No topo da pagina de fidelidade, voce acompanha em tempo real:
+
+1. Passivo Financeiro (R$):
+   - Representa o valor total em reais que seus clientes tem direito a resgatar caso
+     todos usem seus pontos hoje. Ajuda no planejamento financeiro da loja.
+
+2. Pontos em Circulacao:
+   - A quantidade total de pontos disponiveis nas carteiras de todos os seus clientes.
+
+3. Clientes Engajados:
+   - Quantos clientes cadastrados possuem saldo de pontos maior que zero.
+
+4. Total Resgatado (R$ e Pontos):
+   - Historico total acumulado de economia que seus clientes ja obtiveram usando pontos.
+
+--------------------------------------------------------------------------------
+4. CONFIGURANDO AS REGRAS DO PROGRAMA (ABA "PARAMETROS")
+--------------------------------------------------------------------------------
+
+Na aba "Parametros do Programa", voce pode customizar as regras conforme sua estrategia:
+
+1. Chave "Ativacao do Programa de Pontos":
+   - LIGADO (Ativo): Clientes acumulam e podem resgatar pontos no checkout.
+   - DESLIGADO (Inativo): Pausa o programa sem apagar o saldo dos clientes.
+
+2. Taxa de Acumulo (Earn Rate):
+   - Define quantos pontos o cliente ganha por real gasto.
+   - Exemplo: 0.5 (ganha 1 ponto a cada R$ 2,00 gastos).
+   - Exemplo: 1.0 (ganha 1 ponto a cada R$ 1,00 gasto).
+
+3. Valor do Ponto em Reais (Burn Rate):
+   - Define quanto vale cada ponto em desconto monetario.
+   - Exemplo: 0.05 (cada 100 pontos valem R$ 5,00 de desconto).
+   - Exemplo: 0.10 (cada 100 pontos valem R$ 10,00 de desconto).
+
+4. Resgate Minimo (Pontos):
+   - Quantidade minima de pontos que o cliente precisa ter para poder aplicar desconto.
+   - Recomendado: 100 pontos (evita resgates insignificantes de centavos).
+
+5. Teto Maximo de Desconto (%):
+   - Percentual maximo do carrinho que pode ser pago com pontos.
+   - Exemplo: 50% (em um carrinho de R$ 200,00, o cliente pode abater no maximo R$ 100,00).
+
+6. Validade dos Pontos (Dias):
+   - Prazo para os pontos expirarem caso o cliente nao compre novamente.
+   - Exemplo: 365 dias (1 ano). Deixe em branco caso queira pontos sem expiracao.
+
+* Lembre-se de clicar no botao "Salvar Configuracoes" apos qualquer alteracao!
+
+--------------------------------------------------------------------------------
+5. CONCEDENDO BONUS OU CORRECOES (ABA "AJUSTE MANUAL")
+--------------------------------------------------------------------------------
+
+Voce pode conceder pontos bônus a um cliente (ex: aniversario, acao promocional,
+compensacao por atraso de entrega) ou realizar ajustes:
+
+1. Acesse a aba "Ajuste Manual de Saldo".
+2. No campo "ID do Cliente (User ID)", informe o identificador do cliente (encontrado
+   na listagem de Clientes do painel).
+3. No campo "Quantidade de Pontos":
+   - Digite um numero POSITIVO para creditar pontos (Ex: 200).
+   - Digite um numero NEGATIVO para debitar pontos (Ex: -50).
+4. No campo "Justificativa Contabil", escreva o motivo do ajuste (Ex: "Bonus de Aniversario").
+5. Clique em "Efetivar Ajuste no Ledger". O saldo do cliente sera atualizado na hora!
+
+--------------------------------------------------------------------------------
+6. AUDITORIA E EXTRATO GERAL (ABA "ULTIMAS MOVIMENTACOES")
+--------------------------------------------------------------------------------
+
+Na aba "Ultimas Movimentacoes", voce pode acompanhar em tempo real todas as entradas e
+saidas de pontos da loja, com nome do cliente, e-mail, quantidade de pontos, tipo da
+operacao (compra, resgate, estorno ou ajuste admin) e data/hora exata.
+
+--------------------------------------------------------------------------------
+7. EXPERIENCIA DO CLIENTE FINAL NO SITE
+--------------------------------------------------------------------------------
+
+A) Na pagina de Checkout (Finalizacao da Compra):
+   - Na etapa de pagamento, o cliente logado vera o card "Programa de Fidelidade"
+     destacando quantos pontos ele possui e quanto isso vale em Reais.
+   - Ele pode ligar a chave para usar os pontos, ajustar o slider de quantidade ou
+     clicar em "Usar Tudo".
+   - O desconto e aplicado instantaneamente no subtotal da compra.
+   - Uma mensagem destaca quantos novos pontos ele recebera por essa compra.
+
+B) Na area do cliente (/profile ou /profile/fidelidade):
+   - Na aba "Pontos & Fidelidade", o cliente visualiza seus cards de Saldo Disponivel,
+     Pontos Pendentes e Total Vitalicio Acumulado.
+   - Abaixo, ele conta com uma tabela de extrato completa mostrando cada pedido em que
+     ganhou ou usou pontos.
+
+--------------------------------------------------------------------------------
+8. PERGUNTAS FREQUENTES (FAQ)
+--------------------------------------------------------------------------------
+
+P: Os pontos abatem o valor do frete?
+R: Nao. O desconto de pontos e aplicado exclusivamente sobre o valor dos produtos.
+   O frete e cobrado integralmente para nao gerar custos logisticos para sua loja.
+
+P: O cliente pode usar pontos sem estar logado?
+R: Nao. Para resgatar pontos, o cliente precisa estar conectado a sua conta. Se ele
+   estiver deslogado, o sistema apenas exibira um informativo de que aquela compra
+   pode acumular pontos se ele fizer login/cadastro.
+
+P: Posso alterar o valor do ponto depois que o programa ja estiver rodando?
+R: Sim, as novas configuracoes passam a valer imediatamente para os proximos checkouts.
+   O saldo em pontos dos clientes sera mantido, e a nova conversao em R$ sera aplicada.
+
+================================================================================
+FIM DO MANUAL DE OPERACAO
+================================================================================

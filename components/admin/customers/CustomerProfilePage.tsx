@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Avatar, AlertBanner, SkeletonRow } from '@/components/ui'
+import { Avatar, AlertBanner } from '@/components/ui'
+import { Skeleton } from '@/components/ui/skeleton'
 import { CustomerMetricsPanel } from './CustomerMetricsPanel'
 import { CustomerOrderHistory } from './CustomerOrderHistory'
 
@@ -121,17 +122,17 @@ export function CustomerProfilePage({ customerId, onClose }: CustomerProfilePage
       <div className="h-full flex flex-col bg-zinc-950">
         <div className="p-6 border-b border-zinc-800">
           <div className="flex items-center gap-4">
-            <SkeletonRow columns={1} />
+            <Skeleton className="w-12 h-12 rounded-full" />
             <div className="space-y-2">
-              <SkeletonRow columns={1} />
-              <SkeletonRow columns={1} />
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-56" />
             </div>
           </div>
         </div>
         <div className="p-6 space-y-4">
-          <SkeletonRow columns={1} />
-          <SkeletonRow columns={1} />
-          <SkeletonRow columns={1} />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
         </div>
       </div>
     )

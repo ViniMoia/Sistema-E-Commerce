@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
-import { getLojaSettings, updateLojaSettings } from "@/lib/services/loja.service";
+import { getLojaSettings, updateLojaSettings } from "@/services/loja.service";
 import { z } from "zod";
 
 const updateLojaSettingsSchema = z.object({
@@ -14,19 +14,30 @@ const updateLojaSettingsSchema = z.object({
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor primária inválida (deve ser hex #RRGGBB)").optional(),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor secundária inválida (deve ser hex #RRGGBB)").optional(),
   customDomain: z.string().nullable().optional(),
+  // Configurações de Frete & Expedição
+  originCep: z.string().nullable().optional(),
+  originState: z.string().nullable().optional(),
+  originCity: z.string().nullable().optional(),
+  originDistrict: z.string().nullable().optional(),
+  originStreet: z.string().nullable().optional(),
+  originNumber: z.string().nullable().optional(),
+  originComplement: z.string().nullable().optional(),
+  enableCorreios: z.boolean().optional(),
+  correiosContractCode: z.string().nullable().optional(),
+  correiosPassword: z.string().nullable().optional(),
+  enablePickup: z.boolean().optional(),
+  enableNoFreight: z.boolean().optional(),
+  additionalDays: z.number().int().nonnegative().optional(),
 });
 
 /**
  * GET /api/loja/settings
- * Get current loja settings (admin only)
  */
 export async function GET(request: Request) {
   try {
-    const guard = await requireAdmin();
+    const guard = await requireAdmin(request);
     if (guard instanceof NextResponse) return guard;
 
-    // In a real multi-tenant app, we'd get lojaID from user's lojaID
-    // For now, we'll assume the admin manages their own loja
     const lojaID = guard.user.lojaID;
     if (!lojaID) {
       return NextResponse.json(
@@ -55,11 +66,10 @@ export async function GET(request: Request) {
 
 /**
  * PUT /api/loja/settings
- * Update loja settings (admin only)
  */
 export async function PUT(request: Request) {
   try {
-    const guard = await requireAdmin();
+    const guard = await requireAdmin(request);
     if (guard instanceof NextResponse) return guard;
 
     const lojaID = guard.user.lojaID;

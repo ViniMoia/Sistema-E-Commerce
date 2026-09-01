@@ -14,6 +14,10 @@ export async function GET() {
       description: loja.description,
       coverImageUrl: loja.coverImageUrl,
       whatsappNumber: loja.whatsappNumber,
+      pixKey: loja.pixKey,
+      pixKeyType: loja.pixKeyType,
+      primaryColor: loja.primaryColor,
+      secondaryColor: loja.secondaryColor,
     });
   } catch (error) {
     console.error("[LOJA_ACTIVE_GET]", error);

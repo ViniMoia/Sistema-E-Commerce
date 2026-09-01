@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
 import { isValidTransition } from "@/lib/order-transitions";
+import { creditEarnedPoints, refundOrderPoints } from "@/services/loyalty.service";
 import type { ListOrdersParams, UpdateOrderStatusInput, UpdateStatusResult } from "@/types/admin.types";
 import type { CreateOrderInput, OrderWithDetails, OrderSummary } from "@/types/order.types";
 
@@ -181,9 +182,17 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
   return { data, totalCount, nextCursor, hasNextPage };
 }
 
-export async function getOrderDetailForAdmin(orderId: string) {
-  return prisma.order.findUnique({
-    where: { id: orderId },
+export async function getOrderDetailForAdmin(
+  orderIdOrParams: string | { orderId: string; lojaID?: string }
+) {
+  const orderId = typeof orderIdOrParams === 'string' ? orderIdOrParams : orderIdOrParams.orderId;
+  const lojaID = typeof orderIdOrParams === 'string' ? undefined : orderIdOrParams.lojaID;
+
+  return prisma.order.findFirst({
+    where: {
+      id: orderId,
+      ...(lojaID ? { lojaID } : {}),
+    },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
       address: true,
@@ -197,12 +206,35 @@ export async function getOrderDetailForAdmin(orderId: string) {
           price: true,
         },
       },
+      statusHistory: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          performedBy: { select: { id: true, name: true } },
+        },
+      },
     },
   });
 }
 
+export async function updateOrderNotes(params: {
+  orderId: string;
+  lojaID?: string;
+  adminNotes: string;
+}) {
+  const existing = await prisma.order.findUnique({ where: { id: params.orderId } });
+
+  if (!existing || (params.lojaID && existing.lojaID !== params.lojaID)) {
+    return null;
+  }
+
+  return prisma.order.update({
+    where: { id: params.orderId },
+    data: { adminNotes: params.adminNotes },
+  });
+}
+
 export async function updateOrderStatus(
-  input: UpdateOrderStatusInput
+  input: UpdateOrderStatusInput & { lojaID?: string }
 ): Promise<UpdateStatusResult> {
   const fullOrder = await prisma.order.findUnique({
     where: { id: input.orderId },
@@ -210,6 +242,11 @@ export async function updateOrderStatus(
       id: true,
       status: true,
       userID: true,
+      lojaID: true,
+      subtotal: true,
+      pointsEarned: true,
+      pointsRedeemed: true,
+      pointsDiscountValue: true,
       items: {
         select: {
           id: true,
@@ -220,26 +257,13 @@ export async function updateOrderStatus(
     },
   });
 
-  if (!fullOrder) {
+  if (!fullOrder || (input.lojaID && fullOrder.lojaID !== input.lojaID)) {
     return { success: false, error: "Pedido não encontrado.", code: "NOT_FOUND" };
   }
 
   if (!isValidTransition(fullOrder.status, input.newStatus)) {
     return { success: false, error: "Transição de status inválida.", code: "INVALID_TRANSITION" };
   }
-
-  const auditEntry = prisma.auditLog.create({
-    data: {
-      actorId: input.performedById,
-      targetId: fullOrder.userID,
-      action: "ORDER_STATUS_UPDATED",
-      entity: "Order",
-      entityId: input.orderId,
-      previousValue: { status: fullOrder.status },
-      newValue: { status: input.newStatus },
-      ipAddress: input.ipAddress ?? null,
-    },
-  });
 
   const itemsWithVariant = fullOrder.items.filter(
     (i): i is typeof i & { productVariantsId: string } => i.productVariantsId !== null
@@ -263,51 +287,119 @@ export async function updateOrderStatus(
       }
     }
 
-    const [updatedOrder] = await prisma.$transaction([
-      prisma.order.update({
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.update({
         where: { id: input.orderId },
         data: { status: input.newStatus },
         select: { id: true, status: true },
-      }),
-      ...itemsWithVariant.map((item) =>
-        prisma.productVariants.update({
+      });
+
+      for (const item of itemsWithVariant) {
+        await tx.productVariants.update({
           where: { id: item.productVariantsId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },
-        })
-      ),
-      auditEntry,
-    ]);
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorId: input.performedById,
+          targetId: fullOrder.userID,
+          action: "ORDER_STATUS_UPDATED",
+          entity: "Order",
+          entityId: input.orderId,
+          previousValue: { status: fullOrder.status },
+          newValue: { status: input.newStatus },
+          ipAddress: input.ipAddress ?? null,
+        },
+      });
+
+      // Hook de Fidelidade: Creditar pontos ganhos pela compra paga
+      await creditEarnedPoints(
+        {
+          lojaID: fullOrder.lojaID,
+          userID: fullOrder.userID,
+          orderId: input.orderId,
+          subtotal: Number(fullOrder.subtotal),
+        },
+        tx
+      );
+
+      return order;
+    });
 
     return { success: true, order: updatedOrder };
   }
 
-  if (input.newStatus === "CANCELLED" && fullOrder.status === "PAID") {
-    const [updatedOrder] = await prisma.$transaction([
-      prisma.order.update({
+  if (input.newStatus === "CANCELLED") {
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.update({
         where: { id: input.orderId },
         data: { status: input.newStatus },
         select: { id: true, status: true },
-      }),
-      ...itemsWithVariant.map((item) =>
-        prisma.productVariants.update({
-          where: { id: item.productVariantsId },
-          data: { stock: { increment: item.quantity } },
-        })
-      ),
-      auditEntry,
-    ]);
+      });
+
+      // Se já havia sido pago, devolve estoque
+      if (fullOrder.status === "PAID") {
+        for (const item of itemsWithVariant) {
+          await tx.productVariants.update({
+            where: { id: item.productVariantsId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorId: input.performedById,
+          targetId: fullOrder.userID,
+          action: "ORDER_STATUS_UPDATED",
+          entity: "Order",
+          entityId: input.orderId,
+          previousValue: { status: fullOrder.status },
+          newValue: { status: input.newStatus },
+          ipAddress: input.ipAddress ?? null,
+        },
+      });
+
+      // Hook de Fidelidade: Estornar pontos ganhos e/ou devolver pontos resgatados
+      await refundOrderPoints(
+        {
+          lojaID: fullOrder.lojaID,
+          orderId: input.orderId,
+          reason: `Cancelamento do pedido #${input.orderId.slice(0, 8)}`,
+        },
+        tx
+      );
+
+      return order;
+    });
 
     return { success: true, order: updatedOrder };
   }
 
-  const [updatedOrder] = await prisma.$transaction([
-    prisma.order.update({
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.update({
       where: { id: input.orderId },
       data: { status: input.newStatus },
       select: { id: true, status: true },
-    }),
-    auditEntry,
-  ]);
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorId: input.performedById,
+        targetId: fullOrder.userID,
+        action: "ORDER_STATUS_UPDATED",
+        entity: "Order",
+        entityId: input.orderId,
+        previousValue: { status: fullOrder.status },
+        newValue: { status: input.newStatus },
+        ipAddress: input.ipAddress ?? null,
+      },
+    });
+
+    return order;
+  });
 
   return { success: true, order: updatedOrder };
 }

@@ -8,13 +8,34 @@ interface SeededData {
   orders: Array<{ id: string; status: string; userID: string }>
 }
 
-export async function setupTestDb(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL
-
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL não configurada.')
+function isSafeTestDatabaseUrl(url: string | undefined): boolean {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  // Proibir expressamente URLs que apontem para Supabase pooler ou produção se não explicitamente localhost / test
+  if (lower.includes('supabase.com') && !lower.includes('test')) {
+    return false
   }
+  return (
+    lower.includes('localhost') ||
+    lower.includes('127.0.0.1') ||
+    lower.includes('test') ||
+    lower.includes(':5432/ecommerce_test')
+  )
+}
 
+export function validateTestEnvironment(): string {
+  const testDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL
+  if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl)) {
+    throw new Error(
+      `[SEGURANÇA BLOQUEADA] Tentativa de executar testes/limpeza em banco não autorizado! ` +
+      `Defina a variável TEST_DATABASE_URL apontando para um banco descartável local (ex: postgresql://postgres:postgres@localhost:5432/ecommerce_test).`
+    )
+  }
+  return testDbUrl
+}
+
+export async function setupTestDb(): Promise<void> {
+  validateTestEnvironment()
   await prisma.$connect()
 }
 
@@ -126,6 +147,7 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
 }
 
 export async function cleanupTestDb(): Promise<void> {
+  validateTestEnvironment()
   await prisma.session.deleteMany({})
   await prisma.orderStatusHistory.deleteMany({})
   await prisma.orderItem.deleteMany({})

@@ -29,7 +29,7 @@ export async function createTestCustomer(data?: Partial<UserInput>): Promise<Use
 }
 
 interface OrderInput {
-  userID: string
+  userID?: string
   lojaID: string
   status?: OrderStatus
   total?: number
@@ -37,6 +37,12 @@ interface OrderInput {
 }
 
 export async function createTestOrder(data: OrderInput): Promise<Order> {
+  let customerId = data.userID
+  if (!customerId) {
+    const customer = await createTestCustomer({ lojaID: data.lojaID })
+    customerId = customer.id
+  }
+
   const address = await prisma.address.create({
     data: {
       cep: '12345-678',
@@ -45,7 +51,7 @@ export async function createTestOrder(data: OrderInput): Promise<Order> {
       district: 'Centro',
       street: 'Rua Teste',
       number: '100',
-      userID: data.userID
+      userID: customerId
     }
   })
 
@@ -54,7 +60,7 @@ export async function createTestOrder(data: OrderInput): Promise<Order> {
 
   return prisma.order.create({
     data: {
-      userID: data.userID,
+      userID: customerId,
       addressID: address.id,
       lojaID: data.lojaID,
       status: data.status || OrderStatus.PENDING,

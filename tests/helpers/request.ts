@@ -1,4 +1,6 @@
-const BASE_URL = (() => { const u = process.env.TEST_BASE_URL; if (!u) throw new Error('TEST_BASE_URL env var is required'); return u })()
+function getBaseUrl(): string {
+  return process.env.TEST_BASE_URL || 'http://localhost:3000'
+}
 
 interface RequestOptions {
   headers?: Record<string, string>
@@ -11,7 +13,7 @@ interface ResponseData {
 }
 
 function buildUrl(path: string, query?: Record<string, string>): string {
-  const url = new URL(path, BASE_URL)
+  const url = new URL(path, getBaseUrl())
 
   if (query) {
     Object.entries(query).forEach(([key, value]) => {

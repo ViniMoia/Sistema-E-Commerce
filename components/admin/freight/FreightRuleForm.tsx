@@ -65,8 +65,8 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
       })
 
       if (!res.ok) {
-        const errData = await res.json()
-        throw new Error(errData.error || 'Erro ao salvar regra de frete.')
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error || 'Erro ao salvar regra de frete.')
       }
 
       setCityName('')

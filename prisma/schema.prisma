@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,23 +12,50 @@ datasource db {
 }
 
 model Loja {
-  id            String    @id @default(uuid())
-  name          String
-  slug          String    @unique
-  description   String
-  coverImageUrl String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  user          User[]
-  orders        Order[]
-  products      Product[]
-  primaryColor    String?   @default("#DDAF02")
-  secondaryColor  String?   @default("#050505")
-  customDomain    String?   @unique
+  id                   String    @id @default(uuid())
+  name                 String
+  slug                 String    @unique
+  description          String
+  coverImageUrl        String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User[]
+  orders               Order[]
+  products             Product[]
+  primaryColor         String?   @default("#DDAF02")
+  secondaryColor       String?   @default("#050505")
+  customDomain         String?   @unique
   // PIX e WhatsApp configuration
-  pixKey          String?   // Chave PIX (CPF, CNPJ, email, telefone ou aleatória)
-  pixKeyType      String?   // Tipo: CPF, CNPJ, EMAIL, TELEFONE, ALEATORIA
-  whatsappNumber  String?   // Número do WhatsApp para contato
+  pixKey               String?   // Chave PIX (CPF, CNPJ, email, telefone ou aleatória)
+  pixKeyType           String?   // Tipo: CPF, CNPJ, EMAIL, TELEFONE, ALEATORIA
+  whatsappNumber       String?   // Número do WhatsApp para contato
+  // Nuvemshop / ERP Integration configuration
+  nuvemshopStoreId     String?
+  nuvemshopAccessToken String?
+  nuvemshopUserAgent   String?
+  // Configurações de Frete e Expedição
+  originCep            String?
+  originState          String?
+  originCity           String?
+  originDistrict       String?
+  originStreet         String?
+  originNumber         String?
+  originComplement     String?
+  enableCorreios       Boolean   @default(false)
+  correiosContractCode String?
+  correiosPassword     String?
+  enablePickup         Boolean   @default(true)
+  enableNoFreight      Boolean   @default(true)
+  additionalDays       Int       @default(0)
+  // Configurações de Fidelidade / Pontos
+  loyaltyEnabled          Boolean              @default(false)
+  loyaltyEarnRate         Decimal              @default(0.5) @db.Decimal(5, 2)  // Multiplicador de ganho (0.5 = 1 pt a cada R$ 2)
+  loyaltyPointValue       Decimal              @default(0.05) @db.Decimal(5, 4) // Conversão em R$ (0.05 = R$ 0,05 por ponto)
+  loyaltyMinPointsRedeem  Int                  @default(100)                    // Saldo mínimo para permitir resgate
+  loyaltyMaxDiscountPct   Decimal              @default(50.0) @db.Decimal(5, 2) // Limite de % de desconto no subtotal
+  loyaltyPointsExpiryDays Int?                 @default(365)                    // Validade dos pontos em dias (ex: 365 dias)
+  loyaltyWallets          LoyaltyWallet[]
+  loyaltyTransactions     LoyaltyTransaction[]
 }
 
 model User {
@@ -59,6 +84,8 @@ model User {
   auditLogsAsTarget  AuditLog[]           @relation("AuditTarget")
   auditLogsAsActor   AuditLog[]           @relation("AuditActor")
   OrderStatusHistory OrderStatusHistory[]
+  loyaltyWallets     LoyaltyWallet[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@unique([email, lojaID])
   @@index([email])
@@ -87,40 +114,55 @@ model Address {
 }
 
 model Product {
-  id              String            @id @default(uuid())
-  name            String
-  description     String
-  price           Float
-  imageUrl        String
-  galleryUrls     String[]          @default([])
-  stock           Int
-  lojaID          String
-  loja            Loja              @relation(fields: [lojaID], references: [id], onDelete: Cascade)
-  userID          String
-  user            User              @relation(fields: [userID], references: [id], onDelete: Cascade)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  cartItem        CartItem[]
-  productVariants ProductVariants[]
-  orderItems      OrderItem[]
+  id                  String            @id @default(uuid())
+  name                String
+  description         String
+  price               Decimal           @db.Decimal(10, 2)
+  imageUrl            String
+  galleryUrls         String[]          @default([])
+  stock               Int
+  sku                 String?
+  nuvemshopProductId  String?
+  stockBuffer         Int               @default(1)
+  // Dimensões e Peso para Cálculo de Frete
+  weightInGrams       Int?              @default(300)
+  lengthCm            Int?              @default(16)
+  widthCm             Int?              @default(11)
+  heightCm            Int?              @default(4)
+  freeShipping        Boolean           @default(false)
+  lojaID              String
+  loja                Loja              @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  userID              String
+  user                User              @relation(fields: [userID], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  cartItem            CartItem[]
+  productVariants     ProductVariants[]
+  orderItems          OrderItem[]
 
   @@index([lojaID])
+  @@index([lojaID, sku])
+  @@index([nuvemshopProductId])
   @@index([createdAt])
 }
 
 model ProductVariants {
-  id         String      @id @default(uuid())
-  ProductID  String
-  product    Product     @relation(fields: [ProductID], references: [id], onDelete: Cascade)
-  size       String
-  color      String
-  stock      Int
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  cartItem   CartItem[]
-  orderItems OrderItem[]
+  id                 String      @id @default(uuid())
+  ProductID          String
+  product            Product     @relation(fields: [ProductID], references: [id], onDelete: Cascade)
+  size               String
+  color              String
+  stock              Int
+  sku                String?
+  nuvemshopVariantId String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  cartItem           CartItem[]
+  orderItems         OrderItem[]
 
   @@index([ProductID])
+  @@index([sku])
+  @@index([nuvemshopVariantId])
 }
 
 model Cart {
@@ -147,7 +189,7 @@ model CartItem {
   variant     ProductVariants @relation(fields: [variantID], references: [id], onDelete: Cascade)
   quantity    Int
   productName String
-  price       Float
+  price       Decimal         @db.Decimal(10, 2)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   color       String
@@ -195,9 +237,18 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum SyncStatus {
+  PENDING
+  PROCESSING
+  SYNCED
+  FAILED
+  DEAD_LETTER
+}
+
 enum DeliveryType {
   DELIVERY
   PICKUP
+  NONE
 }
 
 model Order {
@@ -218,11 +269,30 @@ model Order {
   freightValue       Decimal?
   subtotal           Decimal              @db.Decimal(10, 2)
   shippingCost       Decimal              @default(0) @db.Decimal(10, 2)
+  shippingProvider   String?              // ex: "CORREIOS", "LOCAL_TABLE", "STORE_PICKUP", "NONE"
+  shippingServiceName String?             // ex: "SEDEX", "PAC", "Retirada", "A Combinar"
+  shippingEstimatedDays Int?              // Prazo prometido em dias úteis
   total              Decimal              @db.Decimal(10, 2)
+  // Auditoria de Pontos no Pedido
+  pointsEarned          Int                  @default(0) // Pontos previstos/gerados por este pedido
+  pointsRedeemed        Int                  @default(0) // Pontos consumidos como desconto
+  pointsDiscountValue   Decimal              @default(0) @db.Decimal(10, 2) // Valor monetário abatido em R$
+  loyaltyTransactions   LoyaltyTransaction[]
+  idempotencyKey        String?              @unique
+  // Nuvemshop / ERP Sync fields
+  nuvemshopOrderId   String?
+  syncStatus         SyncStatus           @default(PENDING)
+  syncAttempts       Int                  @default(0)
+  lastSyncError      String?
+  lastSyncedAt       DateTime?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   items              OrderItem[]
   statusHistory      OrderStatusHistory[]
+
+  @@index([syncStatus])
+  @@index([nuvemshopOrderId])
+  @@index([lojaID])
 }
 
 model OrderItem {
@@ -268,7 +338,7 @@ model FreightRule {
   @@unique([lojaID, cityName])
 }
 
-// ─── Audit Logging ───────────────────────────────────────────────
+// ─── Audit & Synchronization Logging ─────────────────────────────
 
 model AuditLog {
   id            String   @id @default(uuid())
@@ -288,3 +358,76 @@ model AuditLog {
   @@index([targetId])
   @@index([actorId])
 }
+
+model StockSyncLog {
+  id               String   @id @default(uuid())
+  lojaID           String
+  productId        String?
+  variantId        String?
+  sku              String?
+  source           String   // "WEBHOOK", "CRON_RECONCILIATION", "ORDER_CHECKOUT", "MANUAL"
+  previousStock    Int
+  newStock         Int
+  nuvemshopEventId String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  @@index([lojaID])
+  @@index([sku])
+  @@index([createdAt])
+}
+
+// ─── Loyalty & Points Engine ─────────────────────────────────────
+
+enum LoyaltyTxType {
+  EARN             // Pontos creditados por pedido concluído/pago
+  REDEEM           // Pontos resgatados como desconto no checkout
+  REFUND_EARN      // Estorno de pontos creditados (devido a cancelamento de pedido)
+  REFUND_REDEEM    // Devolução de pontos resgatados (pedido cancelado)
+  EXPIRATION       // Expiração periódica por decurso de prazo
+  ADMIN_ADJUSTMENT // Ajuste manual realizado pelo administrador da loja
+}
+
+model LoyaltyWallet {
+  id           String   @id @default(uuid())
+  lojaID       String
+  loja         Loja     @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  userID       String
+  user         User     @relation(fields: [userID], references: [id], onDelete: Cascade)
+  
+  balance      Int      @default(0) // Saldo disponível e confirmado para uso
+  pending      Int      @default(0) // Pontos aguardando confirmação de pagamento
+  lifetimeEarn Int      @default(0) // Histórico acumulado vitalício
+  
+  version      Int      @default(0) // Lock de concorrência / integridade
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([lojaID, userID])
+  @@index([lojaID])
+  @@index([userID])
+}
+
+model LoyaltyTransaction {
+  id            String        @id @default(uuid())
+  lojaID        String
+  loja          Loja          @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  userID        String
+  user          User          @relation(fields: [userID], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  type          LoyaltyTxType
+  points        Int           // Positivo para crédito (+500), negativo para débito (-500)
+  balanceAfter  Int           // Saldo consolidado após esta operação
+  monetaryValue Decimal?      @db.Decimal(10, 2) // Valor em R$ correspondente no momento da operação
+  description   String
+  expiresAt     DateTime?
+  
+  createdAt     DateTime      @default(now())
+
+  @@index([lojaID, userID])
+  @@index([orderId])
+  @@index([createdAt])
+}
+

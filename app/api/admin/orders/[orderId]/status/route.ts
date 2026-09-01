@@ -6,11 +6,12 @@ import { updateOrderStatus } from '@/services/order.service';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { orderId: string } }
+  props: { params: Promise<{ orderId: string }> }
 ) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const params = await props.params;
   const parsed = updateOrderStatusBodySchema.safeParse(await req.json());
   if (!parsed.success) return err('Parâmetros inválidos.', 400, 'VALIDATION_ERROR');
 
@@ -18,6 +19,7 @@ export async function PATCH(
     orderId: params.orderId,
     newStatus: parsed.data.newStatus,
     performedById: auth.user.id,
+    lojaID: auth.user.lojaID,
     ipAddress:
       req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown',
   });

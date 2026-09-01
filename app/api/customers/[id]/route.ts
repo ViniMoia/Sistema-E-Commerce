@@ -2,14 +2,23 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getCustomerProfile } from "@/services/customer.service";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_req: Request, { params }: RouteContext) {
-  const guard = await requireAdmin();
+export async function GET(req: Request, context: RouteContext) {
+  const guard = await requireAdmin(req);
   if (guard instanceof NextResponse) return guard;
 
+  const params = await context.params;
   try {
-    const customer = await getCustomerProfile(params.id);
+    const customer = await getCustomerProfile({
+      customerId: params.id,
+      lojaID: guard.user.lojaID,
+    });
+
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+
     return NextResponse.json(customer, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "CUSTOMER_NOT_FOUND") {

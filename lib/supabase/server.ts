@@ -1,14 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+/**
+ * Cliente Supabase SSR (Auxiliar / Storage / Auth Opcional)
+ * NOTA DE SEGURANÇA (Finding DB-004):
+ * Toda a persistência de banco de dados da aplicação é realizada de forma autoritativa
+ * via Prisma Client no backend Next.js.
+ * A Data API (PostgREST) pública do Supabase deve permanecer desativada ou protegida
+ * com RLS (Row Level Security) via `prisma/migrations/supabase_rls_hardening.sql`.
+ */
 export async function createClient() {
   const cookieStore = await cookies()
 
-  // Create a server's supabase client with newly configured cookie,
-  // which could be used to maintain user's session
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key'
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {

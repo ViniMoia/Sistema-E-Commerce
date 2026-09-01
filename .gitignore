@@ -1,7 +1,31 @@
-.env.local
-.next
-node_modules
-.DS_Store
+# Environment variables
 .env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
+# Next.js build output
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# OS / Editor files
+.DS_Store
+*.pem
+*.key
+*.dump
+*.sql.bak
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Local scripts with connection tests
+test_db_conn.js
+
+# Generated Prisma artifacts
 /app/generated/prisma

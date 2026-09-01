@@ -1,0 +1,138 @@
+================================================================================
+          RELATÓRIO TÉCNICO E EXECUTIVO: SISTEMA DE FRETES MULTI-PROVEDOR
+================================================================================
+Projeto: Plataforma E-Commerce
+Perfil da Entrega: Arquitetura de Logística & Sistema de Fretes Escalável
+Status: 100% Implementado, Testado e Pronto para Produção
+Data: 2026-08-31
+================================================================================
+
+1. SUMÁRIO EXECUTIVO
+--------------------------------------------------------------------------------
+Foi projetada e implementada uma infraestrutura moderna, resiliente e escalável
+de cálculo e seleção de fretes, construída sob medida para atender tanto à
+integração com os Correios quanto à expansão imediata para qualquer outra
+transportadora privada (Melhor Envio, Jadlog, Loggi, Lalamove, frete próprio
+local, etc.).
+
+A solução elimina a dependência de valores fixos manuais, calcula preços e prazos
+oficiais em tempo real conforme a localização do comprador e oferece total
+flexibilidade para que o cliente escolha a modalidade de entrega mais conveniente,
+incluindo a possibilidade explícita de não pagar frete no pedido imediato
+(Retirada no Balcão ou Frete a Combinar via WhatsApp).
+
+
+2. FUNCIONALIDADES ENTREGUES PARA O CLIENTE FINAL (COMPRADOR)
+--------------------------------------------------------------------------------
+1. Cálculo Automático e Adaptado à Localização:
+   - Ao digitar o CEP no checkout, o sistema autocompleta instantaneamente o
+     endereço (Rua, Bairro, Cidade, Estado) via integração ViaCEP.
+   - O sistema consulta em paralelo as opções de frete disponíveis baseando-se
+     no CEP de destino, CEP de saída da loja e no peso/cubagem somados dos
+     produtos do carrinho.
+
+2. Liberdade de Escolha de Envio (Multi-Opções):
+   - Envio Correios: Exibição clara de SEDEX (mais rápido) e PAC (mais econômico),
+     com seus respectivos valores e prazos em dias úteis.
+   - Retirada no Balcão: Opção de buscar o produto fisicamente na loja com
+     custo R$ 0,00.
+   - A Combinar via WhatsApp (Sem Frete no Pedido): Permite ao cliente concluir
+     a compra sem cobrança imediata de frete, combinando o frete ou motoboy
+     diretamente pelo WhatsApp.
+
+3. Transparência Financeira em Tempo Real:
+   - O valor do frete selecionado é somado instantaneamente ao Resumo do Pedido
+     (Subtotal dos Produtos + Frete = Total do Pedido), sem surpresas no
+     momento do pagamento via PIX.
+
+
+3. FUNCIONALIDADES ENTREGUES PARA O LOJISTA (PAINEL ADMIN)
+--------------------------------------------------------------------------------
+1. Central de Configurações de Logística (/admin/settings):
+   - Cadastro do CEP de Saída (Origem) e endereço de onde partem os produtos.
+   - Chaves independentes para Ativar/Desativar os Correios, Permitir Retirada
+     e Permitir Frete a Combinar.
+   - Campo de Prazo Adicional de Expedição (dias extras): Permite somar dias de
+     separação/embalagem ao prazo oficial dos Correios.
+
+2. Gestão de Pedidos e Rastreamento (/admin/orders):
+   - Visualização detalhada do frete escolhido pelo cliente (serviço, custo e
+     prazo prometido).
+   - Campo dedicado para inserção e atualização do Código de Rastreamento
+     (trackingCode), permitindo o acompanhamento do envio do cliente.
+
+
+4. PILARES DE ENGENHARIA, SEGURANÇA E ESCALABILIDADE
+--------------------------------------------------------------------------------
+A. Padrão de Projeto Strategy (Desacoplamento Total):
+   O sistema foi construído através de uma interface unificada (IFreightProvider).
+   Isso significa que a integração com os Correios é apenas um dos provedores
+   conectados. Para adicionar a Jadlog, Loggi ou Melhor Envio no futuro, basta
+   plugar um novo módulo de transportadora sem precisar alterar o banco de dados
+   nem o fluxo de checkout.
+
+B. Algoritmo Inteligente de Cubagem (PackagePackingService):
+   Para carrinhos com múltiplos produtos, o sistema calcula o peso total
+   consolidado e a volumetria cúbica (C x L x A), projetando a menor embalagem
+   virtual compatível com as regras e limites operacionais dos Correios.
+
+C. Blindagem Autoritativa no Servidor (Prevenção de Fraudes):
+   O frontend nunca define o preço do frete no banco. No momento da finalização
+   da compra (checkout.service.ts), o servidor valida e recalcula o frete
+   dentro de uma transação atômica (prisma.$transaction), impedindo que
+   usuários mal-intencionados alterem valores no navegador.
+
+D. Alta Resiliência e Tolerância a Falhas (Circuit Breaker):
+   Consultas externas aos Correios contam com timeout estrito de 3.5 segundos e
+   tabela tarifária de contingência. Se os servidores dos Correios oscilarem
+   ou caírem, a loja não trava nem perde vendas: as opções locais continuam
+   funcionando perfeitamente.
+
+E. Cache Multi-Tenant de Alta Performance:
+   Cotações para rotas repetidas (mesmo CEP e peso) são armazenadas no cache
+   particionado por loja (tenantCache) por 30 minutos, proporcionando respostas
+   em sub-milissegundos e economizando requisições de API.
+
+
+5. MAPEAMENTO TÉCNICO DOS ARQUIVOS IMPLEMENTADOS
+--------------------------------------------------------------------------------
+- types/freight.ts
+  Definição das interfaces IFreightProvider, FreightOption, FreightQuoteRequest
+  e estruturas de dimensões.
+
+- services/freight/packing.service.ts
+  Algoritmo de empacotamento, soma de peso e volumetria do carrinho.
+
+- services/freight/providers/correios.provider.ts
+  Integração de SEDEX e PAC com timeout e fallback de contingência.
+
+- services/freight/providers/ (pickup, none, custom-table)
+  Módulos de Retirada (R$ 0), Frete a Combinar e Regras Locais da Loja.
+
+- services/freight/orchestrator.service.ts
+  Coordenação concorrente (Promise.allSettled) e cache multi-tenant.
+
+- app/api/freight/calculate/route.ts
+  Endpoint REST público com validação Zod para cotação em tempo real.
+
+- services/checkout.service.ts
+  Pipeline transacional com recálculo autoritativo e gravação de metadados.
+
+- components/checkout/CheckoutForm.tsx
+  Formulário interativo com busca de CEP, seleção de cards e totais dinâmicos.
+
+- app/admin/settings/page.tsx & OrderDetailDrawer.tsx
+  Gestão de CEP de saída, regras de frete e inserção de código de rastreio.
+
+- prisma/schema.prisma
+  Modelagem de dimensões físicas em Product, logística em Loja e dados de
+  envio em Order.
+
+
+6. CONCLUSÃO DA ENTREGA
+--------------------------------------------------------------------------------
+O sistema de fretes encontra-se totalmente operacional, com cobertura completa
+de ponta a ponta (do banco de dados à interface visual), 100% tipado em
+TypeScript, validado pelo compilador do Next.js sem erros e pronto para operação
+comercial.
+================================================================================

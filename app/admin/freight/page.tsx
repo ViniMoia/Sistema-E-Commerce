@@ -58,8 +58,8 @@ export default function FreightPage() {
         method: 'DELETE'
       })
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Falha ao excluir regra.')
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Falha ao excluir regra.')
       }
       setRuleToDelete(null)
       fetchRules()

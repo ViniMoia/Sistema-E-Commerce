@@ -15,16 +15,15 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const slug = process.env.NEXT_PUBLIC_LOJA_SLUG || 'loja-padrao';
-    fetchLojaSettings(slug);
+    fetchActiveLojaSettings();
   }, []);
 
-  const fetchLojaSettings = async (slug: string) => {
+  const fetchActiveLojaSettings = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const res = await fetch(`/api/loja/${slug}`);
+      const res = await fetch('/api/loja/active');
       
       if (!res.ok) {
         setError('Loja não encontrada');

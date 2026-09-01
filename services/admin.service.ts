@@ -138,6 +138,7 @@ export async function listCustomers(params: ListCustomersParams) {
   const { pageSize = 20, search, cursor } = params;
 
   const where: Prisma.UserWhereInput = {
+    ...(params.lojaID ? { lojaID: params.lojaID } : {}),
     ...(search && {
       OR: [
         { name: { contains: search, mode: "insensitive" } },

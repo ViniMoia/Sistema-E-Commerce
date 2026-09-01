@@ -7,7 +7,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Button, SkeletonRow, AlertBanner, Spinner, Badge } from '@/components/ui'
+import { Button, AlertBanner, Spinner, Badge } from '@/components/ui'
+import { Skeleton } from '@/components/ui/skeleton'
 import { OrderStatus } from '@prisma/client'
 import { OrderStatusManager } from './OrderStatusManager'
 import { X } from 'lucide-react'
@@ -19,8 +20,13 @@ export interface OrderDetail {
   createdAt: string
   updatedAt: string
   total: number
+  subtotal?: number
   freightValue: number | null
-  deliveryType: 'DELIVERY' | 'PICKUP'
+  shippingCost?: number
+  shippingProvider?: string | null
+  shippingServiceName?: string | null
+  shippingEstimatedDays?: number | null
+  deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE'
   trackingCode: string | null
   adminNotes: string | null
   paymentMethod: string | null
@@ -43,6 +49,7 @@ export interface OrderDetail {
     size: string | null
   }>
   address: {
+    cep?: string
     state: string
     city: string
     neighborhood: string
@@ -163,10 +170,11 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
         body: JSON.stringify({ trackingCode: trackingValue })
       })
       if (!res.ok) {
-        throw new Error('Falha ao salvar código de rastreio')
+        throw new Error('Falha ao salvar código de rastreamento')
       }
       setOrder({ ...order, trackingCode: trackingValue })
       setIsEditingTracking(false)
+      onStatusUpdate()
     } catch (err) {
       console.error(err)
     } finally {
@@ -174,27 +182,24 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
     }
   }
 
-  const isOpen = !!orderId
-
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto bg-zinc-50 dark:bg-zinc-950 p-0 border-l border-zinc-200 dark:border-white/10">
+    <Sheet open={Boolean(orderId)} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-white/10">
         {isLoading && (
-          <div className="p-6 space-y-4 mt-8">
-            <SkeletonRow columns={1} />
-            <SkeletonRow columns={1} />
-            <SkeletonRow columns={1} />
-            <SkeletonRow columns={1} />
+          <div className="p-6 space-y-6">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-40 w-full" />
           </div>
         )}
 
-        {error && !isLoading && (
-          <div className="p-6 mt-8">
+        {error && (
+          <div className="p-6">
             <AlertBanner variant="error" title="Erro" message={error} />
           </div>
         )}
 
-        {order && !isLoading && !error && (
+        {order && (
           <div className="flex flex-col min-h-full">
             {/* 1. HEADER */}
             <div className="px-6 py-6 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 sticky top-0 z-10">
@@ -266,24 +271,44 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 </div>
               </section>
 
-              {/* 4. ENDEREÇO */}
-              {order.deliveryType === 'DELIVERY' && order.address && (
-                <section className="space-y-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
-                    Endereço de Entrega
-                  </h3>
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5">
-                    <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                      {order.address.street}, {order.address.number}
-                      {order.address.complement && ` - ${order.address.complement}`}
-                      <br />
-                      {order.address.neighborhood}
-                      <br />
-                      {order.address.city} - {order.address.state}
-                    </p>
+              {/* 4. ENDEREÇO & MODALIDADE DE ENVIO */}
+              <section className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                  Modalidade & Entrega
+                </h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5 space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-500">Serviço de Envio:</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {order.shippingServiceName || (order.deliveryType === 'PICKUP' ? 'Retirada na Loja' : order.deliveryType === 'NONE' ? 'A Combinar via WhatsApp' : 'Entrega')}
+                    </span>
                   </div>
-                </section>
-              )}
+
+                  {order.shippingEstimatedDays ? (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-zinc-500">Prazo Prometido:</span>
+                      <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                        {order.shippingEstimatedDays} dias úteis
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {order.deliveryType === 'DELIVERY' && order.address && (
+                    <div className="pt-2 border-t border-zinc-100 dark:border-white/5">
+                      <p className="text-xs text-zinc-400 mb-1 font-semibold">Endereço de Destino:</p>
+                      <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                        {order.address.street}, {order.address.number}
+                        {order.address.complement && ` - ${order.address.complement}`}
+                        <br />
+                        {order.address.neighborhood}
+                        <br />
+                        {order.address.city} - {order.address.state}
+                        {order.address.cep && ` (CEP: ${order.address.cep})`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
 
               {/* 5. RESUMO FINANCEIRO */}
               <section className="space-y-3">
@@ -292,74 +317,54 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 </h3>
                 <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5 space-y-2">
                   <div className="flex justify-between text-sm text-zinc-600 dark:text-zinc-400">
-                    <span>Subtotal</span>
+                    <span>Subtotal Produtos</span>
                     <span>{formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}</span>
                   </div>
-                  {order.deliveryType === 'DELIVERY' && order.freightValue !== null && (
-                    <div className="flex justify-between text-sm text-zinc-600 dark:text-zinc-400">
-                      <span>Frete</span>
-                      <span>{formatCurrency(order.freightValue)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-medium text-lg text-[#dbb501] pt-2 border-t border-zinc-100 dark:border-white/5 mt-2">
-                    <span>Total</span>
+                  <div className="flex justify-between text-sm text-zinc-600 dark:text-zinc-400">
+                    <span>Frete ({order.shippingServiceName || 'Envio'})</span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {order.freightValue && order.freightValue > 0 ? formatCurrency(order.freightValue) : 'Grátis (R$ 0,00)'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg text-[#dbb501] pt-2 border-t border-zinc-100 dark:border-white/5 mt-2">
+                    <span>Total do Pedido</span>
                     <span>{formatCurrency(order.total)}</span>
                   </div>
                 </div>
               </section>
 
-              {/* 6. INFORMAÇÕES ADICIONAIS */}
+              {/* 6. RASTREAMENTO E CÓDIGO DE ENVIO */}
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
-                  Informações Adicionais
+                  Código de Rastreamento (Correios / Transportadora)
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Método de Pagamento</span>
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {order.paymentMethod || 'Não definido'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Tipo de Entrega</span>
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {order.deliveryType === 'DELIVERY' ? 'Entrega' : 'Retirada'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-zinc-100 dark:border-white/5 pt-4">
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Código de Rastreio</span>
-                    {order.status === 'SHIPPED' ? (
-                      isEditingTracking ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={trackingValue}
-                            onChange={(e) => setTrackingValue(e.target.value)}
-                            className="h-8 w-32 rounded-md border border-zinc-200 bg-transparent px-2 text-sm text-zinc-900 dark:text-zinc-100 dark:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#dbb501]"
-                          />
-                          <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking} className="h-8">
-                            {isSavingTracking ? <Spinner className="w-3 h-3" /> : 'Salvar'}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            {order.trackingCode || 'Não definido'}
-                          </span>
-                          <button
-                            onClick={() => setIsEditingTracking(true)}
-                            className="text-xs text-[#dbb501] hover:underline"
-                          >
-                            Editar
-                          </button>
-                        </div>
-                      )
-                    ) : (
-                      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {order.trackingCode || 'N/A'}
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5">
+                  {isEditingTracking ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={trackingValue}
+                        onChange={(e) => setTrackingValue(e.target.value)}
+                        placeholder="Ex: AA123456789BR"
+                        className="h-10 flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 text-sm font-mono"
+                      />
+                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking}>
+                        {isSavingTracking ? <Spinner className="w-3 h-3" /> : 'Salvar'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {order.trackingCode || <span className="text-zinc-400 italic">Nenhum código cadastrado</span>}
                       </span>
-                    )}
-                  </div>
+                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)}>
+                        {order.trackingCode ? 'Alterar Rastreio' : 'Adicionar Rastreio'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -410,7 +415,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   Histórico de Status
                 </h3>
                 <div className="relative pl-4 space-y-6 pt-2 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-zinc-200 dark:before:bg-white/10">
-                  {(order.statusHistory || []).map((history, idx) => (
+                  {(order.statusHistory || []).map((history) => (
                     <div key={history.id} className="relative">
                       <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#dbb501] ring-4 ring-zinc-50 dark:ring-zinc-950 mt-1.5" />
                       <div>
@@ -418,7 +423,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                           Status atualizado para <span className="font-bold">{statusMap[history.status]?.label}</span>
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          {formatDate(history.createdAt)} por {history.performedBy.name}
+                          {formatDate(history.createdAt)} por {history.performedBy?.name || 'Sistema'}
                         </p>
                       </div>
                     </div>
@@ -443,7 +448,6 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 onClose={() => setIsStatusManagerOpen(false)}
                 onSuccess={() => {
                   onStatusUpdate()
-                  // Opcionalmente recarregar os detalhes do pedido
                   setOrder(null)
                   onClose()
                 }}

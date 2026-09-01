@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { LoginInput } from "@/lib/validators/auth";
+import { sanitizeUser, SafeUserDTO } from "@/lib/utils/dto-sanitizer";
 
 export async function registerUser(data: {
   name: string;
@@ -9,7 +10,7 @@ export async function registerUser(data: {
   phone?: string;
   avatarImageUrl?: string;
   lojaID: string;
-  address: {
+  address?: {
     cep: string;
     state: string;
     city: string;
@@ -18,69 +19,64 @@ export async function registerUser(data: {
     number: string;
     complement?: string;
   };
-}) {
+}): Promise<SafeUserDTO> {
+  const normalizedEmail = data.email.toLowerCase().trim();
+
   const existingUser = await prisma.user.findUnique({
     where: {
       email_lojaID: {
-        email: data.email,
+        email: normalizedEmail,
         lojaID: data.lojaID,
       },
     },
   });
 
   if (existingUser) {
-    throw new Error("Email já existente");
+    throw new Error("Email já existente para esta loja");
+  }
+
+  const loja = await prisma.loja.findUnique({ where: { id: data.lojaID } });
+  if (!loja) {
+    throw new Error("Loja não encontrada");
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  // Garantir que a Loja exista para evitar erro de Foreign Key constraint (P2003)
-  let loja = await prisma.loja.findUnique({ where: { id: data.lojaID } });
-  if (!loja) {
-    // Se a loja passada não existir, procura a primeira ou cria uma mock para desenvolvimento
-    loja = await prisma.loja.findFirst();
-    if (!loja) {
-      loja = await prisma.loja.create({
-        data: {
-          id: data.lojaID,
-          name: "Loja Padrão",
-          slug: "loja-padrao",
-          description: "Loja Padrão",
-          coverImageUrl: "https://via.placeholder.com/150",
-        },
-      });
-    }
-  }
-
   const user = await prisma.user.create({
     data: {
       name: data.name,
-      email: data.email,
+      email: normalizedEmail,
       password: hashedPassword,
       phone: data.phone,
       lojaID: loja.id,
-
-      addresses: {
-        create: {
-          ...data.address,
-        },
-      },
+      role: "CUSTOMER",
+      status: "ACTIVE",
+      ...(data.address
+        ? {
+            addresses: {
+              create: {
+                ...data.address,
+              },
+            },
+          }
+        : {}),
     },
     include: {
       addresses: true,
     },
   });
 
-  const defaultAddress = user.addresses[0];
+  if (user.addresses.length > 0) {
+    const defaultAddress = user.addresses[0];
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        defaultAddressId: defaultAddress.id,
+      },
+    });
+  }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      defaultAddressId: defaultAddress.id,
-    },
-  });
-
-  return user;
+  return sanitizeUser(user);
 }
 
 export class AuthError extends Error {
@@ -106,13 +102,16 @@ export async function loginUser(data: LoginInput & { lojaID: string }) {
     },
     select: {
       id: true,
+      name: true,
       email: true,
       password: true,
+      role: true,
       status: true,
+      lojaID: true,
     },
   });
 
-  // 3. Mitigação de enumeração de usuário
+  // 3. Mitigação de enumeração de usuário (tempo constante para usuário inexistente)
   if (!user) {
     await bcrypt.compare(password, "$2b$10$invalidhashforsimulationlongenough");
     throw new AuthError("Credenciais inválidas");
@@ -130,9 +129,12 @@ export async function loginUser(data: LoginInput & { lojaID: string }) {
     throw new AuthError("Credenciais inválidas");
   }
 
-  // 6. Retorno mínimo (NUNCA retornar password)
+  // 6. Retorno sanitizado (NUNCA retornar password)
   return {
     id: user.id,
+    name: user.name,
     email: user.email,
+    role: user.role,
+    lojaID: user.lojaID,
   };
 }

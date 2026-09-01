@@ -1,27 +1,25 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/session";
+import { requireAuth } from "@/lib/auth/guards";
 import * as cartService from "@/services/cart.service";
 import { z } from "zod";
 
 const addToCartSchema = z.object({
-  productID: z.string(),
-  variantID: z.string(),
-  quantity: z.number().int().min(1).max(99),
+  productID: z.string().uuid("ID do produto inválido"),
+  variantID: z.string().uuid("ID da variação inválido"),
+  quantity: z.number().int().min(1, "Quantidade mínima é 1").max(99, "Quantidade máxima é 99"),
 });
 
 const updateCartSchema = z.object({
-  variantID: z.string(),
-  quantity: z.number().int().min(1).max(99),
+  variantID: z.string().uuid("ID da variação inválido"),
+  quantity: z.number().int().min(1, "Quantidade mínima é 1").max(99, "Quantidade máxima é 99"),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth(req);
+    if (auth instanceof NextResponse) return auth;
 
-    const cart = await cartService.getCart(user.id);
+    const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error) {
     console.error("[CART_GET_ERROR]", error);
@@ -31,12 +29,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth(req);
+    if (auth instanceof NextResponse) return auth;
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const parsed = addToCartSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -46,8 +42,8 @@ export async function POST(req: Request) {
       );
     }
 
-    await cartService.addToCart(user.id, parsed.data);
-    const cart = await cartService.getCart(user.id);
+    await cartService.addToCart(auth.user.id, parsed.data);
+    const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 201 });
   } catch (error: any) {
     console.error("[CART_POST_ERROR]", error);
@@ -60,12 +56,10 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth(req);
+    if (auth instanceof NextResponse) return auth;
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const parsed = updateCartSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -76,12 +70,12 @@ export async function PATCH(req: Request) {
     }
 
     await cartService.updateCartItemQuantity(
-      user.id,
+      auth.user.id,
       parsed.data.variantID,
       parsed.data.quantity
     );
 
-    const cart = await cartService.getCart(user.id);
+    const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error: any) {
     console.error("[CART_PATCH_ERROR]", error);
@@ -94,12 +88,9 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth(req);
+    if (auth instanceof NextResponse) return auth;
 
-    // Attempt to extract variantID from URL params or body
     const { searchParams } = new URL(req.url);
     let variantID = searchParams.get("variantID");
 
@@ -114,8 +105,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "variantID is required" }, { status: 400 });
     }
 
-    await cartService.removeFromCart(user.id, variantID);
-    const cart = await cartService.getCart(user.id);
+    await cartService.removeFromCart(auth.user.id, variantID);
+    const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error: any) {
     console.error("[CART_DELETE_ERROR]", error);

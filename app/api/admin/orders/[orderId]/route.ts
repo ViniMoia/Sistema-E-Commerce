@@ -5,12 +5,13 @@ import { getOrderDetailForAdmin } from '@/services/order.service';
 
 export async function GET(
   req: Request,
-  { params }: { params: { orderId: string } }
+  props: { params: Promise<{ orderId: string }> }
 ) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const order = await getOrderDetailForAdmin(params.orderId);
+  const params = await props.params;
+  const order = await getOrderDetailForAdmin({ orderId: params.orderId, lojaID: auth.user.lojaID });
   if (!order) return err('Pedido não encontrado.', 404, 'NOT_FOUND');
 
   const serialized = {

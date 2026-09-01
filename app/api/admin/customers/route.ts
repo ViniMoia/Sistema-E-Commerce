@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/lib/auth-admin';
 import { listCustomersSchema } from '@/lib/validators/customer.validators';
 import { listCustomers } from '@/lib/services/customer.service';
-import { ok } from '@/lib/api-response';
+import { ok, err } from '@/lib/api-response';
 import { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const result = listCustomersSchema.safeParse(queryParams);
 
   if (!result.success) {
-    return new Response('Parâmetros de consulta inválidos.', { status: 400 });
+    return err('Parâmetros de consulta inválidos.', 400);
   }
 
   const customers = await listCustomers({

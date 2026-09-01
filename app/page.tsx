@@ -17,7 +17,7 @@ export default async function EcommerceHomepage() {
   const formattedProducts = products.map((prod) => ({
     id: prod.id,
     name: prod.name,
-    price: prod.price,
+    price: Number(prod.price),
     description: prod.description,
     imageUrl: prod.imageUrl,
     stock: prod.stock,

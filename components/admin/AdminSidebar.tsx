@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Settings,
+  Award,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -46,6 +47,12 @@ const NAV_ITEMS = [
     href: "/admin/customers",
     label: "Clientes",
     icon: Users,
+    exact: false,
+  },
+  {
+    href: "/admin/fidelidade",
+    label: "Fidelidade & Pontos",
+    icon: Award,
     exact: false,
   },
   {
