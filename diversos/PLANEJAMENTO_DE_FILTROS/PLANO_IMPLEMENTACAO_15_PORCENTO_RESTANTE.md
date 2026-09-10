@@ -70,7 +70,7 @@ flowchart TD
 
 ---
 
-### Fase 3: Experiência Mobile Ergonômica — Bottom Sheet de Marcas (< 768px)
+### [CONCLUÍDA] Fase 3: Experiência Mobile Ergonômica — Bottom Sheet de Marcas (< 768px)
 
 * **Problema Identificado:**
   Em telas desktop ($\ge$ 768px), o `BrandHoverFlyout` flutua elegantemente logo abaixo do botão no evento de hover. Em dispositivos móveis (smartphones), contudo, não há evento de hover nativo e a interação com o topo da tela força o alcance do polegar (*thumb zone* desconfortável).
