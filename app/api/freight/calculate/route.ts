@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { freightOrchestrator } from '@/services/freight';
+import { getLojaFromHeaders } from '@/lib/tenant';
 import prisma from '@/lib/prisma';
 
 const calculateFreightSchema = z.object({
-  lojaID: z.string().min(1, 'lojaID é obrigatório'),
+  lojaID: z.string().optional(),
   destinationCep: z.string().min(8, 'CEP de destino inválido'),
   items: z
     .array(
@@ -20,7 +21,7 @@ const calculateFreightSchema = z.object({
         heightCm: z.number().nullable().optional(),
       })
     )
-    .default([]),
+    .min(1, 'Pelo menos um item é necessário para calcular o frete.'),
 });
 
 export async function POST(request: Request) {
@@ -40,11 +41,31 @@ export async function POST(request: Request) {
     }
 
     const { lojaID, destinationCep, items } = validation.data;
+    const cleanDestCep = destinationCep.replace(/\D/g, '');
 
-    // Enriquecimento seguro: se os itens vierem apenas com productId, busca dimensões no banco
+    if (cleanDestCep.length !== 8) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'CEP de destino inválido. Deve conter exatamente 8 dígitos numéricos.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 1. Resolução Multi-Tenant segura: body lojaID -> tenant headers -> produto lojaID
+    let resolvedLojaId = lojaID;
+    if (!resolvedLojaId) {
+      const tenant = await getLojaFromHeaders();
+      if (tenant?.id) {
+        resolvedLojaId = tenant.id;
+      }
+    }
+
+    // 2. Enriquecimento seguro: busca dados e dimensões atômicas dos produtos
     const enrichedItems = await Promise.all(
       items.map(async (item) => {
-        if (item.productId && (item.weightInGrams === undefined || item.weightInGrams === null)) {
+        if (item.productId) {
           const product = await prisma.product.findUnique({
             where: { id: item.productId },
             select: {
@@ -54,28 +75,52 @@ export async function POST(request: Request) {
               lengthCm: true,
               widthCm: true,
               heightCm: true,
+              lojaID: true,
             },
           });
 
           if (product) {
+            // Se ainda não resolveu lojaID, resolve pelo produto
+            if (!resolvedLojaId && product.lojaID) {
+              resolvedLojaId = product.lojaID;
+            }
+
             return {
               ...item,
               name: item.name || product.name,
               price: item.price ?? Number(product.price),
-              weightInGrams: product.weightInGrams,
-              lengthCm: product.lengthCm,
-              widthCm: product.widthCm,
-              heightCm: product.heightCm,
+              weightInGrams: item.weightInGrams ?? product.weightInGrams ?? 300,
+              lengthCm: item.lengthCm ?? product.lengthCm ?? 16,
+              widthCm: item.widthCm ?? product.widthCm ?? 11,
+              heightCm: item.heightCm ?? product.heightCm ?? 4,
             };
           }
         }
-        return item;
+
+        // Fallbacks defensivos para itens sem dimensões cadastradas
+        return {
+          ...item,
+          weightInGrams: item.weightInGrams ?? 300,
+          lengthCm: item.lengthCm ?? 16,
+          widthCm: item.widthCm ?? 11,
+          heightCm: item.heightCm ?? 4,
+        };
       })
     );
 
+    if (!resolvedLojaId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Identificador da loja não encontrado.',
+        },
+        { status: 400 }
+      );
+    }
+
     const result = await freightOrchestrator.calculate({
-      lojaID,
-      destinationCep,
+      lojaID: resolvedLojaId,
+      destinationCep: cleanDestCep,
       items: enrichedItems,
     });
 

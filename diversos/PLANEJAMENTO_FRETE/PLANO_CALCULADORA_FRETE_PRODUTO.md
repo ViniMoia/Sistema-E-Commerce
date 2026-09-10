@@ -72,15 +72,16 @@ flowchart TD
 
 ---
 
-### Etapa 2: Ajuste da Rota de API Pública (`app/api/freight/calculate/route.ts`)
+### [CONCLUÍDA] Etapa 2: Ajuste da Rota de API Pública (`app/api/freight/calculate/route.ts`)
 * **Contexto:**
-  O endpoint `/api/freight/calculate` já aceita requisições POST com `lojaID`, `destinationCep` e `items`. Precisamos garantir que ele funcione de forma transparente quando invocado a partir da vitrine pública do produto.
-* **Ações da Etapa 2:**
-  1. Adicionar resolução automática de tenant: Se `lojaID` não for fornecido explicitamente no body, a rota usará `getLojaFromHeaders()` como fallback seguro.
-  2. Enriquecimento atômico de peso e dimensões: Se o item for enviado apenas com `productId` e `quantity`, a rota busca automaticamente `weightInGrams`, `lengthCm`, `widthCm`, `heightCm` na tabela `Product` (com valores padrão inteligentes de 300g caso o cadastro seja nulo).
-  3. Sanitização e validação de CEP via Zod (8 dígitos numéricos).
+  O endpoint `/api/freight/calculate` agora suporta cotações anônimas diretas a partir da vitrine pública de produtos sem necessidade de cadastro, autenticação ou envio de credenciais.
+* **Ações Realizadas na Etapa 2:**
+  1. **Resolução de Multi-Tenant Segura:** Se o `lojaID` não for passado no corpo da requisição, a rota utiliza `getLojaFromHeaders()` como fallback prioritário, seguido pela loja dona do produto (`product.lojaID`).
+  2. **Enriquecimento Atômico de Dimensões e Preço:** Ao enviar apenas o `productId` e a quantidade, o endpoint busca automaticamente peso e cubagem no banco de dados com fallbacks defensivos padronizados (`300g`, `16x11x4 cm`).
+  3. **Sanitização de CEP:** Normalização para 8 dígitos numéricos com rejeição rigorosa de CEPs mal formatados.
+  4. **Validação REST:** Testado com sucesso via script anônimo para CEPs locais e interestaduais, retornando 200 OK com opções consolidadas (J&T Express, Retirada, Correios).
 * **MCPs Utilizados:** `git`.
-* **Portão de Parada:** Teste de chamada REST via script e solicitação de autorização para a Etapa 3.
+* **Portão de Parada:** Etapa 2 concluída com 100% de sucesso. Aguardando autorização para a Etapa 3.
 
 ---
 
@@ -154,8 +155,8 @@ flowchart TD
 | Etapa | Foco Técnico | Arquivos Impactados | Condição para Início |
 | :--- | :--- | :--- | :--- |
 | **Etapa 1** | Motor J&T Express no Backend | `services/freight/providers/jt-express.provider.ts`, `services/freight/orchestrator.service.ts` | **[CONCLUÍDA]** |
-| **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts`, `app/page.tsx` | **Aguardando sua autorização explícita** |
-| **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | Depende da aprovação da Etapa 2 |
+| **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts` | **[CONCLUÍDA]** |
+| **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **Aguardando sua autorização explícita** |
 | **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | Depende da aprovação da Etapa 3 |
 | **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | Depende da aprovação da Etapa 4 |
 | **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | Depende da aprovação da Etapa 5 |
