@@ -102,15 +102,21 @@ flowchart TD
 
 ---
 
-### Etapa 4: Auditoria de Segurança Automatizada com Ruflo & Compilação Next.js
+### [CONCLUÍDA] Etapa 4: Auditoria de Segurança Automatizada com Ruflo & Compilação Next.js
 * **Contexto:**
-  Garantir que a exposição pública do cálculo de frete não crie vetores de injeção ou sobrecarga e que a aplicação continue compilando com 0 erros.
-* **Ações da Etapa 4:**
-  1. Executar `ruflo security scan` nos novos arquivos (`ProductFreightCalculator.tsx`, `jt-express.provider.ts`).
-  2. Executar `ruflo analyze diff --risk` avaliando o índice de risco do diff.
-  3. Executar `npx next build` validando a integridade das 42 rotas da aplicação.
+  Garantir que os novos componentes e rotas estejam livres de vulnerabilidades de segurança, apresentem baixo risco e que a aplicação compile perfeitamente em produção.
+* **Ações Realizadas na Etapa 4:**
+  1. **Varredura de Segurança com Ruflo (`ruflo security scan`):**
+     - Target `./components/catalog`: 0 vulnerabilidades (Critical: 0, High: 0, Medium: 0, Low: 0).
+     - Target `./services/freight`: 0 vulnerabilidades (Critical: 0, High: 0, Medium: 0, Low: 0).
+  2. **Análise de Risco de Diff com Ruflo (`ruflo analyze diff --risk`):**
+     - Risk score: 0/100 (Safe / Low Risk).
+  3. **Compilação de Produção Next.js (`npx next build`):**
+     - Compilação concluída com sucesso em 15.1s via Turbopack.
+     - Verificação de tipos TypeScript concluída em 11.3s com **0 erros**.
+     - Todas as 42 rotas estáticas e dinâmicas geradas e otimizadas com sucesso.
 * **MCPs Utilizados:** `ruflo`.
-* **Portão de Parada:** Apresentação dos relatórios do Ruflo e build com 0 erros e solicitação de autorização para a Etapa 5.
+* **Portão de Parada:** Etapa 4 concluída com 100% de sucesso. Aguardando autorização para a Etapa 5.
 
 ---
 
@@ -149,8 +155,8 @@ flowchart TD
 | **Etapa 1** | Motor J&T Express no Backend | `services/freight/providers/jt-express.provider.ts`, `services/freight/orchestrator.service.ts` | **[CONCLUÍDA]** |
 | **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts` | **[CONCLUÍDA]** |
 | **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **[CONCLUÍDA]** |
-| **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | **Aguardando sua autorização explícita** |
-| **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | Depende da aprovação da Etapa 4 |
+| **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | **[CONCLUÍDA]** |
+| **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | **Aguardando sua autorização explícita** |
 | **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | Depende da aprovação da Etapa 5 |
 
 ---
