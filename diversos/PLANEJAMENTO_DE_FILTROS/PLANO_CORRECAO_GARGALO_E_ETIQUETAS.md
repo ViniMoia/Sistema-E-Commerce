@@ -79,8 +79,12 @@ flowchart TD
 * **MCPs:** `git`.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 4.
 
-#### Etapa 4: Auditoria de Segurança Automatizada com Ruflo & Compilação Next.js
+#### [CONCLUÍDA] Etapa 4: Auditoria de Segurança Automatizada com Ruflo & Compilação Next.js
 * **Objetivo:** Executar `ruflo security scan` e `ruflo analyze diff --risk` garantindo conformidade total de segurança e ausência de regressões, validando com `npx next build` (0 erros nas 42 rotas).
+* **Resultados Obtidos:**
+  - `ruflo security scan`: 0 vulnerabilidades (Critical: 0, High: 0, Medium: 0, Low: 0 em `components/catalog`, `hooks` e `services`).
+  - `ruflo analyze diff HEAD~3 --risk`: Risco Global **LOW (3/100)**.
+  - `next build`: 100% de sucesso, 0 erros em todas as 42 rotas.
 * **MCPs:** `ruflo`.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 5.
 
@@ -101,11 +105,11 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **Etapa 1** | Taxonomia Real & Seed DB | Script de tags Prisma, Banco PostgreSQL | **[CONCLUÍDA]** Commit `ccba7c3` |
 | **Etapa 2** | Eliminação do Gargalo de 20 Produtos | [`product.service.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/services/product.service.ts), [`app/page.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/app/page.tsx) | **[CONCLUÍDA]** Commit `b855ad3` |
-| **Etapa 3** | Pílulas e Hooks do Frontend | [`FilterTagPills.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/FilterTagPills.tsx), [`useProductFilters.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/hooks/useProductFilters.ts) | **[CONCLUÍDA]** |
-| **Etapa 4** | Segurança Ruflo & Build | Scanner Ruflo, `next build` | **Aguardando sua autorização explícita** |
-| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | Depende da aprovação formal da Etapa 4 |
+| **Etapa 3** | Pílulas e Hooks do Frontend | [`FilterTagPills.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/FilterTagPills.tsx), [`useProductFilters.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/hooks/useProductFilters.ts) | **[CONCLUÍDA]** Commit `cf008b9` |
+| **Etapa 4** | Segurança Ruflo & Build | Scanner Ruflo, `next build` | **[CONCLUÍDA]** 0 falhas, risco 3/100, 0 erros |
+| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | **Aguardando sua autorização explícita** |
 | **Etapa 6** | Governança Memory & Docs | MCP Memory, [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) | Depende da aprovação formal da Etapa 5 |
 
 ---
 
-> **Status Atual:** Etapa 3 concluída com sucesso (0 erros de build em 42 rotas). Aguardando autorização do usuário para iniciar a **Etapa 4**.
+> **Status Atual:** Etapa 4 concluída com sucesso (auditoria Ruflo sem falhas de segurança e 0 erros de build). Aguardando autorização do usuário para iniciar a **Etapa 5**.

@@ -30,3 +30,7 @@ test_db_conn.js
 # Generated Prisma artifacts
 /app/generated/prisma
 
+# Tooling and daemon caches
+.claude/
+.claude-flow/
+.swarm/
