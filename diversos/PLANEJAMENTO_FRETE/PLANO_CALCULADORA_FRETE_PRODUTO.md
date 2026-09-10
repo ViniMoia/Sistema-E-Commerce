@@ -120,20 +120,22 @@ flowchart TD
 
 ---
 
-### Etapa 5: Validação Visual e Funcional no Navegador Real (Puppeteer)
+### [CONCLUÍDA] Etapa 5: Validação Visual e Funcional no Navegador Real (Puppeteer)
 * **Contexto:**
-  Comprovar a experiência do usuário tanto em resoluções de desktop quanto em celulares.
-* **Ações da Etapa 5:**
-  1. Testes em Desktop (1920x1080):
-     - Clicar em um produto no catálogo (ex: *ZMOL Shampoo*).
-     - Digitar CEP local de Ananindeua/PA (`67140-615`): validar exibição da Retirada na Loja (R$ 0) e J&T Express local.
-     - Digitar CEP de São Paulo/SP (`01310-100`): validar cálculo interestadual via J&T Express / Correios.
-     - Capturar screenshot de evidência em alta resolução.
-  2. Testes em Mobile (390x844):
-     - Validar responsividade do formulário de frete, espaçamento para teclado virtual e legibilidade dos prazos.
-     - Capturar screenshot de evidência mobile.
+  Comprovação da experiência de uso real tanto em telas Desktop (1920x1080) quanto em dispositivos móveis (390x844).
+* **Ações Realizadas na Etapa 5:**
+  1. **Validação Desktop (1920x1080):**
+     - Seleção do produto ZMOL no catálogo.
+     - Cotação com CEP de São Paulo/SP (`01310-100`): retorno de J&T Express Standard a R$ 12,62 com badge *"Mais Econômico"* (5 dias úteis) vs SEDEX a R$ 54,00 e PAC a R$ 32,50.
+     - Identificação de geolocalização (*📍 São Paulo - SP*).
+     - Evidência visual: `desktop_freight_sp_01310100_1789067934556.png`.
+  2. **Validação Mobile (390x844):**
+     - Simulação de tela de smartphone (iPhone/Android).
+     - Cotação com CEP de Ananindeua/PA (`67140-615`): exibição de Retirada na Loja Grátis (R$ 0,00) e J&T Express Standard a R$ 12,13.
+     - Responsividade perfeita, sem overflow horizontal e botões com área de toque confortável.
+     - Evidência visual: `mobile_freight_pa_67140615_1789067964353.png`.
 * **MCPs Utilizados:** `puppeteer` / Browser Subagent.
-* **Portão de Parada:** Apresentação das evidências visuais e solicitação de autorização para a Etapa 6.
+* **Portão de Parada:** Etapa 5 concluída com 100% de sucesso. Aguardando autorização para a Etapa 6.
 
 ---
 
@@ -156,8 +158,8 @@ flowchart TD
 | **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts` | **[CONCLUÍDA]** |
 | **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **[CONCLUÍDA]** |
 | **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | **[CONCLUÍDA]** |
-| **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | **Aguardando sua autorização explícita** |
-| **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | Depende da aprovação da Etapa 5 |
+| **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | **[CONCLUÍDA]** |
+| **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | **Aguardando sua autorização explícita** |
 
 ---
 
