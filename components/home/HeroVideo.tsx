@@ -6,7 +6,6 @@ import gsap from "gsap";
 export default function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const badgeRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const descRef = useRef<HTMLParagraphElement | null>(null);
   const ctaRef = useRef<HTMLDivElement | null>(null);
@@ -36,24 +35,14 @@ export default function HeroVideo() {
     // Make container visible
     gsap.set(containerRef.current, { visibility: "visible", opacity: 1 });
 
-    // 1. Badge emergence
-    if (badgeRef.current) {
-      tl.fromTo(
-        badgeRef.current,
-        { opacity: 0, y: 24, filter: "blur(4px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2 }
-      );
-    }
-
-    // 2. Heading lines reveal with mask
+    // 1. Heading lines reveal with mask
     if (headingRef.current) {
       const lines = headingRef.current.querySelectorAll(".text-reveal-content");
       if (lines.length > 0) {
         tl.fromTo(
           lines,
           { y: "110%", opacity: 0 },
-          { y: "0%", opacity: 1, duration: 1.4, stagger: 0.18 },
-          "-=0.9"
+          { y: "0%", opacity: 1, duration: 1.4, stagger: 0.18 }
         );
       }
     }
@@ -167,17 +156,6 @@ export default function HeroVideo() {
         style={{ visibility: "hidden", opacity: 0 }}
         className="relative z-20 w-full max-w-xl lg:max-w-2xl px-6 sm:px-12 md:pl-16 lg:pl-24 xl:pl-28 flex flex-col items-start justify-center"
       >
-        {/* Brand Badge */}
-        <div
-          ref={badgeRef}
-          className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6 shadow-lg shadow-black/20"
-        >
-          <span className="w-2 h-2 rounded-full bg-slate-400 animate-pulse" />
-          <span className="text-[10px] sm:text-xs font-mono tracking-[0.22em] uppercase text-slate-300 font-semibold">
-            Sistema Profissional • Continental
-          </span>
-        </div>
-
         {/* Hero Title (H1) with text-reveal-wrapper lines */}
         <h1
           ref={headingRef}
