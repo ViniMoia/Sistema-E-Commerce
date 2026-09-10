@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Meguiar's cursive styling + red ribbon banner -->
+  <g transform="translate(15, 6)">
+    <!-- Main text stylized italic cursive -->
+    <text x="15" y="34" font-family="'Brush Script MT', 'Lucida Handwriting', 'Segoe Script', cursive" font-weight="bold" font-size="34" fill="#FACC15" transform="rotate(-6 15 34)">Meguiar's</text>
+    <!-- Ribbon banner -->
+    <path d="M50 36 L120 30 L115 42 L45 48 Z" fill="#DC2626"/>
+    <text x="56" y="42" font-family="'Montserrat', sans-serif" font-weight="800" font-size="7" fill="#FFFFFF" letter-spacing="2" transform="rotate(-5 56 42)">SINCE 1901</text>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Autoamerica Icon (Double Chevron / Stylized Arrow as seen in user image) -->
+  <g transform="translate(18, 14)">
+    <path d="M4 36 L16 10 L24 10 L14 36 Z" fill="#EF4444"/>
+    <path d="M16 10 L28 36 L36 36 L24 10 Z" fill="#EF4444"/>
+    <path d="M28 36 L40 10 L48 10 L38 36 Z" fill="#EF4444"/>
+  </g>
+  <text x="76" y="40" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#EF4444" letter-spacing="1">AUTO<tspan fill="#FFFFFF">AMERICA</tspan></text>
+  <text x="77" y="52" font-family="'Montserrat', sans-serif" font-weight="600" font-size="7.5" fill="#94A3B8" letter-spacing="3.5">AUTOPRODUCTS</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Kärcher Yellow Plate & Bold Black/White Typography -->
+  <g transform="translate(18, 14)">
+    <rect x="0" y="4" width="36" height="34" rx="4" fill="#FACC15"/>
+    <path d="M10 12 L10 30 M10 21 L22 12 M13 18 L24 30" stroke="#000000" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <text x="68" y="42" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="28" fill="#FACC15" letter-spacing="2">KÄRCHER</text>
+  <text x="70" y="54" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7" fill="#E2E8F0" letter-spacing="3.5">CLEANING SYSTEMS</text>
+</svg>

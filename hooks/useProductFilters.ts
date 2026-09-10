@@ -36,6 +36,10 @@ export interface UseProductFiltersReturn {
   setSelectedBrand: (brandSlug: string | null) => void;
   selectedTags: string[];
   handleToggleTag: (tagSlug: string) => void;
+  selectedPriceRange: string | null;
+  setSelectedPriceRange: (range: string | null) => void;
+  selectedVoltage: string | null;
+  setSelectedVoltage: (voltage: string | null) => void;
   handleClearAllFilters: () => void;
   brandsWithCounts: BrandSummary[];
   filteredProducts: FilterableProduct[];
@@ -147,6 +151,8 @@ export function useProductFilters({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
+  const [selectedVoltage, setSelectedVoltage] = useState<string | null>(null);
   const isHydratedRef = useRef(false);
 
   // ─── 1. Deep Linking: Leitura Inicial dos Parâmetros da URL na Montagem ──────
@@ -230,6 +236,8 @@ export function useProductFilters({
   const handleClearAllFilters = useCallback(() => {
     setSelectedBrand(null);
     setSelectedTags([]);
+    setSelectedPriceRange(null);
+    setSelectedVoltage(null);
     setSearchQuery("");
   }, []);
 
@@ -275,12 +283,35 @@ export function useProductFilters({
         if (!matchesAnyTag) return false;
       }
 
+      // 4. Filtro por Faixa de Preço
+      if (selectedPriceRange) {
+        const price = prod.price;
+        if (selectedPriceRange === "0-50" && price > 50) return false;
+        if (selectedPriceRange === "50-100" && (price < 50 || price > 100)) return false;
+        if (selectedPriceRange === "100-150" && (price < 100 || price > 150)) return false;
+        if (selectedPriceRange === "150-200" && (price < 150 || price > 200)) return false;
+        if (selectedPriceRange === "200+" && price < 200) return false;
+      }
+
+      // 5. Filtro por Voltagem
+      if (selectedVoltage) {
+        const hasVoltage =
+          selectedVoltage === "127"
+            ? /\b(127|110|127v|110v)\b/i.test(text)
+            : /\b(220|220v)\b/i.test(text);
+        if (!hasVoltage) return false;
+      }
+
       return true;
     });
-  }, [initialProducts, searchQuery, selectedBrand, selectedTags]);
+  }, [initialProducts, searchQuery, selectedBrand, selectedTags, selectedPriceRange, selectedVoltage]);
 
   const hasActiveFilters = Boolean(
-    selectedBrand || selectedTags.length > 0 || searchQuery
+    selectedBrand ||
+    selectedTags.length > 0 ||
+    searchQuery.trim() ||
+    selectedPriceRange ||
+    selectedVoltage
   );
 
   return {
@@ -290,6 +321,10 @@ export function useProductFilters({
     setSelectedBrand,
     selectedTags,
     handleToggleTag,
+    selectedPriceRange,
+    setSelectedPriceRange,
+    selectedVoltage,
+    setSelectedVoltage,
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,

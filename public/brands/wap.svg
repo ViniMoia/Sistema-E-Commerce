@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- WAP dynamic emblem & typography -->
+  <g transform="translate(18, 14)">
+    <rect x="0" y="2" width="40" height="38" rx="8" fill="#FACC15"/>
+    <text x="8" y="28" font-family="'Arial Black', sans-serif" font-weight="900" font-size="20" fill="#000000" font-style="italic">W</text>
+  </g>
+  <text x="72" y="44" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="34" fill="#FFFFFF" letter-spacing="3">W<tspan fill="#FACC15">AP</tspan></text>
+  <text x="74" y="56" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7" fill="#94A3B8" letter-spacing="3.5">EQUIPAMENTOS PRO</text>
+</svg>

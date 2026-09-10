@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Lincoln emblem & typography -->
+  <g transform="translate(18, 14)">
+    <polygon points="4,4 34,4 26,36 4,36" fill="#B91C1C"/>
+    <path d="M12 12 L12 28 M12 28 L24 28" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="68" y="44" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" letter-spacing="2">LINCOLN</text>
+  <text x="70" y="56" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7" fill="#EF4444" letter-spacing="3.5">POLIDORES &amp; BOINAS</text>
+</svg>

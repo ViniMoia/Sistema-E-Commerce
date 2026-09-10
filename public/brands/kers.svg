@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Kers detailing emblem & typography -->
+  <g transform="translate(18, 14)">
+    <path d="M4 8 L20 8 L32 20 L20 32 L4 32 L16 20 Z" fill="#0284C7"/>
+    <path d="M22 8 L38 8 L32 20 L38 32 L22 32 L28 20 Z" fill="#38BDF8"/>
+  </g>
+  <text x="68" y="44" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="34" fill="#FFFFFF" letter-spacing="2">KE<tspan fill="#38BDF8">RS</tspan></text>
+  <text x="70" y="56" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7" fill="#94A3B8" letter-spacing="3.5">POLISH &amp; ACCESSORIES</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Sandet chemical shield & typography -->
+  <g transform="translate(18, 14)">
+    <polygon points="20,4 36,14 30,36 10,36 4,14" fill="#0D9488"/>
+    <path d="M12 20 L28 20 M20 12 L20 28" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="68" y="44" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="30" fill="#FFFFFF" letter-spacing="2">SAN<tspan fill="#2DD4BF">DET</tspan></text>
+  <text x="70" y="56" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7" fill="#94A3B8" letter-spacing="3.5">PRODUCAO QUIMICA</text>
+</svg>

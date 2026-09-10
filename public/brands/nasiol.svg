@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Nasiol Shield Contour from user reference image -->
+  <g transform="translate(18, 12)">
+    <path d="M10 6 L42 6 L42 26 L26 40 L10 26 Z" stroke="#94A3B8" stroke-width="3" fill="none" stroke-linejoin="round"/>
+    <path d="M16 6 L36 6" stroke="#E2E8F0" stroke-width="1.5"/>
+  </g>
+  <text x="76" y="42" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="28" fill="#E2E8F0" letter-spacing="2">NASIOL</text>
+  <text x="77" y="54" font-family="'Montserrat', sans-serif" font-weight="600" font-size="7" fill="#64748B" letter-spacing="4">NANO COATINGS</text>
+</svg>

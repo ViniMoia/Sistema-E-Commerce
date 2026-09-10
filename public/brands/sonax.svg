@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Sonax Typography & German Flag Stripe as seen in user reference image -->
+  <text x="30" y="42" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="34" fill="#EF4444" letter-spacing="2">SONAX</text>
+  <circle cx="178" cy="20" r="3" stroke="#EF4444" stroke-width="1.5" fill="none"/>
+  <text x="176.5" y="22" font-family="sans-serif" font-size="4" fill="#EF4444" font-weight="bold">R</text>
+  <!-- German Flag Bars -->
+  <rect x="110" y="47" width="22" height="3" fill="#000000"/>
+  <rect x="132" y="47" width="22" height="3" fill="#EF4444"/>
+  <rect x="154" y="47" width="22" height="3" fill="#FACC15"/>
+  <text x="32" y="58" font-family="'Montserrat', sans-serif" font-weight="800" font-size="7.5" fill="#94A3B8" letter-spacing="3">MADE IN GERMANY</text>
+</svg>

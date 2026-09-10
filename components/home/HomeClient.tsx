@@ -5,7 +5,8 @@ import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
 import { getOptimizedImageUrl } from "@/lib/utils";
 import HeroVideo from "./HeroVideo";
-import { CatalogFilterBar } from "@/components/catalog/CatalogFilterBar";
+import { BrandMinimalistCarousel } from "@/components/catalog/BrandMinimalistCarousel";
+import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
 import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters";
 import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
@@ -60,9 +61,15 @@ export default function HomeClient({
     setSelectedBrand,
     selectedTags,
     handleToggleTag,
+    selectedPriceRange,
+    setSelectedPriceRange,
+    selectedVoltage,
+    setSelectedVoltage,
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,
+    totalCount,
+    filteredCount,
   } = useProductFilters({
     initialProducts,
     initialBrands,
@@ -328,83 +335,102 @@ export default function HomeClient({
       <HeroVideo />
 
       {/* Product List Showcase */}
-      <section id="catalogo" className="px-6 md:px-12 py-24 md:py-32 bg-catalog-bg relative z-20">
-        <div className="max-w-7xl mx-auto">
-          {/* Catalog Filter Bar (Pills, Brand Hover Flyout & Search) */}
-          <CatalogFilterBar
-            brands={brandsWithCounts}
-            selectedBrand={selectedBrand}
-            onSelectBrand={setSelectedBrand}
-            selectedTags={selectedTags}
-            onToggleTag={handleToggleTag}
-            onClearAll={handleClearAllFilters}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+      <section id="catalogo" className="py-10 md:py-16 bg-catalog-bg relative z-20">
+        {/* Carrossel Minimalista de Marcas Soltas no Topo (5 Marcas Simultâneas) */}
+        <BrandMinimalistCarousel
+          brands={brandsWithCounts}
+          selectedBrand={selectedBrand}
+          onSelectBrand={setSelectedBrand}
+        />
 
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-              {filteredProducts.map((prod, index) => (
-                <div 
-                  key={prod.id}  
-                  onClick={() => setSelectedProduct(prod)}
-                  className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
-                  style={{ animationDelay: `${(index % 8) * 0.05}s` }}
-                >
-                  <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
-                    <img 
-                      src={getOptimizedImageUrl(prod.imageUrl, 400, 400)} 
-                      alt={prod.name} 
-                      className="max-h-full object-contain group-hover:scale-[1.05] transition-transform duration-500" 
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col flex-1 justify-end relative">
-                    <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                      Produto
-                    </span>
-                    <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase">
-                      {prod.name}
-                    </h4>
-                    
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                      <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBuy(e, prod);
-                        }}
-                        className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                        title="Adicionar ao Carrinho"
-                      >
-                        <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      </button>
+        {/* Container Amplo: Sidebar Livre + Grid com Rigorosamente 4 Cards por Linha Horizontal */}
+        <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 mt-8 md:mt-12">
+          <div className="flex flex-col lg:flex-row gap-8 xl:gap-12 items-start">
+            {/* Filtros Livres e Barra de Pesquisa na Lateral Esquerda */}
+            <CatalogFreeSidebar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedBrand={selectedBrand}
+              onSelectBrand={setSelectedBrand}
+              selectedTags={selectedTags}
+              onToggleTag={handleToggleTag}
+              selectedPriceRange={selectedPriceRange}
+              onSelectPriceRange={setSelectedPriceRange}
+              selectedVoltage={selectedVoltage}
+              onSelectVoltage={setSelectedVoltage}
+              onClearAll={handleClearAllFilters}
+              brands={brandsWithCounts}
+              totalProductsCount={totalCount}
+              filteredProductsCount={filteredCount}
+            />
+
+            {/* Grid de Produtos: 4 Colunas Horizontais no Desktop sem Apertar os Cards */}
+            <div className="flex-1 w-full min-w-0">
+              {filteredProducts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
+                  {filteredProducts.map((prod, index) => (
+                    <div 
+                      key={prod.id}  
+                      onClick={() => setSelectedProduct(prod)}
+                      className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
+                      style={{ animationDelay: `${(index % 8) * 0.05}s` }}
+                    >
+                      <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
+                        <img 
+                          src={getOptimizedImageUrl(prod.imageUrl, 400, 400)} 
+                          alt={prod.name} 
+                          className="max-h-full object-contain group-hover:scale-[1.05] transition-transform duration-500" 
+                        />
+                      </div>
+                      
+                      <div className="flex flex-col flex-1 justify-end relative">
+                        <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                          Produto
+                        </span>
+                        <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase">
+                          {prod.name}
+                        </h4>
+                        
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
+                          <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBuy(e, prod);
+                            }}
+                            className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
+                            title="Adicionar ao Carrinho"
+                          >
+                            <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-500 bg-[#0B111E]/30 border border-catalog-gold/20 rounded-2xl">
+                  <div className="w-20 h-20 mb-5 rounded-full bg-catalog-card flex items-center justify-center border border-catalog-gold/30 shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-catalog-muted">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                  </div>
+                  <h4 className="text-xl font-semibold text-catalog-text mb-2">Nenhum produto encontrado</h4>
+                  <p className="text-catalog-muted max-w-md mx-auto leading-relaxed text-sm">
+                    Não encontramos nenhum produto que corresponda aos filtros ou termos pesquisados.
+                    Tente selecionar outra marca, remover algumas etiquetas ou faixas de preço.
+                  </p>
+                  <button 
+                    onClick={handleClearAllFilters}
+                    className="mt-6 px-7 py-2.5 rounded-full border border-catalog-gold/45 text-catalog-text hover:bg-catalog-gold/10 hover:border-catalog-gold transition-all shadow-sm text-sm font-mono"
+                  >
+                    Limpar Todos os Filtros
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-24 px-6 text-center animate-in fade-in zoom-in duration-500">
-              <div className="w-24 h-24 mb-6 rounded-full bg-catalog-card flex items-center justify-center border border-catalog-gold/30 shadow-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-catalog-muted">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </div>
-              <h4 className="text-2xl font-semibold text-catalog-text mb-3">Nenhum produto encontrado</h4>
-              <p className="text-catalog-muted max-w-md mx-auto leading-relaxed text-sm">
-                Não encontramos nenhum produto que corresponda aos filtros ou termos pesquisados.
-                Tente selecionar outra marca, remover algumas etiquetas ou usar termos mais amplos.
-              </p>
-              <button 
-                onClick={handleClearAllFilters}
-                className="mt-8 px-8 py-3 rounded-full border border-catalog-gold/45 text-catalog-text hover:bg-catalog-gold/10 hover:border-catalog-gold transition-all shadow-sm text-sm"
-              >
-                Limpar Todos os Filtros
-              </button>
-            </div>
-          )}
+          </div>
         </div>
       </section>
 

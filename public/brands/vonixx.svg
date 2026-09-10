@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 70" fill="none">
+  <!-- Vonixx Icon -->
+  <g transform="translate(15, 8)">
+    <polygon points="12,4 28,38 44,4 34,4 28,18 22,4" fill="#EF4444"/>
+    <polygon points="4,10 28,52 52,10 42,10 28,36 14,10" fill="#B91C1C"/>
+    <polygon points="20,44 28,58 36,44" fill="#EF4444"/>
+  </g>
+  <!-- Vonixx Typography -->
+  <text x="75" y="44" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="32" fill="#FFFFFF" letter-spacing="2">VONI<tspan fill="#EF4444">XX</tspan></text>
+  <text x="76" y="58" font-family="'Montserrat', sans-serif" font-weight="700" font-size="7.5" fill="#94A3B8" letter-spacing="4.5">AUTOMOTIVE CARE</text>
+</svg>
