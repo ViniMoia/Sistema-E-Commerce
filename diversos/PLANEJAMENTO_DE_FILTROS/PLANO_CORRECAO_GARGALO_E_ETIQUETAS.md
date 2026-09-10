@@ -69,7 +69,7 @@ flowchart TD
 * **MCPs:** `sequential-thinking` e `postgres`/`supabase`.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 2.
 
-#### Etapa 2: Eliminação do Gargalo de Dados no SSR e Backend
+#### [CONCLUÍDA] Etapa 2: Eliminação do Gargalo de Dados no SSR e Backend
 * **Objetivo:** Ajustar [`services/product.service.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/services/product.service.ts) e [`app/page.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/app/page.tsx) para carregar todos os 521 produtos da loja ativa para a vitrine inicial, com projeção leve de campos (`id, name, price, description, imageUrl, stock, brand, tagsSearchCache`), garantindo payload enxuto (~28KB gzipped) e consulta Prisma inferior a 25ms.
 * **MCPs:** `postgres` e `git`.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 3.
