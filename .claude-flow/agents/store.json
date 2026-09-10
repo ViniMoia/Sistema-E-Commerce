@@ -1,0 +1,73 @@
+{
+  "agents": {
+    "agent-1788299066912-paqvwp": {
+      "agentId": "agent-1788299066912-paqvwp",
+      "agentType": "architect",
+      "status": "terminated",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Elaborar plano para novo endpoint de exportacao de relatorios de pedidos em CSV",
+        "timeout": 300,
+        "autoTools": true
+      },
+      "createdAt": "2026-09-01T21:44:27.007Z",
+      "model": "opus",
+      "modelRoutedBy": "router",
+      "provider": "anthropic"
+    },
+    "agent-1788299124793-65ukpm": {
+      "agentId": "agent-1788299124793-65ukpm",
+      "agentType": "coder",
+      "status": "terminated",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Implementar servico de exportacao CSV",
+        "timeout": 300,
+        "autoTools": true
+      },
+      "createdAt": "2026-09-01T21:45:24.809Z",
+      "model": "opus",
+      "modelRoutedBy": "router",
+      "provider": "anthropic"
+    },
+    "agent-1788299165481-ar4kgm": {
+      "agentId": "agent-1788299165481-ar4kgm",
+      "agentType": "tester",
+      "status": "terminated",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Analisar suite de testes vitest e diagnosticar cobertura",
+        "timeout": 300,
+        "autoTools": true
+      },
+      "createdAt": "2026-09-01T21:46:05.495Z",
+      "model": "opus",
+      "modelRoutedBy": "router",
+      "provider": "anthropic"
+    },
+    "agent-1788299210849-z5uok0": {
+      "agentId": "agent-1788299210849-z5uok0",
+      "agentType": "reviewer",
+      "status": "terminated",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Revisar codigo de seguranca e conformidade",
+        "timeout": 300,
+        "autoTools": true
+      },
+      "createdAt": "2026-09-01T21:46:50.862Z",
+      "model": "sonnet",
+      "modelRoutedBy": "router",
+      "provider": "anthropic"
+    }
+  },
+  "version": "3.0.0"
+}

@@ -88,6 +88,31 @@ html, body {
   border-color: rgba(221, 175, 2, 0.3);
 }
 
+/* Light Sweep / Sweep Effect (Design System V15) */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.btn-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+  z-index: 1;
+  pointer-events: none;
+  transition: all 0.5s;
+}
+
+.btn-shimmer:hover::before {
+  animation: shimmer 1.5s infinite;
+}
+
 /* Premium Shimmer Button */
 .btn-shimmer-wrap {
   position: relative;
@@ -132,4 +157,154 @@ html, body {
 .btn-shimmer-wrap:hover .btn-shimmer-effect {
   opacity: 1;
   animation: shimmer 1.5s infinite;
+}
+
+/* 1. Text Reveal System */
+.text-reveal-wrapper {
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.text-reveal-content {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* 2. Text Glow Utilities */
+.text-glow {
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   WhatsApp Floating Button Styles (DS3 Planalto Ferramental)
+   ========================================================================== */
+.whatsapp-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7BB04A, #005829);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 88, 41, 0.3), 0 0 0 0 rgba(123, 176, 74, 0.7);
+  opacity: 0;
+  transform: scale(0.6) translateY(20px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: 
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+    visibility 0.45s,
+    background 0.3s,
+    box-shadow 0.3s;
+  cursor: pointer;
+  outline: none;
+  animation: whatsappPulse 2s infinite;
+}
+
+@keyframes whatsappPulse {
+  0% {
+    box-shadow: 0 4px 20px rgba(0, 88, 41, 0.3), 0 0 0 0 rgba(123, 176, 74, 0.7);
+  }
+  70% {
+    box-shadow: 0 4px 20px rgba(0, 88, 41, 0.3), 0 0 0 15px rgba(123, 176, 74, 0);
+  }
+  100% {
+    box-shadow: 0 4px 20px rgba(0, 88, 41, 0.3), 0 0 0 0 rgba(123, 176, 74, 0);
+  }
+}
+
+.whatsapp-btn.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.whatsapp-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.whatsapp-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
+.whatsapp-btn:hover {
+  transform: scale(1.08) translateY(-3px);
+  background: linear-gradient(135deg, #25D366, #005829);
+  box-shadow: 0 8px 30px rgba(0, 88, 41, 0.4), 0 0 15px rgba(184, 160, 106, 0.25);
+  border: 1px solid #B8A06A;
+}
+
+.whatsapp-btn:hover .whatsapp-icon-container {
+  animation: whatsappWiggle 0.6s ease-in-out;
+}
+
+@keyframes whatsappWiggle {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-12deg); }
+  30% { transform: rotate(12deg); }
+  45% { transform: rotate(-6deg); }
+  60% { transform: rotate(6deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.whatsapp-tooltip {
+  position: absolute;
+  right: 76px;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(12px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.whatsapp-btn:hover .whatsapp-tooltip,
+.whatsapp-tooltip.active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .whatsapp-btn {
+    bottom: 24px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .whatsapp-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .whatsapp-tooltip {
+    right: 64px;
+    padding: 8px 16px;
+    font-size: 11px;
+  }
 }

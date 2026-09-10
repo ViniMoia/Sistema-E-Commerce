@@ -1,0 +1,36 @@
+name: basic-development-pipeline
+description: Pipeline de desenvolvimento estruturado (Planner -> Coder -> Tester -> Reviewer -> Memory)
+version: 1.0.0
+stages:
+  - name: planning
+    agent: architect
+    description: Consulta a memória persistente e decompõe requisitos em plano com critérios de aceite
+    outputs:
+      - implementation_plan
+
+  - name: implementation
+    agent: coder
+    depends_on: [planning]
+    description: Implementação estrita e cirúrgica do código delimitado no plano
+    outputs:
+      - code_diff
+
+  - name: testing
+    agent: tester
+    depends_on: [implementation]
+    description: Criação e execução de testes automatizados e diagnóstico de edge cases
+    outputs:
+      - test_report
+
+  - name: review
+    agent: reviewer
+    depends_on: [testing]
+    description: Auditoria de qualidade, segurança e arquitetura (APPROVED ou CHANGES_REQUIRED)
+    outputs:
+      - review_verdict
+
+  - name: memory_registration
+    agent: memory-specialist
+    depends_on: [review]
+    condition: "review_verdict == 'APPROVED'"
+    description: Registro das decisões arquiteturais na memória persistente

@@ -11,6 +11,21 @@ const config: Config = {
       colors: {
         primary: "var(--primary)",
         secondary: "var(--secondary)",
+        brand: {
+          navy: "#010E31",
+          slate: "#0F172A",
+          blue: "#0030E0",
+          yellow: "#F0B40E",
+          gold: "#F0B40E",
+          muted: "#8992A3",
+        },
+        catalog: {
+          bg: "#000000",
+          card: "#0F172A",
+          gold: "#B8A06A",
+          text: "#F5F5F5",
+          muted: "#94A3B8",
+        },
       },
       animation: {
         shimmer: "shimmer 1.5s infinite",

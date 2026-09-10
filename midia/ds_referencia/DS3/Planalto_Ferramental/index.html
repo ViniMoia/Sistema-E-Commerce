@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <title>Planalto Ferramental | Ferramentas Profissionais & Tradição Industrial</title>
+
+  <meta name="description"
+    content="A Planalto Ferramental é uma empresa com 30 anos de tradição, especializada na venda de diversos tipos de ferramentas com variado estoque e preços convidativos." />
+  <meta name="keywords"
+    content="ferramentas, ferramentaria, injeção plástica, usinagem cnc, makita, bosch, vonder, planalto ferramental" />
+  <meta name="author" content="Planalto Ferramental" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.planaltoferramental.com.br/" />
+  <meta property="og:title" content="Planalto Ferramental | Ferramentas Profissionais" />
+  <meta property="og:description"
+    content="Especialista na venda de diversos tipos de ferramentas com variado estoque e preços convidativos. 30 anos de tradição." />
+  <meta property="og:image" content="midia/frames/ezgif-frame-001.jpg" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="Planalto Ferramental | Ferramentas Profissionais" />
+  <meta property="twitter:description"
+    content="Especialista na venda de diversos tipos de ferramentas com variado estoque e preços convidativos. 30 anos de tradição." />
+  <meta property="twitter:image" content="midia/frames/ezgif-frame-001.jpg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon"
+    href="https://res.cloudinary.com/dpt3zi8kx/image/upload/v1783956537/Captura_de_tela_2026-07-13_122733-removebg-preview_s6crxy.png" />
+
+  <!-- Preconnect and Load Google Fonts (Merriweather & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,900;1,900&display=swap"
+    rel="stylesheet" />
+
+  <!-- Swiper CSS via CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+  <!-- Style links -->
+  <link rel="stylesheet" href="index11.css" />
+
+  <!-- Iconify CDN -->
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+</head>
+
+<body>
+
+  <!-- 1. Custom Premium Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-logo">PLANALTO <span>FERRAMENTAL</span></div>
+    <div class="loading-tagline">TECNOLOGIA & TRADIÇÃO</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar-progress"></div>
+    </div>
+    <div class="loading-text">Carregando Modelagem... 0%</div>
+  </div>
+
+  <!-- 2. Fixed Top Site Header -->
+  <header class="site-header">
+    <a class="header-logo" href="#" style="display: flex; align-items: center;">
+      <img
+        src="https://res.cloudinary.com/dpt3zi8kx/image/upload/v1783956537/Captura_de_tela_2026-07-13_122733-removebg-preview_s6crxy.png"
+        alt="Planalto Ferramental" style="height: 50px; max-height: 100%; width: auto; object-fit: contain;">
+    </a>
+
+    <ul class="header-nav">
+      <li><a href="#tradicao" class="header-nav-link">A Empresa</a></li>
+      <li><a href="#produtos" class="header-nav-link">Categorias</a></li>
+      <li><a href="#faq" class="header-nav-link">Dúvidas</a></li>
+      <li><a href="#depoimentos" class="header-nav-link">Depoimentos</a></li>
+    </ul>
+
+    <a href="https://wa.me/5591992891293?text=Ol%C3%A1%2C%20tudo%20bem%3F" class="header-cta" target="_blank" rel="noopener noreferrer">Fale Conosco</a>
+
+    <button class="mobile-nav-toggle" aria-label="Menu principal">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+
+  <!-- Mobile Navigation Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobile-menu">
+    <nav class="mobile-nav">
+      <ul>
+        <li><a href="#tradicao" class="mobile-nav-link-item">A Empresa</a></li>
+        <li><a href="#produtos" class="mobile-nav-link-item">Categorias</a></li>
+        <li><a href="#faq" class="mobile-nav-link-item">Dúvidas</a></li>
+        <li><a href="#depoimentos" class="mobile-nav-link-item">Depoimentos</a></li>
+      </ul>
+      <a href="https://wa.me/5591992891293?text=Ol%C3%A1%2C%20tudo%20bem%3F" class="mobile-cta-btn" target="_blank" rel="noopener noreferrer">Fale Conosco</a>
+    </nav>
+  </div>
+
+  <!-- 3. Hero Section Container with Scroll-Scrub Canvas -->
+  <section class="hero-pin" id="hero-section">
+    <div class="hero-canvas-wrapper">
+      <canvas id="hero-canvas"></canvas>
+      <div class="hero-overlay"></div>
+    </div>
+
+    <div class="hero-content-container">
+      <div class="hero-text-col">
+        <!-- Capsule Tagline Badge -->
+        <span class="hero-badge hero-tagline">Tecnologia em Metalurgia</span>
+
+        <!-- Outlined and Left-Aligned Headline -->
+        <h1 class="display2 hero-title text-clip-anim">
+          <span>A FERRAMENTA CERTA.</span> <br>
+          <span style="color: var(--color-yellow-gold);">O PREÇO QUE VOCÊ BUSCA.</span>
+        </h1>
+
+        <!-- Left-Aligned Subtext -->
+        <p class="hero-subtext">
+          Encontre a maior variedade de ferramentas do mercado, do uso básico às demandas específicas. Estoque completo
+          e os preços mais convidativos do setor.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="hero-actions">
+          <button class="btn btn-shimmer" onclick="window.lenis && window.lenis.scrollTo('#produtos')">
+            Ver Catálogo
+          </button>
+
+          <button class="btn btn-flashlight" onclick="window.lenis && window.lenis.scrollTo('#tradicao')">
+            Conheça Nossa História
+            <iconify-icon icon="solar:alt-arrow-right-bold-duotone"></iconify-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animated Scroll Mouse Cue -->
+    <div class="scroll-indicator">
+      <span class="scroll-text">Role para Explorar</span>
+      <div class="scroll-mouse">
+        <div class="scroll-wheel"></div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <!-- 4. Dobra 2 - Apresentação & Números Animados -->
+    <section id="tradicao" class="section-full">
+      <div class="grid-showcase">
+        <div class="tradicao-grid">
+          <div class="tradicao-left animate-on-scroll">
+            <div class="section-label">Fundada em 1996</div>
+            <h2 class="section-title">Confiança Forjada em <span>Três Décadas</span></h2>
+            <p>
+              A <strong>Planalto Ferramental</strong> é uma empresa sólida com 30 anos de tradição. Somos especializados na venda de diversos tipos de ferramentas, atendendo desde as demandas comuns do mercado até requisições altamente específicas de indústrias de manufatura.
+            </p>
+            <p>
+              Nos destacamos pelo nosso variado estoque de pronta-entrega, preços extremamente convidativos e um time técnico focado na eficiência mecânica dos nossos clientes.
+            </p>
+          </div>
+          <div class="metrics-grid">
+            <!-- Métrica 1 -->
+            <div class="metric-item animate-on-scroll">
+              <div class="metric-number" data-target="30" data-suffix=" Anos">0</div>
+              <div class="metric-label">De Tradição de Mercado</div>
+            </div>
+            <!-- Métrica 2 -->
+            <div class="metric-item animate-on-scroll">
+              <div class="metric-number" data-target="150" data-prefix="" data-suffix="k+">0</div>
+              <div class="metric-label">Ferramentas em Estoque</div>
+            </div>
+            <!-- Métrica 3 -->
+            <div class="metric-item animate-on-scroll">
+              <div class="metric-number" data-target="10" data-prefix="" data-suffix="k+">0</div>
+              <div class="metric-label">Clientes Satisfeitos</div>
+            </div>
+            <!-- Métrica 4 -->
+            <div class="metric-item animate-on-scroll">
+              <div class="metric-number" data-target="350" data-prefix="" data-suffix="+">0</div>
+              <div class="metric-label">Cidades Atendidas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Dobra 3 - Serviços Prioritários (Horizontal Scroll Cinemático) -->
+    <section id="produtos" class="horizontal-scroll-container">
+      <div class="horizontal-scroll-wrapper">
+
+        <!-- Cabeçalho Fixo do Scroll Horizontal -->
+        <div class="horizontal-header">
+          <div class="section-label">Linhas e Serviços</div>
+          <h2 class="section-title">Equipando Sua <span>Produção</span></h2>
+          <p class="section-desc">
+            Explore nossa seleção completa de ferramentas industriais, locação e suporte técnico especializado feito
+            para durar.
+          </p>
+        </div>
+
+        <div class="horizontal-slides-container">
+          <!-- Slide 1 -->
+          <div class="service-slide flashlight-card">
+            <div class="service-bg" style="background-image: url('midia/service_cnc.png');"></div>
+            <div class="service-overlay"></div>
+            <div class="service-content">
+              <div class="service-icon-wrapper">
+                <iconify-icon icon="solar:settings-bold-duotone"></iconify-icon>
+              </div>
+              <h3 class="service-slide-title">Linha Industrial & CNC</h3>
+              <p class="service-slide-desc">Fresas, insertos intercambiáveis e brocas de metal duro para usinagem pesada
+                de extrema fidelidade.</p>
+              <a href="#" class="service-link">
+                Ver Modelos <iconify-icon icon="solar:arrow-right-bold-duotone"></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="service-slide flashlight-card">
+            <div class="service-bg" style="background-image: url('midia/service_power.png');"></div>
+            <div class="service-overlay"></div>
+            <div class="service-content">
+              <div class="service-icon-wrapper">
+                <iconify-icon icon="solar:cpu-bold-duotone"></iconify-icon>
+              </div>
+              <h3 class="service-slide-title">Ferramentas Elétricas</h3>
+              <p class="service-slide-desc">Parafusadeiras, chaves de impacto e esmerilhadeiras das marcas globais mais
+                robustas.</p>
+              <a href="#" class="service-link">
+                Ver Catálogo <iconify-icon icon="solar:arrow-right-bold-duotone"></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="service-slide flashlight-card">
+            <div class="service-bg" style="background-image: url('midia/service_precision.png');"></div>
+            <div class="service-overlay"></div>
+            <div class="service-content">
+              <div class="service-icon-wrapper">
+                <iconify-icon icon="solar:tuning-bold-duotone"></iconify-icon>
+              </div>
+              <h3 class="service-slide-title">Calibração & Precisão</h3>
+              <p class="service-slide-desc">Paquímetros, micrômetros e instrumentos certificados de medição técnica
+                dimensional.</p>
+              <a href="#" class="service-link">
+                Saber Mais <iconify-icon icon="solar:arrow-right-bold-duotone"></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 4 -->
+          <div class="service-slide flashlight-card">
+            <div class="service-bg" style="background-image: url('midia/service_rental.png');"></div>
+            <div class="service-overlay"></div>
+            <div class="service-content">
+              <div class="service-icon-wrapper">
+                <iconify-icon icon="solar:box-minimalistic-bold-duotone"></iconify-icon>
+              </div>
+              <h3 class="service-slide-title">Aluguel de Máquinas</h3>
+              <p class="service-slide-desc">Compressores, geradores e plataformas elevatórias com planos sob medida para
+                sua operação.</p>
+              <a href="#" class="service-link">
+                Orçar Aluguel <iconify-icon icon="solar:arrow-right-bold-duotone"></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Slide 5 -->
+          <div class="service-slide flashlight-card">
+            <div class="service-bg" style="background-image: url('midia/service_consult.png');"></div>
+            <div class="service-overlay"></div>
+            <div class="service-content">
+              <div class="service-icon-wrapper">
+                <iconify-icon icon="solar:chat-round-call-bold-duotone"></iconify-icon>
+              </div>
+              <h3 class="service-slide-title">Consultoria Técnica</h3>
+              <p class="service-slide-desc">Suporte especializado para engenharia de usinagem e otimização produtiva de
+                processos.</p>
+              <a href="#" class="service-link">
+                Falar com Consultor <iconify-icon icon="solar:arrow-right-bold-duotone"></iconify-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 6. Dobra 4 - FAQ (Accordion Animado) -->
+    <section id="faq" class="section-full">
+      <div class="grid-showcase">
+        <div class="faq-layout">
+          <div class="faq-sticky-title animate-on-scroll">
+            <div class="section-label">Suporte e Dúvidas</div>
+            <h2 class="section-title">Perguntas<br><span>Frequentes</span></h2>
+            <p class="section-desc">
+              Tudo o que você precisa saber sobre o fornecimento de ferramentas, envio de produtos e suporte pós-venda.
+            </p>
+          </div>
+          <div class="faq-accordion animate-on-scroll">
+            <!-- Pergunta 1 -->
+            <div class="faq-item">
+              <button class="faq-trigger">
+                <span class="faq-question">Qual o prazo de entrega e como funciona o frete?</span>
+                <div class="faq-icon-wrapper">
+                  <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                </div>
+              </button>
+              <div class="faq-content">
+                <p class="faq-answer">
+                  Realizamos envios de ferramentas para todo o território nacional. Devido ao nosso variado e amplo
+                  estoque de pronta-entrega, a maioria das expedições é realizada no mesmo dia útil da aprovação do
+                  pedido. O prazo e o frete específicos variam de acordo com o CEP e a volumetria contratada.
+                </p>
+              </div>
+            </div>
+
+            <!-- Pergunta 2 -->
+            <div class="faq-item">
+              <button class="faq-trigger">
+                <span class="faq-question">Qual a garantia oferecida nas ferramentas comercializadas?</span>
+                <div class="faq-icon-wrapper">
+                  <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                </div>
+              </button>
+              <div class="faq-content">
+                <p class="faq-answer">
+                  Todas as ferramentas fornecidas pela Planalto Ferramental contam com garantia legal e contratual
+                  oficial dada diretamente pelas fabricantes líderes nacionais e internacionais. Apoiamos integralmente
+                  o cliente nos trâmites de acionamento do suporte em casos de eventuais desconformidades ou defeitos de
+                  fabricação.
+                </p>
+              </div>
+            </div>
+
+            <!-- Pergunta 3 -->
+            <div class="faq-item">
+              <button class="faq-trigger">
+                <span class="faq-question">Como funciona a política de devoluções para ferramentas especiais?</span>
+                <div class="faq-icon-wrapper">
+                  <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                </div>
+              </button>
+              <div class="faq-content">
+                <p class="faq-answer">
+                  Devoluções de ferramentas comuns de estoque podem ser solicitadas em até 7 dias corridos após o
+                  recebimento, de acordo com o Código de Defesa do Consumidor, contanto que o material esteja sem marcas
+                  de uso e na embalagem lacrada. Itens especiais ou fabricados sob especificações exclusivas possuem
+                  contratos de fornecimento dedicados com termos próprios.
+                </p>
+              </div>
+            </div>
+
+            <!-- Pergunta 4 -->
+            <div class="faq-item">
+              <button class="faq-trigger">
+                <span class="faq-question">A Planalto Ferramental oferece suporte técnico especializado
+                  pós-venda?</span>
+                <div class="faq-icon-wrapper">
+                  <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                </div>
+              </button>
+              <div class="faq-content">
+                <p class="faq-answer">
+                  Sim. Contamos com engenheiros e técnicos altamente experientes prontos para prestar consultoria de
+                  especificação pós-venda. Auxiliamos na definição de parâmetros corretos de corte para fresas
+                  industriais, calibragem dimensional de micrômetros e correta utilização mecânica do maquinário
+                  alugado.
+                </p>
+              </div>
+            </div>
+
+            <!-- Pergunta 5 -->
+            <div class="faq-item">
+              <button class="faq-trigger">
+                <span class="faq-question">Como faço para verificar a disponibilidade imediata de uma ferramenta
+                  específica?</span>
+                <div class="faq-icon-wrapper">
+                  <iconify-icon icon="solar:alt-arrow-down-bold"></iconify-icon>
+                </div>
+              </button>
+              <div class="faq-content">
+                <p class="faq-answer">
+                  Nosso inventário é dinâmico e integrado em tempo real. A consulta pode ser feita de maneira rápida
+                  entrando em contato diretamente com nossa central de atendimento pelo WhatsApp ou através de cotação
+                  via formulário neste site.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Dobra 5 - Depoimentos (Carrossel Swiper) -->
+    <section id="depoimentos" class="section-full">
+      <div class="grid-showcase">
+        <div class="depoimentos-header animate-on-scroll">
+          <div>
+            <div class="section-label">Histórias de Sucesso</div>
+            <h2 class="section-title">Quem Confia na <span>Planalto</span></h2>
+          </div>
+          <!-- Swiper Navigation Arrows -->
+          <div class="swiper-nav-buttons">
+            <button class="swiper-btn swiper-btn-prev">
+              <iconify-icon icon="solar:alt-arrow-left-bold"></iconify-icon>
+            </button>
+            <button class="swiper-btn swiper-btn-next">
+              <iconify-icon icon="solar:alt-arrow-right-bold"></iconify-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Slider Container -->
+        <div class="testimonials-slider swiper animate-on-scroll">
+          <div class="swiper-wrapper">
+            <!-- Slide 1 -->
+            <div class="swiper-slide testimonial-card glass-panel">
+              <p class="testimonial-quote">
+                "A Planalto Ferramental é nossa fornecedora há mais de 10 anos. A velocidade de entrega de ferramentas
+                industriais e CNC de alto padrão reduziu as nossas paradas de máquina em quase 30%."
+              </p>
+              <div class="testimonial-author">
+                <div class="author-avatar">
+                  <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                </div>
+                <div class="author-info">
+                  <h5>Roberto M. da Silva</h5>
+                  <p>Diretor Industrial, Metalúrgica Sul</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="swiper-slide testimonial-card glass-panel">
+              <p class="testimonial-quote">
+                "O grande diferencial da Planalto é a capacidade de fornecer ferramentas sob medida para nossas demandas
+                de usinagem específica, sempre com os melhores preços do setor."
+              </p>
+              <div class="testimonial-author">
+                <div class="author-avatar">
+                  <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                </div>
+                <div class="author-info">
+                  <h5>Eduardo Santos</h5>
+                  <p>Coordenador de Compras, ProAuto</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="swiper-slide testimonial-card glass-panel">
+              <p class="testimonial-quote">
+                "O aluguel de geradores e compressores para nossas obras reduziu drasticamente o custo inicial do
+                projeto. Equipamentos de altíssima confiabilidade e entrega cirúrgica."
+              </p>
+              <div class="testimonial-author">
+                <div class="author-avatar">
+                  <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                </div>
+                <div class="author-info">
+                  <h5>Cláudia Regina</h5>
+                  <p>Gestora de Projetos, Construtora Leste</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4 -->
+            <div class="swiper-slide testimonial-card glass-panel">
+              <p class="testimonial-quote">
+                "O atendimento da consultoria técnica pós-venda é excepcional. Eles nos orientaram perfeitamente quanto
+                aos limites físicos das fresas CNC compradas, otimizando o desgaste das peças."
+              </p>
+              <div class="testimonial-author">
+                <div class="author-avatar">
+                  <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                </div>
+                <div class="author-info">
+                  <h5>Marcos Vinícius</h5>
+                  <p>Supervisor de Processos, TechMoldes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Pagination Dots -->
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 8. Footer -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="header-logo" href="#" style="margin-bottom: 24px; display: block;">
+          <img
+            src="https://res.cloudinary.com/dpt3zi8kx/image/upload/v1783956537/Captura_de_tela_2026-07-13_122733-removebg-preview_s6crxy.png"
+            alt="Planalto Ferramental" style="height: 55px; max-height: 100%; width: auto; object-fit: contain;">
+        </a>
+        <p>Especialistas em ferramentas de alta precisão, atendendo a indústria nacional com tradição, variedade e
+          preços extremamente convidativos.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <a href="#hero-section">Início</a>
+        <a href="#tradicao">A Empresa</a>
+        <a href="#produtos">Categorias</a>
+        <a href="#faq">FAQ</a>
+        <a href="#depoimentos">Depoimentos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <a href="https://wa.me/5591992891293" target="_blank" rel="noopener noreferrer"><iconify-icon icon="solar:phone-bold-duotone"
+            style="color: var(--color-light-green);"></iconify-icon> (91) 99289-1293</a>
+        <a href="#"><iconify-icon icon="solar:letter-bold-duotone"
+            style="color: var(--color-light-green);"></iconify-icon> vendas@planaltoferramental.com.br</a>
+        <a href="#"><iconify-icon icon="solar:map-point-bold-duotone"
+            style="color: var(--color-light-green);"></iconify-icon> Centro, Ananindeua - PA, 67000-000</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Vancer. Todos os direitos reservados.</p>
+      <p>Projeto desenvolvido pela Vancer em 2026.</p>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Floating Action Button -->
+  <a href="https://wa.me/5591992891293?text=Ol%C3%A1%2C%20tudo%20bem%3F" 
+     class="whatsapp-btn" 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     aria-label="Fale Conosco no WhatsApp">
+    <span class="whatsapp-tooltip">Fale Conosco</span>
+    <div class="whatsapp-icon-container">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor">
+        <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- CDNs for Smooth Scroll & Animation Frameworks -->
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Swiper.js Script via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <!-- Main script logic link -->
+  <script src="index11.js"></script>
+</body>
+
+</html>

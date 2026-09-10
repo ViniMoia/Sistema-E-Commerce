@@ -29,3 +29,4 @@ test_db_conn.js
 
 # Generated Prisma artifacts
 /app/generated/prisma
+
