@@ -1,7 +1,7 @@
 # Arquitetura Técnica: Sistema de Filtros Avançados e Flyout de Marcas
 
-> **Status do Documento:** Planejamento e Especificação Arquitetural (Sem alterações em código em produção)  
-> **Data de Criação:** 09 de Setembro de 2026  
+> **Status do Documento:** Implementado, Validado e Em Produção  
+> **Data de Atualização:** 10 de Setembro de 2026  
 > **Localização:** `diversos/PLANEJAMENTO_DE_FILTROS/ARQUITETURA_SISTEMA_FILTROS.md`  
 > **Objetivo:** Estabelecer a fundação arquitetural, contratos de dados, matriz de segurança, aderência aos princípios SOLID e roteiro de orquestração via MCPs para a implementação do sistema de filtros do catálogo de produtos.
 
@@ -10,26 +10,25 @@
 ## 1. Visão Geral e Requisitos do Sistema
 
 ### 1.1. Contexto e Necessidade de Negócio
-O catálogo atual da loja opera com uma busca textual simples (`searchQuery`) filtrando título e descrição. Com o crescimento do inventário (produtos estéticos automotivos de marcas renomadas como Vonixx, Easytech, Cadillac, Lincoln, etc.), os clientes necessitam de um sistema de descoberta veloz, refinado e com estética de alta gama.
+O catálogo da loja opera com alta performance entregando todos os 521 produtos ativos da loja para filtragem em tempo real no cliente com SSR enriquecido. Com o crescimento do inventário (produtos estéticos automotivos de marcas renomadas como Vonixx, Easytech, Cadillac, Lincoln, etc.), os clientes contam com um sistema de descoberta instantâneo ($< 2\text{ms}$), refinado e com estética de alta gama Dark & Gold.
 
-### 1.2. Especificação das Etiquetas de Filtro Solicitadas
-O sistema deve suportar 12 dimensões de filtragem prioritárias:
+### 1.2. Especificação das Etiquetas de Filtro Reais (Taxonomia do Inventário Real)
+O sistema suporta a dimensão de Marcas com Flyout e as 10 categorias reais extraídas e semantizadas a partir dos 521 SKUs:
 
-1. **`Marca` (Filtro Especial Dinâmico com Flyout no Hover):**
-   * Ao passar o cursor (hover) sobre a pílula "Marcas", abre-se uma janela flutuante (*Flyout/Popover* em Glassmorphism).
-   * Exibe o grid com **todas as marcas cadastradas** da loja ativa, contendo seus respectivos logotipos/ícones vetoriais, nomes e quantidade de produtos associados.
-   * Permite selecionar uma marca específica diretamente da janela ou clicar em "Ver Todas".
-2. **`Acessórios`** (Pincéis, borrifadores, aplicadores, microfibras, fitas).
-3. **`AIRLESS`** (Equipamentos e bicos de pulverização de alta pressão).
-4. **`Aspiradores`** (Aspiradores de pó e líquidos automotivos / profissionais).
-5. **`Boinas`** (Boinas de lã, espuma, microfibra para corte, refino e lustro).
-6. **`Ceras e Selantes`** (Ceras carnaúba, selantes sintéticos, vitrificadores/cerâmicos).
-7. **`Cheirinho Para Carro`** (Aromatizantes, odorizadores, sprays olfativos).
-8. **`Compressor`** (Compressores de ar e sistemas pneumáticos).
-9. **`Externo`** (Tratamento de lataria, pneus, vidros, caixas de roda, plásticos externos).
-10. **`Extratoras`** (Máquinas extratoras e lavadoras de estofados).
-11. **`Interno`** (Higienização de couro, tecidos, painéis, plásticos internos).
-12. **`Kit de Produtos`** (Combos promocionais, kits de polimento, kits lavagem rápida).
+1. **`Marca` (Filtro Especial Dinâmico com Flyout no Hover / BottomSheet Mobile):**
+   * Ao passar o cursor (hover) sobre a pílula "Marcas", abre-se o Flyout flutuante (*Glassmorphism*). No mobile, abre-se uma Bottom Sheet moderna.
+   * Exibe o grid com **todas as marcas cadastradas** da loja ativa com seus respectivos logos e contagens de produtos.
+2. **`Externo`** (167 produtos: lataria, pneus, vidros, caixas de roda, plásticos externos, shampoos, desengraxantes).
+3. **`Acessórios`** (127 produtos: toalhas de secagem, toalhas claybar, pincéis, borrifadores, aplicadores, microfibras, canhões de espuma).
+4. **`Ceras e Selantes`** (69 produtos: ceras carnaúba, selantes sintéticos, vitrificadores/cerâmicos, SiO2).
+5. **`Interno`** (52 produtos: higienização de couro, tecidos, painéis, plásticos internos, APCs, neutralizadores de odor).
+6. **`Boinas`** (25 produtos: boinas de lã, espuma, microfibra para corte, refino e lustro, pratos e interfaces).
+7. **`Kit de Produtos`** (15 produtos: combos promocionais, trios e kits de tratamento).
+8. **`Cheirinho Para Carro`** (8 produtos: aromatizantes, odorizadores, sprays olfativos, Little Trees).
+9. **`Aspiradores`** (5 produtos: aspiradores de pó e líquidos automotivos / profissionais e bocais).
+10. **`Compressor`** (3 produtos: compressores de ar, tornadores e sistemas pneumáticos).
+11. **`Extratoras`** (3 produtos: máquinas extratoras e lavadoras de estofados).
+*(Nota: A etiqueta fantasma `AIRLESS` foi permanentemente removida por não possuir produtos no nicho de estética automotiva).*
 
 ### 1.3. Posicionamento e Redesenho da Área Superior do Catálogo
 * **Substituição das Frases Existentes:** As frases `"Catálogo Online"` e `"Coleção Completa"` serão retiradas da dobra do catálogo (`#catalogo`).

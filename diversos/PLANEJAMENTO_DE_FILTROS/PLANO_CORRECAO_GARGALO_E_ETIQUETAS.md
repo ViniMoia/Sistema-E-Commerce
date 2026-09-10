@@ -97,23 +97,27 @@ flowchart TD
 * **MCPs:** `puppeteer` / browser subagent.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 6.
 
-#### Etapa 6: Governança no MCP Memory & Documentação Final
+#### [CONCLUÍDA] Etapa 6: Governança no MCP Memory & Documentação Final
 * **Objetivo:** Registrar a nova árvore de categorias no grafo vetorial de memória (`ruflo memory store`) e atualizar o relatório consolidado no `walkthrough.md`.
+* **Resultados Obtidos:**
+  - Taxonomia real persistida no MCP Ruflo Memory (`catalog_filter_taxonomy`, vetor 384-dim).
+  - Arquitetura de mitigação do gargalo persistida no MCP Ruflo Memory (`catalog_ssr_bottleneck_architecture`, vetor 384-dim).
+  - Relatório final compilado e documentação técnica atualizada em [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) e [`ARQUITETURA_SISTEMA_FILTROS.md`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/diversos/PLANEJAMENTO_DE_FILTROS/ARQUITETURA_SISTEMA_FILTROS.md).
 * **MCPs:** `memory`.
 
 ---
 
 ## 4. Tabela Resumo das Etapas
 
-| Etapa | Foco Técnico | Arquivos Impactados | Status / Condição para Início |
+| Etapa | Foco Técnico | Arquivos Impactados | Status |
 | :--- | :--- | :--- | :--- |
 | **Etapa 1** | Taxonomia Real & Seed DB | Script de tags Prisma, Banco PostgreSQL | **[CONCLUÍDA]** Commit `ccba7c3` |
 | **Etapa 2** | Eliminação do Gargalo de 20 Produtos | [`product.service.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/services/product.service.ts), [`app/page.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/app/page.tsx) | **[CONCLUÍDA]** Commit `b855ad3` |
 | **Etapa 3** | Pílulas e Hooks do Frontend | [`FilterTagPills.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/FilterTagPills.tsx), [`useProductFilters.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/hooks/useProductFilters.ts) | **[CONCLUÍDA]** Commit `cf008b9` |
 | **Etapa 4** | Segurança Ruflo & Build | Scanner Ruflo, `next build` | **[CONCLUÍDA]** Commit `2c51a15` |
-| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | **[CONCLUÍDA]** Desktop & Mobile 100% validados |
-| **Etapa 6** | Governança Memory & Docs | MCP Memory, [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) | **Aguardando sua autorização explícita** |
+| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | **[CONCLUÍDA]** Commit `5d82fdf` |
+| **Etapa 6** | Governança Memory & Docs | MCP Memory, [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) | **[CONCLUÍDA]** 100% do plano executado com sucesso |
 
 ---
 
-> **Status Atual:** Etapa 5 concluída com sucesso (testes E2E validados em Desktop e Mobile com screenshots). Aguardando autorização do usuário para iniciar a **Etapa 6**.
+> **Status Final do Plano:** Todas as 6 etapas foram rigorosamente concluídas, validadas e aprovadas. O problema das etiquetas vazias e do gargalo de 20 produtos está **100% resolvido**.
