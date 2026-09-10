@@ -11,6 +11,7 @@ export interface GetProductsFilters {
   page?: number;
   limit?: number;
   cursor?: string;
+  all?: boolean;
 }
 
 export interface CreateProductInput {
@@ -48,10 +49,12 @@ export interface UpdateProductInput {
  * Limite máximo rígido de 100 itens por página.
  */
 export async function getProducts(filters: GetProductsFilters = {}) {
-  const { name, minPrice, maxPrice, lojaId, brandSlug, tags, page, limit, cursor } = filters;
+  const { name, minPrice, maxPrice, lojaId, brandSlug, tags, page, limit, cursor, all } = filters;
 
-  const take = Math.min(Math.max(1, limit ? Number(limit) : 20), 100);
-  const skip = cursor ? 1 : page ? (Math.max(1, Number(page)) - 1) * take : 0;
+  // Se all for true (usado pelo SSR interno da vitrine da loja), desativa o teto de paginação.
+  // Caso contrário, impõe paginação protegida contra DoS (Finding SCL-001) com teto rígido de 100 itens.
+  const take = all ? undefined : Math.min(Math.max(1, limit ? Number(limit) : 20), 100);
+  const skip = all ? undefined : cursor ? 1 : page ? (Math.max(1, Number(page)) - 1) * (take || 20) : 0;
 
   const where: Prisma.ProductWhereInput = {
     ...(name ? { name: { contains: name, mode: "insensitive" } } : {}),

@@ -13,7 +13,7 @@ export default async function EcommerceHomepage() {
 
   // Fetch store products and brands on the server side
   const [products, brands] = await Promise.all([
-    getProducts({ lojaId: activeLoja.id }),
+    getProducts({ lojaId: activeLoja.id, all: true }),
     getBrandsWithProductCount({ lojaId: activeLoja.id }),
   ]);
 
