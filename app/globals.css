@@ -308,3 +308,12 @@ html, body {
     font-size: 11px;
   }
 }
+
+/* Ocultar barra de rolagem nativa mantendo funcionalidade de scroll */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

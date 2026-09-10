@@ -22,6 +22,8 @@ model Loja {
   user                 User[]
   orders               Order[]
   products             Product[]
+  brands               Brand[]
+  categoryTags         CategoryTag[]
   primaryColor         String?   @default("#DDAF02")
   secondaryColor       String?   @default("#050505")
   customDomain         String?   @unique
@@ -139,9 +141,14 @@ model Product {
   cartItem            CartItem[]
   productVariants     ProductVariants[]
   orderItems          OrderItem[]
+  brandID             String?
+  brand               Brand?            @relation(fields: [brandID], references: [id], onDelete: SetNull)
+  categoryTags        ProductCategoryTag[]
+  tagsSearchCache     String[]          @default([])
 
   @@index([lojaID])
   @@index([lojaID, sku])
+  @@index([lojaID, brandID])
   @@index([nuvemshopProductId])
   @@index([createdAt])
 }
@@ -429,5 +436,88 @@ model LoyaltyTransaction {
   @@index([lojaID, userID])
   @@index([orderId])
   @@index([createdAt])
+}
+
+// ─── Brands and Catalog Filters ──────────────────────────────────
+model Brand {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  slug        String    @db.VarChar(100)
+  logoUrl     String?
+  description String?   @db.Text
+  websiteUrl  String?
+  isActive    Boolean   @default(true)
+  lojaID      String
+  loja        Loja      @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([lojaID, slug])
+  @@index([lojaID])
+  @@index([lojaID, isActive])
+}
+
+model CategoryTag {
+  id          String               @id @default(uuid())
+  name        String               @db.VarChar(80)
+  slug        String               @db.VarChar(80)
+  group       String               @default("GERAL")
+  icon        String?
+  order       Int                  @default(0)
+  lojaID      String
+  loja        Loja                 @relation(fields: [lojaID], references: [id], onDelete: Cascade)
+  products    ProductCategoryTag[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([lojaID, slug])
+  @@index([lojaID])
+  @@index([lojaID, order])
+}
+
+model ProductCategoryTag {
+  productID     String
+  product       Product     @relation(fields: [productID], references: [id], onDelete: Cascade)
+  categoryTagID String
+  categoryTag   CategoryTag @relation(fields: [categoryTagID], references: [id], onDelete: Cascade)
+
+  @@id([productID, categoryTagID])
+  @@index([categoryTagID])
+  @@index([productID])
+}
+
+// ─── Logística e Frete (J&T Express) ──────────────────────────────
+model JtExpressGeocom {
+  id           String   @id @default(uuid())
+  state        String   @db.VarChar(2)
+  cityPattern  String?
+  cepStart     String   @db.VarChar(8)
+  cepEnd       String   @db.VarChar(8)
+  geocomCode   String
+  deliveryDays Int      @default(3)
+  isRiskZone   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([cepStart, cepEnd])
+  @@index([geocomCode])
+  @@index([state])
+}
+
+model JtExpressRate {
+  id                String   @id @default(uuid())
+  geocom            String
+  macroRegion       String
+  weightMin         Decimal  @db.Decimal(8, 3)
+  weightMax         Decimal  @db.Decimal(8, 3)
+  basePrice         Decimal  @db.Decimal(10, 2)
+  additionalKgPrice Decimal? @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([geocom, weightMin, weightMax])
+  @@index([geocom])
+  @@index([geocom, weightMin, weightMax])
 }
 

@@ -12,9 +12,19 @@ export const productFiltersSchema = z.object({
   minPrice: z.coerce.number().optional(),
   maxPrice: z.coerce.number().optional(),
   lojaId: z.string().optional(),
+  brandSlug: z.string().optional(),
+  tags: z
+    .union([
+      z.array(z.string()),
+      z.string().transform((str) => str.split(",").map((s) => s.trim()).filter(Boolean))
+    ])
+    .optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(24),
+  sortBy: z.enum(["relevance", "price_asc", "price_desc", "newest"]).optional().default("newest"),
 });
+
+export const catalogFilterQuerySchema = productFiltersSchema;
 
 export const createProductSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),

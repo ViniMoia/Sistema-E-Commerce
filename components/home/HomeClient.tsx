@@ -5,6 +5,8 @@ import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
 import { getOptimizedImageUrl } from "@/lib/utils";
 import HeroVideo from "./HeroVideo";
+import { CatalogFilterBar } from "@/components/catalog/CatalogFilterBar";
+import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 
 // Types
 interface ProductVariant {
@@ -23,6 +25,9 @@ interface Product {
   stock: number;
   galleryUrls?: string[];
   productVariants?: ProductVariant[];
+  brandName?: string | null;
+  brandSlug?: string | null;
+  tags?: string[];
 }
 
 interface LojaInfo {
@@ -50,9 +55,11 @@ const Icons = {
 
 export default function HomeClient({
   initialProducts,
+  initialBrands = [],
   lojaInfo
 }: {
   initialProducts: Product[];
+  initialBrands?: BrandSummary[];
   lojaInfo: LojaInfo | null;
 }) {
   const [products] = useState<Product[]>(initialProducts);
@@ -62,8 +69,60 @@ export default function HomeClient({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { addToCart, isLoading: isAddingToCart } = useCartStore();
   const { setIsOpen } = useCart();
+
+  const handleToggleTag = (slug: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug]
+    );
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedBrand(null);
+    setSelectedTags([]);
+    setSearchQuery("");
+  };
+
+  const TAG_REGEX: Record<string, RegExp> = {
+    "acessorios": /\b(APLICADOR|ESCOVA|PINCEL|MICROFIBRA|PULVERIZADOR|BORRIFADOR|SNOW FOAM|ADAPTADOR|FITA|LUVAS|ESPONJA|BALDE|GRELHA|PANO)\b/i,
+    "airless": /\b(AIRLESS|PISTOLA DE PINTURA|BICO AIRLESS|PULVERIZADOR DE ALTA PRESSAO)\b/i,
+    "aspiradores": /\b(ASPIRADOR|ECOCLEAN|LITE 1200W|PO E AGUA|ASPIRACAO)\b/i,
+    "boinas": /\b(BOINA|CORTE|REFINO|LUSTRO|ESPUMA|LÃ|INTERFACE|HEX)\b/i,
+    "ceras-e-selantes": /\b(CERA|SELANTE|GRAFENO|VITRIFICADOR|SIO2|COATING|ROOTZ|BLEND|NATIVE|CARNAUBA|GLAZE)\b/i,
+    "cheirinho-para-carro": /\b(AROMATIZANTE|CHEIRINHO|ODORIZADOR|SPRAY OLFATIVO|FRAGRANCIA|ESSENCIA|PERFUME|LITTLE TREES)\b/i,
+    "compressor": /\b(COMPRESSOR|PNEUMATICO|MANGUEIRA AR|CALIBRADOR)\b/i,
+    "externo": /\b(PNEUS|RODAS|LATARIA|VIDROS|CHASSI|MOTOR|ALUMAX|DESINCRUSTANTE|ACIDO|SHAMPOO|LAVA AUTOS|VERNIZ DE MOTOR|RESTAURADOR DE PLASTICOS|V-PLASTIC|DELET|D-RET)\b/i,
+    "extratoras": /\b(EXTRATORA|LAVADORA DE ESTOFADOS|IPC CARPET|SANITIZADORA|LAVA ESTOFADOS)\b/i,
+    "interno": /\b(COURO|PAINEL|PLASTICOS INTERNOS|ESTOFADOS|HIGIENIZADOR|APC INTERIORES|SINTRA|BACTRON|FLOAT|PLURI)\b/i,
+    "kit-de-produtos": /\b(KIT|COMBO|TRIO|CONJUNTO|PCT|PACK)\b/i,
+  };
+
+  const BRAND_REGEX: Record<string, RegExp> = {
+    "vonixx": /\b(VONIXX|ROOTZ|SINTRA|BLEND|NATIVE|DELET|ALUMAX|PRISMA|V-PLASTIC|V-LIGHT|V-PAINT|V-ENERGY|VERONA)\b/i,
+    "easytech": /\b(EASYTECH|EASY TECH|INSIGNIA|PLASTI COAT|QUARTZ 9H|FLOAT|ZAP|MELT)\b/i,
+    "cadillac": /\b(CADILLAC|CADMIX|MONSTER CARNAUBA|BLACK MAGIC)\b/i,
+    "lincoln": /\b(LINCOLN|POLIDOR LINCOLN|BOINA LINCOLN)\b/i,
+    "kers": /\b(KERS|POLITRIZ KERS)\b/i,
+    "nobrecar": /\b(NOBRECAR|NOBRE CAR)\b/i,
+    "zacs": /\b(ZACS)\b/i,
+    "ipc": /\b(IPC|ECOCLEAN|CARPET)\b/i,
+    "karcher": /\b(KARCHER|KÄRCHER)\b/i,
+    "wap": /\b(WAP)\b/i,
+  };
+
+  // Contagem dinâmica por marca para o Flyout
+  const brandsWithCounts = React.useMemo(() => {
+    return initialBrands.map((b) => {
+      const count = products.filter((p) => {
+        const text = `${p.name} ${p.description || ""}`;
+        return p.brandSlug === b.slug || BRAND_REGEX[b.slug]?.test(text);
+      }).length;
+      return { ...b, productCount: count > 0 ? count : b.productCount };
+    });
+  }, [initialBrands, products]);
 
   // Sync active image when product opens
   useEffect(() => {
@@ -308,10 +367,37 @@ export default function HomeClient({
   }
 
   // --- HOMEPAGE VIEW ---
-  const filteredProducts = products.filter(prod => 
-    prod.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    prod.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((prod) => {
+    const text = `${prod.name} ${prod.description || ""}`;
+
+    // 1. Busca textual
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        prod.name.toLowerCase().includes(q) ||
+        prod.description.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+
+    // 2. Filtro de Marca
+    if (selectedBrand) {
+      const hasDbBrand = prod.brandSlug === selectedBrand;
+      const hasRegexBrand = BRAND_REGEX[selectedBrand]?.test(text);
+      if (!hasDbBrand && !hasRegexBrand) return false;
+    }
+
+    // 3. Filtro de Tags (Cumulativo / Inclusivo)
+    if (selectedTags.length > 0) {
+      const matchesAnyTag = selectedTags.some((tagSlug) => {
+        const hasDbTag = prod.tags?.includes(tagSlug);
+        const hasRegexTag = TAG_REGEX[tagSlug]?.test(text);
+        return hasDbTag || hasRegexTag;
+      });
+      if (!matchesAnyTag) return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30 fade-in">
@@ -322,42 +408,17 @@ export default function HomeClient({
       {/* Product List Showcase */}
       <section id="catalogo" className="px-6 md:px-12 py-24 md:py-32 bg-catalog-bg relative z-20">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between border-b border-catalog-gold/30 pb-8 animate-in" style={{ animationDelay: '0.1s' }}>
-            <div>
-              <span className="text-catalog-gold text-xs font-mono tracking-[0.2em] uppercase font-bold">Catálogo Online</span>
-              <h3 className="text-4xl md:text-5xl font-semibold tracking-tighter text-catalog-text mt-3">Coleção Completa</h3>
-            </div>
-            
-            <div className="mt-6 md:mt-0 w-full md:w-auto">
-              {/* Search Bar */}
-              <div className="relative w-full md:w-80 group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-catalog-muted group-focus-within:text-catalog-gold transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Buscar produtos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-catalog-card/80 border border-catalog-gold/30 text-catalog-text text-sm rounded-full pl-11 pr-10 py-2.5 focus:outline-none focus:border-catalog-gold/60 focus:bg-catalog-card transition-all placeholder:text-catalog-muted"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-catalog-muted hover:text-catalog-text transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Catalog Filter Bar (Pills, Brand Hover Flyout & Search) */}
+          <CatalogFilterBar
+            brands={brandsWithCounts}
+            selectedBrand={selectedBrand}
+            onSelectBrand={setSelectedBrand}
+            selectedTags={selectedTags}
+            onToggleTag={handleToggleTag}
+            onClearAll={handleClearAllFilters}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
 
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
@@ -411,14 +472,14 @@ export default function HomeClient({
               </div>
               <h4 className="text-2xl font-semibold text-catalog-text mb-3">Nenhum produto encontrado</h4>
               <p className="text-catalog-muted max-w-md mx-auto leading-relaxed text-sm">
-                Não encontramos nenhum produto em nosso catálogo que corresponda a "<span className="text-catalog-text font-medium">{searchQuery}</span>".
-                Verifique a ortografia ou use termos mais amplos.
+                Não encontramos nenhum produto que corresponda aos filtros ou termos pesquisados.
+                Tente selecionar outra marca, remover algumas etiquetas ou usar termos mais amplos.
               </p>
               <button 
-                onClick={() => setSearchQuery("")}
+                onClick={handleClearAllFilters}
                 className="mt-8 px-8 py-3 rounded-full border border-catalog-gold/45 text-catalog-text hover:bg-catalog-gold/10 hover:border-catalog-gold transition-all shadow-sm text-sm"
               >
-                Limpar Busca
+                Limpar Todos os Filtros
               </button>
             </div>
           )}
