@@ -139,28 +139,30 @@ flowchart TD
 
 ---
 
-### Etapa 6: Governança no MCP Memory & Documentação Consolidada
+### [CONCLUÍDA] Etapa 6: Governança no MCP Memory & Documentação Consolidada
 * **Contexto:**
   Consolidar a arquitetura e persistir o conhecimento no grafo permanente.
-* **Ações da Etapa 6:**
-  1. Persistir no MCP Memory (`ruflo memory store`):
-     - Entidade `product_freight_calculator_architecture` com os parâmetros operacionais, tabelas de frete vinculadas e fluxo de dados anônimo.
-  2. Atualizar o relatório consolidado em [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md).
+* **Ações Realizadas na Etapa 6:**
+  1. **Persistência no MCP Memory (`ruflo memory store`):**
+     - Registrada a entidade `architecture/product_freight_calculator` com os parâmetros do fluxo anônimo, JtExpressProvider, tabelas PostgreSQL associadas e especificações do componente UI (vetor 384-dim, ID `entry_1789068137433_`).
+  2. **Documentação Consolidada Atualizada:**
+     - Relatório completo com arquitetura em mermaid, tabela resumo e evidências visuais em [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md).
 * **MCPs Utilizados:** `memory`.
+* **Portão de Parada:** Todas as 6 etapas foram 100% concluídas com sucesso.
 
 ---
 
 ## 5. Tabela Resumo das Etapas
 
-| Etapa | Foco Técnico | Arquivos Impactados | Condição para Início |
+| Etapa | Foco Técnico | Arquivos Impactados | Status Final |
 | :--- | :--- | :--- | :--- |
 | **Etapa 1** | Motor J&T Express no Backend | `services/freight/providers/jt-express.provider.ts`, `services/freight/orchestrator.service.ts` | **[CONCLUÍDA]** |
 | **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts` | **[CONCLUÍDA]** |
 | **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **[CONCLUÍDA]** |
 | **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | **[CONCLUÍDA]** |
 | **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | **[CONCLUÍDA]** |
-| **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | **Aguardando sua autorização explícita** |
+| **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | **[CONCLUÍDA]** |
 
 ---
 
-> **Aviso:** Nenhuma linha de código foi modificada. O projeto permanece intacto. Aguardo sua avaliação e autorização para darmos início à **Etapa 1**.
+> **Status Final:** O projeto foi atualizado, testado e aprovado em 100% das 6 etapas planejadas. Todas as funcionalidades encontram-se em pleno funcionamento.
