@@ -51,7 +51,7 @@ flowchart TD
 
 ---
 
-### Fase 2: Deep Linking e Sincronização Bidirecional com a URL (SEO & Compartilhamento)
+### [CONCLUÍDA] Fase 2: Deep Linking e Sincronização Bidirecional com a URL (SEO & Compartilhamento)
 
 * **Problema Identificado:**
   Quando o usuário clica em marcas ou tags, a seleção ocorre apenas em memória local do React. A URL permanece estática (`#catalogo`). Se o lojista ou cliente copiar a URL ou compartilhá-la em redes sociais e WhatsApp, os filtros aplicados se perdem.
