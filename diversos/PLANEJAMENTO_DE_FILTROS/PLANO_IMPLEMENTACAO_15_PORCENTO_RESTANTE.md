@@ -31,7 +31,7 @@ flowchart TD
 
 ---
 
-### Fase 1: Desacoplamento Arquitetural & Princípio da Responsabilidade Única (SOLID / SRP)
+### [CONCLUÍDA] Fase 1: Desacoplamento Arquitetural & Princípio da Responsabilidade Única (SOLID / SRP)
 
 * **Problema Identificado:**
   A lógica de estado dos filtros (`selectedBrand`, `selectedTags`, `searchQuery`), os dicionários de Regex de marcas e tags, a contagem dinâmica de produtos (`brandsWithCounts`) e o filtro em memória (`filteredProducts`) residem diretamente no corpo de [`components/home/HomeClient.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/home/HomeClient.tsx).
