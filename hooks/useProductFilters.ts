@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 
 export interface FilterableProduct {
@@ -25,6 +25,7 @@ export interface FilterableProduct {
 export interface UseProductFiltersOptions {
   initialProducts: FilterableProduct[];
   initialBrands?: BrandSummary[];
+  enableUrlSync?: boolean;
 }
 
 export interface UseProductFiltersReturn {
@@ -80,17 +81,143 @@ const BRAND_REGEX: Record<string, RegExp> = {
 };
 
 /**
+ * Utilitário seguro para extração de parâmetros de filtros a partir da URL.
+ * Trata tanto query params padrão (?marca=...) quanto params acoplados ao hash (#catalogo?marca=...).
+ */
+function extractFiltersFromLocation(): {
+  brand: string | null;
+  tags: string[];
+  search: string;
+} {
+  if (typeof window === "undefined") {
+    return { brand: null, tags: [], search: "" };
+  }
+
+  // 1. Query params padrão (?marca=...)
+  let searchParams = new URLSearchParams(window.location.search);
+
+  // 2. Suporte resiliente a query após hash (#catalogo?marca=...)
+  if (!searchParams.toString() && window.location.hash.includes("?")) {
+    const hashQuery = window.location.hash.split("?")[1];
+    if (hashQuery) {
+      searchParams = new URLSearchParams(hashQuery);
+    }
+  }
+
+  const brand =
+    searchParams.get("marca") ||
+    searchParams.get("brand") ||
+    searchParams.get("brandSlug") ||
+    null;
+
+  const rawTags =
+    searchParams.getAll("tags").concat(searchParams.getAll("tag")).join(",");
+  const tags = rawTags
+    ? rawTags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+
+  const search =
+    searchParams.get("busca") ||
+    searchParams.get("search") ||
+    searchParams.get("q") ||
+    "";
+
+  return {
+    brand: brand ? brand.toLowerCase().trim() : null,
+    tags,
+    search: search.trim(),
+  };
+}
+
+/**
  * Hook de domínio responsável exclusivamente pela lógica de filtragem,
- * contadores de marcas e busca textual do catálogo de produtos (SRP).
+ * contadores de marcas, busca textual e sincronização bidirecional com a URL (SRP & Deep Linking).
  */
 export function useProductFilters({
   initialProducts,
   initialBrands = [],
+  enableUrlSync = true,
 }: UseProductFiltersOptions): UseProductFiltersReturn {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const isHydratedRef = useRef(false);
 
+  // ─── 1. Deep Linking: Leitura Inicial dos Parâmetros da URL na Montagem ──────
+  useEffect(() => {
+    if (typeof window === "undefined" || !enableUrlSync) return;
+
+    const initial = extractFiltersFromLocation();
+
+    if (initial.brand) {
+      setSelectedBrand(initial.brand);
+    }
+    if (initial.tags.length > 0) {
+      setSelectedTags(initial.tags);
+    }
+    if (initial.search) {
+      setSearchQuery(initial.search);
+    }
+
+    isHydratedRef.current = true;
+  }, [enableUrlSync]);
+
+  // ─── 2. Sincronização Reativa Bidirecional: Estado -> URL (replaceState) ─────
+  useEffect(() => {
+    if (typeof window === "undefined" || !enableUrlSync || !isHydratedRef.current) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+
+      if (selectedBrand) {
+        params.set("marca", selectedBrand);
+      }
+      if (selectedTags.length > 0) {
+        params.set("tags", selectedTags.join(","));
+      }
+      if (searchQuery.trim()) {
+        params.set("busca", searchQuery.trim());
+      }
+
+      const queryString = params.toString();
+      const currentHash = window.location.hash.split("?")[0] || "#catalogo";
+      const pathname = window.location.pathname;
+
+      const newUrl = queryString
+        ? `${pathname}?${queryString}${currentHash}`
+        : `${pathname}${currentHash}`;
+
+      const currentFullUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+      if (currentFullUrl !== newUrl) {
+        window.history.replaceState(null, "", newUrl);
+      }
+    }, 180);
+
+    return () => clearTimeout(timer);
+  }, [selectedBrand, selectedTags, searchQuery, enableUrlSync]);
+
+  // ─── 3. Suporte ao Histórico do Navegador (Botões Voltar/Avançar) ───────────
+  useEffect(() => {
+    if (typeof window === "undefined" || !enableUrlSync) return;
+
+    const handlePopState = () => {
+      const updated = extractFiltersFromLocation();
+      setSelectedBrand(updated.brand);
+      setSelectedTags(updated.tags);
+      setSearchQuery(updated.search);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [enableUrlSync]);
+
+  // ─── 4. Handlers de Ação de Filtros ─────────────────────────────────────────
   const handleToggleTag = useCallback((slug: string) => {
     setSelectedTags((prev) =>
       prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug]
@@ -103,7 +230,7 @@ export function useProductFilters({
     setSearchQuery("");
   }, []);
 
-  // Contagem dinâmica e em tempo real por marca para exibição precisa no Flyout
+  // ─── 5. Contagem dinâmica e em tempo real por marca para o Flyout ────────────
   const brandsWithCounts = useMemo(() => {
     return initialBrands.map((b) => {
       const count = initialProducts.filter((p) => {
@@ -114,7 +241,7 @@ export function useProductFilters({
     });
   }, [initialBrands, initialProducts]);
 
-  // Cálculo derivado dos produtos filtrados
+  // ─── 6. Cálculo derivado dos produtos filtrados ──────────────────────────────
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((prod) => {
       const text = `${prod.name} ${prod.description || ""}`;
