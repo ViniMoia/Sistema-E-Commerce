@@ -34,7 +34,7 @@ export function BrandHoverFlyout({
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="absolute top-full left-0 mt-3 z-50 w-[92vw] max-w-xl sm:max-w-2xl bg-[#0B132B]/95 backdrop-blur-2xl border border-catalog-gold/40 rounded-2xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-200"
+      className="hidden md:block absolute top-full left-0 mt-3 z-50 w-[92vw] max-w-xl sm:max-w-2xl bg-[#0B132B]/95 backdrop-blur-2xl border border-catalog-gold/40 rounded-2xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-200"
       style={{
         boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(184, 160, 106, 0.15)",
       }}

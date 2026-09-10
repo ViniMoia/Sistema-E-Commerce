@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { BrandHoverFlyout, BrandSummary } from "./BrandHoverFlyout";
+import { BrandBottomSheet } from "./BrandBottomSheet";
 
 export interface TagOption {
   slug: string;
@@ -39,12 +40,14 @@ export function FilterTagPills({
   onToggleTag,
   onClearAll,
 }: FilterTagPillsProps) {
-  const [isFlyoutOpen, setIsFlyoutOpen] = React.useState(false);
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const selectedBrandObj = brands.find((b) => b.slug === selectedBrand);
 
   const handleMouseEnter = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
       setIsFlyoutOpen(true);
@@ -52,10 +55,19 @@ export function FilterTagPills({
   };
 
   const handleMouseLeave = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
       setIsFlyoutOpen(false);
     }, 200);
+  };
+
+  const handleBrandButtonClick = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsBottomSheetOpen(true);
+    } else {
+      setIsFlyoutOpen((prev) => !prev);
+    }
   };
 
   const hasActiveFilters = Boolean(selectedBrand || selectedTags.length > 0);
@@ -69,15 +81,15 @@ export function FilterTagPills({
         onMouseLeave={handleMouseLeave}
       >
         <button
-          onClick={() => setIsFlyoutOpen((prev) => !prev)}
+          onClick={handleBrandButtonClick}
           className={`h-9 px-4 rounded-full border text-xs font-mono tracking-wider uppercase transition-all duration-200 flex items-center gap-2 select-none ${
             selectedBrand
               ? "bg-catalog-gold/25 border-catalog-gold text-catalog-gold font-bold shadow-[0_0_15px_rgba(184,160,106,0.3)]"
-              : isFlyoutOpen
+              : isFlyoutOpen || isBottomSheetOpen
               ? "bg-catalog-card border-catalog-gold text-white"
               : "bg-catalog-card/80 border-catalog-gold/30 text-catalog-muted hover:border-catalog-gold/60 hover:text-white"
           }`}
-          aria-expanded={isFlyoutOpen}
+          aria-expanded={isFlyoutOpen || isBottomSheetOpen}
           aria-haspopup="true"
         >
           <span>{selectedBrandObj ? `Marca: ${selectedBrandObj.name}` : "Marca"}</span>
@@ -92,14 +104,14 @@ export function FilterTagPills({
             strokeLinecap="round"
             strokeLinejoin="round"
             className={`transition-transform duration-200 ${
-              isFlyoutOpen ? "rotate-180 text-catalog-gold" : ""
+              isFlyoutOpen || isBottomSheetOpen ? "rotate-180 text-catalog-gold" : ""
             }`}
           >
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
 
-        {/* Janela Flutuante de Marcas */}
+        {/* Janela Flutuante de Marcas (Desktop ≥ 768px) */}
         <BrandHoverFlyout
           brands={brands}
           selectedBrand={selectedBrand}
@@ -112,6 +124,15 @@ export function FilterTagPills({
           onMouseLeave={handleMouseLeave}
         />
       </div>
+
+      {/* Gaveta Inferior de Marcas (Mobile < 768px) */}
+      <BrandBottomSheet
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        brands={brands}
+        selectedBrand={selectedBrand}
+        onSelectBrand={onSelectBrand}
+      />
 
       {/* Separador vertical sutil */}
       <div className="h-5 w-px bg-catalog-gold/30 shrink-0 hidden sm:block" />
