@@ -10,17 +10,16 @@ export interface TagOption {
 }
 
 export const CATALOG_TAGS: TagOption[] = [
-  { slug: "acessorios", name: "Acessórios" },
-  { slug: "airless", name: "AIRLESS" },
-  { slug: "aspiradores", name: "Aspiradores" },
-  { slug: "boinas", name: "Boinas" },
-  { slug: "ceras-e-selantes", name: "Ceras e Selantes" },
-  { slug: "cheirinho-para-carro", name: "Cheirinho Para Carro" },
-  { slug: "compressor", name: "Compressor" },
   { slug: "externo", name: "Externo" },
-  { slug: "extratoras", name: "Extratoras" },
+  { slug: "acessorios", name: "Acessórios" },
+  { slug: "ceras-e-selantes", name: "Ceras e Selantes" },
   { slug: "interno", name: "Interno" },
+  { slug: "boinas", name: "Boinas" },
   { slug: "kit-de-produtos", name: "Kit de Produtos" },
+  { slug: "cheirinho-para-carro", name: "Cheirinho Para Carro" },
+  { slug: "aspiradores", name: "Aspiradores" },
+  { slug: "compressor", name: "Compressor" },
+  { slug: "extratoras", name: "Extratoras" },
 ];
 
 interface FilterTagPillsProps {
