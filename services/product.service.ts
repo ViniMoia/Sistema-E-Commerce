@@ -6,6 +6,8 @@ export interface GetProductsFilters {
   minPrice?: number;
   maxPrice?: number;
   lojaId?: string;
+  brandSlug?: string;
+  tags?: string[];
   page?: number;
   limit?: number;
   cursor?: string;
@@ -46,7 +48,7 @@ export interface UpdateProductInput {
  * Limite máximo rígido de 100 itens por página.
  */
 export async function getProducts(filters: GetProductsFilters = {}) {
-  const { name, minPrice, maxPrice, lojaId, page, limit, cursor } = filters;
+  const { name, minPrice, maxPrice, lojaId, brandSlug, tags, page, limit, cursor } = filters;
 
   const take = Math.min(Math.max(1, limit ? Number(limit) : 20), 100);
   const skip = cursor ? 1 : page ? (Math.max(1, Number(page)) - 1) * take : 0;
@@ -62,6 +64,15 @@ export async function getProducts(filters: GetProductsFilters = {}) {
         }
       : {}),
     ...(lojaId ? { lojaID: lojaId } : {}),
+    ...(brandSlug ? { brand: { slug: brandSlug } } : {}),
+    ...(tags && tags.length > 0
+      ? {
+          OR: [
+            { categoryTags: { some: { categoryTag: { slug: { in: tags } } } } },
+            { tagsSearchCache: { hasSome: tags } },
+          ],
+        }
+      : {}),
   };
 
   return await prisma.product.findMany({
@@ -71,6 +82,12 @@ export async function getProducts(filters: GetProductsFilters = {}) {
     cursor: cursor ? { id: cursor } : undefined,
     include: {
       productVariants: true,
+      brand: true,
+      categoryTags: {
+        include: {
+          categoryTag: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
