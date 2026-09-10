@@ -20,6 +20,7 @@ export interface FilterableProduct {
   brandName?: string | null;
   brandSlug?: string | null;
   tags?: string[];
+  lojaID?: string;
 }
 
 export interface UseProductFiltersOptions {

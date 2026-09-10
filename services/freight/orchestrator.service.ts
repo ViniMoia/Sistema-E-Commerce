@@ -68,8 +68,8 @@ export class FreightOrchestratorService {
     const cartTotal = params.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0);
     const itemsCount = params.items.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
-    // 3. Cache identifier: destino + peso + volume
-    const cacheKey = `${cleanDestCep}_w${packages.weightInGrams}_v${packages.lengthCm}x${packages.widthCm}x${packages.heightCm}`;
+    // 3. Cache identifier: versão + destino + peso + volume
+    const cacheKey = `v2_${cleanDestCep}_w${packages.weightInGrams}_v${packages.lengthCm}x${packages.widthCm}x${packages.heightCm}`;
 
     const cachedOptions = await tenantCache.getOrSet(
       params.lojaID,

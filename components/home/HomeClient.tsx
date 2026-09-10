@@ -8,6 +8,7 @@ import HeroVideo from "./HeroVideo";
 import { CatalogFilterBar } from "@/components/catalog/CatalogFilterBar";
 import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters";
+import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
 
 export type Product = FilterableProduct;
 
@@ -300,6 +301,15 @@ export default function HomeClient({
                   <Icons.ShoppingBag className="w-5 h-5" />
                   <span>{isAddingToCart ? 'Adicionando...' : 'Finalizar Compra'}</span>
                 </button>
+              </div>
+
+              {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) */}
+              <div className="pt-2">
+                <ProductFreightCalculator
+                  productId={selectedProduct.id}
+                  price={selectedProduct.price}
+                  lojaID={selectedProduct.lojaID}
+                />
               </div>
             </div>
           </div>

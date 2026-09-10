@@ -85,28 +85,20 @@ flowchart TD
 
 ---
 
-### Etapa 3: Criação do Componente Visual e Integração no Perfil do Produto
+### [CONCLUÍDA] Etapa 3: Criação do Componente Visual e Integração no Perfil do Produto
 * **Contexto:**
-  A visualização do produto em [`components/home/HomeClient.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/home/HomeClient.tsx) exibe os detalhes do produto selecionado. O usuário solicitou uma área no perfil do produto para digitar o CEP e calcular o frete sem precisar de cadastro.
-* **Ações da Etapa 3:**
-  1. Criar o componente [`components/catalog/ProductFreightCalculator.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/ProductFreightCalculator.tsx):
-     - **Card em Glassmorphism Dark & Gold:** Borda sutil em tom dourado (`border-catalog-gold/30`), fundo escuro translúcido com cantos arredondados (`rounded-2xl`).
-     - **Área de Entrada do CEP:**
-       - Campo de texto com máscara automática: `00000-000`.
-       - Ícone vetorial de caminhão/logística.
-       - Botão dourado com efeito shimmer *"Calcular Frete"*.
-       - Link sutil *"Não sei meu CEP"* direcionando ao Busca CEP oficial dos Correios em nova aba.
-     - **Identificação de Localidade:** Chamada leve a serviço de CEP exibindo a cidade e estado identificados (ex: *"Entrega para Ananindeua - PA"* ou *"Entrega para São Paulo - SP"*).
-     - **Lista de Opções de Frete:**
-       - Card para cada modalidade (ex: `J&T Express Standard`, `Retirada na Loja`, `SEDEX`, `PAC`).
-       - Valor em destaque (`R$ 12,00` ou badge verde `Grátis`).
-       - Prazo em dias úteis com estimativa amigável.
-       - Badge *"Mais Econômico"* ou *"Recomendado"* na opção ideal.
-     - **Persistência no `localStorage`:** Salva o CEP digitado para que, ao navegar entre produtos da loja, o frete já seja calculado automaticamente sem retrabalho.
-  2. Integrar o componente em [`components/home/HomeClient.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/home/HomeClient.tsx):
-     - Posicionado estrategicamente na coluna direita abaixo do bloco de preço e botão de finalizar compra.
+  O componente visual foi criado e posicionado no perfil do produto (`selectedProduct !== null` em `HomeClient.tsx`), permitindo cotações instantâneas e sem cadastro.
+* **Ações Realizadas na Etapa 3:**
+  1. **Componente Criado:** [`components/catalog/ProductFreightCalculator.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/ProductFreightCalculator.tsx)
+     - **Estética Dark & Gold Continental:** Card translúcido com cantos `rounded-2xl`, bordas douradas e efeito glassmorphism.
+     - **Máscara de CEP Dinâmica:** Formatação automática `00000-000` e validação com ícone de confirmação.
+     - **Geolocalização Amigável:** Consulta leve a ViaCEP com exibição de Cidade - UF (`📍 Ananindeua - PA`).
+     - **Opções de Frete Diferenciadas:** Cards com ícones de loja e caminhão, prazos em dias úteis, valores em destaque e badges temáticos (`Grátis`, `Mais Econômico`, `Entrega Rápida`).
+     - **Persistência `localStorage`:** O CEP consultado é mantido na sessão para que o usuário navegue entre outros produtos sem precisar digitar novamente.
+  2. **Integração no Perfil do Produto:** Inserido em [`components/home/HomeClient.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/home/HomeClient.tsx) logo abaixo do botão "FINALIZAR COMPRA".
+  3. **Validação Visual no Navegador:** Evidência capturada em alta resolução confirmando renderização perfeita de J&T Express, Retirada na Loja, PAC e SEDEX.
 * **MCPs Utilizados:** `git`.
-* **Portão de Parada:** Apresentação do código e solicitação de autorização para a Etapa 4.
+* **Portão de Parada:** Etapa 3 concluída com 100% de sucesso. Aguardando autorização para a Etapa 4.
 
 ---
 
@@ -156,8 +148,8 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **Etapa 1** | Motor J&T Express no Backend | `services/freight/providers/jt-express.provider.ts`, `services/freight/orchestrator.service.ts` | **[CONCLUÍDA]** |
 | **Etapa 2** | API Pública de Cálculo de Frete | `app/api/freight/calculate/route.ts` | **[CONCLUÍDA]** |
-| **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **Aguardando sua autorização explícita** |
-| **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | Depende da aprovação da Etapa 3 |
+| **Etapa 3** | Componente UI no Perfil do Produto | `components/catalog/ProductFreightCalculator.tsx`, `components/home/HomeClient.tsx` | **[CONCLUÍDA]** |
+| **Etapa 4** | Auditoria Ruflo & Build Next.js | Scanner Ruflo, `next build` | **Aguardando sua autorização explícita** |
 | **Etapa 5** | Testes no Navegador Real (E2E) | Subagente Puppeteer, Screenshots | Depende da aprovação da Etapa 4 |
 | **Etapa 6** | Governança Memory & Documentação | MCP Memory, `walkthrough.md` | Depende da aprovação da Etapa 5 |
 
