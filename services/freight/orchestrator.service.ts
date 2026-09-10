@@ -6,6 +6,7 @@ import { CorreiosProvider } from './providers/correios.provider';
 import { CustomTableProvider } from './providers/custom-table.provider';
 import { PickupProvider } from './providers/pickup.provider';
 import { NoneOptionProvider } from './providers/none.provider';
+import { JtExpressProvider } from './providers/jt-express.provider';
 
 export interface CalculateFreightParams {
   lojaID: string;
@@ -19,6 +20,7 @@ export class FreightOrchestratorService {
   constructor() {
     // Registro de todos os provedores suportados pela plataforma
     this.providers = [
+      new JtExpressProvider(),
       new CorreiosProvider(),
       new CustomTableProvider(),
       new PickupProvider(),

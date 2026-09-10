@@ -5,3 +5,4 @@ export * from './providers/correios.provider';
 export * from './providers/custom-table.provider';
 export * from './providers/pickup.provider';
 export * from './providers/none.provider';
+export * from './providers/jt-express.provider';
