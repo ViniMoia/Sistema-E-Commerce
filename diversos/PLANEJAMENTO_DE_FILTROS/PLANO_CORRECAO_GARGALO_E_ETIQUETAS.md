@@ -88,8 +88,12 @@ flowchart TD
 * **MCPs:** `ruflo`.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 5.
 
-#### Etapa 5: Validação Visual e Funcional no Navegador Real
+#### [CONCLUÍDA] Etapa 5: Validação Visual e Funcional no Navegador Real
 * **Objetivo:** Testar via subagente Puppeteer em Desktop (1920x1080) e Mobile (390x844), comprovando que cada etiqueta exibe dezenas de produtos com fotos e preços e gravando evidências em screenshots.
+* **Resultados Obtidos:**
+  - Desktop (1920x1080): Testado clique nas pílulas `Acessórios`, `Boinas`, `Interno`, `Externo`. Todos retornaram dezenas de produtos reais com imagens e preços. `AIRLESS` confirmado ausente.
+  - Mobile (390x844): Rolagem horizontal das pílulas e seleção de `Acessórios` operando com fluidez total.
+  - Screenshots de evidência capturadas: `acessorios_filter_desktop`, `boinas_filter_desktop`, `interno_filter_desktop`, `externo_filter_desktop`, `mobile_acessorios_filter`.
 * **MCPs:** `puppeteer` / browser subagent.
 * **Portão de Parada:** Solicitação de permissão antes da Etapa 6.
 
@@ -106,10 +110,10 @@ flowchart TD
 | **Etapa 1** | Taxonomia Real & Seed DB | Script de tags Prisma, Banco PostgreSQL | **[CONCLUÍDA]** Commit `ccba7c3` |
 | **Etapa 2** | Eliminação do Gargalo de 20 Produtos | [`product.service.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/services/product.service.ts), [`app/page.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/app/page.tsx) | **[CONCLUÍDA]** Commit `b855ad3` |
 | **Etapa 3** | Pílulas e Hooks do Frontend | [`FilterTagPills.tsx`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/components/catalog/FilterTagPills.tsx), [`useProductFilters.ts`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/hooks/useProductFilters.ts) | **[CONCLUÍDA]** Commit `cf008b9` |
-| **Etapa 4** | Segurança Ruflo & Build | Scanner Ruflo, `next build` | **[CONCLUÍDA]** 0 falhas, risco 3/100, 0 erros |
-| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | **Aguardando sua autorização explícita** |
-| **Etapa 6** | Governança Memory & Docs | MCP Memory, [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) | Depende da aprovação formal da Etapa 5 |
+| **Etapa 4** | Segurança Ruflo & Build | Scanner Ruflo, `next build` | **[CONCLUÍDA]** Commit `2c51a15` |
+| **Etapa 5** | Testes no Navegador Real | Subagente Puppeteer, Screenshots | **[CONCLUÍDA]** Desktop & Mobile 100% validados |
+| **Etapa 6** | Governança Memory & Docs | MCP Memory, [`walkthrough.md`](file:///C:/Users/Vmoia/.gemini/antigravity-ide/brain/d6ac26bd-88d9-4f32-ba36-b059c7a40657/walkthrough.md) | **Aguardando sua autorização explícita** |
 
 ---
 
-> **Status Atual:** Etapa 4 concluída com sucesso (auditoria Ruflo sem falhas de segurança e 0 erros de build). Aguardando autorização do usuário para iniciar a **Etapa 5**.
+> **Status Atual:** Etapa 5 concluída com sucesso (testes E2E validados em Desktop e Mobile com screenshots). Aguardando autorização do usuário para iniciar a **Etapa 6**.
