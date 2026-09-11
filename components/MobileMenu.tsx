@@ -92,9 +92,9 @@ export function MobileMenu({ user, lojaName = "Loja" }: MobileMenuProps) {
                 <Link 
                   href="/register"
                   onClick={toggleMenu}
-                  className={`w-full py-3 rounded-full bg-white text-black text-center text-sm font-bold tracking-widest uppercase hover:bg-neutral-200 transition-all duration-500 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${menuOpen ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"}`}
+                  className={`w-full py-3 rounded-full bg-brand-yellow text-black text-center text-sm font-bold tracking-widest uppercase hover:bg-yellow-400 transition-all duration-500 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${menuOpen ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-4 blur-sm"}`}
                 >
-                  Inscrever-se
+                  Registro
                 </Link>
               </div>
             )}

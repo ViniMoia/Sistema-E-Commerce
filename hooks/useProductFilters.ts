@@ -23,10 +23,13 @@ export interface FilterableProduct {
   lojaID?: string;
 }
 
+export const DEFAULT_PAGE_SIZE = 12;
+
 export interface UseProductFiltersOptions {
   initialProducts: FilterableProduct[];
   initialBrands?: BrandSummary[];
   enableUrlSync?: boolean;
+  pageSize?: number;
 }
 
 export interface UseProductFiltersReturn {
@@ -43,6 +46,13 @@ export interface UseProductFiltersReturn {
   handleClearAllFilters: () => void;
   brandsWithCounts: BrandSummary[];
   filteredProducts: FilterableProduct[];
+  paginatedProducts: FilterableProduct[];
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  totalPages: number;
+  pageSize: number;
+  startIndex: number;
+  endIndex: number;
   hasActiveFilters: boolean;
   totalCount: number;
   filteredCount: number;
@@ -88,16 +98,19 @@ const BRAND_REGEX: Record<string, RegExp> = {
 };
 
 /**
- * Utilitário seguro para extração de parâmetros de filtros a partir da URL.
+ * Utilitário seguro para extração de parâmetros de filtros e paginação a partir da URL.
  * Trata tanto query params padrão (?marca=...) quanto params acoplados ao hash (#catalogo?marca=...).
  */
 function extractFiltersFromLocation(): {
   brand: string | null;
   tags: string[];
   search: string;
+  priceRange: string | null;
+  voltage: string | null;
+  page: number;
 } {
   if (typeof window === "undefined") {
-    return { brand: null, tags: [], search: "" };
+    return { brand: null, tags: [], search: "", priceRange: null, voltage: null, page: 1 };
   }
 
   // 1. Query params padrão (?marca=...)
@@ -132,27 +145,54 @@ function extractFiltersFromLocation(): {
     searchParams.get("q") ||
     "";
 
+  const priceRange =
+    searchParams.get("preco") ||
+    searchParams.get("price") ||
+    searchParams.get("priceRange") ||
+    null;
+
+  const voltage =
+    searchParams.get("voltagem") ||
+    searchParams.get("voltage") ||
+    null;
+
+  // Sanitização estrita do número da página contra valores negativos, NaN ou injeções
+  const rawPage = searchParams.get("pagina") || searchParams.get("page");
+  let page = 1;
+  if (rawPage) {
+    const parsed = parseInt(rawPage, 10);
+    if (!isNaN(parsed) && parsed >= 1) {
+      page = parsed;
+    }
+  }
+
   return {
     brand: brand ? brand.toLowerCase().trim() : null,
     tags,
     search: search.trim(),
+    priceRange: priceRange ? priceRange.trim() : null,
+    voltage: voltage ? voltage.trim() : null,
+    page,
   };
 }
 
 /**
  * Hook de domínio responsável exclusivamente pela lógica de filtragem,
- * contadores de marcas, busca textual e sincronização bidirecional com a URL (SRP & Deep Linking).
+ * contadores de marcas, busca textual, paginação e sincronização bidirecional com a URL (SRP & Deep Linking).
  */
 export function useProductFilters({
   initialProducts,
   initialBrands = [],
   enableUrlSync = true,
+  pageSize: customPageSize,
 }: UseProductFiltersOptions): UseProductFiltersReturn {
+  const pageSize = customPageSize && customPageSize > 0 ? customPageSize : DEFAULT_PAGE_SIZE;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
   const [selectedVoltage, setSelectedVoltage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const isHydratedRef = useRef(false);
 
   // ─── 1. Deep Linking: Leitura Inicial dos Parâmetros da URL na Montagem ──────
@@ -169,6 +209,15 @@ export function useProductFilters({
     }
     if (initial.search) {
       setSearchQuery(initial.search);
+    }
+    if (initial.priceRange) {
+      setSelectedPriceRange(initial.priceRange);
+    }
+    if (initial.voltage) {
+      setSelectedVoltage(initial.voltage);
+    }
+    if (initial.page > 1) {
+      setCurrentPage(initial.page);
     }
 
     isHydratedRef.current = true;
@@ -192,6 +241,15 @@ export function useProductFilters({
       if (searchQuery.trim()) {
         params.set("busca", searchQuery.trim());
       }
+      if (selectedPriceRange) {
+        params.set("preco", selectedPriceRange);
+      }
+      if (selectedVoltage) {
+        params.set("voltagem", selectedVoltage);
+      }
+      if (currentPage > 1) {
+        params.set("pagina", String(currentPage));
+      }
 
       const queryString = params.toString();
       const currentHash = window.location.hash.split("?")[0] || "#catalogo";
@@ -209,7 +267,15 @@ export function useProductFilters({
     }, 180);
 
     return () => clearTimeout(timer);
-  }, [selectedBrand, selectedTags, searchQuery, enableUrlSync]);
+  }, [
+    selectedBrand,
+    selectedTags,
+    searchQuery,
+    selectedPriceRange,
+    selectedVoltage,
+    currentPage,
+    enableUrlSync,
+  ]);
 
   // ─── 3. Suporte ao Histórico do Navegador (Botões Voltar/Avançar) ───────────
   useEffect(() => {
@@ -220,6 +286,9 @@ export function useProductFilters({
       setSelectedBrand(updated.brand);
       setSelectedTags(updated.tags);
       setSearchQuery(updated.search);
+      setSelectedPriceRange(updated.priceRange);
+      setSelectedVoltage(updated.voltage);
+      setCurrentPage(updated.page);
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -239,7 +308,18 @@ export function useProductFilters({
     setSelectedPriceRange(null);
     setSelectedVoltage(null);
     setSearchQuery("");
+    setCurrentPage(1);
   }, []);
+
+  // ─── 5. Reset Automático da Página ao Alterar Filtros (SRP) ──────────────────
+  const isFilterMountRef = useRef(true);
+  useEffect(() => {
+    if (isFilterMountRef.current) {
+      isFilterMountRef.current = false;
+      return;
+    }
+    setCurrentPage(1);
+  }, [searchQuery, selectedBrand, selectedTags, selectedPriceRange, selectedVoltage]);
 
   // ─── 5. Contagem dinâmica e em tempo real por marca para o Flyout ────────────
   const brandsWithCounts = useMemo(() => {
@@ -314,6 +394,26 @@ export function useProductFilters({
     selectedVoltage
   );
 
+  // ─── 7. Paginação Segura com Bounds Clamping (12 produtos por página) ─────────
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, Math.floor(Number(currentPage) || 1)), totalPages);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, safeCurrentPage, pageSize]);
+
+  const startIndex = filteredProducts.length > 0 ? (safeCurrentPage - 1) * pageSize + 1 : 0;
+  const endIndex = Math.min(safeCurrentPage * pageSize, filteredProducts.length);
+
+  const handleSetPage = useCallback(
+    (page: number) => {
+      const target = Math.floor(Number(page) || 1);
+      setCurrentPage(Math.min(Math.max(1, target), totalPages));
+    },
+    [totalPages]
+  );
+
   return {
     searchQuery,
     setSearchQuery,
@@ -328,6 +428,13 @@ export function useProductFilters({
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,
+    paginatedProducts,
+    currentPage: safeCurrentPage,
+    setCurrentPage: handleSetPage,
+    totalPages,
+    pageSize,
+    startIndex,
+    endIndex,
     hasActiveFilters,
     totalCount: initialProducts.length,
     filteredCount: filteredProducts.length,

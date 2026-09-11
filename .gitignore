@@ -7,15 +7,35 @@
 .env.test.local
 .env.production.local
 
-# Next.js build output
+# Next.js & TypeScript build output
 .next/
 out/
+build/
+dist/
+.turbo/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
 
 # Dependencies
 node_modules/
 
+# Testing & Coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # OS / Editor files
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 *.pem
 *.key
 *.dump
@@ -23,9 +43,24 @@ node_modules/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+.idea/
+*.swp
+*.swo
 
-# Local scripts with connection tests
+# Local scripts, batch and scratchpads
 test_db_conn.js
+scratch/
+*.bat
+*.cmd
+
+# Internal documentation, business & audit files
+diversos/
+material/
+auditoria/
+
+# Non-production design assets and cloned templates
+midia/
+templates/
 
 # Generated Prisma artifacts
 /app/generated/prisma
@@ -34,3 +69,6 @@ test_db_conn.js
 .claude/
 .claude-flow/
 .swarm/
+.agents/
+skills-lock.json
+CLAUDE.md

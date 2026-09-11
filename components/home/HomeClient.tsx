@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
 import { getOptimizedImageUrl } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
 import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters";
 import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
+import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 
 export type Product = FilterableProduct;
 
@@ -53,7 +54,7 @@ export default function HomeClient({
   const { addToCart, isLoading: isAddingToCart } = useCartStore();
   const { setIsOpen } = useCart();
 
-  // Hook desacoplado de filtragem, contagem de marcas e busca textual (SOLID / SRP)
+  // Hook desacoplado de filtragem, contagem de marcas e paginação (SOLID / SRP)
   const {
     searchQuery,
     setSearchQuery,
@@ -68,12 +69,32 @@ export default function HomeClient({
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,
+    paginatedProducts,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    pageSize,
+    startIndex,
+    endIndex,
     totalCount,
     filteredCount,
   } = useProductFilters({
     initialProducts,
     initialBrands,
   });
+
+  const catalogSectionRef = useRef<HTMLElement | null>(null);
+
+  // Transição de página com scroll suave de volta ao topo do catálogo
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+    if (catalogSectionRef.current) {
+      catalogSectionRef.current.scrollIntoView({ behavior: "smooth" });
+    } else {
+      const el = document.getElementById("catalogo");
+      el?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [setCurrentPage]);
 
   // Sync active image when product opens
   useEffect(() => {
@@ -335,7 +356,7 @@ export default function HomeClient({
       <HeroVideo />
 
       {/* Product List Showcase */}
-      <section id="catalogo" className="py-10 md:py-16 bg-catalog-bg relative z-20">
+      <section id="catalogo" ref={catalogSectionRef} className="py-10 md:py-16 bg-catalog-bg relative z-20">
         {/* Carrossel Minimalista de Marcas Soltas no Topo (5 Marcas Simultâneas) */}
         <BrandMinimalistCarousel
           brands={brandsWithCounts}
@@ -364,50 +385,64 @@ export default function HomeClient({
               filteredProductsCount={filteredCount}
             />
 
-            {/* Grid de Produtos: 4 Colunas Horizontais no Desktop sem Apertar os Cards */}
+            {/* Grid de Produtos: 4 Colunas Horizontais no Desktop sem Apertar os Cards (12 por Página) */}
             <div className="flex-1 w-full min-w-0">
               {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
-                  {filteredProducts.map((prod, index) => (
-                    <div 
-                      key={prod.id}  
-                      onClick={() => setSelectedProduct(prod)}
-                      className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
-                      style={{ animationDelay: `${(index % 8) * 0.05}s` }}
-                    >
-                      <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
-                        <img 
-                          src={getOptimizedImageUrl(prod.imageUrl, 400, 400)} 
-                          alt={prod.name} 
-                          className="max-h-full object-contain group-hover:scale-[1.05] transition-transform duration-500" 
-                        />
-                      </div>
-                      
-                      <div className="flex flex-col flex-1 justify-end relative">
-                        <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                          Produto
-                        </span>
-                        <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase">
-                          {prod.name}
-                        </h4>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
+                    {paginatedProducts.map((prod, index) => (
+                      <div 
+                        key={prod.id}  
+                        onClick={() => setSelectedProduct(prod)}
+                        className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
+                        style={{ animationDelay: `${(index % 8) * 0.05}s` }}
+                      >
+                        <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
+                          <img 
+                            src={getOptimizedImageUrl(prod.imageUrl, 400, 400)} 
+                            alt={prod.name} 
+                            className="max-h-full object-contain group-hover:scale-[1.05] transition-transform duration-500" 
+                          />
+                        </div>
                         
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                          <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleBuy(e, prod);
-                            }}
-                            className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                            title="Adicionar ao Carrinho"
-                          >
-                            <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                          </button>
+                        <div className="flex flex-col flex-1 justify-end relative">
+                          <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                            Produto
+                          </span>
+                          <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase">
+                            {prod.name}
+                          </h4>
+                          
+                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
+                            <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBuy(e, prod);
+                              }}
+                              className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
+                              title="Adicionar ao Carrinho"
+                            >
+                              <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+
+                  {/* Componente Visual de Paginação Dark & Gold */}
+                  <CatalogPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredCount}
+                    pageSize={pageSize}
+                    startIndex={startIndex}
+                    endIndex={endIndex}
+                    onPageChange={handlePageChange}
+                    className="mt-10 md:mt-14"
+                  />
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-in fade-in zoom-in duration-500 bg-[#0B111E]/30 border border-catalog-gold/20 rounded-2xl">
                   <div className="w-20 h-20 mb-5 rounded-full bg-catalog-card flex items-center justify-center border border-catalog-gold/30 shadow-inner">

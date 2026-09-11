@@ -9,8 +9,13 @@ import { getLojaFromHeaders } from "@/lib/tenant";
 export async function generateMetadata(): Promise<Metadata> {
   const loja = await getLojaFromHeaders();
   return {
-    title: loja?.name || "E-Commerce",
+    title: loja?.name || "Continental Produtos Estéticos Automotivos",
     description: loja?.description || "Construindo interfaces reais com movimento.",
+    icons: {
+      icon: "/brand/continental-symbol-square.png",
+      shortcut: "/brand/continental-symbol-square.png",
+      apple: "/brand/continental-symbol-square.png",
+    },
   };
 }
 

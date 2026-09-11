@@ -1,6 +1,0 @@
-- **Tailwind CSS** — utility-first CSS framework used for all layout and styling
-- **Iconify** — icon library runtime used to render SVGs and icons
-- **Lucide** — icon set used throughout the interface
-- **Google Fonts** — typography system providing multiple font families
-- **Google Analytics 4** — web analytics service to track user interactions
-- **Aura FxFilter** — custom script used for visual filters and liquid glass effects

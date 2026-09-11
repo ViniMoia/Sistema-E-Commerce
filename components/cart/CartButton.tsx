@@ -4,7 +4,12 @@ import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/components/providers/CartProvider";
 import { useCartStore } from "@/store/cart.store";
 
-export function CartButton() {
+interface CartButtonProps {
+  className?: string;
+  iconClassName?: string;
+}
+
+export function CartButton({ className = "", iconClassName = "w-5 h-5" }: CartButtonProps) {
   const { setIsOpen } = useCart();
   const { cart } = useCartStore();
   
@@ -13,12 +18,12 @@ export function CartButton() {
   return (
     <button 
       onClick={() => setIsOpen(true)}
-      className="relative p-2 text-zinc-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
-      aria-label="Open cart"
+      className={`relative inline-flex items-center justify-center p-1.5 text-white/90 hover:text-brand-yellow transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/60 rounded-sm cursor-pointer group ${className}`}
+      aria-label={`Carrinho de compras (${itemCount} ${itemCount === 1 ? "item" : "itens"})`}
     >
-      <ShoppingCart className="w-5 h-5" />
+      <ShoppingCart className={`${iconClassName} transition-transform duration-200 group-hover:scale-110`} />
       {itemCount > 0 && (
-        <span className="absolute top-0 right-0 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-black bg-primary rounded-full">
+        <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-black bg-brand-yellow rounded-full shadow-[0_0_8px_rgba(240,180,14,0.6)] animate-in">
           {itemCount}
         </span>
       )}
