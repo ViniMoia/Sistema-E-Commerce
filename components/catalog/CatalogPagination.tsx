@@ -52,15 +52,15 @@ export function CatalogPagination({
   onPageChange,
   className = "",
 }: CatalogPaginationProps) {
-  // Se houver 1 página ou menos, não renderiza barra de navegação
-  if (totalPages <= 1) {
-    return null;
-  }
-
   const paginationRange = useMemo(
     () => getPaginationRange(currentPage, totalPages),
     [currentPage, totalPages]
   );
+
+  // Se houver 1 página ou menos, não renderiza barra de navegação
+  if (totalPages <= 1) {
+    return null;
+  }
 
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;

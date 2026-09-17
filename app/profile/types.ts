@@ -22,5 +22,8 @@ export interface UserOrder {
   total: number;
   createdAt: Date;
   trackingCode?: string | null;
+  deliveryType?: 'DELIVERY' | 'PICKUP' | 'NONE' | null;
+  shippingServiceName?: string | null;
+  deliveredConfirmedAt?: Date | string | null;
   items: OrderItemSummary[];
 }

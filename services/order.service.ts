@@ -2,8 +2,9 @@ import prisma from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
 import { isValidTransition } from "@/lib/order-transitions";
 import { creditEarnedPoints, refundOrderPoints } from "@/services/loyalty.service";
+import { InventoryService } from "@/services/inventory.service";
 import type { ListOrdersParams, UpdateOrderStatusInput, UpdateStatusResult } from "@/types/admin.types";
-import type { CreateOrderInput, OrderWithDetails, OrderSummary } from "@/types/order.types";
+import type { CreateOrderInput, OrderWithDetails, OrderSummary, GetUserOrdersParams } from "@/types/order.types";
 
 export class OrderError extends Error {
   constructor(message: string) {
@@ -36,8 +37,20 @@ export async function createOrderFromCart(input: CreateOrderInput): Promise<Orde
   const shippingCostDecimal = new Prisma.Decimal(cart.shippingCost ?? 0);
   const total = subtotal.plus(shippingCostDecimal);
 
-  const [order] = await prisma.$transaction([
-    prisma.order.create({
+  const [order] = await prisma.$transaction(async (tx) => {
+    // Reserva atômica de estoque unificada via InventoryService (REV-001)
+    await InventoryService.reserveStock(
+      cart.items.map((item) => ({
+        productId: item.productID,
+        variantId: item.variantID,
+        quantity: item.quantity,
+        name: item.productName,
+      })),
+      tx,
+      lojaID
+    );
+
+    const createdOrder = await tx.order.create({
       data: {
         userID,
         addressID,
@@ -81,12 +94,15 @@ export async function createOrderFromCart(input: CreateOrderInput): Promise<Orde
           },
         },
       },
-    }),
-    prisma.cart.update({
+    });
+
+    await tx.cart.update({
       where: { id: cartID },
       data: { status: "COMPLETED" },
-    }),
-  ]);
+    });
+
+    return [createdOrder];
+  });
 
   return order as unknown as OrderWithDetails;
 }
@@ -121,11 +137,20 @@ export async function getOrderById(orderID: string): Promise<OrderWithDetails> {
   return order as unknown as OrderWithDetails;
 }
 
-export async function getOrdersByUser(userID: string): Promise<OrderSummary[]> {
+export async function getOrdersByUser(params: GetUserOrdersParams): Promise<OrderSummary[]> {
+  if (!params || !params.userID || !params.lojaID) {
+    throw new OrderError("VALIDATION_ERROR");
+  }
+
   const orders = await prisma.order.findMany({
-    where: { userID },
+    where: {
+      userID: params.userID,
+      lojaID: params.lojaID,
+    },
     include: { items: true },
     orderBy: { createdAt: "desc" },
+    ...(params.limit ? { take: params.limit } : {}),
+    ...(params.skip ? { skip: params.skip } : {}),
   });
 
   return orders as unknown as OrderSummary[];
@@ -165,6 +190,9 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
+        orderNumber: true,
+        deliveryType: true,
+        freightValue: true,
         status: true,
         total: true,
         createdAt: true,
@@ -250,6 +278,7 @@ export async function updateOrderStatus(
       items: {
         select: {
           id: true,
+          productId: true,
           quantity: true,
           productVariantsId: true,
         },
@@ -269,24 +298,11 @@ export async function updateOrderStatus(
     (i): i is typeof i & { productVariantsId: string } => i.productVariantsId !== null
   );
 
+  const isSystemActor = input.performedById === "ASAAS_GATEWAY" || input.performedById === "SYSTEM";
+  const effectiveActorId = isSystemActor ? fullOrder.userID : input.performedById;
+  const auditMetadata = isSystemActor ? { triggeredBy: input.performedById } : undefined;
+
   if (input.newStatus === "PAID") {
-    const variantStockChecks = await prisma.productVariants.findMany({
-      where: { id: { in: itemsWithVariant.map((i) => i.productVariantsId) } },
-      select: { id: true, stock: true },
-    });
-    const stockMap = new Map(variantStockChecks.map((v) => [v.id, v.stock]));
-
-    for (const item of itemsWithVariant) {
-      const available = stockMap.get(item.productVariantsId) ?? 0;
-      if (available < item.quantity) {
-        return {
-          success: false,
-          error: `Estoque insuficiente para a variante ${item.productVariantsId}.`,
-          code: "INVALID_TRANSITION",
-        };
-      }
-    }
-
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const order = await tx.order.update({
         where: { id: input.orderId },
@@ -294,16 +310,12 @@ export async function updateOrderStatus(
         select: { id: true, status: true },
       });
 
-      for (const item of itemsWithVariant) {
-        await tx.productVariants.update({
-          where: { id: item.productVariantsId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        });
-      }
+      // Nota Arquitetural (REV-001): O estoque JÁ FOI reservado no ato do checkout (createOrder).
+      // Portanto, a transição para PAID é puramente confirmatória e NUNCA deve decrementar novamente.
 
       await tx.auditLog.create({
         data: {
-          actorId: input.performedById,
+          actorId: effectiveActorId,
           targetId: fullOrder.userID,
           action: "ORDER_STATUS_UPDATED",
           entity: "Order",
@@ -311,6 +323,7 @@ export async function updateOrderStatus(
           previousValue: { status: fullOrder.status },
           newValue: { status: input.newStatus },
           ipAddress: input.ipAddress ?? null,
+          metadata: auditMetadata,
         },
       });
 
@@ -339,19 +352,21 @@ export async function updateOrderStatus(
         select: { id: true, status: true },
       });
 
-      // Se já havia sido pago, devolve estoque
-      if (fullOrder.status === "PAID") {
-        for (const item of itemsWithVariant) {
-          await tx.productVariants.update({
-            where: { id: item.productVariantsId },
-            data: { stock: { increment: item.quantity } },
-          });
-        }
+      // Se o pedido estava PENDING ou PAID, estorna integralmente o estoque reservado (REV-001)
+      if (fullOrder.status === "PENDING" || fullOrder.status === "PAID") {
+        await InventoryService.restoreStock(
+          fullOrder.items.map((item) => ({
+            productId: item.productId ?? "",
+            variantId: item.productVariantsId,
+            quantity: item.quantity,
+          })),
+          tx
+        );
       }
 
       await tx.auditLog.create({
         data: {
-          actorId: input.performedById,
+          actorId: effectiveActorId,
           targetId: fullOrder.userID,
           action: "ORDER_STATUS_UPDATED",
           entity: "Order",
@@ -359,18 +374,25 @@ export async function updateOrderStatus(
           previousValue: { status: fullOrder.status },
           newValue: { status: input.newStatus },
           ipAddress: input.ipAddress ?? null,
+          metadata: auditMetadata,
         },
       });
 
-      // Hook de Fidelidade: Estornar pontos ganhos e/ou devolver pontos resgatados
-      await refundOrderPoints(
-        {
-          lojaID: fullOrder.lojaID,
-          orderId: input.orderId,
-          reason: `Cancelamento do pedido #${input.orderId.slice(0, 8)}`,
-        },
-        tx
-      );
+      // Se o pedido estava pago OU se era um pedido pendente que resgatou pontos, estorna no ledger (AUD-002)
+      const hasPointsToRefund =
+        fullOrder.status === "PAID" ||
+        (fullOrder.status === "PENDING" && (fullOrder.pointsRedeemed ?? 0) > 0);
+
+      if (hasPointsToRefund) {
+        await refundOrderPoints(
+          {
+            lojaID: fullOrder.lojaID,
+            orderId: input.orderId,
+            reason: (input as any).reason || `Cancelamento do pedido #${input.orderId.slice(0, 8)}`,
+          },
+          tx
+        );
+      }
 
       return order;
     });
@@ -387,7 +409,7 @@ export async function updateOrderStatus(
 
     await tx.auditLog.create({
       data: {
-        actorId: input.performedById,
+        actorId: effectiveActorId,
         targetId: fullOrder.userID,
         action: "ORDER_STATUS_UPDATED",
         entity: "Order",
@@ -395,6 +417,7 @@ export async function updateOrderStatus(
         previousValue: { status: fullOrder.status },
         newValue: { status: input.newStatus },
         ipAddress: input.ipAddress ?? null,
+        metadata: auditMetadata,
       },
     });
 

@@ -18,6 +18,7 @@ export type UpdateOrderStatusInput = {
   newStatus: OrderStatus;
   performedById: string;
   ipAddress?: string;
+  reason?: string;
 };
 
 export type UpdateStatusResult =

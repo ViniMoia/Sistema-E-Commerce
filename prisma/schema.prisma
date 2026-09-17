@@ -66,6 +66,7 @@ model User {
   email              String               @db.VarChar(255)
   password           String               @db.VarChar(255)
   phone              String?              @db.VarChar(20)
+  cpfCnpj            String?              @db.VarChar(20)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   avatarImageUrl     String?
@@ -93,6 +94,8 @@ model User {
   @@index([email])
   @@index([lojaID])
   @@index([defaultAddressId])
+  @@index([cpfCnpj])
+  @@index([cpfCnpj, lojaID])
 }
 
 model Address {
@@ -271,8 +274,16 @@ model Order {
   deliveryType       DeliveryType
   trackingCode       String?
   adminNotes         String?
+  customerCpfCnpj    String?              @db.VarChar(20) // Snapshot histórico do documento do cliente no momento da compra
   paymentMethod      String?
   pixKeyUsed         String?              // Chave PIX usada no pagamento (para histórico)
+  // Gateway Asaas fields
+  asaasPaymentId        String?              @unique
+  asaasPaymentStatus    String?              // ex: "PENDING", "RECEIVED", "CONFIRMED", "REFUNDED"
+  asaasInvoiceUrl       String?              // Link da fatura/comprovante do Asaas
+  // Confirmação de Entrega pelo Cliente
+  deliveredConfirmedAt  DateTime?            // Data/hora da confirmação do recebimento pelo cliente
+  deliveredConfirmedBy  String?              // ID do usuário cliente que confirmou
   freightValue       Decimal?
   subtotal           Decimal              @db.Decimal(10, 2)
   shippingCost       Decimal              @default(0) @db.Decimal(10, 2)
@@ -300,6 +311,9 @@ model Order {
   @@index([syncStatus])
   @@index([nuvemshopOrderId])
   @@index([lojaID])
+  @@index([lojaID, status, createdAt])
+  @@index([userID, createdAt])
+  @@index([customerCpfCnpj])
 }
 
 model OrderItem {
@@ -317,8 +331,9 @@ model OrderItem {
   variant           ProductVariants? @relation(fields: [productVariantsId], references: [id])
   productVariantsId String?
 
-  @@unique([orderId, productId])
+  @@index([orderId])
   @@index([productId])
+  @@index([productVariantsId])
 }
 
 model OrderStatusHistory {
@@ -519,5 +534,17 @@ model JtExpressRate {
   @@unique([geocom, weightMin, weightMax])
   @@index([geocom])
   @@index([geocom, weightMin, weightMax])
+}
+
+model PaymentWebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique
+  provider    String   // ex: "ASAAS"
+  eventType   String   // ex: "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"
+  payload     Json
+  processedAt DateTime @default(now())
+
+  @@index([provider, eventType])
+  @@index([processedAt])
 }
 

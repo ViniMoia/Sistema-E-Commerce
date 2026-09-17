@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/store/cart.store'
 import { Button } from '@/components/ui'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
+import { CheckCircle2, Clock, Copy, Check, ExternalLink, Loader2, Sparkles } from 'lucide-react'
 
 interface ConfirmationOrder {
+  orderId?: string
   orderNumber: number
   customer: { name: string; phone: string }
   items: Array<{ name: string; quantity: number; price: number; color?: string; size?: string }>
@@ -15,6 +17,9 @@ interface ConfirmationOrder {
   freightValue: number | null
   total: number
   pixKey: string | null
+  pixQrCode?: string | null
+  pixPayload?: string | null
+  asaasPaymentId?: string | null
   whatsappNumber: string
 }
 
@@ -23,6 +28,9 @@ export default function CheckoutConfirmationPage() {
   const { clearCart } = useCartStore()
   const [order, setOrder] = useState<ConfirmationOrder | null>(null)
   const [copied, setCopied] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID'>('PENDING')
+  const [isSimulating, setIsSimulating] = useState(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const rawData = sessionStorage.getItem('last_order')
@@ -41,13 +49,65 @@ export default function CheckoutConfirmationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 1. Polling de status em tempo real
+  useEffect(() => {
+    if (!order?.orderId || paymentStatus === 'PAID') return
+
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/orders/${order.orderId}/status`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.order?.status === 'PAID' || data?.order?.status === 'SHIPPED' || data?.order?.status === 'DELIVERED') {
+            setPaymentStatus('PAID')
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erro no polling de status do pedido:', err)
+      }
+    }
+
+    // Consulta inicial e intervalo a cada 3.5 segundos
+    checkStatus()
+    pollingIntervalRef.current = setInterval(checkStatus, 3500)
+
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+    }
+  }, [order?.orderId, paymentStatus])
+
   if (!order) return null
 
+  const pixCopyText = order.pixPayload || order.pixKey || ''
+
   const handleCopyPix = () => {
-    if (order.pixKey) {
-      navigator.clipboard.writeText(order.pixKey)
+    if (pixCopyText) {
+      navigator.clipboard.writeText(pixCopyText)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), 2500)
+    }
+  }
+
+  // Simulação de pagamento para homologação e testes
+  const handleSimulatePayment = async () => {
+    if (!order.orderId || isSimulating) return
+    setIsSimulating(true)
+    try {
+      const res = await fetch('/api/webhooks/asaas/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.orderId }),
+      })
+      if (res.ok) {
+        setPaymentStatus('PAID')
+      }
+    } catch (err) {
+      console.error('Erro ao simular pagamento:', err)
+    } finally {
+      setIsSimulating(false)
     }
   }
 
@@ -66,75 +126,203 @@ export default function CheckoutConfirmationPage() {
     window.open(url, '_blank')
   }
 
+  const qrCodeUrl = order.pixQrCode
+    ? (order.pixQrCode.startsWith('data:') ? order.pixQrCode : `data:image/png;base64,${order.pixQrCode}`)
+    : (order.pixPayload
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(order.pixPayload)}`
+      : null)
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-950">
-      <div className="max-w-xl w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center animate-in slide-in-from-bottom-8 fade-in duration-700">
-        <div className="w-20 h-20 bg-[#dbb501]/10 rounded-full flex items-center justify-center mb-6 relative animate-in zoom-in duration-500 delay-200">
-          <div className="absolute inset-0 bg-[#dbb501]/20 rounded-full animate-ping opacity-75" />
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dbb501" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-zinc-950 text-zinc-100">
+      <div className="max-w-xl w-full bg-[#111111] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl flex flex-col items-center animate-in slide-in-from-bottom-6 fade-in duration-500">
+        
+        {/* Ícone de Status */}
+        {paymentStatus === 'PAID' ? (
+          <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mb-6 relative animate-in zoom-in duration-500">
+            <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-60" />
+            <CheckCircle2 className="w-10 h-10 text-emerald-400 relative z-10" />
+          </div>
+        ) : (
+          <div className="w-20 h-20 bg-[#dbb501]/10 border border-[#dbb501]/30 rounded-full flex items-center justify-center mb-6 relative animate-in zoom-in duration-500">
+            <div className="absolute inset-0 bg-[#dbb501]/20 rounded-full animate-pulse opacity-60" />
+            <Clock className="w-9 h-9 text-[#dbb501] relative z-10" />
+          </div>
+        )}
 
-        <h1 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 text-center mb-2 tracking-tight">
-          Pedido realizado com sucesso!
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-center mb-8">
-          Falta pouco! Agora é só confirmar o pagamento pelo WhatsApp.
-        </p>
+        {/* Título e Subtítulo */}
+        {paymentStatus === 'PAID' ? (
+          <>
+            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6 text-emerald-400" />
+              Pagamento Confirmado!
+            </h1>
+            <p className="text-zinc-400 text-center mb-6 text-sm max-w-md">
+              Excelente! Seu pagamento foi processado automaticamente pelo gateway. Já estamos preparando seu pedido <strong>#{order.orderNumber}</strong>.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight">
+              Pedido #{order.orderNumber} Realizado!
+            </h1>
+            <p className="text-zinc-400 text-center mb-6 text-sm">
+              Efetue o pagamento via <strong>PIX</strong> para aprovação imediata do seu pedido.
+            </p>
+          </>
+        )}
 
-        <div className="w-full bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800/50 mb-8 space-y-4">
-          <div className="flex justify-between items-center text-sm pb-4 border-b border-zinc-200 dark:border-zinc-800">
-            <span className="text-zinc-500 dark:text-zinc-400">Total do Pedido</span>
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">R$ {order.total.toFixed(2)}</span>
+        {/* Resumo do Pedido */}
+        <div className="w-full bg-white/[0.02] rounded-2xl p-5 border border-white/5 mb-6 space-y-3">
+          <div className="flex justify-between items-center text-sm pb-3 border-b border-white/5">
+            <span className="text-zinc-400">Total a Pagar</span>
+            <span className="font-bold text-white text-xl text-[#dbb501]">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}
+            </span>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Chave Pix para Pagamento:</p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 font-mono text-sm text-zinc-600 dark:text-zinc-400 truncate select-all">
-                {order.pixKey || 'Chave não informada'}
-              </div>
-              <button
-                onClick={handleCopyPix}
-                className="shrink-0 p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors text-zinc-600 dark:text-zinc-300"
-              >
-                {copied ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dbb501" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                  </svg>
-                )}
-              </button>
+          <div className="flex justify-between items-center text-xs text-zinc-400">
+            <span>Modalidade de Entrega</span>
+            <span className="font-medium text-zinc-200">
+              {order.deliveryType === 'PICKUP' ? 'Retirada na Loja' : 'Entrega no Endereço'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs text-zinc-400">
+            <span>Status do Pedido</span>
+            {paymentStatus === 'PAID' ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+                Aprovado / Pago
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                Aguardando PIX
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bloco de Pagamento PIX (exibido enquanto PENDING) */}
+        {paymentStatus === 'PENDING' && (
+          <div className="w-full bg-black/40 rounded-2xl p-6 border border-white/10 mb-6 flex flex-col items-center space-y-5">
+            <div className="text-center space-y-1">
+              <p className="text-xs uppercase font-mono tracking-widest text-zinc-400">
+                Pague com QR Code ou Copia e Cola
+              </p>
+              <p className="text-xs text-zinc-500">
+                Abra o aplicativo do seu banco e aponte a câmera
+              </p>
             </div>
-            {copied && <p className="text-xs text-[#dbb501] animate-in fade-in">Chave copiada!</p>}
-          </div>
-        </div>
 
+            {/* Imagem do QR Code */}
+            {qrCodeUrl && (
+              <div className="p-3 bg-white rounded-2xl shadow-lg inline-block border-2 border-[#dbb501]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrCodeUrl}
+                  alt="QR Code PIX"
+                  className="w-48 h-48 sm:w-56 sm:h-56 object-contain"
+                />
+              </div>
+            )}
+
+            {/* Código Copia e Cola */}
+            {pixCopyText && (
+              <div className="w-full space-y-2">
+                <p className="text-xs font-medium text-zinc-300">Código PIX Copia e Cola:</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-xs text-zinc-300 truncate select-all">
+                    {pixCopyText}
+                  </div>
+                  <button
+                    onClick={handleCopyPix}
+                    className="shrink-0 px-3.5 py-2.5 bg-[#dbb501] hover:bg-[#c49b02] text-black font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copiar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Indicador de Escuta em Tempo Real */}
+            <div className="flex items-center gap-2 text-xs text-zinc-400 pt-1">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#dbb501]" />
+              <span>Verificando pagamento em tempo real...</span>
+            </div>
+
+            {/* Botão de Teste / Simulação Local (Apenas visível em Desenvolvimento/Homologação) */}
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="pt-2 w-full border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={handleSimulatePayment}
+                  disabled={isSimulating}
+                  className="w-full text-[11px] font-mono text-zinc-500 hover:text-amber-400 py-1.5 px-3 rounded-lg border border-dashed border-zinc-800 hover:border-amber-500/40 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Simula o recebimento do webhook Asaas para testes imediatos sem transação bancária"
+                >
+                  {isSimulating ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <span>⚡ Testar Aprovação Automática (Simular Webhook Asaas - Dev Only)</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ações Finais */}
         <div className="w-full space-y-3">
-          <Button
-            className="w-full bg-[#dbb501] hover:bg-[#dbb501]/90 text-zinc-950 text-base py-6 font-semibold shadow-[0_0_20px_rgba(219,181,1,0.3)] hover:shadow-[0_0_25px_rgba(219,181,1,0.4)] transition-all flex gap-2 items-center justify-center group"
-            onClick={handleWhatsApp}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:scale-110">
-              <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-              <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
-              <path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
-              <path d="M9.5 13.5c1.5 1 3.5 1 5 0" />
-            </svg>
-            Confirmar pelo WhatsApp
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full py-6 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-            onClick={() => router.push('/')}
-          >
-            Continuar comprando
-          </Button>
+          {paymentStatus === 'PAID' ? (
+            <>
+              <Button
+                className="w-full bg-[#dbb501] hover:bg-[#c49b02] text-black font-semibold py-3.5 rounded-xl transition-all shadow-lg"
+                onClick={() => router.push('/profile')}
+              >
+                Acompanhar Meus Pedidos
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full py-3.5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl"
+                onClick={() => router.push('/')}
+              >
+                Voltar para a Loja
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                className="w-full py-3 border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl text-xs flex items-center justify-center gap-2"
+                onClick={handleWhatsApp}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                  <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+                  <path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z" />
+                  <path d="M9.5 13.5c1.5 1 3.5 1 5 0" />
+                </svg>
+                Dúvidas sobre o pedido? Fale conosco no WhatsApp
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full py-2.5 text-xs text-zinc-500 hover:text-zinc-300"
+                onClick={() => router.push('/')}
+              >
+                Continuar comprando
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

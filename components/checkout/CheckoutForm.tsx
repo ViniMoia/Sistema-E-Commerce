@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Button, AlertBanner, Spinner } from '@/components/ui'
 import { FreightOption } from '@/types/freight'
 import { LoyaltyPointsWidget } from './LoyaltyPointsWidget'
+import { formatCpfCnpj, validateCpfCnpj, cleanDigits } from '@/lib/validators/cpf-cnpj'
 
 export interface CartItem {
   productId?: string
@@ -25,10 +26,13 @@ export interface CheckoutResult {
   shippingServiceName: string | null
   shippingEstimatedDays: number | null
   pixKey: string | null
+  asaasPaymentId?: string | null
+  pixQrCode?: string | null
+  pixPayload?: string | null
   pointsEarned?: number
   pointsRedeemed?: number
   pointsDiscountValue?: number
-  customer: { name: string; phone: string }
+  customer: { name: string; phone: string; cpfCnpj?: string }
   items: Array<{ name: string; quantity: number; price: number }>
   deliveryType: string
 }
@@ -62,6 +66,7 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
     name: '',
     email: '',
     phone: '',
+    cpfCnpj: '',
     deliveryType: 'DELIVERY' as 'DELIVERY' | 'PICKUP' | 'NONE',
     address: {
       state: '',
@@ -206,10 +211,18 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
     }
   }
 
+  const handleCpfCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCpfCnpj(e.target.value)
+    setFormData((p) => ({ ...p, cpfCnpj: formatted }))
+  }
+
   const validateStep1 = () => {
     if (!formData.name || formData.name.length < 2) return 'Nome deve ter pelo menos 2 caracteres.'
     if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) return 'Email inválido.'
     if (!formData.phone || formData.phone.replace(/\D/g, '').length < 10) return 'Telefone inválido.'
+    if (formData.cpfCnpj && !validateCpfCnpj(formData.cpfCnpj)) {
+      return 'CPF ou CNPJ inválido. Verifique os dígitos informados.'
+    }
     return null
   }
 
@@ -258,6 +271,7 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
           name: formData.name,
           email: formData.email,
           phone: formData.phone.replace(/\D/g, ''),
+          cpfCnpj: formData.cpfCnpj ? cleanDigits(formData.cpfCnpj) : undefined,
         },
         items: items.map((item: any) => ({
           productId: item.productID || item.productId,
@@ -384,6 +398,19 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
                   onChange={handlePhoneChange}
                   className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#dbb501]/50 focus:border-[#dbb501] transition-all"
                   placeholder="(00) 00000-0000"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  CPF ou CNPJ <span className="text-xs text-zinc-400 font-normal">(para emissão do PIX)</span>
+                </label>
+                <input
+                  type="text"
+                  name="cpfCnpj"
+                  value={formData.cpfCnpj}
+                  onChange={handleCpfCnpjChange}
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#dbb501]/50 focus:border-[#dbb501] transition-all"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                 />
               </div>
             </div>

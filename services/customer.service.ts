@@ -13,6 +13,7 @@ export interface CustomerRow {
   name: string
   email: string
   phone: string | null
+  cpfCnpj: string | null
   totalOrders: number
   totalSpent: number
   lastOrderAt: string | null
@@ -24,6 +25,7 @@ export interface CustomerProfile {
   name: string
   email: string
   phone: string | null
+  cpfCnpj: string | null
   createdAt: string
   addresses: Array<{
     state: string
@@ -68,7 +70,8 @@ export async function listCustomers(
       ? {
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } }
+            { email: { contains: search, mode: 'insensitive' } },
+            { cpfCnpj: { contains: search, mode: 'insensitive' } }
           ]
         }
       : {})
@@ -84,6 +87,7 @@ export async function listCustomers(
       name: true,
       email: true,
       phone: true,
+      cpfCnpj: true,
       createdAt: true,
       orders: {
         where: { lojaID },
@@ -114,6 +118,7 @@ export async function listCustomers(
       name: user.name,
       email: user.email,
       phone: user.phone,
+      cpfCnpj: user.cpfCnpj,
       totalOrders,
       totalSpent,
       lastOrderAt,
@@ -154,6 +159,7 @@ export async function getCustomerProfile(
       name: true,
       email: true,
       phone: true,
+      cpfCnpj: true,
       createdAt: true,
       addresses: {
         select: {
@@ -177,6 +183,7 @@ export async function getCustomerProfile(
     name: user.name,
     email: user.email,
     phone: user.phone,
+    cpfCnpj: user.cpfCnpj,
     createdAt: user.createdAt.toISOString(),
     addresses: user.addresses.map(addr => ({
       state: addr.state,

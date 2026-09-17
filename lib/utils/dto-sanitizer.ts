@@ -5,6 +5,7 @@ export interface SafeUserDTO {
   role: string;
   status: string;
   phone?: string | null;
+  cpfCnpj?: string | null;
   avatarImageUrl?: string | null;
   lojaID: string;
   createdAt?: Date | string;

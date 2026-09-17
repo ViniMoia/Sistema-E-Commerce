@@ -14,6 +14,13 @@ export interface UpdateOrderStatusInput {
   newStatus: OrderStatus;
 }
 
+export interface GetUserOrdersParams {
+  userID: string;
+  lojaID: string;
+  limit?: number;
+  skip?: number;
+}
+
 // ─── Return Types (derivados do Prisma para garantir sincronia com o schema) ──
 
 /**

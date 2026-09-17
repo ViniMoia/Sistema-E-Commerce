@@ -60,7 +60,7 @@ auditoria/
 
 # Non-production design assets and cloned templates
 midia/
-templates/
+/templates/
 
 # Generated Prisma artifacts
 /app/generated/prisma

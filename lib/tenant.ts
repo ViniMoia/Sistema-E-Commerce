@@ -121,7 +121,13 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
     // 4. Domínio personalizado cadastrado no banco ou slug direto
     const loja = await getCachedLojaBySlugOrDomain(cleanHost);
     return loja as TenantContext | null;
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.digest === "DYNAMIC_SERVER_USAGE" ||
+      (typeof error?.message === "string" && error.message.includes("Dynamic server usage"))
+    ) {
+      throw error;
+    }
     console.error("[GET_LOJA_FROM_HEADERS_ERROR]", error);
     return null;
   }

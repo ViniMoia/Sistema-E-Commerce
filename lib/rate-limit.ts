@@ -7,15 +7,30 @@ interface RateLimitRecord {
 
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
+const MAX_RATE_LIMIT_ENTRIES = 10000;
+
+function pruneRateLimitStore() {
+  const now = Date.now();
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (now > value.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+  // Se ainda estiver no teto de capacidade, elimina os registros mais antigos (FIFO)
+  if (rateLimitStore.size >= MAX_RATE_LIMIT_ENTRIES) {
+    const toDelete = rateLimitStore.size - Math.floor(MAX_RATE_LIMIT_ENTRIES * 0.8);
+    let count = 0;
+    for (const key of rateLimitStore.keys()) {
+      if (count++ >= toDelete) break;
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
 // Limpeza periódica de entradas expiradas para prevenir memory leaks
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of rateLimitStore.entries()) {
-      if (now > value.resetAt) {
-        rateLimitStore.delete(key);
-      }
-    }
+    pruneRateLimitStore();
   }, 60000);
 }
 
@@ -28,7 +43,7 @@ export interface RateLimitResult {
 }
 
 /**
- * Utilitário de Rate Limiting em memória (Finding SEC-005).
+ * Utilitário de Rate Limiting em memória com salvaguarda contra exaustão de heap (SEC-005, AUD2-003).
  */
 export function rateLimit(
   identifier: string,
@@ -39,6 +54,9 @@ export function rateLimit(
   const record = rateLimitStore.get(identifier);
 
   if (!record || now > record.resetAt) {
+    if (rateLimitStore.size >= MAX_RATE_LIMIT_ENTRIES) {
+      pruneRateLimitStore();
+    }
     const resetAt = now + windowMs;
     rateLimitStore.set(identifier, { count: 1, resetAt });
     return {
@@ -71,15 +89,47 @@ export function rateLimit(
   };
 }
 
+const IPV4_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+const IPV6_REGEX = /^[a-fA-F0-9:]+$/;
+
+function isValidIp(ip: string): boolean {
+  if (!ip || ip.length > 45) return false;
+  return IPV4_REGEX.test(ip) || IPV6_REGEX.test(ip);
+}
+
 /**
- * Extrai o endereço IP do cliente a partir dos headers de proxy reverso.
+ * Extrai e valida o endereço IP do cliente a partir dos headers de proxy reverso e CDNs.
+ * Prioriza cabeçalhos autênticos de borda e sanitiza contra injeção e IP spoofing (AUD2-003).
  */
 export function getClientIp(req: Request): string {
+  // 1. Cabeçalhos de borda autenticados de CDNs / Proxies de infraestrutura confiáveis
+  const cfConnectingIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfConnectingIp && isValidIp(cfConnectingIp)) {
+    return cfConnectingIp;
+  }
+
+  const vercelForwardedFor = req.headers.get("x-vercel-forwarded-for")?.trim();
+  if (vercelForwardedFor && isValidIp(vercelForwardedFor)) {
+    return vercelForwardedFor;
+  }
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp && isValidIp(realIp)) {
+    return realIp;
+  }
+
+  // 2. X-Forwarded-For: inspecionar entradas e validar formato IPv4/IPv6
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    const parts = forwarded.split(",").map((p) => p.trim());
+    for (const part of parts) {
+      if (isValidIp(part)) {
+        return part;
+      }
+    }
   }
-  return req.headers.get("x-real-ip") || "127.0.0.1";
+
+  return "127.0.0.1";
 }
 
 /**

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { listCustomersSchema, customerIdSchema } from '@/lib/validators/customer.validators'
+import { registerSchema } from '@/lib/validators/auth'
 
 describe('listCustomersSchema', () => {
   it('deve aceitar objeto vazio (todos opcionais)', () => {
@@ -61,6 +62,49 @@ describe('customerIdSchema', () => {
 
   it('deve rejeitar undefined', () => {
     const result = customerIdSchema.safeParse({ customerId: undefined })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('registerSchema (ACT-005)', () => {
+  it('deve aprovar dados de cadastro válidos com senha >= 8 caracteres', () => {
+    const result = registerSchema.safeParse({
+      name: 'João Silva',
+      email: 'JOAO@TESTE.COM',
+      password: 'senhaForte123',
+      phone: '11999998888',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.email).toBe('joao@teste.com')
+      expect(result.data.name).toBe('João Silva')
+    }
+  })
+
+  it('deve rejeitar senha com menos de 8 caracteres', () => {
+    const result = registerSchema.safeParse({
+      name: 'João Silva',
+      email: 'joao@teste.com',
+      password: '12345',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('deve rejeitar e-mail inválido', () => {
+    const result = registerSchema.safeParse({
+      name: 'João Silva',
+      email: 'email-sem-arroba',
+      password: 'senhaForte123',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('deve rejeitar nome muito curto', () => {
+    const result = registerSchema.safeParse({
+      name: 'J',
+      email: 'joao@teste.com',
+      password: 'senhaForte123',
+    })
     expect(result.success).toBe(false)
   })
 })

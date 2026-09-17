@@ -126,10 +126,10 @@ export default function FreightPage() {
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-100">
             Configuração de Frete
           </h2>
-          <p className="text-muted-foreground mt-2 text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-400">
             Gerencie as regras de frete e valores por cidade.
           </p>
         </div>
@@ -165,22 +165,23 @@ export default function FreightPage() {
 
       {/* Confirmação de Exclusão */}
       <Dialog open={!!ruleToDelete} onOpenChange={(open) => !open && !isDeleting && setRuleToDelete(null)}>
-        <DialogContent className="sm:max-w-md bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+        <DialogContent className="sm:max-w-md bg-zinc-950 border border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <DialogTitle className="text-xl font-bold tracking-tight text-zinc-100">
               Confirmar exclusão
             </DialogTitle>
-            <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+            <DialogDescription className="text-zinc-400">
               Tem certeza que deseja excluir a regra de frete para <strong>{ruleToDelete?.cityName}</strong>? 
               Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-4 sm:justify-end">
+          <DialogFooter className="border-t border-white/10 pt-4 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setRuleToDelete(null)}
               disabled={isDeleting}
+              className="border-white/10 text-zinc-300 hover:text-white"
             >
               Cancelar
             </Button>
@@ -189,7 +190,7 @@ export default function FreightPage() {
               variant="danger"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-100"
+              className="bg-red-600 text-white hover:bg-red-700 font-semibold"
             >
               {isDeleting ? <Spinner className="mr-2 h-4 w-4" /> : null}
               Excluir

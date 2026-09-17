@@ -85,6 +85,7 @@ export default function CheckoutPage() {
   const handleOrderCreated = (result: any) => {
     // Store order data in sessionStorage for confirmation page
     sessionStorage.setItem('last_order', JSON.stringify({
+      orderId: result.id || result.orderId,
       orderNumber: result.orderNumber,
       customer: {
         name: result.customer.name,
@@ -96,6 +97,9 @@ export default function CheckoutPage() {
       freightValue: result.freightValue,
       total: result.total,
       pixKey: result.pixKey,
+      pixQrCode: result.pixQrCode || null,
+      pixPayload: result.pixPayload || null,
+      asaasPaymentId: result.asaasPaymentId || null,
       whatsappNumber: loja.whatsappNumber || ''
     }));
     

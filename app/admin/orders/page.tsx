@@ -39,7 +39,7 @@ export default function OrdersPage() {
         // Map to standard OrderRow shape
         const mapped = ordersArray.map((o: any) => ({
           id: o.id,
-          orderNumber: parseInt(o.id.replace(/\D/g, '')) || 0, // Extract numeric part or default to 0
+          orderNumber: typeof o.orderNumber === 'number' ? o.orderNumber : (parseInt(o.id.replace(/\D/g, '')) || 0),
           createdAt: o.createdAt,
           customerName: o.customer?.name || o.user?.name || 'Sem nome',
           customerEmail: o.customer?.email || o.user?.email || '',
@@ -79,10 +79,10 @@ export default function OrdersPage() {
     <div className="flex-1 space-y-8 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-100">
             Pedidos
           </h2>
-          <p className="text-muted-foreground mt-2 text-zinc-500">
+          <p className="mt-2 text-sm text-zinc-400">
             Gerencie e acompanhe todos os pedidos da loja.
           </p>
         </div>
@@ -102,20 +102,20 @@ export default function OrdersPage() {
           placeholder="Buscar por nome do cliente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 sm:max-w-sm"
+          className="flex h-10 w-full rounded-lg border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:border-[#DDAF02] focus-visible:ring-1 focus-visible:ring-[#DDAF02]/30 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-sm transition-all"
         />
         
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="flex h-10 w-full items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus:ring-zinc-300 sm:max-w-[200px]"
+          className="flex h-10 w-full items-center justify-between rounded-lg border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-[#DDAF02] focus:ring-1 focus:ring-[#DDAF02]/30 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-[200px] transition-all"
         >
-          <option value="ALL">Todos os Status</option>
-          <option value="PENDING">Pendente</option>
-          <option value="PAID">Pago</option>
-          <option value="SHIPPED">Enviado</option>
-          <option value="DELIVERED">Entregue</option>
-          <option value="CANCELLED">Cancelado</option>
+          <option value="ALL" className="bg-zinc-900 text-zinc-200">Todos os Status</option>
+          <option value="PENDING" className="bg-zinc-900 text-zinc-200">Pendente</option>
+          <option value="PAID" className="bg-zinc-900 text-zinc-200">Pago</option>
+          <option value="SHIPPED" className="bg-zinc-900 text-zinc-200">Enviado</option>
+          <option value="DELIVERED" className="bg-zinc-900 text-zinc-200">Entregue</option>
+          <option value="CANCELLED" className="bg-zinc-900 text-zinc-200">Cancelado</option>
         </select>
       </div>
 

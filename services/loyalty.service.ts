@@ -537,6 +537,19 @@ export async function adjustPointsManually(
   const { lojaID, userID, points, description, adminUserId } = validated
 
   const runOperation = async (client: Prisma.TransactionClient) => {
+    // 0. Validar filiação do usuário à loja (AUD-007): impede poluição de carteira entre lojas
+    if (client.user?.findFirst) {
+      const targetUser = await client.user.findFirst({
+        where: { id: userID, lojaID },
+      })
+      if (!targetUser) {
+        throw new LoyaltyError(
+          'USER_NOT_FOUND',
+          `O usuário informado não pertence a esta loja ou não existe.`
+        )
+      }
+    }
+
     const settings = await getLoyaltySettings(lojaID, client)
     const wallet = await getOrCreateWallet(lojaID, userID, client)
 

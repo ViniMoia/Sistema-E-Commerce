@@ -32,7 +32,7 @@ export default async function RootLayout({
   } as React.CSSProperties;
 
   return (
-    <html lang="pt-BR" style={themeStyle}>
+    <html lang="pt-BR" className="dark" style={themeStyle}>
       <body className="antialiased">
         <CartProvider>
           <ConditionalHeader>

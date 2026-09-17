@@ -81,12 +81,11 @@ const cacheFn = typeof React.cache === "function" ? React.cache : ((fn: any) => 
  * - Retorna apenas campos sanitizados (SafeUserDTO).
  */
 export const getCurrentUser = cacheFn(async (): Promise<SafeUserDTO | null> => {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value;
-
-  if (!sessionId) return null;
-
   try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("session_id")?.value;
+
+    if (!sessionId) return null;
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
       include: {
@@ -121,7 +120,10 @@ export const getCurrentUser = cacheFn(async (): Promise<SafeUserDTO | null> => {
     }
 
     return sanitizeUser(session.user);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes("cookies") || error?.digest === "DYNAMIC_SERVER_USAGE") {
+      return null;
+    }
     console.error("Falha ao consultar sessão/usuário:", error);
     return null;
   }

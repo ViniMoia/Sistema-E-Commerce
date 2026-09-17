@@ -11,7 +11,7 @@ export default async function ProfilePage() {
   }
 
   // Fetch orders using the service layer to limit payload and enforce separation of concerns
-  const orders = await getUserOrders(user.id, 10);
+  const orders = await getUserOrders(user.id, 10, 0, user.lojaID);
 
   return (
     <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-main)] py-20 px-4 md:px-8">

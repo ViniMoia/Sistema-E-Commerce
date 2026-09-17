@@ -84,12 +84,12 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-950">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-white/5 bg-zinc-950/60 backdrop-blur-md p-6 shadow-sm">
       <div>
-        <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+        <h3 className="text-lg font-medium text-zinc-100">
           {editingRule ? 'Editar Regra de Frete' : 'Nova Regra de Frete'}
         </h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-zinc-400">
           Configure o valor do frete para uma cidade específica.
         </p>
       </div>
@@ -100,7 +100,7 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label htmlFor="cityName" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <label htmlFor="cityName" className="text-sm font-medium text-zinc-300">
             Cidade
           </label>
           <input
@@ -110,11 +110,11 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
             onChange={(e) => setCityName(e.target.value)}
             placeholder="Ex: São Paulo"
             disabled={isLoading}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dbb501] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400"
+            className="flex h-10 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:border-[#DDAF02] focus-visible:ring-1 focus-visible:ring-[#DDAF02]/30 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="value" className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <label htmlFor="value" className="text-sm font-medium text-zinc-300">
             Valor (R$)
           </label>
           <input
@@ -126,7 +126,7 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
             onChange={(e) => setValue(e.target.value)}
             placeholder="0.00"
             disabled={isLoading}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dbb501] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400"
+            className="flex h-10 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:border-[#DDAF02] focus-visible:ring-1 focus-visible:ring-[#DDAF02]/30 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
           />
         </div>
       </div>
@@ -135,7 +135,7 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="bg-[#dbb501] text-zinc-950 hover:bg-[#c2a001]"
+          className="bg-[#DDAF02] text-zinc-950 hover:bg-[#c2a001] font-semibold"
         >
           {isLoading ? <Spinner className="w-4 h-4 mr-2" /> : null}
           {editingRule ? 'Salvar Alterações' : 'Adicionar Regra'}
@@ -146,6 +146,7 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
             variant="outline" 
             onClick={onCancelEdit}
             disabled={isLoading}
+            className="border-white/10 text-zinc-300 hover:text-white"
           >
             Cancelar
           </Button>

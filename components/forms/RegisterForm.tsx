@@ -10,7 +10,6 @@ type RegisterDTO = {
   email: string;
   password: string;
   phone: string;
-  lojaID: string; // Requerido pelo schema/backend
   address: {
     cep: string;
     state: string; // Requerido pelo backend
@@ -96,8 +95,6 @@ export function RegisterForm() {
       email: formData.email,
       password: formData.password,
       phone: formData.phone,
-      // Passando um lojaID padrão. No futuro, isso pode vir do subdomínio ou contexto da loja.
-      lojaID: "loja-padrao-id", 
       address: {
         cep: formData.cep,
         state: formData.state,

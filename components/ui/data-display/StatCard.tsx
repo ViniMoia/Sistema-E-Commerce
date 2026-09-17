@@ -36,8 +36,8 @@ export function StatCard({
     <Card
       className={cn(
         'animate-in relative overflow-hidden group transition-all duration-400 ease-out',
-        'bg-white dark:bg-[#050505] border-zinc-200 dark:border-white/5',
-        'hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(219,181,1,0.25)] hover:border-[#dbb501]/30',
+        'bg-[#050505]/80 backdrop-blur-md border border-white/5 rounded-xl',
+        'hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(221,175,2,0.2)] hover:border-[#DDAF02]/30',
         className
       )}
     >

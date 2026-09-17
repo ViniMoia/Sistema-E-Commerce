@@ -62,51 +62,60 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Enriquecimento seguro: busca dados e dimensões atômicas dos produtos
-    const enrichedItems = await Promise.all(
-      items.map(async (item) => {
-        if (item.productId) {
-          const product = await prisma.product.findUnique({
-            where: { id: item.productId },
-            select: {
-              name: true,
-              price: true,
-              weightInGrams: true,
-              lengthCm: true,
-              widthCm: true,
-              heightCm: true,
-              lojaID: true,
-            },
-          });
-
-          if (product) {
-            // Se ainda não resolveu lojaID, resolve pelo produto
-            if (!resolvedLojaId && product.lojaID) {
-              resolvedLojaId = product.lojaID;
-            }
-
-            return {
-              ...item,
-              name: item.name || product.name,
-              price: item.price ?? Number(product.price),
-              weightInGrams: item.weightInGrams ?? product.weightInGrams ?? 300,
-              lengthCm: item.lengthCm ?? product.lengthCm ?? 16,
-              widthCm: item.widthCm ?? product.widthCm ?? 11,
-              heightCm: item.heightCm ?? product.heightCm ?? 4,
-            };
-          }
-        }
-
-        // Fallbacks defensivos para itens sem dimensões cadastradas
-        return {
-          ...item,
-          weightInGrams: item.weightInGrams ?? 300,
-          lengthCm: item.lengthCm ?? 16,
-          widthCm: item.widthCm ?? 11,
-          heightCm: item.heightCm ?? 4,
-        };
-      })
+    // 2. Enriquecimento seguro em lote (AUD-008): Elimina N+1 queries buscando todos os produtos de uma só vez
+    const productIds = Array.from(
+      new Set(items.map((i) => i.productId).filter((id): id is string => Boolean(id)))
     );
+
+    const products = productIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            weightInGrams: true,
+            lengthCm: true,
+            widthCm: true,
+            heightCm: true,
+            lojaID: true,
+          },
+        })
+      : [];
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const enrichedItems = items.map((item) => {
+      if (item.productId) {
+        const product = productMap.get(item.productId);
+
+        if (product) {
+          // Se ainda não resolveu lojaID, resolve pelo produto
+          if (!resolvedLojaId && product.lojaID) {
+            resolvedLojaId = product.lojaID;
+          }
+
+          return {
+            ...item,
+            name: item.name || product.name,
+            price: item.price ?? Number(product.price),
+            weightInGrams: item.weightInGrams ?? product.weightInGrams ?? 300,
+            lengthCm: item.lengthCm ?? product.lengthCm ?? 16,
+            widthCm: item.widthCm ?? product.widthCm ?? 11,
+            heightCm: item.heightCm ?? product.heightCm ?? 4,
+          };
+        }
+      }
+
+      // Fallbacks defensivos para itens sem dimensões cadastradas
+      return {
+        ...item,
+        weightInGrams: item.weightInGrams ?? 300,
+        lengthCm: item.lengthCm ?? 16,
+        widthCm: item.widthCm ?? 11,
+        heightCm: item.heightCm ?? 4,
+      };
+    });
 
     if (!resolvedLojaId) {
       return NextResponse.json(

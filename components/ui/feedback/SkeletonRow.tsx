@@ -26,7 +26,7 @@ export function SkeletonRow({ columns, rows = 5 }: SkeletonRowProps) {
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <TableRow
           key={`skeleton-row-${rowIndex}`}
-          className="border-b border-zinc-200 dark:border-white/10 hover:bg-transparent"
+          className="border-b border-white/5 hover:bg-transparent"
         >
           {Array.from({ length: columns }).map((_, colIndex) => {
             const widthClass = staticWidths[(rowIndex * columns + colIndex) % staticWidths.length]
@@ -37,7 +37,7 @@ export function SkeletonRow({ columns, rows = 5 }: SkeletonRowProps) {
               >
                 <Skeleton
                   className={cn(
-                    'h-4 rounded-sm animate-pulse bg-zinc-200/60 dark:bg-white/5',
+                    'h-4 rounded-sm animate-pulse bg-white/5',
                     widthClass
                   )}
                 />

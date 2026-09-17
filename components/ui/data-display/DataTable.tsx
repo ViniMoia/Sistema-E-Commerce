@@ -35,15 +35,15 @@ export function DataTable<T>({
   emptyState,
 }: DataTableProps<T>) {
   return (
-    <div className="w-full overflow-x-auto rounded-md border border-zinc-200 dark:border-white/10">
+    <div className="w-full overflow-x-auto rounded-xl border border-white/5 bg-zinc-950/40 backdrop-blur-md shadow-sm">
       <Table className="w-full text-sm">
-        <TableHeader className="bg-zinc-50 dark:bg-white/[0.02]">
-          <TableRow className="border-b border-zinc-200 dark:border-white/10 hover:bg-transparent">
+        <TableHeader className="bg-white/[0.02] border-b border-white/5">
+          <TableRow className="border-b border-white/5 hover:bg-transparent">
             {columns.map((col) => (
               <TableHead
                 key={String(col.key)}
                 className={cn(
-                  'h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400',
+                  'h-11 px-4 align-middle text-[11px] font-mono uppercase text-zinc-400 tracking-wider',
                   col.align === 'center' && 'text-center',
                   col.align === 'right' && 'text-right'
                 )}
@@ -59,7 +59,7 @@ export function DataTable<T>({
               <SkeletonRow key={`skeleton-${index}`} columns={columns.length} />
             ))
           ) : data.length === 0 ? (
-            <TableRow className="hover:bg-transparent">
+            <TableRow className="hover:bg-transparent border-0">
               <TableCell
                 colSpan={columns.length}
                 className="h-32 p-0 align-middle"
@@ -68,20 +68,19 @@ export function DataTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            data.map((row, index) => (
+            data.map((row) => (
               <TableRow
                 key={keyExtractor(row)}
                 className={cn(
-                  'group transition-colors duration-200 ease-in-out border-b border-zinc-200 dark:border-white/10',
-                  'hover:bg-zinc-100 dark:hover:bg-white/5',
-                  index % 2 === 0 ? 'bg-transparent' : 'bg-zinc-50/50 dark:bg-white/[0.01]'
+                  'group transition-colors duration-200 ease-in-out border-b border-white/5 bg-transparent',
+                  'hover:bg-white/[0.02]'
                 )}
               >
                 {columns.map((col) => (
                   <TableCell
                     key={String(col.key)}
                     className={cn(
-                      'p-4 align-middle text-zinc-900 dark:text-zinc-100',
+                      'p-4 align-middle text-zinc-200 text-sm',
                       col.align === 'center' && 'text-center',
                       col.align === 'right' && 'text-right'
                     )}

@@ -46,7 +46,7 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
     return (
       <div className="grid grid-cols-2 gap-4 mb-6">
         {[0, 1, 2, 3].map((_, index) => (
-          <div key={`skeleton-${index}`} className="h-[100px] w-full bg-zinc-200/60 dark:bg-white/5 animate-pulse rounded-xl" />
+          <div key={`skeleton-${index}`} className="h-[100px] w-full bg-white/5 animate-pulse rounded-xl" />
         ))}
       </div>
     )

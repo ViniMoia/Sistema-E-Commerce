@@ -11,7 +11,8 @@ import { Button, AlertBanner, Spinner, Badge } from '@/components/ui'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OrderStatus } from '@prisma/client'
 import { OrderStatusManager } from './OrderStatusManager'
-import { X } from 'lucide-react'
+import { X, ExternalLink } from 'lucide-react'
+import { getTrackingInfo } from '@/lib/freight/tracking-url'
 
 export interface OrderDetail {
   id: string
@@ -184,12 +185,12 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
   return (
     <Sheet open={Boolean(orderId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-white/10">
+      <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto bg-zinc-950 border-l border-white/10">
         {isLoading && (
           <div className="p-6 space-y-6">
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-8 w-1/3 bg-white/5" />
+            <Skeleton className="h-24 w-full bg-white/5" />
+            <Skeleton className="h-40 w-full bg-white/5" />
           </div>
         )}
 
@@ -202,24 +203,24 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
         {order && (
           <div className="flex flex-col min-h-full">
             {/* 1. HEADER */}
-            <div className="px-6 py-6 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 sticky top-0 z-10">
+            <div className="px-6 py-6 border-b border-white/10 bg-zinc-950 sticky top-0 z-10">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <SheetTitle className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    <SheetTitle className="text-2xl font-bold tracking-tight text-zinc-100">
                       Pedido #{order.orderNumber}
                     </SheetTitle>
                     <Badge status={order.status} />
                   </div>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm text-zinc-400">
                     {formatDate(order.createdAt)}
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#dbb501]"
+                  className="rounded-full p-2 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#DDAF02]"
                 >
-                  <X className="w-5 h-5 text-zinc-500" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -227,44 +228,44 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
             <div className="flex-1 p-6 space-y-8">
               {/* 2. CLIENTE */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Cliente
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5">
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{order.customer?.name || order.user?.name || 'Cliente desconhecido'}</p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{order.customer?.email || order.user?.email}</p>
+                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                  <p className="font-medium text-zinc-100">{order.customer?.name || order.user?.name || 'Cliente desconhecido'}</p>
+                  <p className="text-sm text-zinc-400 mt-1">{order.customer?.email || order.user?.email}</p>
                   {(order.customer?.phone || order.user?.phone) && (
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{order.customer?.phone || order.user?.phone}</p>
+                    <p className="text-sm text-zinc-400 mt-1">{order.customer?.phone || order.user?.phone}</p>
                   )}
                 </div>
               </section>
 
               {/* 3. PRODUTOS */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Produtos
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm border border-zinc-200 dark:border-white/5 overflow-hidden">
-                  <div className="divide-y divide-zinc-200 dark:divide-white/10">
+                <div className="bg-white/[0.02] rounded-xl border border-white/5 overflow-hidden">
+                  <div className="divide-y divide-white/5">
                     {order.items.map(item => (
                       <div key={item.id} className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{item.name}</p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          <p className="font-medium text-sm text-zinc-200">{item.name}</p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
                             {item.quantity}x {formatCurrency(item.price)}
                             {item.color && ` • Cor: ${item.color}`}
                             {item.size && ` • Tam: ${item.size}`}
                           </p>
                         </div>
-                        <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100">
+                        <span className="font-medium text-sm text-zinc-200">
                           {formatCurrency(item.quantity * item.price)}
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-zinc-50 dark:bg-white/[0.02] p-4 flex justify-between border-t border-zinc-200 dark:border-white/10">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Subtotal Produtos</span>
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <div className="bg-white/[0.01] p-4 flex justify-between border-t border-white/5">
+                    <span className="text-sm font-medium text-zinc-400">Subtotal Produtos</span>
+                    <span className="text-sm font-medium text-zinc-100">
                       {formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}
                     </span>
                   </div>
@@ -273,13 +274,13 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 4. ENDEREÇO & MODALIDADE DE ENVIO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Modalidade & Entrega
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5 space-y-3">
+                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5 space-y-3">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-zinc-500">Serviço de Envio:</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    <span className="font-semibold text-zinc-100">
                       {order.shippingServiceName || (order.deliveryType === 'PICKUP' ? 'Retirada na Loja' : order.deliveryType === 'NONE' ? 'A Combinar via WhatsApp' : 'Entrega')}
                     </span>
                   </div>
@@ -287,16 +288,16 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   {order.shippingEstimatedDays ? (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-zinc-500">Prazo Prometido:</span>
-                      <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                      <span className="text-zinc-300 font-medium">
                         {order.shippingEstimatedDays} dias úteis
                       </span>
                     </div>
                   ) : null}
 
                   {order.deliveryType === 'DELIVERY' && order.address && (
-                    <div className="pt-2 border-t border-zinc-100 dark:border-white/5">
+                    <div className="pt-2 border-t border-white/5">
                       <p className="text-xs text-zinc-400 mb-1 font-semibold">Endereço de Destino:</p>
-                      <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                      <p className="text-sm text-zinc-300 leading-relaxed">
                         {order.address.street}, {order.address.number}
                         {order.address.complement && ` - ${order.address.complement}`}
                         <br />
@@ -312,21 +313,21 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 5. RESUMO FINANCEIRO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Resumo Financeiro
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5 space-y-2">
-                  <div className="flex justify-between text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5 space-y-2">
+                  <div className="flex justify-between text-sm text-zinc-400">
                     <span>Subtotal Produtos</span>
                     <span>{formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="flex justify-between text-sm text-zinc-400">
                     <span>Frete ({order.shippingServiceName || 'Envio'})</span>
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <span className="font-medium text-zinc-100">
                       {order.freightValue && order.freightValue > 0 ? formatCurrency(order.freightValue) : 'Grátis (R$ 0,00)'}
                     </span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg text-[#dbb501] pt-2 border-t border-zinc-100 dark:border-white/5 mt-2">
+                  <div className="flex justify-between font-bold text-lg text-[#DDAF02] pt-2 border-t border-white/5 mt-2">
                     <span>Total do Pedido</span>
                     <span>{formatCurrency(order.total)}</span>
                   </div>
@@ -335,10 +336,10 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 6. RASTREAMENTO E CÓDIGO DE ENVIO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Código de Rastreamento (Correios / Transportadora)
                 </h3>
-                <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-200 dark:border-white/5">
+                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
                   {isEditingTracking ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -346,9 +347,9 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                         value={trackingValue}
                         onChange={(e) => setTrackingValue(e.target.value)}
                         placeholder="Ex: AA123456789BR"
-                        className="h-10 flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 text-sm font-mono"
+                        className="h-10 flex-1 rounded-lg border border-white/10 bg-black/40 px-3 text-sm font-mono text-zinc-100 focus:border-[#DDAF02] outline-none"
                       />
-                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking}>
+                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking} className="bg-[#DDAF02] text-black hover:bg-[#c49b02]">
                         {isSavingTracking ? <Spinner className="w-3 h-3" /> : 'Salvar'}
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)}>
@@ -356,13 +357,50 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                        {order.trackingCode || <span className="text-zinc-400 italic">Nenhum código cadastrado</span>}
-                      </span>
-                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)}>
-                        {order.trackingCode ? 'Alterar Rastreio' : 'Adicionar Rastreio'}
-                      </Button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {order.trackingCode ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm font-semibold text-zinc-100">
+                              {order.trackingCode}
+                            </span>
+                            {(() => {
+                              const info = getTrackingInfo(order.trackingCode, order.shippingServiceName || order.shippingProvider);
+                              return info?.carrier ? (
+                                <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-white/10 text-zinc-300 border border-white/10">
+                                  {info.carrier}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const info = getTrackingInfo(order.trackingCode, order.shippingServiceName || order.shippingProvider);
+                              return info?.trackingUrl ? (
+                                <a
+                                  href={info.trackingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#DDAF02] hover:text-[#c49b02] px-2.5 py-1.5 rounded-lg bg-[#DDAF02]/10 border border-[#DDAF02]/20 hover:bg-[#DDAF02]/20 transition-colors"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  Rastrear Objeto
+                                </a>
+                              ) : null;
+                            })()}
+                            <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-white/10 hover:border-[#DDAF02] hover:text-[#DDAF02]">
+                              Alterar
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-zinc-500 italic text-sm">Nenhum código cadastrado</span>
+                          <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-white/10 hover:border-[#DDAF02] hover:text-[#DDAF02]">
+                            Adicionar Rastreio
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -370,14 +408,14 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 7. NOTAS INTERNAS */}
               <section className="space-y-3">
-                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
                     Notas Internas
                   </h3>
                   {!isEditingNotes && (
                     <button
                       onClick={() => setIsEditingNotes(true)}
-                      className="text-xs text-[#dbb501] hover:underline"
+                      className="text-xs text-[#DDAF02] hover:underline"
                     >
                       Editar
                     </button>
@@ -389,40 +427,40 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                       value={notesValue}
                       onChange={(e) => setNotesValue(e.target.value)}
                       rows={3}
-                      className="w-full rounded-md border border-zinc-200 bg-white p-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#dbb501] resize-none"
+                      className="w-full rounded-lg border border-white/10 bg-black/40 p-3 text-sm text-zinc-100 focus:outline-none focus:border-[#DDAF02] resize-none"
                       placeholder="Adicione observações sobre o pedido..."
                     />
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => setIsEditingNotes(false)}>
                         Cancelar
                       </Button>
-                      <Button size="sm" onClick={handleSaveNotes} disabled={isSavingNotes}>
+                      <Button size="sm" onClick={handleSaveNotes} disabled={isSavingNotes} className="bg-[#DDAF02] text-black hover:bg-[#c49b02]">
                         {isSavingNotes ? <Spinner className="w-4 h-4 mr-2" /> : null}
                         Salvar Notas
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-yellow-50/50 dark:bg-yellow-900/10 rounded-lg p-4 border border-yellow-100 dark:border-yellow-900/30 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                    {order.adminNotes || <span className="italic text-zinc-400">Nenhuma nota interna adicionada.</span>}
+                  <div className="bg-[#DDAF02]/5 rounded-xl p-4 border border-[#DDAF02]/20 text-sm text-zinc-300 whitespace-pre-wrap">
+                    {order.adminNotes || <span className="italic text-zinc-500">Nenhuma nota interna adicionada.</span>}
                   </div>
                 )}
               </section>
 
               {/* 8. HISTÓRICO DE STATUS */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
                   Histórico de Status
                 </h3>
-                <div className="relative pl-4 space-y-6 pt-2 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-zinc-200 dark:before:bg-white/10">
+                <div className="relative pl-4 space-y-6 pt-2 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-white/10">
                   {(order.statusHistory || []).map((history) => (
                     <div key={history.id} className="relative">
-                      <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#dbb501] ring-4 ring-zinc-50 dark:ring-zinc-950 mt-1.5" />
+                      <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#DDAF02] ring-4 ring-zinc-950 mt-1.5" />
                       <div>
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          Status atualizado para <span className="font-bold">{statusMap[history.status]?.label}</span>
+                        <p className="text-sm font-medium text-zinc-100">
+                          Status atualizado para <span className="font-bold text-[#DDAF02]">{statusMap[history.status]?.label}</span>
                         </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        <p className="text-xs text-zinc-400 mt-0.5">
                           {formatDate(history.createdAt)} por {history.performedBy?.name || 'Sistema'}
                         </p>
                       </div>
@@ -434,10 +472,10 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
             </div>
 
             {/* 9. FOOTER ACTIONS */}
-            <div className="flex justify-end px-6 py-4 border-t border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 sticky bottom-0 z-10">
+            <div className="flex justify-end px-6 py-4 border-t border-white/10 bg-zinc-950 sticky bottom-0 z-10">
               <Button
                 onClick={() => setIsStatusManagerOpen(true)}
-                className="bg-[#dbb501] text-zinc-950 hover:bg-[#c2a001]"
+                className="bg-[#DDAF02] text-zinc-950 hover:bg-[#c2a001] font-semibold"
               >
                 Atualizar Status
               </Button>

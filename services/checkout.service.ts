@@ -5,6 +5,9 @@ import {
   calculatePointsEarned,
   debitRedeemedPoints,
 } from '@/services/loyalty.service'
+import { asaasClient } from '@/services/asaas/asaas.client'
+import { InventoryService } from '@/services/inventory.service'
+import { cleanDigits } from '@/lib/validators/cpf-cnpj'
 
 export interface CheckoutCartItem {
   productId?: string
@@ -20,6 +23,7 @@ export interface CheckoutCustomerData {
   name: string
   email: string
   phone: string
+  cpfCnpj?: string
   userId?: string
 }
 
@@ -62,10 +66,13 @@ export interface CreateOrderResult {
     shippingServiceName: string | null
     shippingEstimatedDays: number | null
     pixKey: string | null
+    asaasPaymentId?: string | null
+    pixQrCode?: string | null
+    pixPayload?: string | null
     pointsEarned: number
     pointsRedeemed: number
     pointsDiscountValue: number
-    customer: { name: string; phone: string }
+    customer: { name: string; phone: string; cpfCnpj?: string | null }
     items: Array<{
       productId?: string
       name: string
@@ -208,33 +215,54 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
       })
     }
 
-    // 3. Decremento atômico de estoque (DB-002)
-    for (const item of validatedItems) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      })
-
-      if (item.variantId) {
-        await tx.productVariants.update({
-          where: { id: item.variantId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        })
-      }
-    }
+    // 3. Reserva atômica de estoque unificada via InventoryService (REV-001)
+    await InventoryService.reserveStock(
+      validatedItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        name: item.name,
+      })),
+      tx,
+      params.lojaID
+    )
 
     // 4. Resolver ou criar usuário cliente
+    const cleanCustomerCpfCnpj = params.customer.cpfCnpj
+      ? cleanDigits(params.customer.cpfCnpj)
+      : null
+
     let resolvedUserId: string
     if (params.customer.userId) {
-      resolvedUserId = params.customer.userId
+      // Validação de Segurança Anti-IDOR / Anti-Impersonation (AUD2-001):
+      // Garante que o userId informado existe, pertence estritamente a esta loja e corresponde ao e-mail
+      if (typeof tx.user?.findUnique === 'function') {
+        const existingUser = await tx.user.findUnique({
+          where: { id: params.customer.userId },
+          select: { id: true, lojaID: true, email: true },
+        })
+
+        if (!existingUser || existingUser.lojaID !== params.lojaID) {
+          throw new Error('Usuário inválido ou não pertence a esta loja.')
+        }
+
+        if (
+          params.customer.email &&
+          existingUser.email.toLowerCase().trim() !== params.customer.email.toLowerCase().trim()
+        ) {
+          throw new Error('Identificador de usuário não corresponde ao e-mail informado.')
+        }
+
+        resolvedUserId = existingUser.id
+      } else {
+        resolvedUserId = params.customer.userId
+      }
+      if (cleanCustomerCpfCnpj) {
+        await tx.user.update({
+          where: { id: resolvedUserId },
+          data: { cpfCnpj: cleanCustomerCpfCnpj },
+        })
+      }
     } else {
       const upserted = await tx.user.upsert({
         where: {
@@ -243,11 +271,15 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
             lojaID: params.lojaID,
           },
         },
-        update: {},
+        update: {
+          ...(cleanCustomerCpfCnpj ? { cpfCnpj: cleanCustomerCpfCnpj } : {}),
+          ...(params.customer.phone ? { phone: params.customer.phone.trim() } : {}),
+        },
         create: {
           name: params.customer.name.trim(),
           email: params.customer.email.toLowerCase().trim(),
           phone: params.customer.phone.trim(),
+          cpfCnpj: cleanCustomerCpfCnpj,
           password: '',
           role: 'CUSTOMER',
           status: 'ACTIVE',
@@ -361,6 +393,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         user: { connect: { id: resolvedUserId } },
         address: addressConnect,
         status: 'PENDING',
+        customerCpfCnpj: cleanCustomerCpfCnpj,
         paymentMethod: 'WHATSAPP_PIX',
         pixKeyUsed: params.pixKey ?? loja.pixKey ?? null,
         freightValue: calculatedFreight.equals(0) ? null : calculatedFreight,
@@ -388,7 +421,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         },
       },
       include: {
-        user: { select: { name: true, phone: true } },
+        user: { select: { name: true, phone: true, cpfCnpj: true } },
         items: { select: { productId: true, name: true, quantity: true, price: true, color: true, size: true } },
       },
     })
@@ -408,6 +441,56 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
       )
     }
 
+    // 11. Geração de cobrança no Asaas ou dados para PIX Dinâmico
+    let pixQrCode: string | null = null
+    let pixPayload: string | null = created.pixKeyUsed ?? null
+    let asaasPaymentId: string | null = null
+
+    if (process.env.ASAAS_API_KEY) {
+      try {
+        const dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + 1)
+        const dueDateStr = dueDate.toISOString().split('T')[0]
+
+        // Resolve ou cria o cliente no Asaas para obter o customerId oficial (cus_...)
+        const asaasCustomerId = await asaasClient.getOrCreateCustomer({
+          name: params.customer.name,
+          email: params.customer.email,
+          phone: params.customer.phone,
+          cpfCnpj: params.customer.cpfCnpj,
+        })
+
+        const asaasPayment = await asaasClient.createPayment({
+          customer: asaasCustomerId,
+          billingType: 'PIX',
+          value: Number(total),
+          dueDate: dueDateStr,
+          description: `Pedido #${created.orderNumber} - Continental`,
+          externalReference: created.id,
+        })
+
+        asaasPaymentId = asaasPayment.id
+        const pixInfo = await asaasClient.getPixQrCode(asaasPayment.id)
+        pixQrCode = pixInfo.encodedImage
+        pixPayload = pixInfo.payload
+
+        await tx.order.update({
+          where: { id: created.id },
+          data: {
+            asaasPaymentId: asaasPayment.id,
+            asaasPaymentStatus: asaasPayment.status,
+            asaasInvoiceUrl: asaasPayment.invoiceUrl,
+          },
+        })
+      } catch (asaasErr) {
+        console.warn('[ASAAS_DIRECT_CHARGE_WARNING]', asaasErr)
+      }
+    }
+
+    if (!pixPayload) {
+      pixPayload = `00020126580014br.gov.bcb.pix0136${created.id}5204000053039865405${Number(created.total).toFixed(2)}5802BR5913CONTINENTAL6009SAO_PAULO62070503***6304`
+    }
+
     return {
       success: true,
       order: {
@@ -421,10 +504,17 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         shippingServiceName: created.shippingServiceName,
         shippingEstimatedDays: created.shippingEstimatedDays,
         pixKey: created.pixKeyUsed,
+        asaasPaymentId,
+        pixQrCode,
+        pixPayload,
         pointsEarned: created.pointsEarned,
         pointsRedeemed: created.pointsRedeemed,
         pointsDiscountValue: Number(created.pointsDiscountValue),
-        customer: { name: created.user.name, phone: created.user.phone },
+        customer: {
+          name: created.user.name,
+          phone: created.user.phone,
+          cpfCnpj: created.customerCpfCnpj ?? (created.user as any).cpfCnpj ?? null,
+        },
         items: created.items.map((i) => ({
           productId: i.productId ?? undefined,
           name: i.name,

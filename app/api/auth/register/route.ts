@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { registerSchema } from "@/lib/validators/auth";
 import { registerUser } from "@/services/auth.service";
 import { createSession } from "@/lib/session";
 import { getLojaFromHeaders } from "@/lib/tenant";
@@ -15,6 +16,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
+    // Validação formal com Zod (P1-002 / ACT-005)
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados cadastrais inválidos", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
     const activeLoja = await getLojaFromHeaders();
     if (!activeLoja) {
       return NextResponse.json(
@@ -24,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     const user = await registerUser({
-      ...body,
+      ...parsed.data,
       lojaID: activeLoja.id,
     });
 

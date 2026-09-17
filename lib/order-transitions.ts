@@ -10,7 +10,13 @@ export const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 
 export function isValidTransition(
   current: OrderStatus,
-  next: OrderStatus
+  next: OrderStatus,
+  deliveryType?: string
 ): boolean {
+  // Retirada presencial (PICKUP) e modalidade sem frete (NONE) podem transicionar direto de PAGO para ENTREGUE
+  if (current === 'PAID' && next === 'DELIVERED') {
+    return deliveryType === 'PICKUP' || deliveryType === 'NONE'
+  }
   return VALID_TRANSITIONS[current].includes(next)
 }
+

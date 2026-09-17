@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+/**
+ * Convenção Proxy oficial do Next.js 16 (ARC-002, AUD2-008).
+ * Substitui o antigo arquivo middleware.ts.
+ */
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Garante a validação de acesso apenas em rotas administrativas
@@ -17,12 +21,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Validação aprofundada de segurança (role, status do usuário e expiração)
-  // é realizada com cache no Server Component do Layout Admin (app/admin/layout.tsx)
-  // e nas APIs correspondentes pelo método requireAdmin.
+  // é realizada no Layout Admin (app/admin/layout.tsx) e em requireAdmin.
   return NextResponse.next();
 }
 
 export const config = {
   matcher: ["/admin", "/admin/:path*"],
 };
-
