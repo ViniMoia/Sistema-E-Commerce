@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => {
       },
       order: {
         groupBy: vi.fn(),
+        aggregate: vi.fn(),
         count: vi.fn(),
         findMany: vi.fn(),
       },
@@ -118,6 +119,17 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
         },
       ]);
 
+    // Mock de Order Aggregate (Hoje e Mês)
+    (prisma.order.aggregate as any)
+      .mockResolvedValueOnce({
+        _sum: { total: new Prisma.Decimal(320.0), shippingCost: new Prisma.Decimal(20.0) },
+        _count: { _all: 1 },
+      }) // Hoje
+      .mockResolvedValueOnce({
+        _sum: { total: new Prisma.Decimal(980.0), shippingCost: new Prisma.Decimal(65.0) },
+        _count: { _all: 3 },
+      }); // Mês
+
     // 4. Mock de counts do Inbox Operacional
     (prisma.order.count as any)
       .mockResolvedValueOnce(2) // Awaiting dispatch
@@ -198,6 +210,27 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     expect(result.financial.pixConfig.hasPixKey).toBe(true);
     expect(result.financial.pixConfig.pixKeyMasked).toBe('**.***.678/0001-**');
 
+    // Asserções Financeiras
+    expect(result.financial.settledTodayRevenue).toBe(320.0);
+    expect(result.financial.settledTodayShipping).toBe(20.0);
+    expect(result.financial.settledTodayNetRevenue).toBe(300.0);
+    expect(result.financial.settledTodayOrdersCount).toBe(1);
+
+    expect(result.financial.settledMonthRevenue).toBe(980.0);
+    expect(result.financial.settledMonthShipping).toBe(65.0);
+    expect(result.financial.settledMonthNetRevenue).toBe(915.0);
+    expect(result.financial.settledMonthOrdersCount).toBe(3);
+
+    expect(result.financial.settledTotalRevenue).toBe(980.0);
+    expect(result.financial.settledTotalShipping).toBe(65.0);
+    expect(result.financial.settledTotalNetRevenue).toBe(915.0);
+    expect(result.financial.settledTotalOrdersCount).toBe(3);
+    expect(result.financial.settledRevenue).toBe(980.0);
+    expect(result.financial.pendingRevenue).toBe(1435.99);
+    expect(result.financial.cancelledRevenue).toBe(500.0);
+    expect(result.financial.averageTicket).toBe(326.67);
+    expect(result.financial.paymentConversionRatePct).toBe(12);
+
     // Asserções de Logística
     expect(result.logistics.totalShippingRevenue).toBe(45.0);
     expect(result.logistics.deliveryOrdersCount).toBe(2);
@@ -236,6 +269,7 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
       loyaltyPointValue: new Prisma.Decimal(0.05),
     });
     (prisma.order.groupBy as any).mockResolvedValue([]);
+    (prisma.order.aggregate as any).mockResolvedValue({ _sum: { total: null }, _count: { _all: 0 } });
     (prisma.order.count as any).mockResolvedValue(0);
     (prisma.order.findMany as any).mockResolvedValue([]);
     (prisma.product.count as any).mockResolvedValue(10);

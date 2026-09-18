@@ -3,13 +3,17 @@ import prisma from '@/lib/prisma';
 import { updateOrderStatus } from '@/services/order.service';
 import type { AsaasWebhookPayload } from '@/types/asaas.types';
 import type { Prisma } from '@prisma/client';
+import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
     // 1. Validação de Segurança do Token do Webhook Asaas (Fail-Closed - P0-002 / ACT-002)
     const webhookToken = process.env.ASAAS_WEBHOOK_TOKEN;
     if (!webhookToken) {
-      console.error('[ASAAS_WEBHOOK_SECURITY_ALERT] ASAAS_WEBHOOK_TOKEN não está configurado no ambiente.');
+      logger.error('Configuração de webhook não inicializada: ASAAS_WEBHOOK_TOKEN ausente', undefined, {
+        action: 'WEBHOOK_SECURITY_ALERT',
+      });
       return NextResponse.json(
         { error: 'Configuração de webhook não inicializada no servidor.' },
         { status: 500 }
@@ -18,7 +22,20 @@ export async function POST(req: Request) {
 
     const receivedToken =
       req.headers.get('asaas-access-token') || req.headers.get('access_token');
-    if (!receivedToken || receivedToken !== webhookToken) {
+    if (!receivedToken) {
+      return NextResponse.json(
+        { error: 'Token de webhook inválido ou não autorizado.' },
+        { status: 401 }
+      );
+    }
+
+    const bufReceived = Buffer.from(receivedToken);
+    const bufExpected = Buffer.from(webhookToken);
+
+    if (
+      bufReceived.length !== bufExpected.length ||
+      !crypto.timingSafeEqual(bufReceived, bufExpected)
+    ) {
       return NextResponse.json(
         { error: 'Token de webhook inválido ou não autorizado.' },
         { status: 401 }
@@ -116,11 +133,18 @@ export async function POST(req: Request) {
       body.event === 'PAYMENT_CONFIRMED'
     ) {
       if (order.status === 'PENDING') {
+        const paymentDateRaw =
+          body.payment.paymentDate ||
+          body.payment.clientPaymentDate ||
+          body.payment.confirmedDate ||
+          undefined;
+
         const updateResult = await updateOrderStatus({
           orderId: order.id,
           newStatus: 'PAID',
           performedById: 'ASAAS_GATEWAY',
           lojaID: order.lojaID,
+          paidAt: paymentDateRaw ? new Date(paymentDateRaw) : new Date(),
           ipAddress:
             req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
             'asaas-webhook',
@@ -198,6 +222,15 @@ export async function POST(req: Request) {
       }
     }
 
+    logger.info('Evento do Asaas processado com sucesso', {
+      action: 'ASAAS_WEBHOOK_PROCESSED',
+      correlationId: eventId,
+      eventType: body.event,
+      orderId: order.id,
+      tenantId: order.lojaID,
+      asaasPaymentId: body.payment.id,
+    });
+
     return NextResponse.json({
       received: true,
       status: 'PROCESSED',
@@ -206,6 +239,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Erro interno ao processar webhook Asaas', error, {
+      action: 'ASAAS_WEBHOOK_INTERNAL_ERROR',
+    });
     return NextResponse.json(
       { error: 'Erro interno ao processar webhook Asaas', details: errorMsg },
       { status: 500 }

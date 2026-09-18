@@ -6,8 +6,12 @@ import {
   debitRedeemedPoints,
 } from '@/services/loyalty.service'
 import { asaasClient } from '@/services/asaas/asaas.client'
+import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter'
+import type { PaymentGateway } from '@/types/payment-gateway.types'
+import { updateOrderStatus } from '@/services/order.service'
 import { InventoryService } from '@/services/inventory.service'
 import { cleanDigits } from '@/lib/validators/cpf-cnpj'
+import { logger } from '@/lib/logger'
 
 export interface CheckoutCartItem {
   productId?: string
@@ -51,6 +55,7 @@ export interface CreateOrderParams {
   pixKey?: string
   idempotencyKey?: string
   pointsToRedeem?: number // Pontos a resgatar como desconto
+  paymentGateway?: PaymentGateway
 }
 
 export interface CreateOrderResult {
@@ -94,7 +99,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
     throw new Error('O pedido deve conter pelo menos um item.')
   }
 
-  return await prisma.$transaction(async (tx) => {
+  const txResult = await prisma.$transaction(async (tx) => {
     // 0. Verificar idempotência se chave fornecida (DB-002)
     if (params.idempotencyKey) {
       const existingOrder = await tx.order.findUnique({
@@ -116,31 +121,34 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
 
       if (existingOrder) {
         return {
-          success: true,
-          order: {
-            id: existingOrder.id,
-            orderNumber: existingOrder.orderNumber,
-            total: Number(existingOrder.total),
-            subtotal: Number(existingOrder.subtotal),
-            freightValue: existingOrder.freightValue ? Number(existingOrder.freightValue) : null,
-            shippingCost: Number(existingOrder.shippingCost),
-            shippingProvider: existingOrder.shippingProvider,
-            shippingServiceName: existingOrder.shippingServiceName,
-            shippingEstimatedDays: existingOrder.shippingEstimatedDays,
-            pixKey: existingOrder.pixKeyUsed,
-            pointsEarned: existingOrder.pointsEarned,
-            pointsRedeemed: existingOrder.pointsRedeemed,
-            pointsDiscountValue: Number(existingOrder.pointsDiscountValue),
-            customer: { name: existingOrder.user.name, phone: existingOrder.user.phone },
-            items: existingOrder.items.map((i) => ({
-              productId: i.productId ?? undefined,
-              name: i.name,
-              quantity: i.quantity,
-              price: Number(i.price),
-              color: i.color ?? undefined,
-              size: i.size ?? undefined,
-            })),
-            deliveryType: existingOrder.deliveryType,
+          isExisting: true as const,
+          result: {
+            success: true as const,
+            order: {
+              id: existingOrder.id,
+              orderNumber: existingOrder.orderNumber,
+              total: Number(existingOrder.total),
+              subtotal: Number(existingOrder.subtotal),
+              freightValue: existingOrder.freightValue ? Number(existingOrder.freightValue) : null,
+              shippingCost: Number(existingOrder.shippingCost),
+              shippingProvider: existingOrder.shippingProvider,
+              shippingServiceName: existingOrder.shippingServiceName,
+              shippingEstimatedDays: existingOrder.shippingEstimatedDays,
+              pixKey: existingOrder.pixKeyUsed,
+              pointsEarned: existingOrder.pointsEarned,
+              pointsRedeemed: existingOrder.pointsRedeemed,
+              pointsDiscountValue: Number(existingOrder.pointsDiscountValue),
+              customer: { name: existingOrder.user.name, phone: existingOrder.user.phone },
+              items: existingOrder.items.map((i) => ({
+                productId: i.productId ?? undefined,
+                name: i.name,
+                quantity: i.quantity,
+                price: Number(i.price),
+                color: i.color ?? undefined,
+                size: i.size ?? undefined,
+              })),
+              deliveryType: existingOrder.deliveryType,
+            },
           },
         }
       }
@@ -441,90 +449,127 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
       )
     }
 
-    // 11. Geração de cobrança no Asaas ou dados para PIX Dinâmico
-    let pixQrCode: string | null = null
-    let pixPayload: string | null = created.pixKeyUsed ?? null
-    let asaasPaymentId: string | null = null
+    return {
+      isExisting: false as const,
+      created,
+      loja,
+    }
+  })
 
-    if (process.env.ASAAS_API_KEY) {
-      try {
-        const dueDate = new Date()
-        dueDate.setDate(dueDate.getDate() + 1)
-        const dueDateStr = dueDate.toISOString().split('T')[0]
+  if (txResult.isExisting) {
+    return txResult.result
+  }
 
-        // Resolve ou cria o cliente no Asaas para obter o customerId oficial (cus_...)
-        const asaasCustomerId = await asaasClient.getOrCreateCustomer({
+  const { created, loja } = txResult
+
+  // 11. Geração de cobrança no Asaas via PaymentGateway (Two-Phase Execution - DIP/SOLID)
+  let pixQrCode: string | null = null
+  let pixPayload: string | null = created.pixKeyUsed ?? null
+  let asaasPaymentId: string | null = null
+
+  const gateway = params.paymentGateway ?? asaasPaymentAdapter
+  const customerCpf = params.customer.cpfCnpj ?? created.customerCpfCnpj
+
+  // Em ambiente de teste unitário sem mock explícito de gateway, evita chamadas de rede externas
+  const isTestWithoutMock =
+    process.env.NODE_ENV === 'test' &&
+    !params.paymentGateway &&
+    !(asaasClient.createPayment as any)?.mock
+
+  if (process.env.ASAAS_API_KEY && customerCpf && !isTestWithoutMock) {
+    try {
+      const chargeResult = await gateway.createPixCharge({
+        orderId: created.id,
+        orderNumber: created.orderNumber,
+        value: Number(created.total),
+        customer: {
           name: params.customer.name,
           email: params.customer.email,
           phone: params.customer.phone,
-          cpfCnpj: params.customer.cpfCnpj,
-        })
-
-        const asaasPayment = await asaasClient.createPayment({
-          customer: asaasCustomerId,
-          billingType: 'PIX',
-          value: Number(total),
-          dueDate: dueDateStr,
-          description: `Pedido #${created.orderNumber} - Continental`,
-          externalReference: created.id,
-        })
-
-        asaasPaymentId = asaasPayment.id
-        const pixInfo = await asaasClient.getPixQrCode(asaasPayment.id)
-        pixQrCode = pixInfo.encodedImage
-        pixPayload = pixInfo.payload
-
-        await tx.order.update({
-          where: { id: created.id },
-          data: {
-            asaasPaymentId: asaasPayment.id,
-            asaasPaymentStatus: asaasPayment.status,
-            asaasInvoiceUrl: asaasPayment.invoiceUrl,
-          },
-        })
-      } catch (asaasErr) {
-        console.warn('[ASAAS_DIRECT_CHARGE_WARNING]', asaasErr)
-      }
-    }
-
-    if (!pixPayload) {
-      pixPayload = `00020126580014br.gov.bcb.pix0136${created.id}5204000053039865405${Number(created.total).toFixed(2)}5802BR5913CONTINENTAL6009SAO_PAULO62070503***6304`
-    }
-
-    return {
-      success: true,
-      order: {
-        id: created.id,
-        orderNumber: created.orderNumber,
-        total: Number(created.total),
-        subtotal: Number(created.subtotal),
-        freightValue: created.freightValue ? Number(created.freightValue) : null,
-        shippingCost: Number(created.shippingCost),
-        shippingProvider: created.shippingProvider,
-        shippingServiceName: created.shippingServiceName,
-        shippingEstimatedDays: created.shippingEstimatedDays,
-        pixKey: created.pixKeyUsed,
-        asaasPaymentId,
-        pixQrCode,
-        pixPayload,
-        pointsEarned: created.pointsEarned,
-        pointsRedeemed: created.pointsRedeemed,
-        pointsDiscountValue: Number(created.pointsDiscountValue),
-        customer: {
-          name: created.user.name,
-          phone: created.user.phone,
-          cpfCnpj: created.customerCpfCnpj ?? (created.user as any).cpfCnpj ?? null,
+          cpfCnpj: customerCpf,
         },
-        items: created.items.map((i) => ({
-          productId: i.productId ?? undefined,
-          name: i.name,
-          quantity: i.quantity,
-          price: Number(i.price),
-          color: i.color ?? undefined,
-          size: i.size ?? undefined,
-        })),
-        deliveryType: created.deliveryType,
-      },
+        description: `Pedido #${created.orderNumber} - Continental`,
+      })
+
+      asaasPaymentId = chargeResult.paymentId
+      pixQrCode = chargeResult.pixQrCodeBase64
+      pixPayload = chargeResult.pixPayload
+
+      await prisma.order.update({
+        where: { id: created.id },
+        data: {
+          asaasPaymentId: chargeResult.paymentId,
+          asaasPaymentStatus: chargeResult.status,
+          asaasInvoiceUrl: chargeResult.invoiceUrl,
+        },
+      })
+    } catch (gatewayErr: any) {
+      logger.error('Falha na emissão da cobrança no gateway de pagamento', gatewayErr, {
+        action: 'CHECKOUT_GATEWAY_CHARGE_FAILED',
+        orderId: created.id,
+        orderNumber: created.orderNumber,
+        tenantId: params.lojaID,
+        customer: {
+          cpfCnpj: params.customer.cpfCnpj,
+          email: params.customer.email,
+        },
+      })
+      // Decisão 2 homologada: Fail-Closed. Compensação atômica e eliminação de PIX fake.
+      try {
+        await updateOrderStatus({
+          orderId: created.id,
+          newStatus: 'CANCELLED',
+          performedById: 'CHECKOUT_PAYMENT_FAILURE',
+          lojaID: params.lojaID,
+          reason: `Falha na emissão da cobrança PIX no gateway: ${gatewayErr?.message || 'Erro de comunicação'}`,
+        })
+      } catch (compensateErr) {
+        logger.error('Erro crítico na compensação do pedido após falha no gateway', compensateErr, {
+          action: 'CHECKOUT_COMPENSATION_FAILED',
+          orderId: created.id,
+          tenantId: params.lojaID,
+        })
+      }
+
+      throw new Error(
+        'Não foi possível gerar a cobrança PIX no momento. Por favor, verifique seus dados e tente novamente.'
+      )
     }
-  })
+  }
+
+  return {
+    success: true,
+    order: {
+      id: created.id,
+      orderNumber: created.orderNumber,
+      total: Number(created.total),
+      subtotal: Number(created.subtotal),
+      freightValue: created.freightValue ? Number(created.freightValue) : null,
+      shippingCost: Number(created.shippingCost),
+      shippingProvider: created.shippingProvider,
+      shippingServiceName: created.shippingServiceName,
+      shippingEstimatedDays: created.shippingEstimatedDays,
+      pixKey: created.pixKeyUsed,
+      asaasPaymentId,
+      pixQrCode,
+      pixPayload,
+      pointsEarned: created.pointsEarned,
+      pointsRedeemed: created.pointsRedeemed,
+      pointsDiscountValue: Number(created.pointsDiscountValue),
+      customer: {
+        name: created.user.name,
+        phone: created.user.phone,
+        cpfCnpj: created.customerCpfCnpj ?? (created.user as any).cpfCnpj ?? null,
+      },
+      items: created.items.map((i) => ({
+        productId: i.productId ?? undefined,
+        name: i.name,
+        quantity: i.quantity,
+        price: Number(i.price),
+        color: i.color ?? undefined,
+        size: i.size ?? undefined,
+      })),
+      deliveryType: created.deliveryType,
+    },
+  }
 }

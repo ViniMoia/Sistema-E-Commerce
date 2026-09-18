@@ -5,6 +5,7 @@ import { Button, AlertBanner, Spinner } from '@/components/ui'
 import { FreightOption } from '@/types/freight'
 import { LoyaltyPointsWidget } from './LoyaltyPointsWidget'
 import { formatCpfCnpj, validateCpfCnpj, cleanDigits } from '@/lib/validators/cpf-cnpj'
+import { toast } from 'sonner'
 
 export interface CartItem {
   productId?: string
@@ -220,8 +221,8 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
     if (!formData.name || formData.name.length < 2) return 'Nome deve ter pelo menos 2 caracteres.'
     if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) return 'Email inválido.'
     if (!formData.phone || formData.phone.replace(/\D/g, '').length < 10) return 'Telefone inválido.'
-    if (formData.cpfCnpj && !validateCpfCnpj(formData.cpfCnpj)) {
-      return 'CPF ou CNPJ inválido. Verifique os dígitos informados.'
+    if (!formData.cpfCnpj || !validateCpfCnpj(formData.cpfCnpj)) {
+      return 'CPF ou CNPJ válido é obrigatório para emissão do PIX.'
     }
     return null
   }
@@ -271,7 +272,7 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
           name: formData.name,
           email: formData.email,
           phone: formData.phone.replace(/\D/g, ''),
-          cpfCnpj: formData.cpfCnpj ? cleanDigits(formData.cpfCnpj) : undefined,
+          cpfCnpj: cleanDigits(formData.cpfCnpj),
         },
         items: items.map((item: any) => ({
           productId: item.productID || item.productId,
@@ -317,7 +318,9 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
 
       onOrderCreated(data.data.order)
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro inesperado ao finalizar o pedido.')
+      const errorMsg = err.message || 'Ocorreu um erro inesperado ao finalizar o pedido.'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setIsLoading(false)
     }
@@ -402,7 +405,8 @@ export function CheckoutForm({ lojaID, pixKey, whatsappNumber, items = [], onOrd
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  CPF ou CNPJ <span className="text-xs text-zinc-400 font-normal">(para emissão do PIX)</span>
+                  CPF ou CNPJ <span className="text-[#dbb501] font-bold">*</span>{' '}
+                  <span className="text-xs text-zinc-400 font-normal">(obrigatório para emissão do PIX)</span>
                 </label>
                 <input
                   type="text"

@@ -53,7 +53,31 @@ export interface DashboardPixConfigDTO {
 }
 
 export interface DashboardFinancialDTO {
-  /** Receita confirmada em pedidos pagos ou entregues (R$) */
+  /** Valor recebido no dia civil corrente em horário oficial de Brasília (R$) - Maior destaque */
+  settledTodayRevenue: number;
+  /** Frete recebido em pedidos liquidados hoje (R$) */
+  settledTodayShipping: number;
+  /** Receita líquida de produtos recebida hoje (Total - Frete) em R$ */
+  settledTodayNetRevenue: number;
+  /** Quantidade de pedidos liquidados no dia civil corrente */
+  settledTodayOrdersCount: number;
+  /** Valor acumulado recebido no mês civil corrente em horário oficial de Brasília (R$) */
+  settledMonthRevenue: number;
+  /** Frete acumulado recebido no mês corrente (R$) */
+  settledMonthShipping: number;
+  /** Receita líquida de produtos recebida no mês corrente (Total - Frete) em R$ */
+  settledMonthNetRevenue: number;
+  /** Quantidade de pedidos liquidados no mês civil corrente */
+  settledMonthOrdersCount: number;
+  /** Valor acumulado total de todos os recebimentos históricos válidos (R$) */
+  settledTotalRevenue: number;
+  /** Frete acumulado total em pedidos liquidados históricos (R$) */
+  settledTotalShipping: number;
+  /** Receita líquida de produtos histórica total (Total - Frete) em R$ */
+  settledTotalNetRevenue: number;
+  /** Quantidade total histórica de pedidos liquidados */
+  settledTotalOrdersCount: number;
+  /** Receita confirmada total em pedidos pagos ou entregues (R$) - compatibilidade reversa */
   settledRevenue: number;
   /** Receita em aberto aguardando pagamento PIX (R$) */
   pendingRevenue: number;

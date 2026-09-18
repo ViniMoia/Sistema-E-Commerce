@@ -27,11 +27,19 @@ export class AsaasClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
-  constructor() {
+  constructor(apiUrl?: string, apiKey?: string) {
     this.baseUrl = (
-      process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3'
+      apiUrl || process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3'
     ).replace(/\/$/, '');
-    this.apiKey = process.env.ASAAS_API_KEY || '';
+    this.apiKey = apiKey !== undefined ? apiKey : (process.env.ASAAS_API_KEY || '');
+
+    // Bloqueio preventivo de segurança: Chave de produção nunca deve apontar para Sandbox
+    if (this.apiKey.startsWith('$aact_prod_') && this.baseUrl.includes('sandbox.asaas.com')) {
+      throw new AsaasClientError(
+        'Configuração inválida de ambiente: Chave de produção do Asaas não pode ser utilizada com URL de Sandbox.',
+        500
+      );
+    }
   }
 
   private get headers(): HeadersInit {
@@ -41,14 +49,31 @@ export class AsaasClient {
     };
   }
 
+  private async request(url: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          ...this.headers,
+          ...(options.headers || {}),
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   /**
    * Busca um cliente no Asaas pelo endereço de e-mail.
    */
   async findCustomerByEmail(email: string): Promise<AsaasCustomerResponse | null> {
     const url = `${this.baseUrl}/customers?email=${encodeURIComponent(email.trim().toLowerCase())}`;
-    const res = await fetch(url, {
+    const res = await this.request(url, {
       method: 'GET',
-      headers: this.headers,
     });
 
     if (!res.ok) {
@@ -98,9 +123,8 @@ export class AsaasClient {
       sanitizedPayload.notificationDisabled = payload.notificationDisabled;
     }
 
-    const res = await fetch(url, {
+    const res = await this.request(url, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify(sanitizedPayload),
     });
 
@@ -134,9 +158,8 @@ export class AsaasClient {
    */
   async createPayment(payload: AsaasPaymentPayload): Promise<AsaasPaymentResponse> {
     const url = `${this.baseUrl}/payments`;
-    const res = await fetch(url, {
+    const res = await this.request(url, {
       method: 'POST',
-      headers: this.headers,
       body: JSON.stringify(payload),
     });
 
@@ -157,9 +180,8 @@ export class AsaasClient {
    */
   async getPixQrCode(paymentId: string): Promise<AsaasPixQrCodeResponse> {
     const url = `${this.baseUrl}/payments/${paymentId}/pixQrCode`;
-    const res = await fetch(url, {
+    const res = await this.request(url, {
       method: 'GET',
-      headers: this.headers,
     });
 
     if (!res.ok) {
@@ -179,9 +201,8 @@ export class AsaasClient {
    */
   async getPayment(paymentId: string): Promise<AsaasPaymentResponse> {
     const url = `${this.baseUrl}/payments/${paymentId}`;
-    const res = await fetch(url, {
+    const res = await this.request(url, {
       method: 'GET',
-      headers: this.headers,
     });
 
     if (!res.ok) {

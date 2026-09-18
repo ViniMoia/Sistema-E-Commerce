@@ -3,6 +3,7 @@ import { Prisma, OrderStatus } from "@prisma/client";
 import { isValidTransition } from "@/lib/order-transitions";
 import { creditEarnedPoints, refundOrderPoints } from "@/services/loyalty.service";
 import { InventoryService } from "@/services/inventory.service";
+import { invalidateDashboardCache } from "@/services/dashboard.service";
 import type { ListOrdersParams, UpdateOrderStatusInput, UpdateStatusResult } from "@/types/admin.types";
 import type { CreateOrderInput, OrderWithDetails, OrderSummary, GetUserOrdersParams } from "@/types/order.types";
 
@@ -304,9 +305,13 @@ export async function updateOrderStatus(
 
   if (input.newStatus === "PAID") {
     const updatedOrder = await prisma.$transaction(async (tx) => {
+      const paidTimestamp = input.paidAt ? new Date(input.paidAt) : new Date();
       const order = await tx.order.update({
         where: { id: input.orderId },
-        data: { status: input.newStatus },
+        data: {
+          status: input.newStatus,
+          paidAt: paidTimestamp,
+        },
         select: { id: true, status: true },
       });
 
@@ -341,6 +346,7 @@ export async function updateOrderStatus(
       return order;
     });
 
+    invalidateDashboardCache(fullOrder.lojaID);
     return { success: true, order: updatedOrder };
   }
 
@@ -397,6 +403,7 @@ export async function updateOrderStatus(
       return order;
     });
 
+    invalidateDashboardCache(fullOrder.lojaID);
     return { success: true, order: updatedOrder };
   }
 
@@ -424,5 +431,6 @@ export async function updateOrderStatus(
     return order;
   });
 
+  invalidateDashboardCache(fullOrder.lojaID);
   return { success: true, order: updatedOrder };
 }

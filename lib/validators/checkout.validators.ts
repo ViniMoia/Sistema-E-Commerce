@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { validateCpfCnpj } from '@/lib/validators/cpf-cnpj'
 
 const cartItemSchema = z.object({
   productId: z.string().optional(),
@@ -11,10 +12,15 @@ const cartItemSchema = z.object({
 })
 
 const customerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(10),
-  cpfCnpj: z.string().optional(),
+  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
+  email: z.string().email('E-mail inválido'),
+  phone: z.string().min(10, 'Telefone deve ter no mínimo 10 dígitos'),
+  cpfCnpj: z
+    .string('CPF ou CNPJ é obrigatório para emissão do PIX')
+    .min(11, 'CPF ou CNPJ é obrigatório para emissão do PIX')
+    .refine((val) => validateCpfCnpj(val), {
+      message: 'CPF ou CNPJ inválido. Verifique os dígitos informados.',
+    }),
   userId: z.string().optional(),
 })
 

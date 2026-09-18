@@ -19,6 +19,7 @@ export type UpdateOrderStatusInput = {
   performedById: string;
   ipAddress?: string;
   reason?: string;
+  paidAt?: Date | string;
 };
 
 export type UpdateStatusResult =

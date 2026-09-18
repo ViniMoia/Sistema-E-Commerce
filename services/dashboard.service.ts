@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
+import { getBusinessTimeRanges } from '@/lib/utils/date-ranges';
 import { Prisma, OrderStatus, DeliveryType } from '@prisma/client';
 import type {
   AggregatedDashboardDataDTO,
@@ -69,10 +70,14 @@ export async function getAggregatedDashboardMetrics(
     'dashboard',
     'aggregated_metrics_v1',
     async () => {
+      const timeRanges = getBusinessTimeRanges();
+
       // 1. Execução paralela em batch das consultas necessárias
       const [
         loja,
         orderGroups,
+        todayReceiptsAggregate,
+        monthReceiptsAggregate,
         carrierGroups,
         awaitingDispatchCount,
         awaitingPickupCount,
@@ -116,6 +121,34 @@ export async function getAggregatedDashboardMetrics(
           where: { lojaID },
           _count: { _all: true },
           _sum: { total: true, shippingCost: true },
+        }),
+
+        // Recebimento do Dia (paidAt no dia civil corrente em America/Sao_Paulo)
+        prisma.order.aggregate({
+          where: {
+            lojaID,
+            status: { in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED] },
+            OR: [
+              { paidAt: { gte: timeRanges.startOfDay, lte: timeRanges.endOfDay } },
+              { paidAt: null, createdAt: { gte: timeRanges.startOfDay, lte: timeRanges.endOfDay } },
+            ],
+          },
+          _sum: { total: true, shippingCost: true },
+          _count: { _all: true },
+        }),
+
+        // Recebimento do Mês (paidAt no mês civil corrente em America/Sao_Paulo)
+        prisma.order.aggregate({
+          where: {
+            lojaID,
+            status: { in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED] },
+            OR: [
+              { paidAt: { gte: timeRanges.startOfMonth, lte: timeRanges.endOfMonth } },
+              { paidAt: null, createdAt: { gte: timeRanges.startOfMonth, lte: timeRanges.endOfMonth } },
+            ],
+          },
+          _sum: { total: true, shippingCost: true },
+          _count: { _all: true },
         }),
 
         // Agrupamento de pedidos por Provedor e Tipo de Entrega (Logística)
@@ -261,6 +294,7 @@ export async function getAggregatedDashboardMetrics(
 
       // ─── 2. Consolidação de Métricas Financeiras & Funil ───────────────────
       let settledRevenue = 0;
+      let settledShipping = 0;
       let pendingRevenue = 0;
       let cancelledRevenue = 0;
       let totalOrdersCount = 0;
@@ -272,6 +306,7 @@ export async function getAggregatedDashboardMetrics(
       for (const group of orderGroups) {
         const count = group._count._all;
         const totalVal = group._sum.total?.toNumber() ?? 0;
+        const shippingVal = group._sum.shippingCost?.toNumber() ?? 0;
         totalOrdersCount += count;
 
         switch (group.status) {
@@ -279,11 +314,13 @@ export async function getAggregatedDashboardMetrics(
             paidOrdersCount += count;
             settledOrdersCount += count;
             settledRevenue += totalVal;
+            settledShipping += shippingVal;
             break;
           case OrderStatus.SHIPPED:
           case OrderStatus.DELIVERED:
             settledOrdersCount += count;
             settledRevenue += totalVal;
+            settledShipping += shippingVal;
             break;
           case OrderStatus.PENDING:
             pendingOrdersCount += count;
@@ -303,8 +340,42 @@ export async function getAggregatedDashboardMetrics(
           ? Math.round((settledOrdersCount / totalOrdersCount) * 100)
           : 0;
 
+      const settledTodayRevenue =
+        Math.round((todayReceiptsAggregate?._sum?.total?.toNumber() ?? 0) * 100) / 100;
+      const settledTodayShipping =
+        Math.round((todayReceiptsAggregate?._sum?.shippingCost?.toNumber() ?? 0) * 100) / 100;
+      const settledTodayNetRevenue =
+        Math.max(0, Math.round((settledTodayRevenue - settledTodayShipping) * 100) / 100);
+      const settledTodayOrdersCount = todayReceiptsAggregate?._count?._all ?? 0;
+
+      const settledMonthRevenue =
+        Math.round((monthReceiptsAggregate?._sum?.total?.toNumber() ?? 0) * 100) / 100;
+      const settledMonthShipping =
+        Math.round((monthReceiptsAggregate?._sum?.shippingCost?.toNumber() ?? 0) * 100) / 100;
+      const settledMonthNetRevenue =
+        Math.max(0, Math.round((settledMonthRevenue - settledMonthShipping) * 100) / 100);
+      const settledMonthOrdersCount = monthReceiptsAggregate?._count?._all ?? 0;
+
+      const settledTotalRevenue = Math.round(settledRevenue * 100) / 100;
+      const settledTotalShipping = Math.round(settledShipping * 100) / 100;
+      const settledTotalNetRevenue =
+        Math.max(0, Math.round((settledTotalRevenue - settledTotalShipping) * 100) / 100);
+      const settledTotalOrdersCount = settledOrdersCount;
+
       const financialDTO: DashboardFinancialDTO = {
-        settledRevenue: Math.round(settledRevenue * 100) / 100,
+        settledTodayRevenue,
+        settledTodayShipping,
+        settledTodayNetRevenue,
+        settledTodayOrdersCount,
+        settledMonthRevenue,
+        settledMonthShipping,
+        settledMonthNetRevenue,
+        settledMonthOrdersCount,
+        settledTotalRevenue,
+        settledTotalShipping,
+        settledTotalNetRevenue,
+        settledTotalOrdersCount,
+        settledRevenue: settledTotalRevenue,
         pendingRevenue: Math.round(pendingRevenue * 100) / 100,
         cancelledRevenue: Math.round(cancelledRevenue * 100) / 100,
         averageTicket: Math.round(averageTicket * 100) / 100,

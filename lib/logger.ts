@@ -9,8 +9,54 @@ export interface LogContext {
   tenantId?: string;
   userId?: string;
   requestId?: string;
+  correlationId?: string;
+  orderId?: string;
+  orderNumber?: number;
+  asaasPaymentId?: string;
   action?: string;
   [key: string]: unknown;
+}
+
+export function maskCpfCnpj(doc: string): string {
+  const clean = doc.replace(/\D/g, '');
+  if (clean.length === 11) {
+    return `${clean.slice(0, 3)}.***.***-${clean.slice(9)}`;
+  }
+  if (clean.length === 14) {
+    return `${clean.slice(0, 2)}.***.***/****-${clean.slice(12)}`;
+  }
+  return '***.***.***-**';
+}
+
+export function sanitizeLogValue(key: string, value: unknown): unknown {
+  if (typeof value === 'string') {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey.includes('cpf') || lowerKey.includes('cnpj') || lowerKey.includes('document')) {
+      return maskCpfCnpj(value);
+    }
+    if (
+      lowerKey.includes('apikey') ||
+      lowerKey.includes('secret') ||
+      lowerKey.includes('password') ||
+      lowerKey.includes('token') ||
+      lowerKey.includes('auth')
+    ) {
+      return '[REDACTED]';
+    }
+  }
+
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    if (Array.isArray(value)) {
+      return value.map((item) => sanitizeLogValue(key, item));
+    }
+    const sanitizedObj: Record<string, unknown> = {};
+    for (const [subKey, subVal] of Object.entries(value as Record<string, unknown>)) {
+      sanitizedObj[subKey] = sanitizeLogValue(subKey, subVal);
+    }
+    return sanitizedObj;
+  }
+
+  return value;
 }
 
 export interface StructuredLog {
@@ -50,11 +96,13 @@ export class Logger {
       ...context,
     };
 
+    const sanitized = (sanitizeLogValue('context', mergedContext) || {}) as LogContext;
+
     const logEntry: StructuredLog = {
       timestamp: new Date().toISOString(),
       level,
       message,
-      ...(Object.keys(mergedContext).length > 0 ? { context: mergedContext } : {}),
+      ...(Object.keys(sanitized).length > 0 ? { context: sanitized } : {}),
     };
 
     if (err instanceof Error) {

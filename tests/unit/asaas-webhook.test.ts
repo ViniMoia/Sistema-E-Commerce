@@ -51,12 +51,45 @@ describe('Asaas Webhook Handler (POST /api/webhooks/asaas)', () => {
     expect(json.error).toContain('Configuração de webhook não inicializada');
   });
 
-  it('deve rejeitar requisição com status 401 se token do webhook for inválido ou ausente', async () => {
+  it('deve rejeitar requisição com status 401 se cabeçalho asaas-access-token estiver ausente', async () => {
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_123' } }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toContain('Token de webhook inválido');
+  });
+
+  it('deve rejeitar requisição com status 401 se token do webhook for inválido (tamanho diferente)', async () => {
     const req = new Request('http://localhost/api/webhooks/asaas', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'asaas-access-token': 'wrong-token',
+      },
+      body: JSON.stringify({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_123' } }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toContain('Token de webhook inválido');
+  });
+
+  it('deve rejeitar requisição com status 401 para token forjado com mesmo tamanho (timingSafeEqual)', async () => {
+    // TEST_TOKEN tem 16 caracteres ('secret-token-123')
+    const forgedToken = 'secret-token-999';
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'asaas-access-token': forgedToken,
       },
       body: JSON.stringify({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_123' } }),
     });
@@ -257,4 +290,76 @@ describe('Asaas Webhook Handler (POST /api/webhooks/asaas)', () => {
       })
     );
   });
+
+  it('deve atualizar pedido PENDING para CANCELLED ao receber PAYMENT_DELETED (AUD-005)', async () => {
+    vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
+    vi.mocked(prisma.paymentWebhookEvent.create).mockResolvedValueOnce({} as any);
+    vi.mocked(prisma.order.findFirst).mockResolvedValueOnce({
+      id: 'order_pending_deleted',
+      status: 'PENDING',
+      lojaID: 'loja_default',
+      total: 150,
+    } as any);
+    vi.mocked(prisma.order.update).mockResolvedValueOnce({} as any);
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: true,
+      order: { id: 'order_pending_deleted', status: 'CANCELLED' },
+    } as any);
+
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'asaas-access-token': TEST_TOKEN,
+      },
+      body: JSON.stringify({
+        id: 'evt_deleted_1',
+        event: 'PAYMENT_DELETED',
+        payment: {
+          id: 'pay_asaas_deleted',
+          externalReference: 'order_pending_deleted',
+          status: 'DELETED',
+          value: 150.0,
+        },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    expect(orderService.updateOrderStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_pending_deleted',
+        newStatus: 'CANCELLED',
+        performedById: 'ASAAS_GATEWAY_EXPIRATION',
+      })
+    );
+  });
+
+  it('deve lidar com concorrência estrita (P2002) retornando 200 ALREADY_PROCESSED', async () => {
+    vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
+    const p2002Error: any = new Error('Unique constraint failed on the fields: (`eventId`)');
+    p2002Error.code = 'P2002';
+    vi.mocked(prisma.paymentWebhookEvent.create).mockRejectedValueOnce(p2002Error);
+
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'asaas-access-token': TEST_TOKEN,
+      },
+      body: JSON.stringify({
+        id: 'evt_concurrent_1',
+        event: 'PAYMENT_RECEIVED',
+        payment: { id: 'pay_concurrent', status: 'RECEIVED', value: 100 },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.status).toBe('ALREADY_PROCESSED');
+    expect(orderService.updateOrderStatus).not.toHaveBeenCalled();
+  });
 });
+

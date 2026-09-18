@@ -56,6 +56,9 @@ export interface AsaasPaymentResponse {
   bankSlipUrl?: string;
   transactionReceiptUrl?: string;
   deleted?: boolean;
+  confirmedDate?: string;
+  paymentDate?: string;
+  clientPaymentDate?: string;
 }
 
 export interface AsaasPixQrCodeResponse {

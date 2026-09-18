@@ -36,4 +36,30 @@ describe('Logging Estruturado e Observabilidade (OPS-001)', () => {
     expect(entry.error?.stack).toBeDefined()
     expect(entry.context?.tenantId).toBe('loja-xyz')
   })
+
+  it('deve mascarar automaticamente CPF/CNPJ e redigir credenciais em logs (LGPD)', () => {
+    const logger = new Logger()
+    const entry = logger.info('Dados de cliente recebidos', {
+      orderId: 'ord-1234',
+      correlationId: 'corr-5678',
+      asaasPaymentId: 'pay-9999',
+      customer: {
+        cpfCnpj: '52998224725',
+        cnpj: '11222333000181',
+      },
+      asaasApiKey: '$aact_prod_secret_token_123',
+      webhookToken: 'whsec_secret_123',
+    })
+
+    expect(entry.context?.orderId).toBe('ord-1234')
+    expect(entry.context?.correlationId).toBe('corr-5678')
+    expect(entry.context?.asaasPaymentId).toBe('pay-9999')
+    // PII mascarado
+    expect((entry.context?.customer as any)?.cpfCnpj).toBe('529.***.***-25')
+    expect((entry.context?.customer as any)?.cnpj).toBe('11.***.***/****-81')
+    // Segredos redigidos
+    expect(entry.context?.asaasApiKey).toBe('[REDACTED]')
+    expect(entry.context?.webhookToken).toBe('[REDACTED]')
+  })
 })
+
