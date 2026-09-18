@@ -108,14 +108,14 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
     if (cleanHost.endsWith(`.${platformDomain}`)) {
       const slug = cleanHost.replace(`.${platformDomain}`, "");
       const loja = await getCachedLojaBySlug(slug);
-      return loja as TenantContext | null;
+      if (loja) return loja as TenantContext | null;
     }
 
     // 3. Domínio Vercel de preview ou staging (ex: loja1.vercel.app)
     if (cleanHost.endsWith(".vercel.app")) {
       const slug = cleanHost.replace(".vercel.app", "");
       const loja = await getCachedLojaBySlug(slug);
-      return loja as TenantContext | null;
+      if (loja) return loja as TenantContext | null;
     }
 
     // 4. Domínio personalizado cadastrado no banco ou slug direto
