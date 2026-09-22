@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/guards";
 import * as cartService from "@/services/cart.service";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 const addToCartSchema = z.object({
   productID: z.string().uuid("ID do produto inválido"),
@@ -22,7 +23,9 @@ export async function GET(req: Request) {
     const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error) {
-    console.error("[CART_GET_ERROR]", error);
+    logger.error("Erro ao obter carrinho do usuário", error, {
+      action: "CART_GET_ERROR",
+    });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -46,7 +49,9 @@ export async function POST(req: Request) {
     const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 201 });
   } catch (error: any) {
-    console.error("[CART_POST_ERROR]", error);
+    logger.error("Erro ao adicionar item ao carrinho", error, {
+      action: "CART_POST_ERROR",
+    });
     if (error instanceof cartService.CartError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
@@ -78,7 +83,9 @@ export async function PATCH(req: Request) {
     const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error: any) {
-    console.error("[CART_PATCH_ERROR]", error);
+    logger.error("Erro ao atualizar quantidade no carrinho", error, {
+      action: "CART_PATCH_ERROR",
+    });
     if (error instanceof cartService.CartError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
@@ -109,7 +116,9 @@ export async function DELETE(req: Request) {
     const cart = await cartService.getCart(auth.user.id);
     return NextResponse.json(cart || { items: [] }, { status: 200 });
   } catch (error: any) {
-    console.error("[CART_DELETE_ERROR]", error);
+    logger.error("Erro ao remover item do carrinho", error, {
+      action: "CART_DELETE_ERROR",
+    });
     if (error instanceof cartService.CartError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

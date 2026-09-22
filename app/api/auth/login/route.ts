@@ -4,11 +4,14 @@ import { loginUser, AuthError } from "@/services/auth.service";
 import { createSession } from "@/lib/session";
 import { getLojaFromHeaders } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   // Proteção contra brute-force: 5 tentativas por minuto por IP (SEC-005)
   const rateLimitResponse = checkRateLimit(req, "auth_login", 5, 60000);
   if (rateLimitResponse) return rateLimitResponse;
+
+  let activeLojaId: string | undefined;
 
   try {
     const body = await req.json().catch(() => null);
@@ -33,14 +36,16 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
+    activeLojaId = activeLoja.id;
 
     // Autenticação com escopo de loja
     const user = await loginUser({
-      ...parsed.data,
+      email: parsed.data.email,
+      password: parsed.data.password,
       lojaID: activeLoja.id,
     });
 
-    // Criação de sessão na base de dados + Cookie
+    // Criação de sessão segura com renovação de identificador (anti-fixation)
     await createSession(user.id);
 
     return NextResponse.json(
@@ -58,7 +63,10 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("Login route error:", error);
+    logger.error("Erro inesperado durante tentativa de login", error, {
+      action: "AUTH_LOGIN",
+      tenantId: activeLojaId,
+    });
     return NextResponse.json(
       { error: "Erro ao fazer login" },
       { status: 500 }

@@ -2,7 +2,7 @@ import { LoginForm } from "@/components/forms/LoginForm";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Login | Pernambuco Confecções",
+  title: "Login | Continental Produtos Estéticos",
   description: "Acesse sua conta para continuar.",
 };
 

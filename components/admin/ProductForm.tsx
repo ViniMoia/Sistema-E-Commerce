@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
 import {
   Form,
   FormControl,
@@ -218,10 +219,14 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
               control={form.control}
               name="imageUrl"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL da Imagem</FormLabel>
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Foto Principal do Produto</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://..." {...field} />
+                    <ProductImageUpload
+                      value={field.value}
+                      onChange={field.onChange}
+                      label="Foto Principal"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -273,9 +278,13 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                     name={`galleryUrls.${index}.url`}
                     render={({ field: formField }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>URL da Imagem Extra</FormLabel>
+                        <FormLabel>Foto Adicional #{index + 1}</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://..." {...formField} />
+                          <ProductImageUpload
+                            value={formField.value}
+                            onChange={formField.onChange}
+                            label={`Galeria #${index + 1}`}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -98,6 +98,7 @@ export const getCurrentUser = cacheFn(async (): Promise<SafeUserDTO | null> => {
             status: true,
             avatarImageUrl: true,
             phone: true,
+            cpfCnpj: true,
             lojaID: true,
             createdAt: true,
             updatedAt: true,

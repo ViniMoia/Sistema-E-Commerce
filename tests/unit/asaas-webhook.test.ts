@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/webhooks/asaas/route';
 import prisma from '@/lib/prisma';
 import * as orderService from '@/services/order.service';
+import { emailService } from '@/lib/email';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
@@ -11,13 +12,23 @@ vi.mock('@/lib/prisma', () => ({
     },
     order: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
     },
   },
 }));
 
 vi.mock('@/services/order.service', () => ({
   updateOrderStatus: vi.fn(),
+}));
+
+vi.mock('@/lib/email', () => ({
+  emailService: {
+    sendOrderPaymentConfirmedEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'msg-test' }),
+  },
 }));
 
 describe('Asaas Webhook Handler (POST /api/webhooks/asaas)', () => {
@@ -360,6 +371,120 @@ describe('Asaas Webhook Handler (POST /api/webhooks/asaas)', () => {
     const json = await res.json();
     expect(json.status).toBe('ALREADY_PROCESSED');
     expect(orderService.updateOrderStatus).not.toHaveBeenCalled();
+  });
+
+  it('deve disparar e-mail de confirmação de pagamento de forma assíncrona quando o pedido transitar para PAID', async () => {
+    vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
+    vi.mocked(prisma.paymentWebhookEvent.create).mockResolvedValueOnce({} as any);
+    vi.mocked(prisma.order.findFirst).mockResolvedValueOnce({
+      id: 'ord-email-test',
+      status: 'PENDING',
+      lojaID: 'loja-1',
+      total: 250,
+    } as any);
+    vi.mocked(prisma.order.update).mockResolvedValueOnce({} as any);
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: true,
+      order: { id: 'ord-email-test', status: 'PAID' },
+    } as any);
+
+    const fullOrderMock = {
+      id: 'ord-email-test',
+      orderNumber: 501,
+      total: 250,
+      deliveryType: 'DELIVERY',
+      shippingServiceName: 'SEDEX',
+      shippingEstimatedDays: 2,
+      pointsEarned: 25,
+      user: { name: 'Carlos Silva', email: 'carlos@exemplo.com' },
+      loja: { name: 'Continental Loja' },
+      items: [
+        { name: 'Produto A', quantity: 2, price: 100, color: 'Azul', size: 'G' },
+        { name: 'Produto B', quantity: 1, price: 50, color: null, size: null },
+      ],
+      address: {
+        street: 'Av. Brasil',
+        number: '500',
+        complement: 'Sala 1',
+        district: 'Centro',
+        city: 'São Paulo',
+        state: 'SP',
+        cep: '01000-000',
+      },
+    };
+
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce(fullOrderMock as any);
+
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'asaas-access-token': TEST_TOKEN,
+      },
+      body: JSON.stringify({
+        id: 'evt_email_1',
+        event: 'PAYMENT_RECEIVED',
+        payment: { id: 'pay_email_1', externalReference: 'ord-email-test', value: 250.0 },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    // Permite que a microtarefa/promessa assíncrona resolva
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(prisma.order.findUnique).toHaveBeenCalledWith({
+      where: { id: 'ord-email-test' },
+      include: expect.any(Object),
+    });
+
+    expect(emailService.sendOrderPaymentConfirmedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'carlos@exemplo.com',
+        customerName: 'Carlos Silva',
+        orderNumber: 501,
+        totalValue: 250,
+      })
+    );
+  });
+
+  it('deve manter resposta HTTP 200 de sucesso mesmo se o envio de e-mail rejeitar (resiliência / fail-safe)', async () => {
+    vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
+    vi.mocked(prisma.paymentWebhookEvent.create).mockResolvedValueOnce({} as any);
+    vi.mocked(prisma.order.findFirst).mockResolvedValueOnce({
+      id: 'ord-email-fail',
+      status: 'PENDING',
+      lojaID: 'loja-1',
+      total: 100,
+    } as any);
+    vi.mocked(prisma.order.update).mockResolvedValueOnce({} as any);
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: true,
+      order: { id: 'ord-email-fail', status: 'PAID' },
+    } as any);
+
+    // findUnique lança erro de rede simulando falha temporária
+    vi.mocked(prisma.order.findUnique).mockRejectedValueOnce(new Error('Erro de conexão no envio de e-mail'));
+
+    const req = new Request('http://localhost/api/webhooks/asaas', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'asaas-access-token': TEST_TOKEN,
+      },
+      body: JSON.stringify({
+        id: 'evt_email_fail',
+        event: 'PAYMENT_RECEIVED',
+        payment: { id: 'pay_fail_1', externalReference: 'ord-email-fail', value: 100.0 },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.status).toBe('PROCESSED');
+    expect(json.received).toBe(true);
   });
 });
 

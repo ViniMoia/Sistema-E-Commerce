@@ -2,7 +2,7 @@ import { RegisterForm } from "@/components/forms/RegisterForm";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Registro | Pernambuco Confecções",
+  title: "Registro | Continental Produtos Estéticos",
   description: "Crie sua conta para acessar ofertas exclusivas.",
 };
 

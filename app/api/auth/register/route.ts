@@ -4,11 +4,14 @@ import { registerUser } from "@/services/auth.service";
 import { createSession } from "@/lib/session";
 import { getLojaFromHeaders } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   // Proteção contra brute-force / spam registration: 5 tentativas por minuto por IP (SEC-005)
   const rateLimitResponse = checkRateLimit(req, "auth_register", 5, 60000);
   if (rateLimitResponse) return rateLimitResponse;
+
+  let activeLojaId: string | undefined;
 
   try {
     const body = await req.json().catch(() => null);
@@ -32,6 +35,7 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
+    activeLojaId = activeLoja.id;
 
     const user = await registerUser({
       ...parsed.data,
@@ -49,7 +53,10 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("API Error in /api/auth/register:", error);
+    logger.error("Erro ao registrar novo usuário", error, {
+      action: "AUTH_REGISTER",
+      tenantId: activeLojaId,
+    });
     return NextResponse.json(
       { error: error.message || "Erro ao registrar usuário" },
       { status: 400 }

@@ -100,3 +100,23 @@ export interface LoyaltyStatementResult {
     monetaryBalance: number
   }
 }
+
+export interface ExpireLoyaltyPointsParams {
+  lojaID: string
+  userID: string
+  points: number
+  description?: string
+}
+
+export interface ProcessLoyaltyExpirationsOptions {
+  lojaID?: string
+  now?: Date
+}
+
+export interface ProcessLoyaltyExpirationsResult {
+  processedWallets: number
+  expiredCount: number
+  totalPointsExpired: number
+  errors: Array<{ userId: string; lojaId: string; error: string }>
+}
+

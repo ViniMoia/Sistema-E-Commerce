@@ -4,6 +4,7 @@ import { DevEmailService } from "./providers/dev.provider";
 
 export * from "./email.types";
 export * from "./templates/password-reset.template";
+export * from "./templates/order-payment-confirmed.template";
 export * from "./providers/resend.provider";
 export * from "./providers/dev.provider";
 
@@ -32,4 +33,6 @@ export const emailService = {
   sendEmail: (options: Parameters<IEmailService["sendEmail"]>[0]) => getEmailService().sendEmail(options),
   sendPasswordResetEmail: (params: Parameters<IEmailService["sendPasswordResetEmail"]>[0]) =>
     getEmailService().sendPasswordResetEmail(params),
+  sendOrderPaymentConfirmedEmail: (params: Parameters<IEmailService["sendOrderPaymentConfirmedEmail"]>[0]) =>
+    getEmailService().sendOrderPaymentConfirmedEmail(params),
 };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ok, err } from "@/lib/api-response";
 import { requireAdmin } from "@/lib/auth-admin";
 import { listCustomers } from "@/services/customer.service";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req);
@@ -11,7 +12,10 @@ export async function GET(req: Request) {
     const customers = await listCustomers({ lojaID: auth.user.lojaID });
     return ok(customers);
   } catch (error) {
-    console.error("[CUSTOMERS_GET]", error);
+    logger.error("Erro ao listar clientes", error, {
+      action: "CUSTOMERS_GET",
+      tenantId: auth.user.lojaID,
+    });
     return err("Internal Server Error", 500, "INTERNAL_ERROR");
   }
 }

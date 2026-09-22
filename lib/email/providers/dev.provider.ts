@@ -1,4 +1,10 @@
-import { IEmailService, SendEmailOptions, EmailResult, PasswordResetEmailParams } from "../email.types";
+import {
+  IEmailService,
+  SendEmailOptions,
+  EmailResult,
+  PasswordResetEmailParams,
+  OrderPaymentConfirmedEmailParams,
+} from "../email.types";
 import { renderPasswordResetEmail } from "../templates/password-reset.template";
 
 export interface RecordedEmail {
@@ -39,6 +45,19 @@ export class DevEmailService implements IEmailService {
     return this.sendEmail({
       to: params.to,
       subject: `Redefinição de Senha - ${params.storeName || "Continental"}`,
+      html,
+      text,
+    });
+  }
+
+  async sendOrderPaymentConfirmedEmail(params: OrderPaymentConfirmedEmailParams): Promise<EmailResult> {
+    const subject = `Pagamento Confirmado: Pedido #${params.orderNumber} - ${params.storeName || "Continental"}`;
+    const text = `Olá ${params.customerName},\n\nSeu pagamento de R$ ${params.totalValue.toFixed(2)} referente ao pedido #${params.orderNumber} foi confirmado com sucesso!\n\nAcompanhe seu pedido: ${params.orderUrl || "#"}`;
+    const html = `<p>Olá <strong>${params.customerName}</strong>,</p><p>Seu pagamento de <strong>R$ ${params.totalValue.toFixed(2)}</strong> referente ao pedido <strong>#${params.orderNumber}</strong> foi confirmado com sucesso!</p>`;
+
+    return this.sendEmail({
+      to: params.to,
+      subject,
       html,
       text,
     });

@@ -5,6 +5,85 @@ import type { AsaasWebhookPayload } from '@/types/asaas.types';
 import type { Prisma } from '@prisma/client';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
+import { emailService } from '@/lib/email';
+
+/**
+ * Disparo assíncrono e não-bloqueante de e-mail de confirmação de pagamento.
+ * Falhas neste envio são registradas em log de erro, mas NUNCA quebram a liquidação
+ * nem atrasam a resposta HTTP 200 ao gateway Asaas.
+ */
+async function sendOrderPaymentConfirmationAsync(orderId: string, paymentDate: Date): Promise<void> {
+  try {
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: { select: { name: true, email: true } },
+        loja: { select: { name: true } },
+        items: {
+          select: {
+            name: true,
+            quantity: true,
+            price: true,
+            color: true,
+            size: true,
+          },
+        },
+        address: true,
+      },
+    });
+
+    if (!fullOrder || !fullOrder.user?.email) {
+      logger.warn('Dados insuficientes para envio de e-mail de confirmação de pagamento', {
+        action: 'PAYMENT_EMAIL_SKIPPED',
+        orderId,
+      });
+      return;
+    }
+
+    let addressFormatted: string | null = null;
+    if (fullOrder.address) {
+      const a = fullOrder.address;
+      const comp = a.complement ? `, ${a.complement}` : '';
+      addressFormatted = `${a.street}, ${a.number}${comp} - ${a.district}, ${a.city}/${a.state} - CEP: ${a.cep}`;
+    }
+
+    const platformDomain = process.env.PLATFORM_DOMAIN || 'continentalestetica.com.br';
+    const orderUrl = `https://${platformDomain}/profile/orders/${fullOrder.id}`;
+
+    await emailService.sendOrderPaymentConfirmedEmail({
+      to: fullOrder.user.email,
+      customerName: fullOrder.user.name || 'Cliente',
+      orderNumber: fullOrder.orderNumber,
+      totalValue: Number(fullOrder.total),
+      paymentDate,
+      items: fullOrder.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: Number(i.price),
+        color: i.color,
+        size: i.size,
+      })),
+      deliveryType: fullOrder.deliveryType,
+      shippingServiceName: fullOrder.shippingServiceName,
+      shippingEstimatedDays: fullOrder.shippingEstimatedDays,
+      addressFormatted,
+      pointsEarned: fullOrder.pointsEarned,
+      storeName: fullOrder.loja?.name || 'Continental Produtos Estéticos',
+      orderUrl,
+    });
+
+    logger.info('E-mail de confirmação de pagamento despachado com sucesso', {
+      action: 'PAYMENT_CONFIRMATION_EMAIL_SENT',
+      orderId,
+      to: fullOrder.user.email,
+    });
+  } catch (emailErr) {
+    logger.error('Falha não-bloqueante no envio de e-mail de confirmação de pagamento', emailErr, {
+      action: 'PAYMENT_CONFIRMATION_EMAIL_FAILED',
+      orderId,
+    });
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -139,12 +218,14 @@ export async function POST(req: Request) {
           body.payment.confirmedDate ||
           undefined;
 
+        const paymentDate = paymentDateRaw ? new Date(paymentDateRaw) : new Date();
+
         const updateResult = await updateOrderStatus({
           orderId: order.id,
           newStatus: 'PAID',
           performedById: 'ASAAS_GATEWAY',
           lojaID: order.lojaID,
-          paidAt: paymentDateRaw ? new Date(paymentDateRaw) : new Date(),
+          paidAt: paymentDate,
           ipAddress:
             req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
             'asaas-webhook',
@@ -156,6 +237,14 @@ export async function POST(req: Request) {
             { status: 422 }
           );
         }
+
+        // Disparo assíncrono não-bloqueante (fire-and-forget seguro)
+        sendOrderPaymentConfirmationAsync(order.id, paymentDate).catch((err) => {
+          logger.error('Erro na promessa de envio de e-mail de confirmação de pagamento', err, {
+            action: 'PAYMENT_CONFIRMATION_EMAIL_UNHANDLED_ERROR',
+            orderId: order.id,
+          });
+        });
       } else if (order.status === 'CANCELLED') {
         // Alerta de Discrepância Financeira / Pagamento Tardio (AUD2-005):
         // Pagamento capturado no Asaas para pedido que já havia sido cancelado por timeout.

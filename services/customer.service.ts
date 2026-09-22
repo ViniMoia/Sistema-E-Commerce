@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
+import { cleanDigits, validateCpfCnpj } from '@/lib/validators/cpf-cnpj'
 
 export interface ListCustomersParams {
   lojaID: string
@@ -280,3 +281,75 @@ export async function getCustomerMetrics(
     cancelledOrders
   }
 }
+
+export interface UpdateUserProfileParams {
+  userId: string
+  lojaID: string
+  name: string
+  phone?: string | null
+  cpfCnpj?: string | null
+}
+
+export async function updateUserProfile(params: UpdateUserProfileParams) {
+  const { userId, lojaID, name, phone, cpfCnpj } = params
+
+  // 1. Verificar existência do usuário com isolamento multi-tenant
+  const existingUser = await prisma.user.findFirst({
+    where: { id: userId, lojaID },
+    select: { id: true, cpfCnpj: true },
+  })
+
+  if (!existingUser) {
+    throw new Error('USER_NOT_FOUND')
+  }
+
+  // 2. Se houver CPF/CNPJ fornecido, limpar dígitos e verificar unicidade no tenant
+  let cleanCpf: string | null | undefined = undefined
+  if (cpfCnpj !== undefined) {
+    cleanCpf = cpfCnpj ? cleanDigits(cpfCnpj) : null
+    if (cleanCpf && cleanCpf !== existingUser.cpfCnpj) {
+      if (!validateCpfCnpj(cleanCpf)) {
+        throw new Error('INVALID_CPF_CNPJ')
+      }
+
+      const conflict = await prisma.user.findFirst({
+        where: {
+          lojaID,
+          cpfCnpj: cleanCpf,
+          id: { not: userId },
+        },
+      })
+
+      if (conflict) {
+        throw new Error('CPF_ALREADY_IN_USE')
+      }
+    }
+  }
+
+  // 3. Atualizar dados cadastrais
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: name.trim(),
+      ...(phone !== undefined ? { phone: phone ? phone.trim() : null } : {}),
+      ...(cleanCpf !== undefined ? { cpfCnpj: cleanCpf } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpfCnpj: true,
+      role: true,
+      status: true,
+      avatarImageUrl: true,
+      lojaID: true,
+      createdAt: true,
+      updatedAt: true,
+      defaultAddressId: true,
+    },
+  })
+
+  return updatedUser
+}
+

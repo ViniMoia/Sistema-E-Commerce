@@ -12,6 +12,9 @@ import type {
   ManualAdjustmentParams,
   LoyaltyStatementParams,
   LoyaltyStatementResult,
+  ExpireLoyaltyPointsParams,
+  ProcessLoyaltyExpirationsOptions,
+  ProcessLoyaltyExpirationsResult,
 } from '@/types/loyalty.types'
 
 // ─── Custom Errors ────────────────────────────────────────────────
@@ -651,3 +654,177 @@ export async function getStatement(
     },
   }
 }
+
+// ─── Rotina de Expiração de Pontos (ACT-P2-05) ───────────────────
+
+/**
+ * Calcula com precisão contábil (FIFO) quantos pontos do saldo atual do usuário expiraram.
+ */
+export async function calculateExpiredPointsForUser(
+  lojaID: string,
+  userID: string,
+  currentBalance: number,
+  now: Date = new Date(),
+  client: Prisma.TransactionClient | typeof prisma = prisma
+): Promise<number> {
+  if (currentBalance <= 0) return 0
+
+  const earnTransactions = await client.loyaltyTransaction.findMany({
+    where: {
+      lojaID,
+      userID,
+      type: LoyaltyTxType.EARN,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      points: true,
+      expiresAt: true,
+    },
+  })
+
+  let needed = currentBalance
+  let unexpiredPoints = 0
+
+  for (const tx of earnTransactions) {
+    const contrib = Math.min(tx.points, needed)
+    if (!tx.expiresAt || tx.expiresAt > now) {
+      unexpiredPoints += contrib
+    }
+    needed -= contrib
+    if (needed <= 0) break
+  }
+
+  const expiredPoints = currentBalance - unexpiredPoints
+  return Math.max(0, expiredPoints)
+}
+
+/**
+ * Realiza a baixa contábil atômica de pontos expirados no saldo da carteira e registra no Ledger.
+ */
+export async function expireUserPoints(
+  params: ExpireLoyaltyPointsParams,
+  tx?: Prisma.TransactionClient
+) {
+  const { lojaID, userID, points, description } = params
+  if (points <= 0) return null
+
+  const runOperation = async (client: Prisma.TransactionClient) => {
+    const settings = await getLoyaltySettings(lojaID, client)
+    const wallet = await client.loyaltyWallet.findUnique({
+      where: { lojaID_userID: { lojaID, userID } },
+    })
+
+    if (!wallet || wallet.balance <= 0) {
+      return null
+    }
+
+    const pointsToDeduct = Math.min(points, wallet.balance)
+    if (pointsToDeduct <= 0) return null
+
+    const updatedWallet = await client.loyaltyWallet.update({
+      where: { id: wallet.id },
+      data: {
+        balance: { decrement: pointsToDeduct },
+        version: { increment: 1 },
+      },
+    })
+
+    const monetaryValue = calculateDiscountFromPoints(
+      pointsToDeduct,
+      settings.loyaltyPointValue
+    )
+
+    const transaction = await client.loyaltyTransaction.create({
+      data: {
+        lojaID,
+        userID,
+        type: LoyaltyTxType.EXPIRATION,
+        points: -pointsToDeduct,
+        balanceAfter: updatedWallet.balance,
+        monetaryValue: new Prisma.Decimal(monetaryValue),
+        description: description || 'Expiração de pontos por decurso do prazo de validade',
+      },
+    })
+
+    return {
+      wallet: updatedWallet,
+      transaction,
+      pointsExpired: pointsToDeduct,
+    }
+  }
+
+  if (tx) {
+    return await runOperation(tx)
+  } else {
+    return await prisma.$transaction(runOperation)
+  }
+}
+
+/**
+ * Motor central de varredura periódica para expirar pontos em todas as carteiras ativas.
+ */
+export async function processLoyaltyExpirations(
+  options: ProcessLoyaltyExpirationsOptions = {}
+): Promise<ProcessLoyaltyExpirationsResult> {
+  const now = options.now || new Date()
+  const whereClause: Prisma.LoyaltyWalletWhereInput = {
+    balance: { gt: 0 },
+    ...(options.lojaID ? { lojaID: options.lojaID } : {}),
+  }
+
+  const walletsWithBalance = await prisma.loyaltyWallet.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      lojaID: true,
+      userID: true,
+      balance: true,
+    },
+  })
+
+  let processedWallets = 0
+  let expiredCount = 0
+  let totalPointsExpired = 0
+  const errors: Array<{ userId: string; lojaId: string; error: string }> = []
+
+  for (const wallet of walletsWithBalance) {
+    try {
+      processedWallets++
+      const pointsToExpire = await calculateExpiredPointsForUser(
+        wallet.lojaID,
+        wallet.userID,
+        wallet.balance,
+        now
+      )
+
+      if (pointsToExpire > 0) {
+        const result = await expireUserPoints({
+          lojaID: wallet.lojaID,
+          userID: wallet.userID,
+          points: pointsToExpire,
+        })
+
+        if (result) {
+          expiredCount++
+          totalPointsExpired += result.pointsExpired
+        }
+      }
+    } catch (err: any) {
+      errors.push({
+        userId: wallet.userID,
+        lojaId: wallet.lojaID,
+        error: err?.message || 'Erro ao processar expiração da carteira',
+      })
+    }
+  }
+
+  return {
+    processedWallets,
+    expiredCount,
+    totalPointsExpired,
+    errors,
+  }
+}
+

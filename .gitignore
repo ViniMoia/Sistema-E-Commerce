@@ -54,7 +54,6 @@ scratch/
 *.cmd
 
 # Internal documentation, business & audit files
-diversos/
 material/
 auditoria/
 

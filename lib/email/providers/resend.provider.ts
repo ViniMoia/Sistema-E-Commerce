@@ -1,5 +1,12 @@
-import { IEmailService, SendEmailOptions, EmailResult, PasswordResetEmailParams } from "../email.types";
+import {
+  IEmailService,
+  SendEmailOptions,
+  EmailResult,
+  PasswordResetEmailParams,
+  OrderPaymentConfirmedEmailParams,
+} from "../email.types";
 import { renderPasswordResetEmail } from "../templates/password-reset.template";
+import { renderOrderPaymentConfirmedEmail } from "../templates/order-payment-confirmed.template";
 
 export class ResendEmailService implements IEmailService {
   private apiKey: string;
@@ -66,6 +73,17 @@ export class ResendEmailService implements IEmailService {
     return this.sendEmail({
       to: params.to,
       subject: `Redefinição de Senha - ${params.storeName || "Continental"}`,
+      html,
+      text,
+    });
+  }
+
+  async sendOrderPaymentConfirmedEmail(params: OrderPaymentConfirmedEmailParams): Promise<EmailResult> {
+    const { html, text } = renderOrderPaymentConfirmedEmail(params);
+    const storeName = params.storeName || "Continental";
+    return this.sendEmail({
+      to: params.to,
+      subject: `Pagamento Confirmado: Pedido #${params.orderNumber} - ${storeName}`,
       html,
       text,
     });

@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Novo Produto | Pernambuco Confecções",
+  title: "Novo Produto | Painel Administrativo",
   description: "Cadastro de novo produto no catálogo.",
 };
 

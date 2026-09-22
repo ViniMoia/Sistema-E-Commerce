@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { ConditionalHeader } from "@/components/ConditionalHeader";
 import { CartProvider } from "@/components/providers/CartProvider";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { Toaster } from "@/components/ui/toaster";
 import { getLojaFromHeaders } from "@/lib/tenant";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,6 +41,7 @@ export default async function RootLayout({
           </ConditionalHeader>
           {children}
           <WhatsAppButton phoneNumber={loja?.whatsappNumber} />
+          <Toaster />
         </CartProvider>
       </body>
     </html>
