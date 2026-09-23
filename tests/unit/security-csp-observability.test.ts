@@ -31,15 +31,19 @@ describe("Segurança HTTP, CSP e Observabilidade (Fase 5 - ACT-P3-01 e ACT-P3-02
       expect(csp).toContain("https://viacep.com.br");
       expect(csp).toContain("https://api.qrserver.com");
       expect(csp).toContain("https://api.asaas.com");
+      expect(csp).toContain("https://*.mitiendanube.com");
+      expect(csp).toContain("https://res.cloudinary.com");
       expect(csp).toContain("frame-ancestors 'none'");
     });
 
-    it("deve incluir api.qrserver.com e *.supabase.co nos domínios remotos de imagens", () => {
+    it("deve incluir api.qrserver.com, *.mitiendanube.com e *.supabase.co nos domínios remotos de imagens", () => {
       const patterns = nextConfig.images?.remotePatterns || [];
       const hostnames = patterns.map((p: any) => p.hostname);
 
       expect(hostnames).toContain("*.supabase.co");
       expect(hostnames).toContain("api.qrserver.com");
+      expect(hostnames).toContain("*.mitiendanube.com");
+      expect(hostnames).toContain("res.cloudinary.com");
     });
   });
 

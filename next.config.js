@@ -20,6 +20,18 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'api.qrserver.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.mitiendanube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dcdn-us.mitiendanube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
   async headers() {
@@ -27,7 +39,7 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' blob: data: https://*.supabase.co https://via.placeholder.com https://images.unsplash.com https://api.qrserver.com",
+      "img-src 'self' blob: data: https://*.supabase.co https://via.placeholder.com https://images.unsplash.com https://api.qrserver.com https://*.mitiendanube.com https://dcdn-us.mitiendanube.com https://res.cloudinary.com",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co https://viacep.com.br https://api.asaas.com https://sandbox.asaas.com https://api.resend.com",
       "frame-ancestors 'none'",
