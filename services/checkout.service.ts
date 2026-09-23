@@ -7,7 +7,7 @@ import {
 } from '@/services/loyalty.service'
 import { asaasClient } from '@/services/asaas/asaas.client'
 import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter'
-import type { PaymentGateway } from '@/types/payment-gateway.types'
+import type { PaymentGateway, PaymentMethod, CreditCardData } from '@/types/payment-gateway.types'
 import { updateOrderStatus } from '@/services/order.service'
 import { InventoryService } from '@/services/inventory.service'
 import { cleanDigits } from '@/lib/validators/cpf-cnpj'
@@ -55,6 +55,10 @@ export interface CreateOrderParams {
   pixKey?: string
   idempotencyKey?: string
   pointsToRedeem?: number // Pontos a resgatar como desconto
+  paymentMethod?: PaymentMethod
+  creditCard?: CreditCardData
+  installments?: number
+  installmentValue?: number
   paymentGateway?: PaymentGateway
 }
 
@@ -71,9 +75,18 @@ export interface CreateOrderResult {
     shippingServiceName: string | null
     shippingEstimatedDays: number | null
     pixKey: string | null
+    paymentMethod?: string | null
     asaasPaymentId?: string | null
     pixQrCode?: string | null
     pixPayload?: string | null
+    creditCardBrand?: string | null
+    creditCardLast4?: string | null
+    installments?: number | null
+    installmentValue?: number | null
+    asaasBankSlipUrl?: string | null
+    asaasDigitableLine?: string | null
+    asaasBarCode?: string | null
+    asaasDueDate?: string | null
     pointsEarned: number
     pointsRedeemed: number
     pointsDiscountValue: number
@@ -402,8 +415,10 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         address: addressConnect,
         status: 'PENDING',
         customerCpfCnpj: cleanCustomerCpfCnpj,
-        paymentMethod: 'WHATSAPP_PIX',
+        paymentMethod: params.paymentMethod || 'PIX',
         pixKeyUsed: params.pixKey ?? loja.pixKey ?? null,
+        installments: params.installments || 1,
+        installmentValue: params.installmentValue ? new Prisma.Decimal(params.installmentValue) : null,
         freightValue: calculatedFreight.equals(0) ? null : calculatedFreight,
         subtotal: subtotal,
         shippingCost: calculatedFreight,
@@ -466,9 +481,16 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
   let pixQrCode: string | null = null
   let pixPayload: string | null = created.pixKeyUsed ?? null
   let asaasPaymentId: string | null = null
+  let creditCardBrand: string | null = null
+  let creditCardLast4: string | null = null
+  let asaasBankSlipUrl: string | null = null
+  let asaasDigitableLine: string | null = null
+  let asaasBarCode: string | null = null
+  let asaasDueDate: Date | null = null
 
   const gateway = params.paymentGateway ?? asaasPaymentAdapter
   const customerCpf = params.customer.cpfCnpj ?? created.customerCpfCnpj
+  const selectedMethod = params.paymentMethod || 'PIX'
 
   // Em ambiente de teste unitário sem mock explícito de gateway, evita chamadas de rede externas
   const isTestWithoutMock =
@@ -477,51 +499,157 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
     !(asaasClient.createPayment as any)?.mock
 
   if (process.env.ASAAS_API_KEY && customerCpf && !isTestWithoutMock) {
+    // Validação preventiva do piso mínimo exigido pelo Asaas (R$ 5,00)
+    if (Number(created.total) < 5.0) {
+      try {
+        await updateOrderStatus({
+          orderId: created.id,
+          newStatus: 'CANCELLED',
+          performedById: 'SYSTEM',
+          lojaID: params.lojaID,
+          reason: `Valor do pedido (R$ ${Number(created.total).toFixed(2)}) abaixo do mínimo de R$ 5,00 do Asaas.`,
+        })
+      } catch (compensateErr) {
+        logger.error('Erro na compensação preventiva por piso mínimo', compensateErr, {
+          orderId: created.id,
+        })
+      }
+      throw new Error(
+        `O valor total do pedido (R$ ${Number(created.total).toFixed(2)}) é inferior ao valor mínimo de R$ 5,00 exigido para processamento pelo gateway.`
+      )
+    }
+
     try {
-      const chargeResult = await gateway.createPixCharge({
-        orderId: created.id,
-        orderNumber: created.orderNumber,
-        value: Number(created.total),
-        customer: {
-          name: params.customer.name,
-          email: params.customer.email,
-          phone: params.customer.phone,
-          cpfCnpj: customerCpf,
-        },
-        description: `Pedido #${created.orderNumber} - Continental`,
-      })
+      if (selectedMethod === 'CREDIT_CARD' && params.creditCard) {
+        const cardResult = await gateway.createCreditCardCharge({
+          orderId: created.id,
+          orderNumber: created.orderNumber,
+          value: Number(created.total),
+          customer: {
+            name: params.customer.name,
+            email: params.customer.email,
+            phone: params.customer.phone,
+            cpfCnpj: customerCpf,
+            postalCode: params.address?.cep,
+            addressNumber: params.address?.number,
+            addressComplement: params.address?.complement,
+          },
+          creditCard: params.creditCard,
+          installmentCount: params.installments || 1,
+          installmentValue: params.installmentValue,
+          description: `Pedido #${created.orderNumber} - Continental`,
+        })
 
-      asaasPaymentId = chargeResult.paymentId
-      pixQrCode = chargeResult.pixQrCodeBase64
-      pixPayload = chargeResult.pixPayload
+        asaasPaymentId = cardResult.paymentId
+        creditCardBrand = cardResult.creditCardBrand || null
+        creditCardLast4 = cardResult.creditCardLast4 || null
 
-      await prisma.order.update({
-        where: { id: created.id },
-        data: {
-          asaasPaymentId: chargeResult.paymentId,
-          asaasPaymentStatus: chargeResult.status,
-          asaasInvoiceUrl: chargeResult.invoiceUrl,
-        },
-      })
+        await prisma.order.update({
+          where: { id: created.id },
+          data: {
+            asaasPaymentId: cardResult.paymentId,
+            asaasPaymentStatus: cardResult.status,
+            asaasInvoiceUrl: cardResult.invoiceUrl,
+            creditCardBrand,
+            creditCardLast4,
+            installments: params.installments || 1,
+            installmentValue: params.installmentValue ? new Prisma.Decimal(params.installmentValue) : null,
+          },
+        })
+
+        // Se o cartão foi aprovado imediatamente, transiciona para PAID e credita pontos
+        if (cardResult.status === 'CONFIRMED') {
+          await updateOrderStatus({
+            orderId: created.id,
+            newStatus: 'PAID',
+            performedById: 'ASAAS_GATEWAY',
+            lojaID: params.lojaID,
+            paidAt: new Date(),
+          })
+        }
+      } else if (selectedMethod === 'BOLETO') {
+        const boletoResult = await gateway.createBoletoCharge({
+          orderId: created.id,
+          orderNumber: created.orderNumber,
+          value: Number(created.total),
+          customer: {
+            name: params.customer.name,
+            email: params.customer.email,
+            phone: params.customer.phone,
+            cpfCnpj: customerCpf,
+            postalCode: params.address?.cep,
+            addressNumber: params.address?.number,
+            addressComplement: params.address?.complement,
+          },
+          description: `Pedido #${created.orderNumber} - Continental`,
+        })
+
+        asaasPaymentId = boletoResult.paymentId
+        asaasBankSlipUrl = boletoResult.bankSlipUrl
+        asaasDigitableLine = boletoResult.digitableLine
+        asaasBarCode = boletoResult.barCode || null
+        asaasDueDate = boletoResult.dueDate ? new Date(boletoResult.dueDate + 'T23:59:59') : null
+
+        await prisma.order.update({
+          where: { id: created.id },
+          data: {
+            asaasPaymentId: boletoResult.paymentId,
+            asaasPaymentStatus: boletoResult.status,
+            asaasInvoiceUrl: boletoResult.invoiceUrl,
+            asaasBankSlipUrl,
+            asaasDigitableLine,
+            asaasBarCode,
+            asaasDueDate,
+          },
+        })
+      } else {
+        // PIX ou padrão
+        const chargeResult = await gateway.createPixCharge({
+          orderId: created.id,
+          orderNumber: created.orderNumber,
+          value: Number(created.total),
+          customer: {
+            name: params.customer.name,
+            email: params.customer.email,
+            phone: params.customer.phone,
+            cpfCnpj: customerCpf,
+          },
+          description: `Pedido #${created.orderNumber} - Continental`,
+        })
+
+        asaasPaymentId = chargeResult.paymentId
+        pixQrCode = chargeResult.pixQrCodeBase64
+        pixPayload = chargeResult.pixPayload
+
+        await prisma.order.update({
+          where: { id: created.id },
+          data: {
+            asaasPaymentId: chargeResult.paymentId,
+            asaasPaymentStatus: chargeResult.status,
+            asaasInvoiceUrl: chargeResult.invoiceUrl,
+          },
+        })
+      }
     } catch (gatewayErr: any) {
       logger.error('Falha na emissão da cobrança no gateway de pagamento', gatewayErr, {
         action: 'CHECKOUT_GATEWAY_CHARGE_FAILED',
         orderId: created.id,
         orderNumber: created.orderNumber,
+        method: selectedMethod,
         tenantId: params.lojaID,
         customer: {
           cpfCnpj: params.customer.cpfCnpj,
           email: params.customer.email,
         },
       })
-      // Decisão 2 homologada: Fail-Closed. Compensação atômica e eliminação de PIX fake.
+      // Rollback Atômico com actor 'SYSTEM' (elimina bug de foreign key em AuditLog)
       try {
         await updateOrderStatus({
           orderId: created.id,
           newStatus: 'CANCELLED',
-          performedById: 'CHECKOUT_PAYMENT_FAILURE',
+          performedById: 'SYSTEM',
           lojaID: params.lojaID,
-          reason: `Falha na emissão da cobrança PIX no gateway: ${gatewayErr?.message || 'Erro de comunicação'}`,
+          reason: `Falha na emissão da cobrança (${selectedMethod}) no gateway: ${gatewayErr?.message || 'Erro de comunicação'}`,
         })
       } catch (compensateErr) {
         logger.error('Erro crítico na compensação do pedido após falha no gateway', compensateErr, {
@@ -531,9 +659,10 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         })
       }
 
-      throw new Error(
-        'Não foi possível gerar a cobrança PIX no momento. Por favor, verifique seus dados e tente novamente.'
-      )
+      const clientMsg =
+        gatewayErr?.message ||
+        `Não foi possível gerar a cobrança via ${selectedMethod} no momento. Por favor, verifique seus dados e tente novamente.`
+      throw new Error(clientMsg)
     }
   }
 
@@ -550,9 +679,18 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
       shippingServiceName: created.shippingServiceName,
       shippingEstimatedDays: created.shippingEstimatedDays,
       pixKey: created.pixKeyUsed,
+      paymentMethod: created.paymentMethod,
       asaasPaymentId,
       pixQrCode,
       pixPayload,
+      creditCardBrand,
+      creditCardLast4,
+      installments: params.installments || 1,
+      installmentValue: params.installmentValue ?? null,
+      asaasBankSlipUrl,
+      asaasDigitableLine,
+      asaasBarCode,
+      asaasDueDate: asaasDueDate ? asaasDueDate.toISOString() : null,
       pointsEarned: created.pointsEarned,
       pointsRedeemed: created.pointsRedeemed,
       pointsDiscountValue: Number(created.pointsDiscountValue),

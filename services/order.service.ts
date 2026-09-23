@@ -299,7 +299,13 @@ export async function updateOrderStatus(
     (i): i is typeof i & { productVariantsId: string } => i.productVariantsId !== null
   );
 
-  const isSystemActor = input.performedById === "ASAAS_GATEWAY" || input.performedById === "SYSTEM";
+  const isSystemActor =
+    input.performedById === "ASAAS_GATEWAY" ||
+    input.performedById === "SYSTEM" ||
+    input.performedById === "CHECKOUT_PAYMENT_FAILURE" ||
+    input.performedById === "ASAAS_GATEWAY_EXPIRATION" ||
+    input.performedById?.startsWith("SYSTEM_") ||
+    input.performedById?.startsWith("ASAAS_");
   const effectiveActorId = isSystemActor ? fullOrder.userID : input.performedById;
   const auditMetadata = isSystemActor ? { triggeredBy: input.performedById } : undefined;
 

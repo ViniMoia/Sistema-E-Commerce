@@ -281,6 +281,16 @@ model Order {
   asaasPaymentId        String?              @unique
   asaasPaymentStatus    String?              // ex: "PENDING", "RECEIVED", "CONFIRMED", "REFUNDED"
   asaasInvoiceUrl       String?              // Link da fatura/comprovante do Asaas
+  // Campos de Cartão de Crédito e Boleto (Asaas Expansion)
+  creditCardBrand       String?              // Bandeira: "VISA", "MASTERCARD", "ELO", etc.
+  creditCardLast4       String?              // Últimos 4 dígitos: "1234"
+  installments          Int?                 @default(1) // Número de parcelas
+  installmentValue      Decimal?             @db.Decimal(10, 2) // Valor de cada parcela
+  // Metadados de Boleto Bancário
+  asaasBankSlipUrl      String?              // URL do PDF oficial do boleto
+  asaasDigitableLine    String?              // Linha digitável (Cópia e Cola de 47/48 dígitos)
+  asaasBarCode          String?              // Código de barras numérico
+  asaasDueDate          DateTime?            // Data de vencimento efetiva
   // Confirmação de Entrega pelo Cliente
   deliveredConfirmedAt  DateTime?            // Data/hora da confirmação do recebimento pelo cliente
   deliveredConfirmedBy  String?              // ID do usuário cliente que confirmou

@@ -5,6 +5,7 @@ import type {
   AsaasCustomerResponse,
   AsaasCustomerListResponse,
   AsaasCreateCustomerPayload,
+  AsaasBoletoIdentificationFieldResponse,
 } from '@/types/asaas.types';
 
 export class AsaasClientError extends Error {
@@ -215,6 +216,29 @@ export class AsaasClient {
     }
 
     return (await res.json()) as AsaasPaymentResponse;
+  }
+
+  /**
+   * Obtém a linha digitável e o código de barras de um boleto bancário emitido.
+   */
+  async getBoletoIdentificationField(
+    paymentId: string
+  ): Promise<AsaasBoletoIdentificationFieldResponse> {
+    const url = `${this.baseUrl}/payments/${paymentId}/identificationField`;
+    const res = await this.request(url, {
+      method: 'GET',
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new AsaasClientError(
+        `Falha ao obter linha digitável do boleto ${paymentId}: ${res.statusText}`,
+        res.status,
+        errorData.errors
+      );
+    }
+
+    return (await res.json()) as AsaasBoletoIdentificationFieldResponse;
   }
 }
 

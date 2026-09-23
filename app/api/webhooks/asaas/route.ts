@@ -309,6 +309,18 @@ export async function POST(req: Request) {
             'asaas-webhook',
         });
       }
+    } else if (body.event === 'PAYMENT_AWAITING_RISK_ANALYSIS') {
+      logger.info('Pagamento de cartão em análise de risco no Asaas', {
+        action: 'ASAAS_PAYMENT_AWAITING_RISK_ANALYSIS',
+        orderId: order.id,
+        asaasPaymentId: body.payment.id,
+      });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          adminNotes: `[ANÁLISE DE SEGURANÇA] Cobrança de Cartão ${body.payment.id} em análise antifraude pelo Asaas. Aguardar confirmação antes do despacho.`,
+        },
+      });
     }
 
     logger.info('Evento do Asaas processado com sucesso', {
