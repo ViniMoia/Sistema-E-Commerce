@@ -64,21 +64,50 @@ export async function addToCart(
   userID: string,
   data: {
     productID: string;
-    variantID: string;
+    variantID?: string | null;
     quantity: number;
   }
 ) {
-  // Fetch product and variant details to prevent client-side manipulation
-  const variant = await prisma.productVariants.findUnique({
-    where: { id: data.variantID },
-    include: { product: true },
-  });
+  let variant: any;
 
-  if (!variant || variant.ProductID !== data.productID) {
-    throw new CartError("Invalid product or variant");
+  if (data.variantID) {
+    // Fetch product and variant details to prevent client-side manipulation
+    variant = await prisma.productVariants.findUnique({
+      where: { id: data.variantID },
+      include: { product: true },
+    });
+
+    if (!variant || variant.ProductID !== data.productID) {
+      throw new CartError("Invalid product or variant");
+    }
+  } else {
+    // Produto simples sem variante informada: busca primeira variante existente ou cria variante padrão
+    variant = await prisma.productVariants.findFirst({
+      where: { ProductID: data.productID },
+      include: { product: true },
+    });
+
+    if (!variant) {
+      const product = await prisma.product.findUnique({
+        where: { id: data.productID },
+      });
+      if (!product) {
+        throw new CartError("Produto não encontrado");
+      }
+      variant = await prisma.productVariants.create({
+        data: {
+          ProductID: product.id,
+          size: "Único",
+          color: "Padrão",
+          stock: product.stock,
+        },
+        include: { product: true },
+      });
+    }
   }
 
-  if (variant.stock < data.quantity) {
+  const effectiveStock = typeof variant.stock === "number" ? variant.stock : variant.product.stock;
+  if (effectiveStock < data.quantity) {
     throw new CartError("Insufficient stock");
   }
 
@@ -118,11 +147,11 @@ export async function addToCart(
   }
 
   // 2. Verificar se o item (variante) já existe no carrinho
-  const existingItem = activeCart.items.find(item => item.variantID === data.variantID);
+  const existingItem = activeCart.items.find(item => item.variantID === variant.id);
 
   if (existingItem) {
     const newQuantity = existingItem.quantity + data.quantity;
-    if (variant.stock < newQuantity) {
+    if (effectiveStock < newQuantity) {
       throw new CartError("Insufficient stock for this quantity");
     }
 
@@ -140,7 +169,7 @@ export async function addToCart(
     data: {
       cartID: activeCart.id,
       productID: data.productID,
-      variantID: data.variantID,
+      variantID: variant.id,
       quantity: data.quantity,
       color: variant.color,
       size: variant.size,

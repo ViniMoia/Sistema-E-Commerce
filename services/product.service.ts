@@ -130,11 +130,17 @@ export async function createProduct(data: CreateProductInput) {
         ...productData,
         price: decimalPrice,
         productVariants: {
-          create: variants.map((v) => ({
-            size: v.size,
-            color: v.color,
-            stock: Math.max(0, v.stock),
-          })),
+          create: variants && variants.length > 0
+            ? variants.map((v) => ({
+                size: v.size,
+                color: v.color,
+                stock: Math.max(0, v.stock),
+              }))
+            : [{
+                size: "Único",
+                color: "Padrão",
+                stock: Math.max(0, productData.stock || 0),
+              }],
         },
       },
       include: {

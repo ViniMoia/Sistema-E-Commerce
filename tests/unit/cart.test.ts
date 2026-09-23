@@ -8,6 +8,11 @@ vi.mock('@/lib/prisma', () => {
     default: {
       productVariants: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
+        create: vi.fn(),
+      },
+      product: {
+        findUnique: vi.fn(),
       },
       cart: {
         findFirst: vi.fn(),
@@ -131,4 +136,110 @@ describe('Isolamento e Segurança do Carrinho de Compras (ARC-001)', () => {
       })
     )
   })
+
+  it('deve permitir adicionar produto sem variante buscando variante existente automaticamente', async () => {
+    const dbPrice = new Prisma.Decimal('45.00')
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce({
+      id: 'var-default',
+      ProductID: 'prod-simples',
+      stock: 5,
+      color: 'Padrão',
+      size: 'Único',
+      product: {
+        id: 'prod-simples',
+        name: 'Cera Automotiva',
+        price: dbPrice,
+        stock: 5,
+        lojaID: 'loja-1',
+      },
+    } as any)
+
+    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
+      id: 'cart-1',
+      userID: 'user-1',
+      status: 'ACTIVE',
+      items: [],
+    } as any)
+
+    vi.mocked(prisma.cartItem.create).mockResolvedValueOnce({ id: 'item-simples' } as any)
+
+    await addToCart('user-1', {
+      productID: 'prod-simples',
+      quantity: 1,
+    })
+
+    expect(prisma.cartItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          cartID: 'cart-1',
+          variantID: 'var-default',
+          productID: 'prod-simples',
+          quantity: 1,
+        }),
+      })
+    )
+  })
+
+  it('deve criar variante padrão automaticamente se o produto não possuir nenhuma variante cadastrada', async () => {
+    const dbPrice = new Prisma.Decimal('120.00')
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(null)
+    vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      id: 'prod-novo',
+      name: 'Polidor Especial',
+      price: dbPrice,
+      stock: 15,
+      lojaID: 'loja-1',
+    } as any)
+
+    vi.mocked(prisma.productVariants.create).mockResolvedValueOnce({
+      id: 'var-criada',
+      ProductID: 'prod-novo',
+      size: 'Único',
+      color: 'Padrão',
+      stock: 15,
+      product: {
+        id: 'prod-novo',
+        name: 'Polidor Especial',
+        price: dbPrice,
+        stock: 15,
+        lojaID: 'loja-1',
+      },
+    } as any)
+
+    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
+      id: 'cart-1',
+      userID: 'user-1',
+      status: 'ACTIVE',
+      items: [],
+    } as any)
+
+    vi.mocked(prisma.cartItem.create).mockResolvedValueOnce({ id: 'item-novo' } as any)
+
+    await addToCart('user-1', {
+      productID: 'prod-novo',
+      quantity: 2,
+    })
+
+    expect(prisma.productVariants.create).toHaveBeenCalledWith({
+      data: {
+        ProductID: 'prod-novo',
+        size: 'Único',
+        color: 'Padrão',
+        stock: 15,
+      },
+      include: { product: true },
+    })
+
+    expect(prisma.cartItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          cartID: 'cart-1',
+          variantID: 'var-criada',
+          productID: 'prod-novo',
+          quantity: 2,
+        }),
+      })
+    )
+  })
 })
+

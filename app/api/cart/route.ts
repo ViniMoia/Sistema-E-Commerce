@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 
 const addToCartSchema = z.object({
   productID: z.string().uuid("ID do produto inválido"),
-  variantID: z.string().uuid("ID da variação inválido"),
+  variantID: z.string().uuid("ID da variação inválido").optional().nullable(),
   quantity: z.number().int().min(1, "Quantidade mínima é 1").max(99, "Quantidade máxima é 99"),
 });
 

@@ -24,7 +24,7 @@ interface CartStore {
   cart: CartType | null;
   isLoading: boolean;
   fetchCart: () => Promise<void>;
-  addToCart: (variantID: string, productID: string, quantity: number) => Promise<void>;
+  addToCart: (variantID: string | null | undefined, productID: string, quantity: number) => Promise<void>;
   updateQuantity: (variantID: string, quantity: number) => Promise<void>;
   removeItem: (variantID: string) => Promise<void>;
   clearCart: () => void;

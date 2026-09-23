@@ -35,9 +35,11 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-medium text-white tracking-tight">{item.productName}</h3>
-            <p className="text-xs text-neutral-400 font-light mt-1">
-              {item.color} / {item.size}
-            </p>
+            {item.color && item.size && item.size !== "Único" && item.color !== "Padrão" ? (
+              <p className="text-xs text-neutral-400 font-light mt-1">
+                {item.color} / {item.size}
+              </p>
+            ) : null}
           </div>
           <p className="font-mono text-white">
             ${(item.price * item.quantity).toFixed(2)}
