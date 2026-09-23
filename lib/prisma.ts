@@ -14,14 +14,25 @@ const prismaClientSingleton = () => {
   })
 }
 
-declare const globalThis: {
-  prismaGlobal: ReturnType<typeof prismaClientSingleton> | undefined
-} & typeof global
+declare global {
+  // eslint-disable-next-line no-var
+  var prismaGlobal: ReturnType<typeof prismaClientSingleton> | undefined
+}
 
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
-
-export default prisma
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.prismaGlobal = prisma
 }
+
+// Hook de encerramento seguro de conexões em processos Node.js locais
+if (typeof process !== 'undefined') {
+  const cleanDisconnect = async () => {
+    if (globalThis.prismaGlobal) {
+      await globalThis.prismaGlobal.$disconnect().catch(() => {})
+    }
+  }
+  process.once('beforeExit', cleanDisconnect)
+}
+
+export default prisma
