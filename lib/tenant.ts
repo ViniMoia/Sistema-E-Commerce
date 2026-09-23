@@ -91,15 +91,25 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
     }
 
     // 1. Ambiente de desenvolvimento local
-    if (
+    const isDev = process.env.NODE_ENV !== "production";
+    const isLocalOrLan =
       cleanHost === "localhost" ||
-      cleanHost === "127.0.0.1"
-    ) {
+      cleanHost === "127.0.0.1" ||
+      cleanHost === "0.0.0.0" ||
+      cleanHost.startsWith("192.168.") ||
+      cleanHost.startsWith("10.") ||
+      cleanHost.startsWith("172.") ||
+      cleanHost.startsWith("26.");
+
+    if (isDev && isLocalOrLan) {
       const defaultSlug =
         process.env.DEFAULT_LOJA_SLUG ||
         process.env.NEXT_PUBLIC_DEFAULT_LOJA_SLUG ||
-        "loja-padrao";
-      const devLoja = await getCachedLojaBySlug(defaultSlug);
+        "continental-prototipo";
+      let devLoja = await getCachedLojaBySlug(defaultSlug);
+      if (!devLoja) {
+        devLoja = await prisma.loja.findFirst();
+      }
       return devLoja as TenantContext | null;
     }
 
