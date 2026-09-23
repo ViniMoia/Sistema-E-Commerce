@@ -29,8 +29,6 @@ interface CatalogFreeSidebarProps {
   onToggleTag: (slug: string) => void;
   selectedPriceRange: string | null;
   onSelectPriceRange: (range: string | null) => void;
-  selectedVoltage: string | null;
-  onSelectVoltage: (voltage: string | null) => void;
   onClearAll: () => void;
   brands: BrandSummary[];
   totalProductsCount: number;
@@ -46,8 +44,6 @@ export function CatalogFreeSidebar({
   onToggleTag,
   selectedPriceRange,
   onSelectPriceRange,
-  selectedVoltage,
-  onSelectVoltage,
   onClearAll,
   brands,
   totalProductsCount,
@@ -64,16 +60,14 @@ export function CatalogFreeSidebar({
     selectedBrand ||
     selectedTags.length > 0 ||
     searchQuery.trim() ||
-    selectedPriceRange ||
-    selectedVoltage
+    selectedPriceRange
   );
 
   const activeFiltersCount =
     (selectedBrand ? 1 : 0) +
     selectedTags.length +
     (searchQuery.trim() ? 1 : 0) +
-    (selectedPriceRange ? 1 : 0) +
-    (selectedVoltage ? 1 : 0);
+    (selectedPriceRange ? 1 : 0);
 
   // Conteúdo modular não-encapsulado (livre na lateral, semelhante à referência 3)
   const renderFreeSidebarContent = () => (
@@ -163,18 +157,6 @@ export function CatalogFreeSidebar({
               </button>
             </span>
           )}
-          {selectedVoltage && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0B111E] border border-catalog-gold text-catalog-gold text-[10px] font-mono">
-              <span>Voltagem: {selectedVoltage}V</span>
-              <button
-                type="button"
-                onClick={() => onSelectVoltage(null)}
-                className="hover:text-white font-bold"
-              >
-                ✕
-              </button>
-            </span>
-          )}
           {selectedTags.map((tagSlug) => (
             <span
               key={tagSlug}
@@ -249,33 +231,7 @@ export function CatalogFreeSidebar({
         </div>
       </div>
 
-      {/* ─── 6. BLOCO LIVRE: "VOLTAGEM" ─── */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-          Voltagem
-        </h3>
-        <div className="flex flex-col gap-1.5">
-          {["127", "220"].map((v) => {
-            const isSelected = selectedVoltage === v;
-            return (
-              <label
-                key={v}
-                className="flex items-center gap-2 text-xs font-mono text-gray-300 cursor-pointer hover:text-white"
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => onSelectVoltage(isSelected ? null : v)}
-                  className="rounded border-catalog-gold/40 text-catalog-gold focus:ring-0 bg-[#0B132B]"
-                />
-                <span>{v}V</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ─── 7. BLOCO LIVRE: "MARCA" ─── */}
+      {/* ─── 6. BLOCO LIVRE: "MARCA" ─── */}
       <div className="space-y-2">
         <h3 className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
           Marca

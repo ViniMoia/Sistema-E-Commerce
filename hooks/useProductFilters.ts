@@ -41,8 +41,6 @@ export interface UseProductFiltersReturn {
   handleToggleTag: (tagSlug: string) => void;
   selectedPriceRange: string | null;
   setSelectedPriceRange: (range: string | null) => void;
-  selectedVoltage: string | null;
-  setSelectedVoltage: (voltage: string | null) => void;
   handleClearAllFilters: () => void;
   brandsWithCounts: BrandSummary[];
   filteredProducts: FilterableProduct[];
@@ -106,11 +104,10 @@ function extractFiltersFromLocation(): {
   tags: string[];
   search: string;
   priceRange: string | null;
-  voltage: string | null;
   page: number;
 } {
   if (typeof window === "undefined") {
-    return { brand: null, tags: [], search: "", priceRange: null, voltage: null, page: 1 };
+    return { brand: null, tags: [], search: "", priceRange: null, page: 1 };
   }
 
   // 1. Query params padrão (?marca=...)
@@ -151,11 +148,6 @@ function extractFiltersFromLocation(): {
     searchParams.get("priceRange") ||
     null;
 
-  const voltage =
-    searchParams.get("voltagem") ||
-    searchParams.get("voltage") ||
-    null;
-
   // Sanitização estrita do número da página contra valores negativos, NaN ou injeções
   const rawPage = searchParams.get("pagina") || searchParams.get("page");
   let page = 1;
@@ -171,7 +163,6 @@ function extractFiltersFromLocation(): {
     tags,
     search: search.trim(),
     priceRange: priceRange ? priceRange.trim() : null,
-    voltage: voltage ? voltage.trim() : null,
     page,
   };
 }
@@ -191,7 +182,6 @@ export function useProductFilters({
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
-  const [selectedVoltage, setSelectedVoltage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const isHydratedRef = useRef(false);
 
@@ -212,9 +202,6 @@ export function useProductFilters({
     }
     if (initial.priceRange) {
       setSelectedPriceRange(initial.priceRange);
-    }
-    if (initial.voltage) {
-      setSelectedVoltage(initial.voltage);
     }
     if (initial.page > 1) {
       setCurrentPage(initial.page);
@@ -244,9 +231,6 @@ export function useProductFilters({
       if (selectedPriceRange) {
         params.set("preco", selectedPriceRange);
       }
-      if (selectedVoltage) {
-        params.set("voltagem", selectedVoltage);
-      }
       if (currentPage > 1) {
         params.set("pagina", String(currentPage));
       }
@@ -272,7 +256,6 @@ export function useProductFilters({
     selectedTags,
     searchQuery,
     selectedPriceRange,
-    selectedVoltage,
     currentPage,
     enableUrlSync,
   ]);
@@ -287,7 +270,6 @@ export function useProductFilters({
       setSelectedTags(updated.tags);
       setSearchQuery(updated.search);
       setSelectedPriceRange(updated.priceRange);
-      setSelectedVoltage(updated.voltage);
       setCurrentPage(updated.page);
     };
 
@@ -306,7 +288,6 @@ export function useProductFilters({
     setSelectedBrand(null);
     setSelectedTags([]);
     setSelectedPriceRange(null);
-    setSelectedVoltage(null);
     setSearchQuery("");
     setCurrentPage(1);
   }, []);
@@ -319,7 +300,7 @@ export function useProductFilters({
       return;
     }
     setCurrentPage(1);
-  }, [searchQuery, selectedBrand, selectedTags, selectedPriceRange, selectedVoltage]);
+  }, [searchQuery, selectedBrand, selectedTags, selectedPriceRange]);
 
   // ─── 5. Contagem dinâmica e em tempo real por marca para o Flyout ────────────
   const brandsWithCounts = useMemo(() => {
@@ -373,25 +354,15 @@ export function useProductFilters({
         if (selectedPriceRange === "200+" && price < 200) return false;
       }
 
-      // 5. Filtro por Voltagem
-      if (selectedVoltage) {
-        const hasVoltage =
-          selectedVoltage === "127"
-            ? /\b(127|110|127v|110v)\b/i.test(text)
-            : /\b(220|220v)\b/i.test(text);
-        if (!hasVoltage) return false;
-      }
-
       return true;
     });
-  }, [initialProducts, searchQuery, selectedBrand, selectedTags, selectedPriceRange, selectedVoltage]);
+  }, [initialProducts, searchQuery, selectedBrand, selectedTags, selectedPriceRange]);
 
   const hasActiveFilters = Boolean(
     selectedBrand ||
     selectedTags.length > 0 ||
     searchQuery.trim() ||
-    selectedPriceRange ||
-    selectedVoltage
+    selectedPriceRange
   );
 
   // ─── 7. Paginação Segura com Bounds Clamping (12 produtos por página) ─────────
@@ -423,8 +394,6 @@ export function useProductFilters({
     handleToggleTag,
     selectedPriceRange,
     setSelectedPriceRange,
-    selectedVoltage,
-    setSelectedVoltage,
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,

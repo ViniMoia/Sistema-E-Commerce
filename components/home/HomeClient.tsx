@@ -64,8 +64,6 @@ export default function HomeClient({
     handleToggleTag,
     selectedPriceRange,
     setSelectedPriceRange,
-    selectedVoltage,
-    setSelectedVoltage,
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,
@@ -377,8 +375,6 @@ export default function HomeClient({
               onToggleTag={handleToggleTag}
               selectedPriceRange={selectedPriceRange}
               onSelectPriceRange={setSelectedPriceRange}
-              selectedVoltage={selectedVoltage}
-              onSelectVoltage={setSelectedVoltage}
               onClearAll={handleClearAllFilters}
               brands={brandsWithCounts}
               totalProductsCount={totalCount}
