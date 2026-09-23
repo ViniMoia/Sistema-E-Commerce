@@ -80,7 +80,7 @@ const TAG_REGEX: Record<string, RegExp> = {
     /\b(KIT|COMBO|TRIO|CONJUNTO|PCT|PACK|JOGO|DUPLA)\b/i,
 };
 
-const BRAND_REGEX: Record<string, RegExp> = {
+export const BRAND_REGEX: Record<string, RegExp> = {
   autoamerica:
     /\b(AUTOAMERICA|AUTO AMERICA|AUTO ESPELHAMENTO|TRIPLE PASTE|HIGH SHINE|FOAM GLOSS|GOLD DUSTER|FAST CUT|AMERICA)\b/i,
   cadillac:
