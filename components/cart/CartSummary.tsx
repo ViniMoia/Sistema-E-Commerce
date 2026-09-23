@@ -30,7 +30,7 @@ function AnimatedCheckoutButton({ onClick }: { onClick?: () => void }) {
             <span className="absolute top-0 left-0 h-full w-full -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:animate-shimmer group-hover:opacity-100" />
           </span>
           <span className="relative z-10 flex items-center gap-2">
-            <span className="text-sm font-bold tracking-widest text-white uppercase">Checkout</span>
+            <span className="text-sm font-bold tracking-widest text-white uppercase">Finalizar Compra</span>
           </span>
         </span>
       </button>
