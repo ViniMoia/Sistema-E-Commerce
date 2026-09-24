@@ -121,10 +121,19 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
       if (loja) return loja as TenantContext | null;
     }
 
-    // 3. Domínio Vercel de preview ou staging (ex: loja1.vercel.app)
+    // 3. Domínio Vercel de preview, staging ou deployment (ex: loja1.vercel.app ou projeto-git-*.vercel.app)
     if (cleanHost.endsWith(".vercel.app")) {
       const slug = cleanHost.replace(".vercel.app", "");
-      const loja = await getCachedLojaBySlug(slug);
+      let loja = await getCachedLojaBySlug(slug);
+      if (loja) return loja as TenantContext | null;
+
+      // 3.1. Fallback resiliente para preview deployments na Vercel usando o default slug
+      const defaultSlug =
+        process.env.DEFAULT_LOJA_SLUG ||
+        process.env.NEXT_PUBLIC_DEFAULT_LOJA_SLUG ||
+        "continental-prototipo";
+      
+      loja = await getCachedLojaBySlug(defaultSlug);
       if (loja) return loja as TenantContext | null;
     }
 
