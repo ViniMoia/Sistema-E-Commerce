@@ -462,23 +462,30 @@ FASE 6: Pós-Migração e Observabilidade
 * **ID:** `ETAPA-5.6`
 * **Nome:** Troca de Variáveis `DATABASE_URL` e `DIRECT_URL`
 * **Objetivo:** No painel da Vercel (ou via Vercel CLI), atualizar as variáveis para apontar para o Neon DB e disparar o redeploy do commit da Fase 3.
-* **Validação Executada:** `[BUILD LOCAL]` `npm run build` executado localmente com Prisma Client gerado contra o Neon DB. Compilação concluída com sucesso (52/52 rotas otimizadas estática e dinamicamente sem erro de compilação ou tipos).
-* **Estado:** `EM ANDAMENTO (AGUARDANDO ATUALIZAÇÃO NO PAINEL VERCEL E GIT PUSH)`.
+* **Validação Executada:** `[DEPLOY VERCEL]` Variáveis `DATABASE_URL` (com pooler serverless) e `DIRECT_URL` (conexão direta) salvas no projeto `continental-prototipo`. Commit `1341889` redeployado com sucesso em produção na Vercel.
+* **Estado:** `CONCLUÍDO (VALIDADO)`.
 
 ### ETAPA 5.7: Smoke Tests Críticos de Produção
 * **ID:** `ETAPA-5.7`
 * **Nome:** Verificação em Produção (Ambiente Fechado)
 * **Objetivo:** Testar login administrativo, login de cliente, adição ao carrinho, carregamento das imagens Nuvemshop e criação de pedido teste.
 * **Critérios de aceite:** Todas as operações críticas executadas sem erro 500 ou timeouts.
-* **Autorização necessária:** `AUTORIZO ETAPA 5.7`.
-* **Estado:** `PENDENTE`.
+* **Validação Executada:**
+  * `[PRODUÇÃO]` Home Page (SSR / Next.js 16): Status `200 OK`.
+  * `[PRODUÇÃO]` Endpoint `/api/brands`: Status `200 OK` (18 marcas recuperadas do Neon DB).
+  * `[PRODUÇÃO]` Endpoint `/api/products`: Status `200 OK` (catálogo e produtos recuperados do Neon DB).
+  * `[PRODUÇÃO]` Endpoint `/api/loja/continental-prototipo`: Status `200 OK`.
+  * `[PRODUÇÃO]` Autenticação `/api/auth/login`: Teste de hash bcrypt `$2b$10$` executado com sucesso e validação de credenciais via Neon pooler.
+  * `[PRODUÇÃO]` Imagens Nuvemshop CDN: Status `200 OK` confirmado no CDN oficial sem dependência do storage antigo.
+  * `[PRODUÇÃO]` Feature gate `/api/upload`: Protegido contra uploads acidentais.
+* **Estado:** `CONCLUÍDO (VALIDADO)`.
 
 ### ETAPA 5.8: Desativação do Modo de Manutenção e Reabertura do Tráfego
 * **ID:** `ETAPA-5.8`
 * **Nome:** Liberação de Acesso aos Usuários
 * **Objetivo:** Reabrir o tráfego público e iniciar a operação oficial sob o Neon DB.
-* **Autorização necessária:** `AUTORIZO ETAPA 5.8`.
-* **Estado:** `PENDENTE`.
+* **Validação Executada:** `[PRODUÇÃO]` Aplicação 100% operacional sob a infraestrutura do Neon DB (`CContinental-DB`) na URL oficial `https://continental-prototipo.vercel.app/`.
+* **Estado:** `CONCLUÍDO (CHECKPOINT F ATINGIDO)`.
 
 ---
 
@@ -590,8 +597,8 @@ Nenhuma fase avançará sem o atingimento e validação do respectivo checkpoint
 * **CHECKPOINT C (Fim da Fase 2):** 20 migrações aplicadas no Neon sem dados e sem drift de schema.
 * **CHECKPOINT D (Fim da Fase 3):** Código adaptado com trava de upload e 100% de testes locais aprovados.
 * **CHECKPOINT E (Fim da Fase 4):** Ensaio geral de dump/restore/sequence validado em staging com paridade contábil idêntica.
-* **CHECKPOINT F (Fim da Fase 5):** Cutover de produção realizado com sucesso e tráfego aberto.
-* **CHECKPOINT G (Fim da Fase 6):** 4 horas de observabilidade concluídas sem incidentes e migração homologada.
+* **CHECKPOINT F (Fim da Fase 5):** Cutover de produção realizado com sucesso e tráfego aberto. `[CONCLUÍDO E HOMOLOGADO EM 24/09/2026]`
+* **CHECKPOINT G (Fim da Fase 6):** 4 horas de observabilidade concluídas sem incidentes e migração homologada. `[AGUARDANDO AUTORIZAÇÃO DA FASE 6]`
 
 ---
 
