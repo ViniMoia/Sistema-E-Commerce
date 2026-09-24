@@ -21,6 +21,14 @@ export async function uploadAvatarAction(formData: FormData): Promise<{
       return { success: false, error: "Não autorizado. Sessão expirada." };
     }
 
+    // Feature gate conservativo: Upload direto em standby temporário.
+    if (process.env.ENABLE_DIRECT_UPLOAD !== "true" && process.env.NODE_ENV !== "test") {
+      return {
+        success: false,
+        error: "O upload direto de fotos está temporariamente desativado. Utilize a imagem por URL externa.",
+      };
+    }
+
     const file = formData.get("avatar") as File | null;
     if (!file) {
       return { success: false, error: "Nenhum arquivo de imagem foi enviado." };

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 /**
  * Singleton do Prisma Client para reuso de conexões (Finding SCL-002).
  * Previne connection exhaustion em ambientes Serverless/Node.js e
- * suporta connection pooling do Supabase/PgBouncer.
+ * suporta connection pooling nativo (Neon Serverless Connection Pooler).
  */
 const prismaClientSingleton = () => {
   return new PrismaClient({

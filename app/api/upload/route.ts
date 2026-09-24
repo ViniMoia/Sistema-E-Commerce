@@ -15,6 +15,16 @@ export async function POST(req: Request) {
     return err("Não autorizado. Faça login para enviar arquivos.", 401, "UNAUTHORIZED");
   }
 
+  // Feature gate conservativo: Upload direto em standby temporário.
+  // A aplicação opera com imagens por URLs externas (Nuvemshop/CDNs). Código preservado para futuro S3/R2.
+  if (process.env.ENABLE_DIRECT_UPLOAD !== "true" && process.env.NODE_ENV !== "test") {
+    return err(
+      "O upload direto de arquivos está temporariamente desativado. Por favor, utilize a inserção de imagens através de URL externa.",
+      503,
+      "FEATURE_TEMPORARILY_DISABLED"
+    );
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

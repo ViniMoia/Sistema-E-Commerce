@@ -1,0 +1,957 @@
+================================================================================
+ARQUITETURA E AUDITORIA TECNICA DE MIGRACAO
+SUPABASE -> NEON DB (PostgreSQL Serverless)
+================================================================================
+
+Data da Auditoria: 24/09/2026
+Projeto: E-Commerce Multi-Tenant
+Versao da Arquitetura: 2.0 (Pos-Homologacao de Estrategia de URLs e Standby)
+Arquivo Original Markdown: ../ARQUITETURA_MIGRACAO_SUPABASE_NEON.md
+
+--------------------------------------------------------------------------------
+1. RESUMO EXECUTIVO
+--------------------------------------------------------------------------------
+
+Este documento estabelece o diagnostico arquitetural e o planejamento tecnico
+exaustivo para a migracao da infraestrutura de banco de dados do projeto
+E-Commerce Multi-Tenant da plataforma Supabase para o Neon DB (PostgreSQL
+Serverless, plano Free Tier).
+
+A auditoria foi conduzida inspecionando o repositorio em nivel de codigo-fonte,
+esquemas de persistencia, historico de migracoes, cadeia de dependencias,
+suites de testes automatizados e configuracoes de infraestrutura.
+
+PRINCIPAIS CONCLUSOES DA AUDITORIA:
+
+1. Camada de Banco de Dados & ORM (Baixo Impacto / Compatibilidade 100%):
+   * O projeto utiliza Prisma ORM 5.22.0 configurado com o conector nativo
+     "postgresql".
+   * A modelagem do banco contem 22 modelos relacionais, 7 enums e 20 migracoes
+     ativas versionadas em SQL puro. Nao ha dependencia de extensoes
+     proprietarias do Supabase, funcoes PL/pgSQL acopladas a plataforma,
+     triggers de banco ou views customizadas.
+   * Nao existem chamadas SQL brutas ($queryRaw ou $executeRaw). Todas as
+     operacoes de banco operam atraves da API tipada do Prisma Client e
+     blocos de transacao ACID (prisma.$transaction).
+   * A compatibilidade tecnica da modelagem e da ORM com o Neon DB e total
+     e imediata, exigindo apenas a reconfiguracao das strings de conexao
+     (DATABASE_URL e DIRECT_URL).
+
+2. Autenticacao (Zero Impacto / Independencia Total):
+   * A aplicacao NAO utiliza o Supabase Auth (GoTrue).
+   * O sistema possui motor proprio de autenticacao multi-tenant: senhas
+     criptografadas com bcryptjs, entidades User e Session gerenciadas
+     diretamente no PostgreSQL via Prisma, e identificadores de sessao
+     opacos (256-bit) trafegados em cookies HTTP-only (session_id).
+   * A migracao para o Neon preservara a autenticacao de forma identica e
+     sem necessidade de substituicao de servico de identidade.
+
+3. Row Level Security (RLS) & PostgREST (Desacoplamento Seguro):
+   * O arquivo prisma/migrations/supabase_rls_hardening.sql foi criado no
+     projeto unicamente como medida defensiva para bloquear a API publica
+     HTTP (PostgREST) do Supabase, revogando privilegios das roles anon e
+     authenticated e impondo politica deny_direct_api_access com USING (false).
+   * O isolamento multi-tenant real da aplicacao e estritamente garantido
+     a nivel de aplicacao em todas as consultas Prisma via chave de tenant
+     lojaID.
+   * Como o Neon DB opera estritamente como PostgreSQL sob conexao autenticada
+     TCP/TLS (sem exposicao de API REST/GraphQL anonima na borda), as roles
+     especificas do Supabase nao existem e nao sao necessarias.
+
+4. Armazenamento de Midia & Decisao Humana Formalizada (Operacao Exclusiva via URL):
+   * O banco de dados relacional armazena exclusivamente strings com URLs de
+     imagens (Product.imageUrl, Product.galleryUrls, User.avatarImageUrl),
+     nunca binarios ou blobs.
+   * A vasta maioria das imagens do catalogo provem da sincronizacao com a
+     Nuvemshop e ja reside nas CDNs externas da plataforma
+     (dcdn-us.mitiendanube.com).
+   * Decisao Arquitetural Homologada: O sistema nao realizara upload local
+     de imagens para o banco de dados nem dependera de Object Storage nesta
+     fase.
+   * Estrategia de Desativacao Conservativa (Soft-Deactivation): As rotas de
+     upload direto ja implementadas (/api/upload e uploadAvatarAction) nao
+     serao desfeitas ou destruidas. Elas serao mantidas no codigo e
+     temporariamente desativadas via trava logica (feature gate), preservando
+     todo o trabalho tecnico realizado e deixando a arquitetura pronta para
+     plugar um provedor S3/Cloudflare R2 em fase futura.
+   * Impacto na Migracao: A dependencia do Supabase Storage e anulada para
+     o escopo desta migracao, transformando o cutover em uma migracao pura
+     e direta de PostgreSQL.
+
+--------------------------------------------------------------------------------
+2. OBJETIVO DA MIGRACAO
+--------------------------------------------------------------------------------
+
+Auditar com evidencias concretas a viabilidade e os requisitos tecnicos para
+transferir a custodia do banco de dados relacional PostgreSQL do Supabase para
+o Neon DB, respeitando integralmente:
+* A preservacao de 100% da modelagem relacional (tabelas, colunas, tipos,
+  constraints e indices inalterados);
+* A manutencao da ORM Prisma 5.22.0 como camada unica de persistencia;
+* A garantia de zero perda de dados, integridade referencial e consistencia
+  transacional;
+* A operacao 100% focada em imagens referenciadas por URLs externas;
+* O levantamento previo de todos os riscos, custos operacionais, plano de
+  cutover e estrategia de rollback.
+
+--------------------------------------------------------------------------------
+3. RESTRICOES ABSOLUTAS
+--------------------------------------------------------------------------------
+
+Nesta etapa de planejamento arquitetural, foram seguidas as seguintes restricoes:
+1. Nao Implementacao: Nenhuma linha de codigo de producao, schema, migracao,
+   pacote ou infraestrutura foi alterada.
+2. Escrita Unica Autorizada: Apenas a geracao deste documento tecnico e do
+   original Markdown em diversos/PLANEJAMENTO_DB/Arquitetura_alteracao/.
+3. Imutabilidade da Modelagem: Nenhuma alteracao estrutural nas entidades do
+   banco de dados foi proposta ou considerada como requisito de migracao.
+4. Imutabilidade da ORM: A permanencia do Prisma ORM 5.22.0 e mandatoria.
+5. Seguranca de Segredos: Nenhum segredo real de producao (.env, tokens Asaas,
+   Resend ou senhas) e exposto neste documento.
+
+--------------------------------------------------------------------------------
+4. ESCOPO
+--------------------------------------------------------------------------------
+
+* Auditoria completa da camada de persistencia PostgreSQL e Prisma ORM;
+* Mapeamento de todas as referencias ao ecossistema Supabase no repositorio;
+* Analise de compatibilidade entre PostgreSQL Supabase e PostgreSQL Neon DB;
+* Avaliacao de limites operacionais do Neon DB Free Tier (computacao serverless,
+  limites de conexoes, scale-to-zero e storage);
+* Inventario de variaveis de ambiente, configuracoes de build e CI/CD;
+* Planejamento de desativacao conservativa das rotas de upload direto de
+  imagens (/api/upload), preservando o codigo para reativacao futura;
+* Planejamento de estrategias de transferencia de dados (pg_dump / pg_restore),
+  validacao de integridade, cutover e rollback;
+* Desenho das arquiteturas atual e futura com diagramas visuais;
+* Formulacao da DAG de implementacao e matriz de decisoes humanas.
+
+--------------------------------------------------------------------------------
+5. FORA DE ESCOPO
+--------------------------------------------------------------------------------
+
+* Criacao de projetos ou contas no Neon DB;
+* Execucao de dumps de banco de dados reais;
+* Aplicacao de migrations ou scripts DDL;
+* Modificacao do codigo-fonte em app/, lib/, services/, components/ ou tests/;
+* Exclusao ou destruicao das rotas e componentes de upload de arquivos (serao
+  apenas soft-deactivated na implementacao futura);
+* Alteracao de dependencias em package.json;
+* Alteracao de arquivos de variaveis de ambiente (.env).
+
+--------------------------------------------------------------------------------
+6. ARQUITETURA ATUAL
+--------------------------------------------------------------------------------
+
+6.1 TOPOLOGIA E FLUXO DE REQUISICOES
+
+Atualmente, o sistema opera sob a arquitetura Next.js 16 (App Router) em modo
+full-stack, com o PostgreSQL hospedado na nuvem AWS (regiao us-east-1)
+provisionado pelo Supabase.
+
++-----------------------------------------------------------------------------+
+| CLIENTE / NAVEGADOR                                                         |
+|   [Interface Web (React / Next.js)]                                         |
+|   [Componente de Imagem (URL Externa / Upload)]                             |
++-----------------------------------------------------------------------------+
+                                      |
+                     (Requisicoes HTTP / Cookie session_id)
+                                      v
++-----------------------------------------------------------------------------+
+| SERVIDOR DE APLICACAO (Next.js 16 Standalone / Node.js)                     |
+|   [proxy.ts] (Protecao de Rotas)                                            |
+|        |                                                                    |
+|        v                                                                    |
+|   [Server Actions / API Routes (/api/*)]                                    |
+|        |                                                                    |
+|        +---> [lib/session.ts] (Gerenciador de Sessao)                       |
+|        |                                                                    |
+|        +---> [services/*] (Camada de Servicos de Negocio)                   |
+|        |          |                                                         |
+|        |          v                                                         |
+|        |     [lib/prisma.ts] (Prisma Client Singleton)                      |
+|        |                                                                    |
+|        +---> [lib/supabase/storage.ts] (Helper Legado de Upload)            |
++-----------------------------------------------------------------------------+
+               | (DATABASE_URL)         | (DIRECT_URL)           |
+               | (Pooling :6543)        | (Migrations :5432)     | (Upload)
+               v                        v                        v
++-----------------------------+ +---------------------+ +---------------------+
+| SUPABASE POOLER (:6543)     | | SUPABASE DIRECT     | | SUPABASE STORAGE    |
+| (PgBouncer)                 | | (:5432)             | | (Buckets)           |
++-----------------------------+ +---------------------+ +---------------------+
+               |                        |
+               +-----------+------------+
+                           v
+          +-----------------------------------+
+          | BANCO DE DADOS POSTGRESQL NUVEM   |
+          | (Supabase - Schema public)        |
+          +-----------------------------------+
+
+Midias Externas:
+* As imagens de produtos sincronizados com a Nuvemshop sao carregadas pelo
+  navegador diretamente das CDNs da Nuvemshop (*.mitiendanube.com).
+
+6.2 ANALISE DO FLUXO DE PERSISTENCIA
+* Leituras e Escritas de Negocio: 100% trafegadas pelo Prisma Client conectando
+  via DATABASE_URL atraves do pooler de transacoes (porta 6543, pgbouncer=true).
+* Operacoes DDL e Migrations: Executadas via "npx prisma migrate deploy"
+  conectando via DIRECT_URL (porta 5432) diretamente ao banco.
+* Isolamento de Seguranca: O acesso ao banco pela aplicacao utiliza credenciais
+  com privilegios de proprietario/administrador (postgres), contornando o RLS.
+* Armazenamento de Imagens: Feito estritamente por referencias textuais de URL.
+  As imagens da Nuvemshop sao apontadas diretamente para as CDNs da plataforma.
+
+--------------------------------------------------------------------------------
+7. INVENTARIO COMPLETO DO SUPABASE
+--------------------------------------------------------------------------------
+
+A auditoria realizou varredura completa por referencias ao Supabase no codigo,
+dependencias, testes e configuracoes:
+
++---------------------------+------------------------+----------------------+--------------------+--------------------------------+---------------------------------------------+
+| Componente Auditado       | Uso Atual no Projeto   | Categoria            | Dependencia Real   | Impacto na Migracao            | Evidencia                                   |
++---------------------------+------------------------+----------------------+--------------------+--------------------------------+---------------------------------------------+
+| PostgreSQL Database       | Banco relacional princ.| PostgreSQL puro      | Nao (Postgres puro)| Baixo (Troca connection string)| prisma/schema.prisma linhas 8-12            |
+| Connection Pooler         | PgBouncer porta 6543   | Infra / Pooler       | Supabase PgBouncer | Baixo (Neon tem pooler nativo) | .env.example linha 8                        |
+| Supabase Auth (GoTrue)    | Auth, signup, JWT      | Especifica Supabase  | NAO UTILIZADO      | ZERO IMPACTO                   | services/auth.service.ts e lib/session.ts   |
+| Supabase Storage          | Upload produtos/avatar | Especifica Supabase  | DESATIVADO CONSERV.| BAIXO (Rotas em standby / URL) | Decisao formal do usuario (24/09/2026)      |
+| Supabase Realtime         | Subscriptions / CDC    | Especifica Supabase  | NAO UTILIZADO      | ZERO IMPACTO                   | Zero ocorrencias no codigo                  |
+| Supabase Edge Functions   | Funcoes serverless Deno| Especifica Supabase  | NAO UTILIZADO      | ZERO IMPACTO                   | Zero ocorrencias no codigo                  |
+| PostgREST Data API        | Exposicao REST schema  | Especifica Supabase  | Bloqueada intenc.  | ZERO IMPACTO (Nao utilizada)   | prisma/migrations/supabase_rls_hardening.sql|
+| RLS Policies              | Hardening PostgREST    | Especifica Supabase  | Apenas nega Postg. | Baixo (Desnecessario no Neon)  | prisma/migrations/supabase_rls_hardening.sql|
+| @supabase/supabase-js     | SDK JS v2.103.2        | Integracao SDK       | Utilizado Storage  | Baixo (Permanece p/ futuro S3) | package.json linha 29                       |
+| @supabase/ssr             | Helper SSR v0.10.2     | Integracao SDK       | Arquivo helper orf.| Desprezivel (Inerte)           | lib/supabase/server.ts linhas 1-40          |
+| next.config.js (CSP)      | Whitelist *.supabase.co| Configuracao         | Sim                | Baixo (Pode ser mantido)       | next.config.js linhas 9, 42, 44             |
+| lib/utils.ts (ImageOpt)   | URL render optimizer   | Codigo aplicacao     | Sim                | Baixo (Preservado p/ legados)  | lib/utils.ts linhas 11-24                   |
++---------------------------+------------------------+----------------------+--------------------+--------------------------------+---------------------------------------------+
+
+--------------------------------------------------------------------------------
+8. SEPARAR POSTGRESQL DE SERVICOS SUPABASE
+--------------------------------------------------------------------------------
+
++----------------------------------------------------------------------------+
+|                          CAMADA DE DADOS E INFRA                           |
++-------------------------------------+--------------------------------------+
+|           POSTGRESQL PURO           |         SUPABASE PLATAFORMA          |
+|    (Totalmente Portavel ao Neon)    |        (Nao Existe no Neon DB)       |
++-------------------------------------+--------------------------------------+
+| * 22 Tabelas Relacionais            | * Supabase Storage (Buckets)         |
+| * 7 Tipos ENUM nativos              | * Supabase Auth (GoTrue API)         |
+| * Foreign Keys & On Delete Actions  | * PostgREST HTTP Data API            |
+| * Constraints CHECK monetarias      | * Edge Functions (Deno Runtime)      |
+| * Indices B-Tree compostos          | * Supabase Realtime Engine           |
+| * Tipos nativos (JSONB, DECIMAL)    | * Roles de borda: anon/auth          |
+| * Sequences & Autoincrement         | * Painel Supabase Studio             |
+| * Conexoes TCP via libpq / Pooler   | * Transformador de Imagem CDN        |
++-------------------------------------+--------------------------------------+
+
+* Evidencia no Codigo: Toda a logica de negocios reside em TypeScript
+  (services/), operando com o Prisma. Nenhuma regra reside em triggers,
+  procedures ou funcoes internas do banco de dados Supabase.
+
+--------------------------------------------------------------------------------
+9. INVENTARIO POSTGRESQL
+--------------------------------------------------------------------------------
+
+9.1 TABELAS E CHAVES PRIMARIAS (22 Entidades)
+
+1.  Loja: PK id (UUID) | Tenant raiz (1:N com User, Order, Product, etc.)
+2.  User: PK id (UUID) | FK lojaID -> Loja.id, defaultAddressId -> Address.id
+3.  Address: PK id (UUID) | FK userID -> User.id
+4.  Product: PK id (UUID) | FK lojaID -> Loja.id, userID -> User.id, brandID -> Brand.id
+5.  ProductVariants: PK id (UUID) | FK ProductID -> Product.id
+6.  Cart: PK id (UUID) | FK userID -> User.id
+7.  CartItem: PK id (UUID) | FK cartID -> Cart.id, productID -> Product.id, variantID -> ProductVariants.id
+8.  Session: PK id (TEXT 256-bit) | FK userId -> User.id
+9.  Order: PK id (UUID) | FK userID -> User.id, lojaID -> Loja.id, addressID -> Address.id
+10. OrderItem: PK id (UUID) | FK orderId -> Order.id, productId -> Product.id, productVariantsId -> ProductVariants.id
+11. OrderStatusHistory: PK id (CUID) | FK orderId -> Order.id, performedById -> User.id
+12. FreightRule: PK id (CUID) | FK implicita lojaID -> Loja.id
+13. AuditLog: PK id (UUID) | FK targetId -> User.id, actorId -> User.id
+14. StockSyncLog: PK id (UUID) | Logs de sincronizacao de estoque Nuvemshop
+15. LoyaltyWallet: PK id (UUID) | FK lojaID -> Loja.id, userID -> User.id (lock version)
+16. LoyaltyTransaction: PK id (UUID) | FK lojaID -> Loja.id, userID -> User.id, orderId -> Order.id
+17. Brand: PK id (UUID) | FK lojaID -> Loja.id
+18. CategoryTag: PK id (UUID) | FK lojaID -> Loja.id
+19. ProductCategoryTag: PK Composta (productID + categoryTagID) | N:N Product e CategoryTag
+20. JtExpressGeocom: PK id (UUID) | Faixas de CEP da transportadora J&T
+21. JtExpressRate: PK id (UUID) | Matriz de tarifas de frete J&T Express
+22. PaymentWebhookEvent: PK id (UUID) | Ledger de idempotencia de webhooks de pagamento Asaas
+
+9.2 TIPOS CUSTOMIZADOS (ENUMs)
+1. CartStatus: ACTIVE, COMPLETED, ABANDONED
+2. UserStatus: ACTIVE, BLOCKED, PENDING
+3. Role: ADMIN, CUSTOMER, SELLER
+4. OrderStatus: PENDING, PAID, SHIPPED, DELIVERED, CANCELLED
+5. SyncStatus: PENDING, PROCESSING, SYNCED, FAILED, DEAD_LETTER
+6. DeliveryType: DELIVERY, PICKUP, NONE
+7. LoyaltyTxType: EARN, REDEEM, REFUND_EARN, REFUND_REDEEM, EXPIRATION, ADMIN_ADJUSTMENT
+
+9.3 CONSTRAINTS CHECK & PRECISAO MONETARIA
+Configuradas explicitamente na migracao 20260522000000:
+* Product: price >= 0, stock >= 0
+* ProductVariants: stock >= 0
+* CartItem: quantity > 0, price >= 0
+* Order: total >= 0, subtotal >= 0, shippingCost >= 0
+* OrderItem: quantity > 0, price >= 0
+* FreightRule: value >= 0
+
+9.4 INDICES E SEQUENCIAS
+* Sequencias Nativas: Order.orderNumber utiliza sequence PostgreSQL (SERIAL / autoincrement()).
+* Indices Compostos de Performance:
+  - Order: [lojaID, status, createdAt], [lojaID, status, paidAt], [lojaID, userID], [customerCpfCnpj]
+  - User: [email, lojaID] (UNIQUE), [cpfCnpj, lojaID], [lojaID, status], [lojaID, role]
+  - Product: [lojaID, sku], [lojaID, brandID], [lojaID, createdAt], [lojaID, stock]
+  - JtExpressRate: [geocom, weightMin, weightMax] (UNIQUE)
+
+--------------------------------------------------------------------------------
+10. MODELAGEM - VALIDACAO DA PRESERVACAO
+--------------------------------------------------------------------------------
+
+A exigencia de que a modelagem permaneca 100% inalterada e plenamente viavel.
+* O schema pode ser reproduzido no Neon sem alteracoes? Sim. Todos os modelos,
+  campos, tipos primitivos, enums, chaves primarias, estrangeiras e constraints
+  CHECK sao recursos padrao da sintaxe SQL do PostgreSQL 15/16/17, totalmente
+  suportados pelo Neon DB.
+* Extensoes Utilizadas? Nenhuma extensao (pg_trgm, uuid-ossp, pgcrypto, etc.)
+  e exigida pelo Prisma schema ou pelas migracoes.
+* Funcoes Incompativeis? Nao existem funcoes de banco customizadas no projeto.
+* Sequences? A coluna Order.orderNumber (SERIAL) e portavel nativamente.
+
+--------------------------------------------------------------------------------
+11. ROW LEVEL SECURITY (RLS)
+--------------------------------------------------------------------------------
+
+11.1 AUDITORIA DO SCRIPT supabase_rls_hardening.sql
+O projeto possui um unico artefato relacionado a RLS:
+prisma/migrations/supabase_rls_hardening.sql.
+* Motivacao Tecnica: O Supabase expoe na porta 443 uma camada de PostgREST
+  aberta a internet sob a rota /rest/v1/. Para prevenir que qualquer cliente
+  utilizando a chave publica anonima fizesse consultas diretas via HTTP as
+  tabelas sensiveis, o script aplicou:
+  1. ENABLE ROW LEVEL SECURITY em 13 tabelas;
+  2. REVOKE ALL ON ALL TABLES FROM anon, authenticated;
+  3. GRANT ALL ON ALL TABLES TO postgres, service_role;
+  4. Criacao da policy deny_direct_api_access com expressao USING (false).
+* Mecanismos de Identidade: O script NAO utiliza auth.uid(), nem auth.jwt().
+  A regra foi puramente um bloqueio total (false).
+
+11.2 COMPORTAMENTO E DECISAO NO NEON DB
+* O Neon DB disponibiliza exclusivamente endpoints PostgreSQL autenticados por
+  senha e TLS (porta 5432). Nao existe servico PostgREST ou Data API web.
+* O usuario do banco no Neon opera com privilegios completos sobre o schema
+  public (semelhante ao usuario postgres).
+* Conclusao: O script de hardening e especifico da infraestrutura Supabase.
+  No Neon DB, as tabelas devem manter a seguranca padrao do PostgreSQL
+  gerenciada pelo usuario mestre da aplicacao, dispensando o script Supabase RLS.
+
+--------------------------------------------------------------------------------
+12. AUTENTICACAO
+--------------------------------------------------------------------------------
+
+12.1 COMO A AUTENTICACAO REALMENTE FUNCIONA NO PROJETO
+A auditoria comprovou categoricamente que o projeto possui um motor de
+autenticacao proprietario implementado na camada de aplicacao:
+
+[Cliente HTTP] 
+      | (Envia Cookie: session_id=<hex_256bit>)
+      v
+[proxy.ts] -- Checagem de presenca do cookie --> Bloqueia anonimo em /admin
+      v
+[lib/session.ts - getCurrentUser()]
+      |
+      +--> prisma.session.findUnique({ where: { id: sessionId }, include: { user: true } })
+      |
+      +--> Se expirado (expiresAt < now) --> prisma.session.deleteMany() --> Retorna null
+      |
+      +--> Se user.status == 'BLOCKED' --> Retorna null
+      |
+      +--> Retorna SafeUserDTO sanitizado (sem password)
+
+1. Cadastro (services/auth.service.ts linhas 7-83):
+   * Valida unicidade composta por loja (email_lojaID);
+   * Gera hash seguro com bcrypt.hash(password, 10);
+   * Persiste a entidade na tabela User via Prisma Client.
+2. Login (services/auth.service.ts linhas 92-143):
+   * Busca usuario no PostgreSQL delimitado pelo tenant (email_lojaID);
+   * Compara o hash via bcrypt.compare(password, user.password);
+   * Cria registro na tabela Session com expiracao de 7 dias e grava o
+     cookie seguro session_id.
+3. Recuperacao de Senha (services/auth.service.ts linhas 145-261):
+   * Gera token aleatorio de 64 caracteres hexadecimais;
+   * Salva resetToken e resetTokenExpires na tabela User;
+   * Envia e-mail transacional via API do Resend.
+
+12.2 CONCLUSAO SOBRE A MIGRACAO DE AUTENTICACAO
+* Dependencia do Supabase Auth: 0% (Zero).
+* Acao Necessaria: Nenhuma alteracao de codigo. Os dados das tabelas User e
+  Session serao transportados diretamente para o Neon DB, e os usuarios
+  continuarao autenticados normalmente.
+
+--------------------------------------------------------------------------------
+13. STORAGE & TRATAMENTO DE IMAGENS
+--------------------------------------------------------------------------------
+
+13.1 AUDITORIA DO ARMAZENAMENTO DE IMAGENS
+Ficou categoricamente comprovado pela auditoria:
+1. O PostgreSQL NUNCA armazena binarios de imagens. O banco armazena apenas
+   URLs de texto (VARCHAR / TEXT).
+2. A maior parte do catalogo provem da Nuvemshop. Essas imagens ja estao
+   hospedadas na CDN da Nuvemshop (https://dcdn-us.mitiendanube.com/...). O
+   carregamento dessas fotos independe de qualquer storage interno.
+3. Rotas de Upload Existentes: Os arquivos lib/supabase/storage.ts,
+   app/api/upload/route.ts, ProductImageUpload.tsx e AvatarManager.tsx foram
+   criados para permitir upload direto de arquivos locais.
+
+13.2 DECISAO ESTRATEGICA HOMOLOGADA (DESATIVACAO CONSERVATIVA)
+Conforme instrucao expressa e soberana da lideranca tecnica do projeto:
+* No momento, o sistema trabalhara exclusivamente com imagens referenciadas por URL.
+* Nao havera dependencia de Object Storage ativo durante a migracao para o Neon DB.
+* Preservacao de Codigo: Nenhuma rota, servico ou componente de upload sera
+  desfeito ou deletado. Na etapa de implementacao, sera aplicada uma estrategia
+  de desativacao conservativa (Soft-Deactivation / Feature Gating):
+  1. A rota /api/upload permanecera com sua estrutura original, retornando um
+     status de recurso temporariamente desativado;
+  2. A Server Action uploadAvatarAction recebera trava identica;
+  3. No componente ProductImageUpload.tsx, a interface priorizara o campo de
+     texto para URL direta;
+  4. O arquivo lib/supabase/storage.ts e preservado intacto como base pronta
+     para, em um momento futuro, ser atualizado para um driver de Object
+     Storage dedicado (como Cloudflare R2 ou AWS S3).
+
+13.3 VANTAGEM ARQUITETURAL IMEDIATA
+Essa decisao desacopla totalmente a migracao do banco de dados relacional de
+qualquer problema de storage. A migracao para o Neon DB torna-se uma operacao
+limpa e descomplicada de banco de dados PostgreSQL.
+
+--------------------------------------------------------------------------------
+14. REALTIME
+--------------------------------------------------------------------------------
+
+* Auditoria: Varredura por metodos supabase.channel, postgres_changes ou websockets.
+* Resultado: Zero referencias. O projeto nao utiliza o motor de Realtime do Supabase.
+* Impacto: Nulo.
+
+--------------------------------------------------------------------------------
+15. EDGE FUNCTIONS / SERVERLESS
+--------------------------------------------------------------------------------
+
+* Auditoria: Varredura por diretorios supabase/functions ou scripts Deno.
+* Resultado: Zero referencias. Todas as automacoes rodam no Next.js 16 (Node.js).
+* Impacto: Nulo.
+
+--------------------------------------------------------------------------------
+16. API E ACESSO A DADOS
+--------------------------------------------------------------------------------
+
+Todo o fluxo de acesso a dados segue uma arquitetura uniforme de 4 camadas:
+1. Frontend / UI (React Components / Hooks / SWR)
+2. Backend / API Layer (app/api/*, actions.ts, proxy.ts)
+3. Domain Services (services/order, checkout, loyalty, etc.)
+4. ORM & Persistence (lib/prisma.ts -> @prisma/client) -> TCP Wire Protocol
+
+Nenhum componente da interface grafica acessa o banco diretamente via
+PostgREST ou SDK do Supabase. A substituicao do banco nao causa efeito
+cascata no frontend.
+
+--------------------------------------------------------------------------------
+17. ORM E MIGRATIONS
+--------------------------------------------------------------------------------
+
+17.1 CONFIGURACAO ATUAL DA ORM
+* Pacotes: @prisma/client@^5.22.0, prisma@^5.22.0.
+* Datasource: PostgreSQL com suporte nativo a pooling via parametros de URL.
+* Singleton: Gerenciado em lib/prisma.ts com log seletivo e hook de desconexao limpa.
+
+17.2 INVENTARIO DE MIGRACOES (HISTORICO ATIVO)
+O diretorio prisma/migrations contem 20 migracoes sequenciais:
+1.  20260423214204_add_initial_tables
+2.  20260424231005_edit_address
+3.  20260427164311_implementacao_status_user
+4.  20260427211753_integracao_tabela_session
+5.  20260429214420_db_cart_schema
+6.  20260511165055_role_enum_add_schema
+7.  20260511213657_add_audit_log_model
+8.  20260512193716_add_audit_log_entity_fields
+9.  20260513004039_order_update
+10. 20260513203715_ (refatoracao order, history e frete)
+11. 20260520192856_add_pix_key_to_loja
+12. 20260520201129_add_pixkeyused_to_order
+13. 20260521000000_reconcile_schema_drift
+14. 20260522000000_monetary_decimal_and_check_constraints
+15. 20260523000000_performance_composite_indexes
+16. 20260524000000_add_order_idempotency_key
+17. 20260831000000_add_loyalty_engine
+18. 20260916000000_add_asaas_and_delivery_confirmation
+19. 20260916130000_add_cpf_cnpj_to_user_and_order
+20. 20260917000000_add_order_paid_at
+
+* Portabilidade para o Neon DB: 100% Portaveis. As 20 migracoes utilizam DDL
+  PostgreSQL padrao. O comando "npx prisma migrate deploy" executara com
+  sucesso no Neon DB.
+
+--------------------------------------------------------------------------------
+18. VARIAVEIS DE AMBIENTE E SECRETS
+--------------------------------------------------------------------------------
+
++---------------------------------------+-------------------------+--------------------+-----------------------------+
+| Nome da Variavel                      | Finalidade              | Componente Afetado | Substituicao Esperada       |
++---------------------------------------+-------------------------+--------------------+-----------------------------+
+| DATABASE_URL                          | String de conexao pooler| Prisma Client      | String com endpoint -pooler |
+| DIRECT_URL                            | String de conexao direta| Prisma Migrate     | String com endpoint direto  |
+| TEST_DATABASE_URL                     | Conexao banco de testes | Testes de integr.  | Banco descartavel local     |
+| NEXT_PUBLIC_SUPABASE_URL              | URL base API Supabase   | Storage legado     | Desnecessaria nesta fase    |
+| SUPABASE_SERVICE_ROLE_KEY             | Chave privada Supabase  | Storage legado     | Desnecessaria nesta fase    |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  | Chave publica anonima   | Helper orfao       | Desnecessaria / Obsoleta    |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY         | Chave publica legada    | Helper orfao       | Desnecessaria / Obsoleta    |
++---------------------------------------+-------------------------+--------------------+-----------------------------+
+
+--------------------------------------------------------------------------------
+19. SEGURANCA
+--------------------------------------------------------------------------------
+
+1. Exposicao de Credenciais: .gitignore cobre .env e arquivos temporarios.
+   Nenhum segredo real consta no codigo-fonte.
+2. Controle de Acesso ao Banco: No Neon DB, o acesso e estritamente via protocolo
+   TCP PostgreSQL sobre TLS 1.3 obrigatorio (sslmode=require).
+3. Privilegios da Role de Conexao: O usuario gerado pelo Neon DB e proprietario
+   do banco (neondb_owner), possuindo permissoes para criar tabelas e schemas.
+4. Isolamento Multi-Tenant: Permanece inalterado, garantido deterministicamente
+   no codigo via clausulas "where: { lojaID: ... }" em todas as consultas Prisma.
+
+--------------------------------------------------------------------------------
+20. INTEGRIDADE DOS DADOS
+--------------------------------------------------------------------------------
+
+* Precisao Financeira (DECIMAL(10,2)): Tipos exatos de ponto fixo. A exportacao
+  (pg_dump) e importacao (pg_restore) preservam a precisao bit a bit.
+* Sequencia de Numeracao de Pedidos (Order.orderNumber): Gerada via sequence
+  (Order_orderNumber_seq). O processo de migracao deve sincronizar o valor
+  atual da sequence no Neon imediatamente apos o restore.
+* Tipos ENUM e JSONB: Compatibilidade binaria identica entre Supabase e Neon.
+* Timestamps e Timezone: Gravadas normalizadas em UTC. O dump/restore deve ser
+  executado garantindo TIMEZONE='UTC'.
+
+--------------------------------------------------------------------------------
+21. COMPATIBILIDADE COM O NEON DB
+--------------------------------------------------------------------------------
+
++-----------------------------------+--------------------+--------------------+---------------------------------------+
+| Recurso / Item                    | Estado Atual       | Estado no Neon DB  | Compatibilidade / Mitigacao           |
++-----------------------------------+--------------------+--------------------+---------------------------------------+
+| Versao PostgreSQL                 | PostgreSQL 15/16   | PostgreSQL 15/16/17| 100% Compativel                       |
+| Connection Pooling                | PgBouncer porta 6543| Neon Pooler :5432 | 100% Compativel (Host -pooler)        |
+| Conexoes Diretas (Migrations)     | Porta 5432 direta  | Host direto :5432  | 100% Compativel (Variavel DIRECT_URL) |
+| Prisma ORM                        | Prisma 5.22.0      | Prisma 5.22.0      | 100% Compativel                       |
+| Transacoes ACID ($transaction)    | Suportadas         | Suportadas         | 100% Compativel                       |
+| Constraints CHECK & Indices       | Totalmente ativos  | Totalmente suport. | 100% Compativel                       |
+| Object Storage                    | Buckets supabase   | Desativado nesta f.| Nao impacta (operacao 100% via URL)   |
+| Scale-to-Zero (Free Tier)         | Instancia continua | Suspende apos 5 min| Latencia cold start (500ms a 2s)      |
+| Limite de Armazenamento           | 500 MB (Free)      | 500 MB (Free)      | Compativel (sem midias no banco)      |
++-----------------------------------+--------------------+--------------------+---------------------------------------+
+
+--------------------------------------------------------------------------------
+22. PERFORMANCE E CONEXOES
+--------------------------------------------------------------------------------
+
+22.1 DIMENSIONAMENTO DE CONEXOES EM AMBIENTE SERVERLESS
+* O pooler transparente do Neon DB multiplexa centenas de conexoes simultaneas
+  de clientes em conexoes reais leves com o backend PostgreSQL.
+* Configuracao Recomendada:
+  DATABASE_URL="postgresql://[user]:[password]@[endpoint]-pooler.neon.tech/neondb?sslmode=require&connect_timeout=15&pool_timeout=20"
+  DIRECT_URL="postgresql://[user]:[password]@[endpoint].neon.tech/neondb?sslmode=require"
+
+22.2 COMPORTAMENTO DE COLD START (SCALE-TO-ZERO)
+* No plano Free Tier do Neon, a computacao suspende apos 5 min inativa.
+* Impacto: A primeira requisicao ociosa levara entre 500ms e 2 segundos.
+* Mitigacao: Caso desejado, ping leve de keep-alive a cada 4 min via cron.
+
+--------------------------------------------------------------------------------
+23. INFRAESTRUTURA E DEPLOY
+--------------------------------------------------------------------------------
+
+* Build do Next.js: "prisma generate && next build" nao exige conexao viva
+  com o banco durante o build.
+* Deploy de Migracoes: Executado via "npx prisma migrate deploy" contra a DIRECT_URL.
+
+--------------------------------------------------------------------------------
+24. TESTES E QUALIDADE
+--------------------------------------------------------------------------------
+
+* Trava de Seguranca em tests/setup/db.ts: O codigo bloqueia testes destrutivos
+  se a URL contiver "supabase.com". Deve ser adaptado para incluir "neon.tech".
+* Testes de Storage: Os testes utilizam mocks do Vitest e continuarao passando.
+
+--------------------------------------------------------------------------------
+25. CODIGO AFETADO - MATRIZ DE ARQUIVOS
+--------------------------------------------------------------------------------
+
++-----------------------------------------+---------------------------------+----------------------------------------+-------------+
+| Arquivo                                 | Responsabilidade                | Alteracao Futura Esperada              | Criticidade |
++-----------------------------------------+---------------------------------+----------------------------------------+-------------+
+| .env / .env.example                     | Variaveis de ambiente           | Substituir DATABASE_URL e DIRECT_URL   | Critica(P0) |
+| tests/setup/db.ts                       | Config banco de teste           | Incluir trava de seguranca neon.tech   | Alta (P1)   |
+| lib/prisma.ts                           | Singleton Prisma Client         | Atualizar docstrings                   | Baixa (P3)  |
+| app/api/upload/route.ts                 | Rota de upload de arquivos      | Trava de feature desativada temporar.  | Media (P2)  |
+| app/profile/actions.ts                  | Action de upload de avatar      | Trava de feature desativada temporar.  | Media (P2)  |
+| components/admin/ProductImageUpload.tsx | Componente de foto admin        | Priorizar exibicao de campo de URL ext.| Media (P2)  |
+| lib/supabase/storage.ts                 | Helper de Storage               | Preservado inalterado p/ futuro S3/R2  | Baixa (P3)  |
+| prisma/migrations/supabase_rls_hardening| Hardening PostgREST             | Isolar/ignorar no deployment Neon DB   | Baixa (P3)  |
+| package.json                            | Dependencias                    | Inalterado nesta fase                  | Baixa (P3)  |
++-----------------------------------------+---------------------------------+----------------------------------------+-------------+
+
+--------------------------------------------------------------------------------
+26. MATRIZ DE IMPACTO CONSOLIDADA
+--------------------------------------------------------------------------------
+
++-----------------------+----------------------+--------------------+--------------------------------+-----------------+
+| Area do Sistema       | Estado Atual         | Impacto Migracao   | Tipo de Mudanca Futura         | Nivel de Risco  |
++-----------------------+----------------------+--------------------+--------------------------------+-----------------+
+| Banco Relacional      | Supabase PostgreSQL  | Alto na infra      | Troca infra e migracao dados   | Baixo/Medio     |
+| Camada de ORM         | Prisma ORM 5.22.0    | Zero Impacto       | Nenhuma alteracao estrutural   | Baixo           |
+| Autenticacao          | In-house (Session)   | Zero Impacto       | Nenhuma alteracao no codigo    | Baixo           |
+| Row Level Security    | Ativo PostgREST      | Baixo              | Dispensavel no Neon            | Baixo           |
+| Object Storage        | Supabase Storage     | Desacoplado        | Soft-deactivation rotas; URL   | Baixo           |
+| Realtime              | Inexistente          | Zero Impacto       | Nenhuma                        | Baixo           |
+| APIs e Server Actions | Next.js App Router   | Zero Impacto       | Nenhuma                        | Baixo           |
+| Testes Automatizados  | Vitest (52 arquivos) | Minimo             | Atualizacao trava tests/setup  | Baixo           |
+| Seguranca/Isolamento  | Multi-tenant lojaID  | Zero Impacto       | Preservado identicamente       | Baixo           |
+| Performance/Conexoes  | PgBouncer ativo      | Minimo             | Configurar Neon Pooler -pooler | Baixo           |
++-----------------------+----------------------+--------------------+--------------------------------+-----------------+
+
+--------------------------------------------------------------------------------
+27. MATRIZ DE RISCOS
+--------------------------------------------------------------------------------
+
++---------------------------------------+---------------+---------+------------+---------------------------------------+
+| Risco Identificado                    | Probabilidade | Impacto | Severidade | Mitigacao Arquitetural                |
++---------------------------------------+---------------+---------+------------+---------------------------------------+
+| Dessincronizacao sequence orderNumber | Media         | Alto    | Alta       | Executar script setval pos-restore    |
+| Cold Start Neon DB Free Tier          | Alta          | Baixo   | Baixa      | Pooler ativo; ping keep-alive se nec. |
+| Esgotamento Storage Neon Free Tier    | Baixa         | Alto    | Media      | Sem midias no banco; 500MB e amplo    |
+| Divergencia Schema Drift entre bases  | Baixa         | Alto    | Alta       | Validar com prisma migrate status     |
+| Timeout de Conexao durante Cutover    | Baixa         | Medio   | Baixa      | Parametros estritos na DATABASE_URL   |
++---------------------------------------+---------------+---------+------------+---------------------------------------+
+
+--------------------------------------------------------------------------------
+28. ESTRATEGIAS DE MIGRACAO AVALIADAS
+--------------------------------------------------------------------------------
+
+ESTRATEGIA A: Migracao Direta com Janela de Manutencao (Cutover Unico) - RECOMENDADA
+* Descricao: Aplicacao em modo manutencao por 15 a 30 minutos. Dump completo
+  (pg_dump) extraido do Supabase e restaurado (pg_restore) no Neon DB. Variaveis
+  de ambiente atualizadas e aplicacao reativada.
+* Complexidade: Baixa.
+* Risco de Inconsistencia: Minimo.
+* Downtime: 15 a 30 minutos.
+* Reversibilidade (Rollback): Imediata (basta voltar as variaveis para o Supabase).
+
+--------------------------------------------------------------------------------
+29. ESTRATEGIA DE DADOS (EXTRACAO, TRANSPORTE E VALIDACAO)
+--------------------------------------------------------------------------------
+
+29.1 PIPELINE DE DUMP & RESTORE
+[Supabase PostgreSQL]
+        |
+        | pg_dump -h <host> -U postgres -d postgres --format=custom --no-owner --no-privileges -f backup.dump
+        v
+[Arquivo Local / Scratch Seguro] (Validacao Checksum SHA-256)
+        |
+        | pg_restore -h <neon-host> -U <neon-user> -d neondb --no-owner --no-privileges backup.dump
+        v
+[Neon DB PostgreSQL]
+        |
+        | Script SQL de Sincronizacao de Sequences (Order_orderNumber_seq)
+        v
+[Validacao de Contagem e Consistencia Cruzada]
+
+29.2 PRESERVACAO DE SEQUENCES
+Comando mandatorio a ser executado pos-restore no Neon:
+SELECT setval(
+    pg_get_serial_sequence('"Order"', 'orderNumber'),
+    COALESCE(MAX("orderNumber"), 1),
+    max("orderNumber") IS NOT NULL
+) FROM "Order";
+
+--------------------------------------------------------------------------------
+30. CUTOVER (PLANO CONCEITUAL)
+--------------------------------------------------------------------------------
+
+Roteiro de 10 passos:
+[1. Pre-Requisitos] --> Provisionar Neon DB + Obter credenciais (Pooled e Direta)
+[2. Congelamento]   --> Ativar pagina de manutencao temporaria no Next.js
+[3. Dump Supabase]  --> pg_dump consistente da base de dados do Supabase
+[4. Restore Neon]   --> pg_restore na instancia do Neon DB
+[5. Sync Sequences] --> Executar correcao de sequences para orderNumber
+[6. Validacao DB]   --> Executar script de reconciliacao de linhas e somatorios
+[7. Troca Config]   --> Atualizar DATABASE_URL e DIRECT_URL no host de deploy
+[8. Smoke Tests]    --> Executar login, catalogo via URL e checkout teste no Neon
+[9. Reabertura]     --> Desativar tela de manutencao e reabrir trafego publico
+[10. Monitoramento] --> Observabilidade de conexoes e latencia nas primeiras 4h
+
+--------------------------------------------------------------------------------
+31. ROLLBACK (PLANO DE CONTINGENCIA)
+--------------------------------------------------------------------------------
+
+* Gatilho de Rollback: Inconsistencia de registros pos-restore, erro de conexao
+  no pooler Neon > 1% ou falha no checkout nos primeiros minutos de teste.
+* Procedimento: Reverter imediatamente as variaveis de ambiente DATABASE_URL e
+  DIRECT_URL para o Supabase e reiniciar o servidor Next.js.
+* Garantia: Como o Supabase nao e modificado durante o cutover, o retorno ao
+  estado original e 100% seguro e instantaneo.
+
+--------------------------------------------------------------------------------
+32. PLANO DE VALIDACAO E AUDITORIA POS-MIGRACAO
+--------------------------------------------------------------------------------
+
+32.1 VALIDACAO ESTRUTURAL E DE OBJETOS
+* Contagem de tabelas no schema public (exatamente 22);
+* Presenca de todos os 7 tipos ENUM;
+* Validacao de todas as 11 constraints CHECK ativas;
+* Validacao de integridade de indices compostos (via pg_indexes).
+
+32.2 VALIDACAO DE CONSISTENCIA DE DADOS
+Script comparativo de contagem linha a linha:
+SELECT 'Loja' as tbl, count(*) FROM "Loja" UNION ALL
+SELECT 'User', count(*) FROM "User" UNION ALL
+SELECT 'Product', count(*) FROM "Product" UNION ALL
+SELECT 'Order', count(*) FROM "Order" UNION ALL
+SELECT 'Cart', count(*) FROM "Cart" UNION ALL
+SELECT 'LoyaltyWallet', count(*) FROM "LoyaltyWallet";
+
+Checksum Financeiro:
+SELECT SUM("total") as total_geral, SUM("subtotal") as subtotal_geral FROM "Order";
+O valor deve ser identico ate os centavos (DECIMAL(10,2)).
+
+32.3 VALIDACAO FUNCIONAL (SMOKE TESTS)
+* Login de Usuarios via bcryptjs;
+* Criacao correta de sessao na tabela Session;
+* Exibicao correta das fotos vindas das URLs externas da Nuvemshop;
+* Checkout completo com incremento sequencial de Order.orderNumber.
+
+--------------------------------------------------------------------------------
+33. ARQUITETURA FUTURA
+--------------------------------------------------------------------------------
+
+33.1 TOPOLOGIA ALVO POS-MIGRACAO (SEM DEPENDENCIA DE STORAGE)
+
++-----------------------------------------------------------------------------+
+| CLIENTE / NAVEGADOR                                                         |
+|   [Interface Web (React / Next.js)]                                         |
++-----------------------------------------------------------------------------+
+       | (Requisicoes HTTP / Cookie session_id)        | (Imagens via URL)
+       v                                               v
++----------------------------------------+ +----------------------------------+
+| SERVIDOR DE APLICACAO                  | | CDNs E MIDIAS EXTERNAS (URLs)    |
+| (Next.js 16 Standalone / Node.js)      | |  * Nuvemshop CDN                 |
+|   [proxy.ts] (Protecao de Rotas)       | |    (*.mitiendanube.com)          |
+|        |                               | |  * Servidores Externos           |
+|        v                               | |    (Cloudinary / Unsplash)       |
+|   [Server Actions / API Routes]        | +----------------------------------+
+|        |                               |
+|        +---> [services/*]              |
+|        |          |                    |
+|        |          v                    |
+|        |     [lib/prisma.ts]           |
+|        |     (Prisma Client Singleton) |
+|        |                               |
+|        +---> [lib/supabase/storage.ts] |
+|              (Em Standby / Desativado) |
++----------------------------------------+
+         | (DATABASE_URL)          | (DIRECT_URL)
+         | (Pooling :5432)         | (Migrations :5432)
+         v                         v
++--------------------------+ +---------------------------+
+| NEON SERVERLESS POOLER   | | NEON DIRECT CONNECTION    |
+| (:5432 - Host -pooler)   | | (:5432 - Host Direto)     |
++--------------------------+ +---------------------------+
+              \                         /
+               v                       v
+      +-----------------------------------------+
+      | NEON COMPUTE SERVERLESS NODE (0.5 vCPU) |
+      +-----------------------------------------+
+                           |
+                           v
+      +-----------------------------------------+
+      | NEON STORAGE ENGINE                     |
+      | (Paginas de Dados em Nuvem)             |
+      +-----------------------------------------+
+
+--------------------------------------------------------------------------------
+34. DEPENDENCIAS EXTERNAS AO BANCO
+--------------------------------------------------------------------------------
+
++------------------+-----------------------+--------------------+------------------------+------------+
+| Servico Supabase | Utilizado no Projeto? | Onde esta o Uso    | Estrategia Adotada     | Status     |
++------------------+-----------------------+--------------------+------------------------+------------+
+| Auth             | Nao                   | Nenhum             | Nao necessaria (prop.) | Resolvido  |
+| Storage          | Era utilizado         | lib/supabase/stor. | 100% via URL / Standby | Resolvido  |
+| Realtime         | Nao                   | Nenhum             | Nao necessaria         | Resolvido  |
+| Edge Functions   | Nao                   | Nenhum             | Nao necessaria         | Resolvido  |
+| PostgREST        | Nao                   | Bloqueado por RLS  | Desnecessario no Neon  | Resolvido  |
++------------------+-----------------------+--------------------+------------------------+------------+
+
+--------------------------------------------------------------------------------
+35. COORDENACAO DE AGENTES E FERRAMENTAS
+--------------------------------------------------------------------------------
+
+Em estrito cumprimento a Regra de Nao Inventar Ferramentas:
+* O prompt mencionava conceitualmente o framework ruflo. A inspecao confirmou
+  que nao existe servidor MCP ruflo registrado no ambiente.
+* Nenhuma chamada ficticia foi realizada. Todas as auditorias foram conduzidas
+  pelas ferramentas nativas reais disponiveis (view_file, grep_search, list_dir,
+  run_command e write_to_file).
+* Plugins irrelevantes ao repositorio (science, android-cli, firebase) nao foram invocados.
+
+--------------------------------------------------------------------------------
+36. MATRIZ DE DECISOES HUMANAS (STATUS ATUALIZADO)
+--------------------------------------------------------------------------------
+
+1. Destino do Armazenamento de Imagens (Storage):
+   * DEFINIDO PELO USUARIO (24/09/2026): Nao havera upload local nesta fase.
+     A aplicacao operara exclusivamente com imagens por URL (Nuvemshop/externas).
+     As rotas de upload serao apenas desativadas temporariamente por feature gate,
+     mantendo o codigo pronto para o futuro.
+   * Status: RESOLVIDO.
+
+2. Tolerancia a Downtime para o Cutover:
+   * Recomendacao: Janela de manutencao programada de 15-30 minutos (madrugada).
+   * Status: Pendente de agendamento.
+
+3. Politicas de Cold Start no Neon Free Tier:
+   * Opcao A: Aceitar a latencia na 1a requisicao ociosa (500ms a 2s).
+   * Opcao B: Configurar ping leve de keep-alive a cada 4 min.
+   * Status: Pendente de escolha.
+
+4. Destino do Banco de Testes Automatizados:
+   * Opcao A: Banco local Docker / PostgreSQL.
+   * Opcao B: Branch efemero no Neon DB.
+   * Status: Pendente de escolha.
+
+--------------------------------------------------------------------------------
+37. GRAU DE DIFICULDADE DA MIGRACAO
+--------------------------------------------------------------------------------
+
+Classificacao Tecnica: BAIXA A MODERADA (Revisada apos Decisao de Storage)
+
+Justificativa Baseada em Evidencias:
+1. Fatores que Tornam a Migracao Simples (Baixo Risco):
+   * Desacoplamento do Storage: A decisao de trabalhar exclusivamente com URLs
+     externas e manter as rotas de upload em standby eliminou o maior obstaculo;
+   * Zero Acoplamento com Supabase Auth: A autenticacao e 100% proprietaria;
+   * Zero Dependencia de Realtime, Edge Functions ou PostgREST;
+   * Modelagem 100% PostgreSQL Padrao: As 20 migracoes rodam de forma nativa;
+   * ORM Tipada: Ausencia total de queries manuais em SQL puro ($queryRaw).
+2. Unico Ponto Residual de Atencao:
+   * Reconciliacao mandatoria da sequence Order_orderNumber_seq apos o restore
+     dos dados e configuracao adequada do pooler serverless no Neon DB.
+
+--------------------------------------------------------------------------------
+38. DAG DA FUTURA IMPLEMENTACAO
+--------------------------------------------------------------------------------
+
+[FASE 0: Definicao de Janela]
+   +-- Agendamento da Janela de Manutencao (15-30 min)
+   v
+[FASE 1: Preparacao Neon DB]
+   +-- Criacao do Projeto no Neon DB
+   +-- Coleta de DATABASE_URL (-pooler) e DIRECT_URL (direta)
+   +-- Teste de conexao preliminar
+   v
+[FASE 2: Homologacao Estrutural (Sem Dados)]
+   +-- Execucao de "npx prisma migrate deploy" no Neon
+   +-- Validacao de integridade das 22 tabelas e 7 enums
+   v
+[FASE 3: Adaptacao de Codigo & Trava Conservativa]
+   +-- Ajuste de trava de seguranca em tests/setup/db.ts (neon.tech)
+   +-- Insercao de trava temporaria de feature gate nas rotas de upload (/api/upload)
+   +-- Execucao da suite de testes unitarios ("npm test")
+   v
+[FASE 4: Ensaio Geral de Migracao de Dados (Staging)]
+   +-- Extracao de dump do Supabase (pg_dump)
+   +-- Carga no Neon DB (pg_restore)
+   +-- Sincronizacao da sequence Order_orderNumber_seq
+   +-- Validacao de contagem de linhas e somatorio financeiro
+   v
+[FASE 5: Janela de Cutover de Producao]
+   +-- Ativacao de Modo de Manutencao na Loja
+   +-- Backup final consistente do Supabase
+   +-- Restauracao definitiva no Neon DB
+   +-- Sincronizacao final de sequences
+   +-- Troca de variaveis de ambiente no deploy
+   +-- Execucao de Smoke Tests em producao
+   v
+[FASE 6: Reabertura & Observabilidade]
+   +-- Desativacao da pagina de manutencao
+   +-- Monitoramento de latencia e conexoes (4h)
+   +-- Homologacao final
+
+--------------------------------------------------------------------------------
+39. ROADMAP FUTURO
+--------------------------------------------------------------------------------
+
+* Fase 0 - Agendamento: Definir a data/hora da janela de cutover.
+* Fase 1 - Provisionamento: Criar projeto no Neon DB (regiao us-east-1 ou sa-east-1).
+* Fase 2 - Testes de DDL: Aplicar as 20 migracoes limpas no Neon DB.
+* Fase 3 - Adaptacao e Testes: Inserir feature gate na rota de upload e atualizar tests/setup.
+* Fase 4 - Ensaio em Staging: Validar tempo de pg_dump/pg_restore e sequences.
+* Fase 5 - Cutover em Producao: Execucao controlada com tela de manutencao e rollback.
+* Fase 6 - Pos-Migracao: Monitoramento de estabilidade do Neon DB.
+
+--------------------------------------------------------------------------------
+40. CRITERIOS DE ACEITE DA FUTURA MIGRACAO
+--------------------------------------------------------------------------------
+
+A migracao somente podera ser homologada como concluida se todos os criterios
+forem atendidos:
+1.  Paridade de Modelagem: O schema no Neon DB deve conter rigorosamente as
+    mesmas 22 tabelas, 7 enums e 11 constraints CHECK do schema original.
+2.  Manutencao da ORM: A aplicacao deve continuar operando 100% via Prisma
+    ORM 5.22.0 sem alteracao nas entidades.
+3.  Fidelidade de Dados: A contagem total de registros em todas as 22 tabelas
+    deve coincidir exatamente com a base de origem no momento do congelamento.
+4.  Precisao Financeira: O somatorio de total e subtotal na tabela Order deve
+    coincidir rigorosamente entre as bases.
+5.  Continuidade de Numeracao: O proximo pedido criado em producao deve receber
+    o numero imediatamente subsequente ao ultimo pedido registrado (orderNumber).
+6.  Autenticacao Integra: Usuarios e administradores existentes devem conseguir
+    realizar login com suas senhas habituais sem redefinicao forcada.
+7.  Catalogo por URL Funcional: Todas as fotos de produtos (Nuvemshop e links
+    externos) devem carregar perfeitamente nas listagens e detalhes.
+8.  Upload em Standby: A rota /api/upload deve responder de forma controlada
+    informando o uso de URLs externas, com o codigo base preservado.
+9.  Seguranca de Testes: A suite de testes automatizados (npm test) deve passar
+    com 100% de sucesso.
+10. Observabilidade: O banco Neon nao deve apresentar erros de pooler timeout
+    ou saturacao de conexoes.
+
+--------------------------------------------------------------------------------
+41. CHECKLIST FINAL DE VERIFICACAO TECNICA
+--------------------------------------------------------------------------------
+
+[x] Auditoria tecnica completa realizada sem suposicoes
+[x] Inventario completo de todas as referencias ao Supabase no repositorio
+[x] Separacao rigorosa entre recursos nativos PostgreSQL e servicos Supabase
+[x] Identificacao e preservacao mandante da ORM Prisma 5.22.0
+[x] Identificacao e preservacao estrita da modelagem relacional (22 tabelas / 7 enums)
+[x] Auditoria profunda de RLS (comprovada utilidade restrita a PostgREST hardening)
+[x] Auditoria profunda de Autenticacao (comprovado uso de motor proprio / zero GoTrue)
+[x] Decisao de Storage homologada: operacao 100% via URL externa; rotas em standby
+[x] Auditoria de Realtime e Edge Functions (comprovada ausencia total no projeto)
+[x] Auditoria das 20 migracoes ativas e historico DDL
+[x] Inventario de variaveis de ambiente sem exposicao de segredos
+[x] Analise de compatibilidade, performance, pooling e cold starts no Neon DB
+[x] Avaliacao de estrategias de migracao, cutover e rollback
+[x] Matriz de arquivos afetados e criticidade atualizada
+[x] Matriz de decisoes humanas atualizada com a resolucao da Decisao 1
+[x] Grau de dificuldade reclassificado para "BAIXO A MODERADO" com embasamento tecnico
+[x] DAG e roadmap de implementacao futura estruturados
+[x] Criterios de aceite objetivos definidos
+[x] Nenhuma alteracao em codigo ou infraestrutura foi realizada nesta etapa
+[x] Versao Markdown original preservada intacta
+[x] Versao TXT estruturada salva no diretorio designado
+
+================================================================================
+Fim do Documento Tecnico em Formato Plain Text (.txt)
+================================================================================

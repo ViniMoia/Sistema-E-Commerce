@@ -246,4 +246,60 @@ describe("Módulo de Armazenamento Supabase Storage (ACT-P2-02)", () => {
       );
     });
   });
+
+  describe("5. Feature Gate de Desativação Conservativa (Migração Neon)", () => {
+    it("deve retornar 503 com mensagem amigável quando NODE_ENV !== 'test' e ENABLE_DIRECT_UPLOAD !== 'true'", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({
+        id: "admin-1",
+        role: "ADMIN",
+        lojaID: "loja-1",
+      } as any);
+
+      const originalEnv = process.env.NODE_ENV;
+      try {
+        (process.env as any).NODE_ENV = "production";
+        const formData = new FormData();
+        const fakeFile = new File(["fake"], "photo.jpg", { type: "image/jpeg" });
+        formData.append("file", fakeFile);
+        formData.append("bucket", "products");
+
+        const req = new Request("http://localhost/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const res = await POST(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(503);
+        expect(json.code).toBe("FEATURE_TEMPORARILY_DISABLED");
+        expect(json.error).toContain("temporariamente desativado");
+      } finally {
+        (process.env as any).NODE_ENV = originalEnv;
+      }
+    });
+
+    it("deve retornar erro amigável em uploadAvatarAction quando NODE_ENV !== 'test'", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({
+        id: "user-123",
+        role: "CUSTOMER",
+        lojaID: "loja-1",
+      } as any);
+
+      const originalEnv = process.env.NODE_ENV;
+      try {
+        (process.env as any).NODE_ENV = "production";
+        const formData = new FormData();
+        const fakeImg = new File(["bytes"], "avatar.webp", { type: "image/webp" });
+        formData.append("avatar", fakeImg);
+
+        const result = await uploadAvatarAction(formData);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain("temporariamente desativado");
+      } finally {
+        (process.env as any).NODE_ENV = originalEnv;
+      }
+    });
+  });
 });

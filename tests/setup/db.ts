@@ -11,8 +11,8 @@ interface SeededData {
 function isSafeTestDatabaseUrl(url: string | undefined): boolean {
   if (!url) return false
   const lower = url.toLowerCase()
-  // Proibir expressamente URLs que apontem para Supabase pooler ou produção se não explicitamente localhost / test
-  if (lower.includes('supabase.com') && !lower.includes('test')) {
+  // Proibir expressamente URLs que apontem para Supabase pooler, Neon DB ou produção se não explicitamente localhost / test
+  if ((lower.includes('supabase.com') || lower.includes('neon.tech')) && !lower.includes('test')) {
     return false
   }
   return (
