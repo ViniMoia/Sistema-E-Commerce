@@ -2,7 +2,7 @@
 
 import { Minus, Plus, Trash2 } from "lucide-react";
 
-import { getOptimizedImageUrl } from "@/lib/utils";
+import { getOptimizedImageUrl, formatProductTitle } from "@/lib/utils";
 
 interface CartItemProps {
   item: {
@@ -31,17 +31,19 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
         />
       </div>
 
-      <div className="flex flex-col flex-1 justify-between py-1">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-medium text-white tracking-tight">{item.productName}</h3>
+      <div className="flex flex-col flex-1 justify-between py-1 min-w-0">
+        <div className="flex justify-between items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-white tracking-tight break-words [overflow-wrap:anywhere] line-clamp-2">
+              {formatProductTitle(item.productName)}
+            </h3>
             {item.color && item.size && item.size !== "Único" && item.color !== "Padrão" ? (
               <p className="text-xs text-neutral-400 font-light mt-1">
                 {item.color} / {item.size}
               </p>
             ) : null}
           </div>
-          <p className="font-mono text-white">
+          <p className="font-mono text-white shrink-0">
             ${(item.price * item.quantity).toFixed(2)}
           </p>
         </div>

@@ -7,11 +7,7 @@ import {
   Sparkles,
   Settings2,
   PlusCircle,
-  Clock,
   ArrowUpRight,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   Save,
   Users,
@@ -130,46 +126,46 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
   };
 
   return (
-    <div className="glass-panel rounded-xl border border-[#DDAF02]/20 overflow-hidden flex flex-col justify-between">
+    <div className="bg-catalog-card rounded-2xl border border-catalog-gold/30 overflow-hidden flex flex-col justify-between shadow-sm">
       {/* Header do Widget */}
-      <div className="px-5 py-4 border-b border-white/5 bg-white/[0.01] flex flex-wrap items-center justify-between gap-3">
+      <div className="px-6 py-4 border-b border-catalog-gold/20 bg-[#050B14] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-[#DDAF02]/10 border border-[#DDAF02]/20 text-[#DDAF02]">
-            <Award className="w-4 h-4" />
+          <div className="p-2.5 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold">
+            <Award className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-white tracking-tight">
-                Programa de Fidelidade & Pontos Continental
+              <h3 className="text-sm font-semibold text-white tracking-tight uppercase font-mono">
+                Programa de Fidelidade Continental
               </h3>
               <span
                 className={`
-                  px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border
+                  px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border
                   ${
                     configState.loyaltyEnabled
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/50'
+                      : 'bg-catalog-gold/15 text-catalog-gold border-catalog-gold/50'
                   }
                 `}
               >
                 {configState.loyaltyEnabled ? 'Ativo' : 'Pausado'}
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Acúmulo automático no checkout e resgate como desconto
+            <p className="text-xs text-catalog-muted mt-0.5 font-light">
+              Acúmulo automático no checkout e resgate de desconto técnico
             </p>
           </div>
         </div>
 
         {/* Abas de Navegação */}
-        <div className="flex items-center p-1 rounded-lg bg-black/40 border border-white/5 text-xs font-mono">
+        <div className="flex items-center p-1 rounded-xl bg-[#0B132B]/80 border border-catalog-gold/30 text-xs font-mono">
           <button
             type="button"
             onClick={() => setActiveTab('metrics')}
-            className={`px-3 py-1 rounded-md transition-all ${
+            className={`px-3 py-1.5 rounded-lg transition-all ${
               activeTab === 'metrics'
-                ? 'bg-[#DDAF02]/20 text-[#DDAF02] font-semibold'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-catalog-gold/20 text-catalog-gold font-bold border border-catalog-gold/50 shadow-[0_0_15px_rgba(240,180,14,0.15)]'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             Métricas
@@ -177,109 +173,109 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
           <button
             type="button"
             onClick={() => setActiveTab('config')}
-            className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
               activeTab === 'config'
-                ? 'bg-[#DDAF02]/20 text-[#DDAF02] font-semibold'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-catalog-gold/20 text-catalog-gold font-bold border border-catalog-gold/50 shadow-[0_0_15px_rgba(240,180,14,0.15)]'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <Settings2 className="w-3 h-3" />
+            <Settings2 className="w-3.5 h-3.5" />
             Configurar
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('adjust')}
-            className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
               activeTab === 'adjust'
-                ? 'bg-[#DDAF02]/20 text-[#DDAF02] font-semibold'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-catalog-gold/20 text-catalog-gold font-bold border border-catalog-gold/50 shadow-[0_0_15px_rgba(240,180,14,0.15)]'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <PlusCircle className="w-3 h-3" />
+            <PlusCircle className="w-3.5 h-3.5" />
             Ajustar
           </button>
         </div>
       </div>
 
       {/* Conteúdo da Aba */}
-      <div className="p-5 flex-1">
+      <div className="p-6 flex-1">
         {/* ABA 1: MÉTRICAS */}
         {activeTab === 'metrics' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                <p className="text-[10px] text-zinc-500 font-mono uppercase">Em Circulação</p>
-                <p className="text-lg font-bold text-[#DDAF02] font-mono mt-0.5">
+              <div className="bg-[#0B132B]/70 p-3.5 rounded-xl border border-catalog-gold/25">
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Em Circulação</p>
+                <p className="text-lg font-bold text-white font-mono mt-0.5">
                   {loyalty.totalCirculatingPoints.toLocaleString('pt-BR')} pts
                 </p>
               </div>
 
-              <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                <p className="text-[10px] text-zinc-500 font-mono uppercase">Passivo Estimado</p>
+              <div className="bg-[#0B132B]/70 p-3.5 rounded-xl border border-catalog-gold/25">
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Passivo Estimado</p>
                 <p className="text-lg font-bold text-white font-mono mt-0.5">
                   {formatBRL(loyalty.projectedFinancialLiability)}
                 </p>
               </div>
 
-              <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                <p className="text-[10px] text-zinc-500 font-mono uppercase">Economia Gerada</p>
+              <div className="bg-[#0B132B]/70 p-3.5 rounded-xl border border-catalog-gold/25">
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Economia Gerada</p>
                 <p className="text-lg font-bold text-emerald-400 font-mono mt-0.5">
                   {formatBRL(loyalty.totalRedeemedMonetaryDiscount)}
                 </p>
               </div>
 
-              <div className="bg-black/20 p-3 rounded-lg border border-white/5">
-                <p className="text-[10px] text-zinc-500 font-mono uppercase">Carteiras Ativas</p>
-                <p className="text-lg font-bold text-sky-400 font-mono mt-0.5 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
+              <div className="bg-[#0B132B]/70 p-3.5 rounded-xl border border-catalog-gold/25">
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Carteiras Ativas</p>
+                <p className="text-lg font-bold text-white font-mono mt-0.5 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-catalog-gold" />
                   {loyalty.activeWalletsCount}
                 </p>
               </div>
             </div>
 
             {/* Regras Vigentes Resumo */}
-            <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#DDAF02]" />
+            <div className="bg-[#050B14]/80 p-3 rounded-xl border border-catalog-gold/20 flex flex-wrap items-center justify-between gap-2 text-xs text-catalog-muted font-mono">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Sparkles className="w-3.5 h-3.5 text-catalog-gold" />
                 Taxa: Ganha 1 pt a cada R${' '}
                 {(1 / (configState.loyaltyEarnRate || 0.5)).toFixed(2)} gastos
               </span>
-              <span className="font-mono text-zinc-300">
+              <span className="text-white font-semibold">
                 1 pt = {formatBRL(configState.loyaltyPointValue)}
               </span>
-              <span className="font-mono text-zinc-300">
+              <span className="text-white font-semibold">
                 Mínimo: {configState.loyaltyMinPointsRedeem} pts
               </span>
             </div>
 
             {/* Últimas Transações */}
             {loyalty.recentTransactions.length > 0 && (
-              <div>
-                <p className="text-[10px] text-zinc-500 font-mono uppercase mb-2">
+              <div className="pt-2">
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider mb-2 font-bold">
                   Atividade Recente de Pontos
                 </p>
                 <div className="space-y-1.5">
                   {loyalty.recentTransactions.slice(0, 3).map((tx) => (
                     <div
                       key={tx.id}
-                      className="px-3 py-2 rounded bg-black/20 border border-white/5 flex items-center justify-between text-xs"
+                      className="px-3.5 py-2.5 rounded-xl bg-[#0B132B]/60 border border-catalog-gold/20 flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            tx.points > 0 ? 'bg-emerald-400' : 'bg-amber-400'
+                            tx.points > 0 ? 'bg-emerald-400' : 'bg-[#F0B40E]'
                           }`}
                         />
                         <span className="text-white truncate font-medium">
                           {tx.userName}
                         </span>
-                        <span className="text-zinc-500 text-[11px] truncate hidden sm:inline">
+                        <span className="text-catalog-muted text-[11px] truncate hidden sm:inline">
                           — {tx.description}
                         </span>
                       </div>
                       <span
                         className={`font-mono font-bold shrink-0 ml-2 ${
-                          tx.points > 0 ? 'text-emerald-400' : 'text-amber-400'
+                          tx.points > 0 ? 'text-emerald-400' : 'text-catalog-gold'
                         }`}
                       >
                         {tx.points > 0 ? `+${tx.points}` : tx.points} pts
@@ -295,10 +291,10 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
         {/* ABA 2: CONFIGURAÇÃO RÁPIDA */}
         {activeTab === 'config' && (
           <form onSubmit={handleSaveConfig} className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[#0B132B]/70 border border-catalog-gold/30">
               <div>
-                <p className="text-xs font-medium text-white">Status do Programa</p>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-xs font-mono font-bold text-white uppercase tracking-wider">Status do Programa</p>
+                <p className="text-[11px] text-catalog-muted mt-0.5">
                   {configState.loyaltyEnabled
                     ? 'Clientes acumulam e resgatam pontos normalmente'
                     : 'Programa pausado (resgates e novos acúmulos desativados)'}
@@ -314,12 +310,12 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                 }
                 className={`
                   relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
-                  ${configState.loyaltyEnabled ? 'bg-[#DDAF02]' : 'bg-zinc-700'}
+                  ${configState.loyaltyEnabled ? 'bg-gradient-to-r from-[#F0B40E] to-[#E5A805]' : 'bg-zinc-800'}
                 `}
               >
                 <span
                   className={`
-                    pointer-events-none inline-block h-5 w-5 transform rounded-full bg-black shadow ring-0 transition duration-200 ease-in-out
+                    pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[#010E31] shadow ring-0 transition duration-200 ease-in-out
                     ${configState.loyaltyEnabled ? 'translate-x-5' : 'translate-x-0'}
                   `}
                 />
@@ -327,8 +323,8 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="text-zinc-400 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
                   Taxa de Acúmulo (ex: 0.5 = 1 pt a cada R$ 2)
                 </label>
                 <input
@@ -343,12 +339,12 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                       loyaltyEarnRate: parseFloat(e.target.value) || 0.5,
                     })
                   }
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                  className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
                   Valor de 1 Ponto em R$ (ex: 0.05)
                 </label>
                 <input
@@ -363,12 +359,12 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                       loyaltyPointValue: parseFloat(e.target.value) || 0.05,
                     })
                   }
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                  className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
                   Mínimo de Pontos para Resgate
                 </label>
                 <input
@@ -381,12 +377,12 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                       loyaltyMinPointsRedeem: parseInt(e.target.value, 10) || 100,
                     })
                   }
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                  className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
                   Teto Máximo de Desconto (%)
                 </label>
                 <input
@@ -400,7 +396,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                       loyaltyMaxDiscountPct: parseFloat(e.target.value) || 50,
                     })
                   }
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                  className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 />
               </div>
             </div>
@@ -408,12 +404,12 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
             <button
               type="submit"
               disabled={isSavingConfig}
-              className="w-full bg-[#DDAF02] hover:bg-[#c99f02] text-black font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] hover:from-[#F5BD1E] hover:to-[#F0B40E] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 disabled:opacity-50"
             >
               {isSavingConfig ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#010E31]" />
               ) : (
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4 text-[#010E31]" />
               )}
               <span>Salvar Configurações de Fidelidade</span>
             </button>
@@ -423,12 +419,14 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
         {/* ABA 3: AJUSTE MANUAL RÁPIDO */}
         {activeTab === 'adjust' && (
           <form onSubmit={handleAdjustPoints} className="space-y-3 text-xs">
-            <p className="text-zinc-400 text-xs">
+            <p className="text-catalog-muted text-xs font-light">
               Credite ou debite pontos de um cliente manualmente durante o suporte:
             </p>
 
-            <div>
-              <label className="text-zinc-400 block mb-1">ID do Usuário (UUID)</label>
+            <div className="space-y-1">
+              <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
+                ID do Usuário (UUID)
+              </label>
               <input
                 type="text"
                 placeholder="ex: c9a12345-6789-abcd-ef01-234567890abc"
@@ -436,14 +434,14 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                 onChange={(e) =>
                   setAdjustState({ ...adjustState, userID: e.target.value })
                 }
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-zinc-400 block mb-1">
-                  Pontos (+ para crédito, - para débito)
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
+                  Pontos (+ crédito, - débito)
                 </label>
                 <input
                   type="number"
@@ -455,20 +453,22 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                       points: parseInt(e.target.value, 10) || 0,
                     })
                   }
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono focus:border-[#DDAF02] outline-none"
+                  className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 />
               </div>
 
-              <div>
-                <label className="text-zinc-400 block mb-1">Impacto em R$</label>
-                <div className="w-full bg-black/20 border border-white/5 rounded-lg px-3 py-2 text-[#DDAF02] font-mono font-medium">
+              <div className="space-y-1">
+                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
+                  Impacto em R$
+                </label>
+                <div className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs font-bold flex items-center">
                   {formatBRL(adjustState.points * configState.loyaltyPointValue)}
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-zinc-400 block mb-1">
+            <div className="space-y-1">
+              <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase block">
                 Motivo / Justificativa (Auditoria)
               </label>
               <input
@@ -478,19 +478,19 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                 onChange={(e) =>
                   setAdjustState({ ...adjustState, description: e.target.value })
                 }
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-[#DDAF02]"
+                className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 rounded-xl px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={isAdjusting}
-              className="w-full bg-[#DDAF02] hover:bg-[#c99f02] text-black font-semibold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] hover:from-[#F5BD1E] hover:to-[#F0B40E] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 disabled:opacity-50 mt-2"
             >
               {isAdjusting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#010E31]" />
               ) : (
-                <PlusCircle className="w-4 h-4" />
+                <PlusCircle className="w-4 h-4 text-[#010E31]" />
               )}
               <span>Processar Ajuste de Saldo</span>
             </button>
@@ -499,16 +499,16 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
       </div>
 
       {/* Footer do Widget */}
-      <div className="px-5 py-3 border-t border-white/5 bg-white/[0.01] flex items-center justify-between text-xs">
-        <span className="text-zinc-500 font-mono text-[11px]">
+      <div className="px-6 py-3.5 border-t border-catalog-gold/15 bg-[#050B14] flex items-center justify-between text-xs">
+        <span className="text-catalog-muted font-mono text-[11px]">
           Validade padrão: {loyalty.settings.loyaltyPointsExpiryDays ?? 365} dias
         </span>
         <Link
           href="/admin/fidelidade"
-          className="text-[#DDAF02] hover:underline flex items-center gap-1 font-mono text-[11px]"
+          className="text-catalog-gold hover:underline flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider font-semibold"
         >
           <span>Painel Detalhado & Extratos</span>
-          <ArrowUpRight className="w-3 h-3" />
+          <ArrowUpRight className="w-3.5 h-3.5" />
         </Link>
       </div>
     </div>

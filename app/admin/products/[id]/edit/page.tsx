@@ -6,7 +6,7 @@ import * as productService from "@/services/product.service";
 
 export const metadata: Metadata = {
   title: "Editar Produto | Painel Administrativo",
-  description: "Edição de produto e variantes no catálogo.",
+  description: "Edição de produto e variantes no catálogo Continental.",
 };
 
 type EditProductPageProps = {
@@ -34,30 +34,35 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-4xl fade-in">
-      <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--text-main)]">
-          Editar Produto
-        </h1>
-        <p className="text-[var(--text-main)]/60">
-          Atualize as informações, fotos, preços e variantes de grade do produto.
-        </p>
-      </div>
+    <div className="min-h-screen bg-catalog-bg text-catalog-text p-6 md:p-10">
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="border-b border-catalog-gold/20 pb-6">
+          <span className="text-[10px] text-catalog-gold font-mono tracking-[0.25em] uppercase border border-catalog-gold/45 px-2.5 py-1 rounded inline-block mb-2 font-bold">
+            Edição de Registro
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white uppercase font-mono">
+            Editar Produto: {product.name}
+          </h1>
+          <p className="text-catalog-muted mt-1 text-xs sm:text-sm font-light">
+            Atualize as informações, fotos, preços e variantes de grade do produto.
+          </p>
+        </div>
 
-      <ProductForm
-        lojaID={user.lojaID}
-        productId={product.id}
-        initialData={{
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          stock: product.stock,
-          galleryUrls: product.galleryUrls,
-          productVariants: product.productVariants,
-        }}
-      />
+        <ProductForm
+          lojaID={user.lojaID}
+          productId={product.id}
+          initialData={{
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: Number(product.price),
+            imageUrl: product.imageUrl,
+            stock: product.stock,
+            galleryUrls: product.galleryUrls,
+            productVariants: product.productVariants,
+          }}
+        />
+      </div>
     </div>
   );
 }

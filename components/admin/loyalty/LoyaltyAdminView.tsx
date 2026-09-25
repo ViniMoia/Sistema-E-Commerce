@@ -12,11 +12,17 @@ import {
   Save,
   PlusCircle,
   Clock,
+  Coins,
   ArrowUpRight,
   ArrowDownLeft,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
+  Loader2,
+  Calendar,
+  Percent,
+  Calculator,
+  UserCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LoyaltySettings } from '@/types/loyalty.types'
@@ -159,137 +165,165 @@ export function LoyaltyAdminView() {
     }
   }
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
+  }
+
+  const isEnabled = report?.settings?.loyaltyEnabled ?? configForm.loyaltyEnabled
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
+      {/* Cabeçalho Canônico Continental */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-catalog-gold/20 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-              <Award className="w-6 h-6" />
-            </div>
-            Gestão do Programa de Fidelidade & Pontos
+          <div className="flex items-center gap-2 text-catalog-gold text-xs font-mono uppercase tracking-widest mb-1.5">
+            <Award className="w-3.5 h-3.5" />
+            <span>Continental Rewards & Retention</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-continental-display tracking-tight text-white flex items-center gap-3">
+            Fidelidade & Pontos
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Configure taxas de acúmulo e resgate, acompanhe o passivo financeiro e audite movimentações.
+          <p className="text-catalog-muted mt-1 text-xs sm:text-sm font-light">
+            Configure taxas de acúmulo e resgate, acompanhe o passivo financeiro e audite movimentações do programa.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="p-2 rounded-xl bg-white/5 border border-white/10 text-catalog-muted hover:text-catalog-gold hover:border-catalog-gold/40 transition-all cursor-pointer"
+            title="Atualizar métricas"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-catalog-gold' : ''}`} />
+          </button>
+
+          <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted">
+            <span>Status do Programa:</span>
+            <span
+              className={`font-bold px-2.5 py-0.5 rounded-full border text-xs flex items-center gap-1.5 ${
+                isEnabled
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${isEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              {isEnabled ? 'Ativo' : 'Desativado'}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Cards de Métricas em Destaque */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 4 Cards de Métricas em Destaque */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Passivo Financeiro Projetado */}
-        <div className="rounded-2xl bg-gradient-to-br from-amber-500/15 via-zinc-900/60 to-zinc-950 p-6 border border-amber-500/20 shadow-lg">
-          <div className="flex items-center justify-between text-xs text-amber-400 font-medium uppercase tracking-wider">
+        <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/35 shadow-2xl relative overflow-hidden group hover:border-catalog-gold transition-all">
+          <div className="flex items-center justify-between text-xs text-catalog-gold font-mono font-semibold uppercase tracking-wider">
             <span>Passivo Financeiro</span>
-            <DollarSign className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
           <div className="mt-3">
-            <p className="text-3xl font-bold text-white font-mono">
-              R$ {(report?.metrics.projectedFinancialLiability ?? 0).toFixed(2).replace('.', ',')}
+            <p className="text-3xl font-bold text-catalog-gold font-mono tracking-tight">
+              {formatCurrency(report?.metrics.projectedFinancialLiability ?? 0)}
             </p>
-            <p className="text-xs text-zinc-400 mt-1">
-              Valor nominal total dos pontos em circulação
+            <p className="text-[11px] text-catalog-muted font-light mt-1">
+              Valor de resgate dos pontos em circulação
             </p>
           </div>
         </div>
 
         {/* Pontos em Circulação */}
-        <div className="rounded-2xl bg-zinc-900/60 p-6 border border-white/5">
-          <div className="flex items-center justify-between text-xs text-zinc-400 font-medium uppercase tracking-wider">
+        <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/25 shadow-xl relative overflow-hidden group hover:border-catalog-gold/50 transition-all">
+          <div className="flex items-center justify-between text-xs text-catalog-muted font-mono font-medium uppercase tracking-wider">
             <span>Pontos em Circulação</span>
-            <Sparkles className="w-4 h-4 text-amber-400" />
+            <div className="w-8 h-8 rounded-lg bg-catalog-gold/10 border border-catalog-gold/20 flex items-center justify-center text-catalog-gold">
+              <Sparkles className="w-4 h-4" />
+            </div>
           </div>
           <div className="mt-3">
-            <p className="text-3xl font-bold text-zinc-100 font-mono">
-              {(report?.metrics.totalCirculatingPoints ?? 0).toLocaleString('pt-BR')}
+            <p className="text-3xl font-bold text-white font-mono tracking-tight">
+              {(report?.metrics.totalCirculatingPoints ?? 0).toLocaleString('pt-BR')} <span className="text-sm text-catalog-gold font-normal">pts</span>
             </p>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-[11px] text-catalog-muted font-light mt-1">
               Disponíveis nas carteiras dos clientes
             </p>
           </div>
         </div>
 
-        {/* Clientes com Pontos Ativos */}
-        <div className="rounded-2xl bg-zinc-900/60 p-6 border border-white/5">
-          <div className="flex items-center justify-between text-xs text-zinc-400 font-medium uppercase tracking-wider">
+        {/* Clientes Engajados */}
+        <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/20 shadow-xl relative overflow-hidden group hover:border-catalog-gold/40 transition-all">
+          <div className="flex items-center justify-between text-xs text-catalog-muted font-mono font-medium uppercase tracking-wider">
             <span>Clientes Engajados</span>
-            <Users className="w-4 h-4 text-primary" />
+            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400">
+              <Users className="w-4 h-4" />
+            </div>
           </div>
           <div className="mt-3">
-            <p className="text-3xl font-bold text-zinc-100 font-mono">
+            <p className="text-3xl font-bold text-white font-mono tracking-tight">
               {report?.metrics.activeCustomersWithPoints ?? 0}
             </p>
-            <p className="text-xs text-zinc-500 mt-1">
-              Carteiras ativas com saldo &gt; 0
+            <p className="text-[11px] text-catalog-muted font-light mt-1">
+              Carteiras ativas com saldo acumulado &gt; 0
             </p>
           </div>
         </div>
 
         {/* Total Economizado por Clientes */}
-        <div className="rounded-2xl bg-zinc-900/60 p-6 border border-white/5">
-          <div className="flex items-center justify-between text-xs text-zinc-400 font-medium uppercase tracking-wider">
+        <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/20 shadow-xl relative overflow-hidden group hover:border-catalog-gold/40 transition-all">
+          <div className="flex items-center justify-between text-xs text-catalog-muted font-mono font-medium uppercase tracking-wider">
             <span>Total Resgatado</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
           <div className="mt-3">
-            <p className="text-3xl font-bold text-emerald-400 font-mono">
-              R$ {(report?.metrics.totalRedeemedMonetaryValue ?? 0).toFixed(2).replace('.', ',')}
+            <p className="text-3xl font-bold text-emerald-400 font-mono tracking-tight">
+              {formatCurrency(report?.metrics.totalRedeemedMonetaryValue ?? 0)}
             </p>
-            <p className="text-xs text-zinc-500 mt-1">
-              {(report?.metrics.totalRedeemedPoints ?? 0).toLocaleString('pt-BR')} pontos resgatados
+            <p className="text-[11px] text-catalog-muted font-light mt-1">
+              {(report?.metrics.totalRedeemedPoints ?? 0).toLocaleString('pt-BR')} pontos convertidos em descontos
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tabs de Navegação */}
-      <div className="flex border-b border-white/10 gap-6 text-sm font-medium">
-        <button
-          onClick={() => setActiveTab('config')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-all ${
-            activeTab === 'config'
-              ? 'border-primary text-primary font-semibold'
-              : 'border-transparent text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Parâmetros do Programa
-        </button>
-
-        <button
-          onClick={() => setActiveTab('adjust')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-all ${
-            activeTab === 'adjust'
-              ? 'border-primary text-primary font-semibold'
-              : 'border-transparent text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <PlusCircle className="w-4 h-4" />
-          Ajuste Manual de Saldo
-        </button>
-
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`pb-3 flex items-center gap-2 border-b-2 transition-all ${
-            activeTab === 'history'
-              ? 'border-primary text-primary font-semibold'
-              : 'border-transparent text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Últimas Movimentações
-        </button>
+      {/* Pílulas de Navegação por Abas */}
+      <div className="flex flex-wrap gap-2.5 border-b border-catalog-gold/20 pb-4">
+        {[
+          { id: 'config', label: 'Parâmetros do Programa', icon: Settings },
+          { id: 'adjust', label: 'Ajuste Manual de Saldo', icon: PlusCircle },
+          { id: 'history', label: 'Últimas Movimentações (Ledger)', icon: Clock },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                isActive
+                  ? 'bg-catalog-gold/20 text-catalog-gold font-bold border-2 border-catalog-gold shadow-[0_0_15px_rgba(240,180,14,0.2)]'
+                  : 'bg-[#0B132B]/60 text-catalog-muted border border-catalog-gold/25 hover:border-catalog-gold/50 hover:text-white'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* TAB 1: Configurações */}
+      {/* ABA 1: Configurações de Parâmetros */}
       {activeTab === 'config' && (
-        <form onSubmit={handleSaveConfig} className="glass-panel rounded-2xl p-8 space-y-6 max-w-3xl">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
+        <form onSubmit={handleSaveConfig} className="bg-catalog-card border border-catalog-gold/30 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl max-w-3xl">
+          {/* Chave de Ativação do Programa */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-[#050B14] border border-catalog-gold/25">
             <div>
-              <h3 className="font-semibold text-white">Ativação do Programa de Pontos</h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Habilita o acúmulo e resgate de pontos nas compras desta loja.
+              <h3 className="font-bold text-white text-sm">Habilitar Fidelidade & Pontos</h3>
+              <p className="text-xs text-catalog-muted font-light mt-0.5">
+                Permite acúmulo em pedidos finalizados e habilita widget de resgate no checkout.
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -301,39 +335,42 @@ export function LoyaltyAdminView() {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+              <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-catalog-gold" />
             </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Taxa de Acúmulo */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                Taxa de Acúmulo (Earn Rate)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5" />
+                <span>Taxa de Acúmulo (Earn Rate)</span>
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={configForm.loyaltyEarnRate}
-                  onChange={(e) =>
-                    setConfigForm((prev) => ({ ...prev, loyaltyEarnRate: Number(e.target.value) }))
-                  }
-                  className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
-                />
-              </div>
-              <p className="text-[11px] text-zinc-500">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={configForm.loyaltyEarnRate}
+                onChange={(e) =>
+                  setConfigForm((prev) => ({ ...prev, loyaltyEarnRate: Number(e.target.value) }))
+                }
+                className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
+              />
+              <p className="text-[11px] text-catalog-muted font-light">
                 Multiplicador por R$ gasto (ex: 0.5 = 1 pt a cada R$ 2,00).
               </p>
             </div>
 
             {/* Valor do Ponto */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                Valor do Ponto em Reais (Burn Rate)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>Valor do Ponto em Reais (Burn Rate)</span>
               </label>
               <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-catalog-gold font-mono font-bold text-xs pointer-events-none">
+                  R$
+                </div>
                 <input
                   type="number"
                   step="0.001"
@@ -345,18 +382,19 @@ export function LoyaltyAdminView() {
                       loyaltyPointValue: Number(e.target.value),
                     }))
                   }
-                  className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
                 />
               </div>
-              <p className="text-[11px] text-zinc-500">
-                Valor em R$ de cada ponto (ex: 0.05 = R$ 0,05 por ponto).
+              <p className="text-[11px] text-catalog-muted font-light">
+                Valor monetário de cada ponto (ex: 0.05 = R$ 0,05 de desconto por ponto).
               </p>
             </div>
 
             {/* Saldo Mínimo para Resgate */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                Resgate Mínimo (Pontos)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                <Calculator className="w-3.5 h-3.5" />
+                <span>Resgate Mínimo (Pontos)</span>
               </label>
               <input
                 type="number"
@@ -368,40 +406,47 @@ export function LoyaltyAdminView() {
                     loyaltyMinPointsRedeem: Number(e.target.value),
                   }))
                 }
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
               />
-              <p className="text-[11px] text-zinc-500">
-                Quantidade mínima exigida para liberar opção de desconto.
+              <p className="text-[11px] text-catalog-muted font-light">
+                Quantidade mínima exigida para liberar o desconto no checkout.
               </p>
             </div>
 
             {/* Teto Máximo de Desconto % */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                Teto Máximo de Desconto (%)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                <Percent className="w-3.5 h-3.5" />
+                <span>Teto Máximo de Desconto (%)</span>
               </label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={configForm.loyaltyMaxDiscountPct}
-                onChange={(e) =>
-                  setConfigForm((prev) => ({
-                    ...prev,
-                    loyaltyMaxDiscountPct: Number(e.target.value),
-                  }))
-                }
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
-              />
-              <p className="text-[11px] text-zinc-500">
-                Limite percentual de abatimento no subtotal (ex: 50%).
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={configForm.loyaltyMaxDiscountPct}
+                  onChange={(e) =>
+                    setConfigForm((prev) => ({
+                      ...prev,
+                      loyaltyMaxDiscountPct: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full h-11 px-4 pr-10 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
+                />
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-catalog-gold font-mono font-bold text-xs pointer-events-none">
+                  %
+                </div>
+              </div>
+              <p className="text-[11px] text-catalog-muted font-light">
+                Limite percentual de abatimento máximo no subtotal da compra.
               </p>
             </div>
 
             {/* Validade dos Pontos */}
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                Validade dos Pontos (Dias)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Prazo de Validade dos Pontos (Dias)</span>
               </label>
               <input
                 type="number"
@@ -414,57 +459,73 @@ export function LoyaltyAdminView() {
                   }))
                 }
                 placeholder="Ex: 365 (deixe em branco para sem expiração)"
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
               />
-              <p className="text-[11px] text-zinc-500">
-                Prazo em dias após a compra para expirar os pontos (opcional).
+              <p className="text-[11px] text-catalog-muted font-light">
+                Período em dias até a expiração contábil dos pontos concedidos.
               </p>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/5 flex justify-end">
+          <div className="pt-4 border-t border-catalog-gold/20 flex justify-end">
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 font-semibold text-zinc-950 shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#DDAF02] text-black font-bold text-xs uppercase font-mono tracking-wider px-8 py-3.5 shadow-[0_0_20px_rgba(240,180,14,0.3)] hover:shadow-[0_0_30px_rgba(240,180,14,0.5)] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
-              <Save className="w-4 h-4" />
-              {saving ? 'Salvando...' : 'Salvar Configurações'}
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <span>Salvando Parâmetros...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-black" />
+                  <span>Salvar Configurações</span>
+                </>
+              )}
             </button>
           </div>
         </form>
       )}
 
-      {/* TAB 2: Ajuste Manual de Saldo */}
+      {/* ABA 2: Ajuste Manual Auditado */}
       {activeTab === 'adjust' && (
-        <form onSubmit={handleManualAdjust} className="glass-panel rounded-2xl p-8 space-y-6 max-w-2xl">
-          <div>
-            <h3 className="font-semibold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-amber-500" />
-              Ajuste Manual Auditado
+        <form onSubmit={handleManualAdjust} className="bg-catalog-card border border-catalog-gold/30 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl max-w-2xl">
+          <div className="border-b border-catalog-gold/20 pb-4">
+            <h3 className="font-bold font-continental-display text-white text-base flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-catalog-gold" />
+              <span>Ajuste Contábil Auditado de Saldo</span>
             </h3>
-            <p className="text-xs text-zinc-400 mt-1">
-              Conceda pontos bônus, cortesias ou realize correções contábeis no saldo de um cliente.
+            <p className="text-xs text-catalog-muted font-light mt-1">
+              Conceda cortesias, créditos promocionais ou estornos diretamente na carteira de um cliente.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#050B14] border border-catalog-gold/20 flex items-start gap-2.5 text-xs text-catalog-muted">
+            <AlertCircle className="w-4 h-4 text-catalog-gold shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              Todas as movimentações manuais são registradas de forma indelével no ledger do programa com autor do ajuste e justificativa.
             </p>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
-                ID do Cliente (User ID)
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                ID do Cliente (UUID)
               </label>
               <input
                 type="text"
                 required
                 value={adjustForm.userID}
                 onChange={(e) => setAdjustForm((prev) => ({ ...prev, userID: e.target.value }))}
-                placeholder="Cole o UUID do usuário"
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                placeholder="Cole o ID do cliente (ex: clu789abc...)"
+                className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                 Quantidade de Pontos (+ para Crédito, - para Débito)
               </label>
               <input
@@ -472,12 +533,12 @@ export function LoyaltyAdminView() {
                 required
                 value={adjustForm.points}
                 onChange={(e) => setAdjustForm((prev) => ({ ...prev, points: Number(e.target.value) }))}
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono font-bold text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+              <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                 Justificativa Contábil (Obrigatória)
               </label>
               <textarea
@@ -487,67 +548,104 @@ export function LoyaltyAdminView() {
                 onChange={(e) =>
                   setAdjustForm((prev) => ({ ...prev, description: e.target.value }))
                 }
-                placeholder="Ex: Crédito de cortesia por atraso de entrega no pedido #1234"
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                placeholder="Ex: Cortesia por fidelidade ou bonificação por campanha especial"
+                className="w-full p-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner resize-none"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/5 flex justify-end">
+          <div className="pt-4 border-t border-catalog-gold/20 flex justify-end">
             <button
               type="submit"
               disabled={adjusting}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 font-semibold text-zinc-950 shadow-md transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#DDAF02] text-black font-bold text-xs uppercase font-mono tracking-wider px-8 py-3.5 shadow-[0_0_20px_rgba(240,180,14,0.3)] hover:shadow-[0_0_30px_rgba(240,180,14,0.5)] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              {adjusting ? 'Processando Ajuste...' : 'Efetivar Ajuste no Ledger'}
+              {adjusting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <span>Processando Ajuste...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-black" />
+                  <span>Efetivar Ajuste no Ledger</span>
+                </>
+              )}
             </button>
           </div>
         </form>
       )}
 
-      {/* TAB 3: Histórico Recente de Movimentações */}
+      {/* ABA 3: Histórico de Movimentações (Ledger) */}
       {activeTab === 'history' && (
-        <div className="rounded-2xl bg-zinc-900/40 border border-white/5 overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-white">Últimas Movimentações na Loja</h3>
+        <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
+          <div className="px-6 py-4 border-b border-catalog-gold/25 bg-[#050B14] flex items-center justify-between">
+            <div className="flex items-center gap-2 text-catalog-gold text-xs font-mono uppercase tracking-wider font-semibold">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Extrato Geral de Movimentações da Loja</span>
+            </div>
+            <span className="text-xs font-mono text-catalog-muted">
+              {report?.recentTransactions?.length || 0} lançamentos recentes
+            </span>
           </div>
 
           {!report?.recentTransactions || report.recentTransactions.length === 0 ? (
-            <div className="p-12 text-center text-zinc-500">
-              Nenhuma movimentação de pontos registrada nesta loja.
+            <div className="p-16 text-center space-y-2">
+              <Award className="w-8 h-8 text-catalog-gold/60 mx-auto" />
+              <p className="text-white font-semibold text-sm">Nenhuma movimentação registrada</p>
+              <p className="text-xs text-catalog-muted font-light max-w-sm mx-auto">
+                Assim que pedidos forem concluídos ou ajustes forem efetuados, o extrato contábil será preenchido aqui.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-white/[0.02] text-xs font-semibold uppercase text-zinc-400 border-b border-white/5">
-                  <tr>
-                    <th className="px-6 py-3.5">Cliente</th>
-                    <th className="px-6 py-3.5">Descrição</th>
-                    <th className="px-6 py-3.5 text-center">Tipo</th>
-                    <th className="px-6 py-3.5 text-center">Pontos</th>
-                    <th className="px-6 py-3.5 text-right">Data</th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#050B14] border-b border-catalog-gold/30">
+                    <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold">
+                      Cliente
+                    </th>
+                    <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold">
+                      Motivo / Descrição
+                    </th>
+                    <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold text-center">
+                      Tipo
+                    </th>
+                    <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold text-center">
+                      Pontos
+                    </th>
+                    <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold text-right">
+                      Data / Hora
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-catalog-gold/15 text-xs font-mono">
                   {report.recentTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-white">{tx.userName}</p>
-                        <p className="text-xs text-zinc-500">{tx.userEmail}</p>
+                    <tr key={tx.id} className="hover:bg-white/[0.03] transition-colors">
+                      <td className="py-4 px-6">
+                        <p className="font-semibold text-white tracking-tight">{tx.userName}</p>
+                        <p className="text-[11px] text-catalog-muted font-mono">{tx.userEmail}</p>
                       </td>
-                      <td className="px-6 py-4 text-xs text-zinc-300">{tx.description}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-zinc-300 font-semibold">
+                      <td className="py-4 px-6 text-neutral-300">
+                        {tx.description}
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-neutral-300 font-semibold">
                           {tx.type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center font-mono font-semibold">
-                        <span className={tx.points > 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      <td className="py-4 px-6 text-center font-mono font-bold">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full border text-xs ${
+                            tx.points > 0
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                              : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                          }`}
+                        >
                           {tx.points > 0 ? `+${tx.points}` : tx.points} pts
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right text-xs text-zinc-400 whitespace-nowrap">
+                      <td className="py-4 px-6 text-right text-catalog-muted whitespace-nowrap text-[11px]">
                         {new Date(tx.createdAt).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',

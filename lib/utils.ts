@@ -25,3 +25,12 @@ export function getOptimizedImageUrl(url: string, width: number, height?: number
   
   return url;
 }
+
+/**
+ * Insere caracteres de quebra suave (\u200B - zero-width space) após delimitadores como '/'
+ * para permitir que o navegador quebre linhas em termos compostos longos sem estourar o container.
+ */
+export function formatProductTitle(title: string | undefined | null): string {
+  if (!title) return "";
+  return title.replace(/\//g, "/\u200B");
+}

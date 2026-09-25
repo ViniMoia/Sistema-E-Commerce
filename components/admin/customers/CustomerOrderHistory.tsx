@@ -4,10 +4,10 @@ import * as React from 'react'
 import {
   DataTable,
   ColumnDef,
-  Badge,
-  EmptyState
+  Badge
 } from '@/components/ui'
 import { OrderStatus } from '@prisma/client'
+import { ShoppingCart, Filter, AlertCircle, Package } from 'lucide-react'
 
 interface OrderHistoryItem {
   id: string
@@ -26,11 +26,11 @@ interface CustomerOrderHistoryProps {
 
 const statusOptions = [
   { value: 'ALL', label: 'Todos os Status' },
-  { value: 'PENDING', label: 'Pendente' },
-  { value: 'PAID', label: 'Pago' },
-  { value: 'SHIPPED', label: 'Enviado' },
-  { value: 'DELIVERED', label: 'Entregue' },
-  { value: 'CANCELLED', label: 'Cancelado' },
+  { value: 'PENDING', label: 'Pendentes' },
+  { value: 'PAID', label: 'Pagos' },
+  { value: 'SHIPPED', label: 'Enviados' },
+  { value: 'DELIVERED', label: 'Entregues' },
+  { value: 'CANCELLED', label: 'Cancelados' },
 ] as const
 
 export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) {
@@ -54,7 +54,7 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
           const mapped = json.data.data.map(mapOrder)
           setOrders(mapped)
         } else {
-          throw new Error('Formato de resposta inv\u00e1lido')
+          throw new Error('Formato de resposta inválido')
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -76,8 +76,9 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
 
   if (error) {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-        <p className="text-sm text-red-400">{error}</p>
+      <div className="rounded-xl border border-red-500/40 bg-red-950/40 p-4 text-xs font-mono text-red-400 flex items-center gap-2">
+        <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+        <span>{error}</span>
       </div>
     )
   }
@@ -85,10 +86,10 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
   const columns: ColumnDef<OrderHistoryItem>[] = [
     {
       key: 'orderNumber',
-      header: '#',
+      header: 'Pedido #',
       render: (val) => (
-        <span className="font-medium text-zinc-100">
-          {String(val)}
+        <span className="font-mono font-bold text-catalog-gold text-xs">
+          #{String(val).padStart(5, '0')}
         </span>
       )
     },
@@ -101,9 +102,9 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
     },
     {
       key: 'createdAt',
-      header: 'Data',
+      header: 'Data / Hora',
       render: (val) => (
-        <span className="text-zinc-400">
+        <span className="text-catalog-muted font-mono text-[11px]">
           {new Intl.DateTimeFormat('pt-BR', {
             dateStyle: 'short',
             timeStyle: 'short'
@@ -112,12 +113,11 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
       )
     },
     {
-      key: 'itemCount',
-      header: 'Itens',
-      align: 'center',
+      key: 'deliveryType',
+      header: 'Entrega',
       render: (val) => (
-        <span className="text-zinc-400">
-          {String(val)}
+        <span className="text-neutral-300 font-mono text-xs">
+          {String(val) === 'DELIVERY' ? 'Domicílio' : 'Retirada'}
         </span>
       )
     },
@@ -130,9 +130,9 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
           ? (typeof val === 'number' ? val : parseFloat(String(val)))
           : null
         return (
-          <span className="text-zinc-400">
+          <span className="text-catalog-muted font-mono text-xs">
             {value === null || value === 0
-              ? 'Gr\u00e1tis'
+              ? 'Grátis'
               : new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL'
@@ -143,12 +143,12 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
     },
     {
       key: 'total',
-      header: 'Total',
+      header: 'Total Pago',
       align: 'right',
       render: (val) => {
         const total = typeof val === 'number' ? val : parseFloat(String(val || '0'))
         return (
-          <span className="font-medium text-zinc-100">
+          <span className="font-mono font-bold text-white text-xs">
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
               currency: 'BRL'
@@ -156,43 +156,53 @@ export function CustomerOrderHistory({ customerId }: CustomerOrderHistoryProps) 
           </span>
         )
       }
-    },
-    {
-      key: 'deliveryType',
-      header: 'Entrega',
-      render: (val) => (
-        <span className="text-zinc-400">
-          {String(val) === 'DELIVERY' ? 'Entrega' : 'Retirada'}
-        </span>
-      )
     }
   ]
 
   return (
-    <div className="space-y-4">
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="flex h-9 w-full max-w-[200px] items-center justify-between rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#dbb501] focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+    <div className="space-y-3">
+      {/* Barra de Filtro de Status */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-catalog-gold" />
+          <span className="text-xs font-mono uppercase text-catalog-muted tracking-wider">
+            Filtrar:
+          </span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-8 rounded-lg border border-catalog-gold/30 bg-[#0B132B] px-3 text-xs font-mono text-white focus:outline-none focus:border-catalog-gold transition-all"
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value} className="bg-[#050B14] text-white">
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <DataTable
-        columns={columns}
-        data={filteredOrders}
-        keyExtractor={(row) => row.id}
-        isLoading={isLoading}
-        emptyState={
-          <EmptyState
-            title="Nenhum pedido encontrado para este cliente"
-          />
-        }
-      />
+        <span className="text-xs font-mono text-catalog-muted">
+          {filteredOrders.length} {filteredOrders.length === 1 ? 'pedido' : 'pedidos'}
+        </span>
+      </div>
+
+      {/* Tabela do Histórico */}
+      <div className="bg-[#050B14] border border-catalog-gold/20 rounded-xl overflow-hidden shadow-lg">
+        <DataTable
+          columns={columns}
+          data={filteredOrders}
+          keyExtractor={(row) => row.id}
+          isLoading={isLoading}
+          emptyState={
+            <div className="py-10 text-center space-y-2">
+              <Package className="w-6 h-6 text-catalog-gold/60 mx-auto" />
+              <p className="text-xs font-mono text-catalog-muted">
+                Nenhum pedido encontrado com este critério.
+              </p>
+            </div>
+          }
+        />
+      </div>
     </div>
   )
 }

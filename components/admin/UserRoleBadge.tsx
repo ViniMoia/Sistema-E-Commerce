@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { ShieldAlert, User } from "lucide-react";
+import { ShieldCheck, User } from "lucide-react";
 
 interface UserRoleBadgeProps {
   role: "ADMIN" | "CUSTOMER";
@@ -8,22 +7,17 @@ interface UserRoleBadgeProps {
 export function UserRoleBadge({ role }: UserRoleBadgeProps) {
   if (role === "ADMIN") {
     return (
-      <Badge 
-        className="bg-neutral-800 text-white hover:bg-neutral-700 ring-1 ring-white/10 border-0 gap-1.5 py-1 px-3 shadow-none transition-colors"
-      >
-        <ShieldAlert className="w-3.5 h-3.5" />
-        Admin
-      </Badge>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 shadow-[0_0_12px_rgba(240,180,14,0.2)]">
+        <ShieldCheck className="w-3.5 h-3.5 text-catalog-gold" />
+        Administrador
+      </span>
     );
   }
 
   return (
-    <Badge 
-      variant="outline" 
-      className="text-neutral-400 border-white/10 gap-1.5 py-1 px-3 hover:bg-white/5 transition-colors"
-    >
-      <User className="w-3.5 h-3.5" />
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium bg-white/5 text-neutral-300 border border-white/10 hover:border-white/20 transition-colors">
+      <User className="w-3.5 h-3.5 text-neutral-400" />
       Cliente
-    </Badge>
+    </span>
   );
 }

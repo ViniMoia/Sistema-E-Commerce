@@ -5,12 +5,14 @@ interface ContinentalLogoProps {
   className?: string;
   variant?: "horizontal" | "symbol" | "full";
   priority?: boolean;
+  href?: string;
 }
 
 export function ContinentalLogo({
   className = "h-10 sm:h-11 md:h-12 w-auto",
   variant = "symbol",
   priority = true,
+  href = "/",
 }: ContinentalLogoProps) {
   const src =
     variant === "symbol"
@@ -28,7 +30,7 @@ export function ContinentalLogo({
 
   return (
     <Link
-      href="/"
+      href={href}
       className="inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/60 rounded-sm"
       aria-label="Continental Produtos Estéticos Automotivos - Página Inicial"
     >

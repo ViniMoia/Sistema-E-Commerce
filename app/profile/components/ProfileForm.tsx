@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "../types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, Lock, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Lock, ShieldCheck, UserCheck, Save } from "lucide-react";
 
 export function ProfileForm({ user }: { user: UserProfile }) {
   const router = useRouter();
@@ -64,7 +64,7 @@ export function ProfileForm({ user }: { user: UserProfile }) {
         throw new Error(result.error || "Não foi possível salvar as alterações.");
       }
 
-      const successMsg = "Suas informações foram atualizadas com sucesso!";
+      const successMsg = "Suas informações cadastrais foram atualizadas com sucesso!";
       setFeedback({ type: "success", message: successMsg });
       toast({
         title: "Perfil atualizado",
@@ -87,12 +87,14 @@ export function ProfileForm({ user }: { user: UserProfile }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/10 pb-4">
+    <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-catalog-gold/20 pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Informações Pessoais</h2>
-          <p className="text-sm text-zinc-400">
-            Atualize seus dados cadastrais para agilizar suas compras e emissão de pedidos.
+          <h2 className="text-xl sm:text-2xl font-bold font-continental-display text-white tracking-tight">
+            Informações Pessoais
+          </h2>
+          <p className="text-xs text-catalog-muted font-light mt-0.5">
+            Atualize seus dados cadastrais para agilizar suas compras e emissão de notas fiscais.
           </p>
         </div>
       </div>
@@ -100,27 +102,27 @@ export function ProfileForm({ user }: { user: UserProfile }) {
       {/* Banner de Feedback Inline */}
       {feedback && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm transition-all ${
+          className={`flex items-center gap-3 p-4 rounded-xl border text-xs font-mono transition-all ${
             feedback.type === "success"
-              ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-300"
-              : "bg-red-950/40 border-red-500/30 text-red-300"
+              ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
+              : "bg-red-950/40 border-red-500/40 text-red-300"
           }`}
         >
           {feedback.type === "success" ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Nome Completo */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
+          <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center justify-between">
             <span>Nome Completo</span>
-            <span className="text-xs text-zinc-500">Obrigatório</span>
+            <span className="text-[10px] text-catalog-muted font-normal">Obrigatório</span>
           </label>
           <input
             type="text"
@@ -129,16 +131,16 @@ export function ProfileForm({ user }: { user: UserProfile }) {
             required
             placeholder="Seu nome completo"
             disabled={isSaving}
-            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--primary)] transition-all disabled:opacity-50"
+            className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner disabled:opacity-50"
           />
         </div>
 
         {/* E-mail (Somente Leitura) */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
+          <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center justify-between">
             <span>E-mail</span>
-            <span className="inline-flex items-center gap-1 text-xs text-zinc-400">
-              <Lock className="w-3 h-3 text-zinc-500" />
+            <span className="inline-flex items-center gap-1 text-[10px] text-neutral-400 font-normal">
+              <Lock className="w-3 h-3 text-catalog-gold/60" />
               Não alterável
             </span>
           </label>
@@ -146,15 +148,15 @@ export function ProfileForm({ user }: { user: UserProfile }) {
             type="email"
             value={user.email}
             disabled
-            className="w-full bg-white/[0.03] border border-white/5 rounded-lg px-4 py-3 text-zinc-400 cursor-not-allowed selection:bg-none"
+            className="w-full h-11 px-4 rounded-xl border border-white/5 bg-[#050B14] text-xs font-mono text-neutral-400 cursor-not-allowed selection:bg-none"
           />
         </div>
 
         {/* Telefone / WhatsApp */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
+          <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center justify-between">
             <span>Telefone / WhatsApp</span>
-            <span className="text-xs text-zinc-500">Opcional</span>
+            <span className="text-[10px] text-catalog-muted font-normal">Opcional</span>
           </label>
           <input
             type="tel"
@@ -162,21 +164,21 @@ export function ProfileForm({ user }: { user: UserProfile }) {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(00) 00000-0000"
             disabled={isSaving}
-            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--primary)] transition-all disabled:opacity-50"
+            className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner disabled:opacity-50"
           />
         </div>
 
         {/* CPF / CNPJ */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
+          <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center justify-between">
             <span>CPF / CNPJ</span>
             {hasExistingCpf ? (
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium">
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono font-medium">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Validado
               </span>
             ) : (
-              <span className="text-xs text-zinc-500">Para Nota Fiscal</span>
+              <span className="text-[10px] text-catalog-muted font-normal">Para Emissão Fiscal</span>
             )}
           </label>
           <input
@@ -185,33 +187,36 @@ export function ProfileForm({ user }: { user: UserProfile }) {
             onChange={(e) => setCpfCnpj(e.target.value)}
             disabled={hasExistingCpf || isSaving}
             placeholder={hasExistingCpf ? user.cpfCnpj! : "000.000.000-00"}
-            className={`w-full rounded-lg px-4 py-3 transition-all ${
+            className={`w-full h-11 px-4 rounded-xl text-xs font-mono transition-all ${
               hasExistingCpf
-                ? "bg-white/[0.03] border border-white/5 text-zinc-400 cursor-not-allowed"
-                : "bg-black/40 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--primary)] disabled:opacity-50"
+                ? "border border-white/5 bg-[#050B14] text-neutral-400 cursor-not-allowed"
+                : "border border-catalog-gold/30 bg-[#0B132B]/80 text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 shadow-inner disabled:opacity-50"
             }`}
           />
         </div>
       </div>
 
-      <div className="pt-4 flex items-center gap-4">
+      <div className="pt-4 border-t border-catalog-gold/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <button
           type="submit"
           disabled={isSaving || !name.trim()}
-          className="inline-flex items-center justify-center gap-2 bg-[var(--primary)] text-black font-semibold px-8 py-3 rounded-lg hover:bg-[var(--primary)]/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-[var(--primary)]/10"
+          className="btn-shimmer inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#DDAF02] text-black font-bold uppercase font-mono tracking-wider px-8 py-3.5 shadow-[0_0_20px_rgba(240,180,14,0.3)] hover:shadow-[0_0_30px_rgba(240,180,14,0.5)] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
         >
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin text-black" />
-              <span>Salvando...</span>
+              <span>Salvando Alterações...</span>
             </>
           ) : (
-            <span>Salvar Alterações</span>
+            <>
+              <Save className="w-4 h-4 text-black" />
+              <span>Salvar Alterações</span>
+            </>
           )}
         </button>
 
-        <span className="text-xs text-zinc-500">
-          Suas informações são armazenadas de forma segura e criptografada.
+        <span className="text-[11px] font-mono text-catalog-muted">
+          Suas informações são armazenadas com segurança e criptografia.
         </span>
       </div>
     </form>

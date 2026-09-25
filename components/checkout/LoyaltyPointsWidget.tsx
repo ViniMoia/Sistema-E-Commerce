@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Award, Sparkles, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Award, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 interface LoyaltyPointsWidgetProps {
   lojaID: string
@@ -107,32 +107,32 @@ export function LoyaltyPointsWidget({
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 bg-zinc-50 dark:bg-zinc-900/40 animate-pulse">
-        <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3 mb-2" />
-        <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
+      <div className="rounded-2xl border border-catalog-gold/20 p-4 bg-[#0B132B]/50 animate-pulse">
+        <div className="h-4 bg-catalog-gold/20 rounded w-1/3 mb-2" />
+        <div className="h-3 bg-catalog-gold/10 rounded w-1/2" />
       </div>
     )
   }
 
-  // Se não estiver logado, exibe banner informativo sutil sobre os pontos
+  // Se não estiver logado, exibe banner informativo no padrão Continental
   if (!isAuthenticated) {
     return (
-      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent p-4.5 transition-all">
+      <div className="rounded-2xl border border-catalog-gold/30 bg-[#0B132B]/60 p-4.5 transition-all">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
+          <div className="p-2 rounded-xl bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30 shrink-0">
             <Award className="w-5 h-5" />
           </div>
           <div className="flex-1 text-xs">
-            <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+            <p className="font-bold text-white uppercase font-mono tracking-wider text-xs flex items-center gap-1.5">
               Programa de Pontos & Fidelidade
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <Sparkles className="w-3.5 h-3.5 text-catalog-gold" />
             </p>
-            <p className="text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
-              Você acumulará pontos nesta compra! Faça login para resgatar saldos e descontos exclusivos.
+            <p className="text-catalog-muted mt-1 leading-relaxed">
+              Você acumulará pontos nesta compra! Faça login para resgatar saldos e descontos exclusivos na finalização.
             </p>
             {simulation && simulation.projectedEarnedPoints > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium text-[11px]">
-                +{simulation.projectedEarnedPoints} pontos previstos após o pagamento
+              <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-catalog-gold/15 border border-catalog-gold/40 text-catalog-gold font-mono font-bold text-[11px]">
+                +{simulation.projectedEarnedPoints} pontos previstos após a compra
               </div>
             )}
           </div>
@@ -144,24 +144,24 @@ export function LoyaltyPointsWidget({
   const hasPoints = wallet && wallet.balance > 0
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/50 backdrop-blur-md p-5 shadow-sm space-y-4">
+    <div className="rounded-2xl border border-catalog-gold/30 bg-[#0B132B]/70 backdrop-blur-md p-5 shadow-sm space-y-4">
       {/* Header do Card */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center text-amber-500">
+          <div className="w-10 h-10 rounded-xl bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold shrink-0">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+            <h4 className="text-sm font-bold text-white font-mono uppercase tracking-wider flex items-center gap-2">
               Programa de Fidelidade
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-mono font-medium">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-catalog-gold/20 text-catalog-gold font-mono font-bold border border-catalog-gold/40">
                 VIP
               </span>
             </h4>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Você possui <strong className="text-zinc-900 dark:text-zinc-200">{wallet?.balance ?? 0} pontos</strong>
+            <p className="text-xs text-catalog-muted font-mono mt-0.5">
+              Saldo: <strong className="text-white font-bold">{wallet?.balance ?? 0} pontos</strong>
               {wallet && wallet.monetaryBalance > 0 && (
-                <span> (equivalente a R$ {wallet.monetaryBalance.toFixed(2).replace('.', ',')})</span>
+                <span className="text-catalog-gold"> (R$ {wallet.monetaryBalance.toFixed(2).replace('.', ',')})</span>
               )}
             </p>
           </div>
@@ -176,17 +176,17 @@ export function LoyaltyPointsWidget({
               onChange={(e) => setUsePoints(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-zinc-300 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+            <div className="w-11 h-6 bg-[#050B14] border border-catalog-gold/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F0B40E] peer-checked:border-[#F0B40E]" />
           </label>
         )}
       </div>
 
       {/* Seção quando o toggle está ativo */}
       {usePoints && hasPoints && (
-        <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-600 dark:text-zinc-400">Quantidade de pontos a resgatar:</span>
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+        <div className="pt-3 border-t border-catalog-gold/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-catalog-muted uppercase">Quantidade de pontos a resgatar:</span>
+            <span className="font-bold text-catalog-gold">
               {requestedPoints} pts
             </span>
           </div>
@@ -198,12 +198,12 @@ export function LoyaltyPointsWidget({
               max={wallet.balance}
               value={requestedPoints}
               onChange={(e) => setRequestedPoints(Number(e.target.value))}
-              className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              className="w-full h-2 bg-[#050B14] rounded-lg appearance-none cursor-pointer accent-[#F0B40E] border border-catalog-gold/20"
             />
             <button
               type="button"
               onClick={() => setRequestedPoints(wallet.balance)}
-              className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-colors shrink-0"
+              className="px-3 py-1 text-[11px] font-mono font-bold uppercase rounded-lg bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 hover:bg-catalog-gold/25 transition-colors shrink-0"
             >
               Usar Tudo
             </button>
@@ -213,18 +213,18 @@ export function LoyaltyPointsWidget({
           {simulation && (
             <div className="mt-2">
               {simulation.eligible ? (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 text-xs font-mono flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                     <span>Desconto de fidelidade aplicado:</span>
                   </div>
-                  <strong className="font-mono text-sm">
+                  <strong className="font-bold text-sm">
                     - R$ {simulation.discountValue.toFixed(2).replace('.', ',')}
                   </strong>
                 </div>
               ) : (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div className="p-3 rounded-xl bg-red-950/60 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                   <span>{simulation.reason || 'Pontos insuficientes para esta compra.'}</span>
                 </div>
               )}
@@ -235,12 +235,12 @@ export function LoyaltyPointsWidget({
 
       {/* Rodapé Informativo: Projeção de Acúmulo Futuro */}
       {simulation && simulation.projectedEarnedPoints > 0 && (
-        <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/40">
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-amber-500" />
+        <div className="flex items-center justify-between text-[11px] font-mono text-catalog-muted pt-2 border-t border-catalog-gold/15">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-catalog-gold" />
             Bônus acumulado nesta compra:
           </span>
-          <span className="font-semibold text-amber-500 font-mono">
+          <span className="font-bold text-catalog-gold">
             +{simulation.projectedEarnedPoints} pontos
           </span>
         </div>

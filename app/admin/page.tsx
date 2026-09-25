@@ -18,7 +18,6 @@ import {
   Clock,
   XCircle,
   ArrowUpRight,
-  ShieldAlert,
   Store,
 } from 'lucide-react';
 
@@ -43,39 +42,39 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  // Consulta canônica com cache particionado por tenant (Fase 1)
+  // Consulta canônica com cache particionado por tenant
   const data = await getAggregatedDashboardMetrics(lojaID);
 
   return (
     <div className="p-6 md:p-10 space-y-8 fade-in text-white">
-      {/* ─── Top Header & Navegação Rápida de Catálogo (Intocados) ─────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-white/5 pb-6">
+      {/* ─── Top Header & Navegação Rápida de Catálogo ─────────── */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-catalog-gold/20 pb-6">
         <div>
-          <p className="text-[10px] text-[#DDAF02] font-mono tracking-[0.25em] uppercase mb-1">
+          <p className="text-[10px] text-catalog-gold font-mono tracking-[0.25em] uppercase mb-1 font-bold">
             Visão Geral & Operação
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white uppercase">
             Dashboard
           </h1>
-          <p className="text-zinc-400 mt-1 text-sm">
+          <p className="text-catalog-muted mt-1 text-sm">
             Bem-vindo de volta,{' '}
             <span className="text-white font-medium">{user.name}</span>. Resumo da loja{' '}
-            <span className="text-[#DDAF02] font-medium">{data.lojaName}</span>.
+            <span className="text-catalog-gold font-semibold">{data.lojaName}</span>.
           </p>
         </div>
 
-        {/* Contadores Informativos de Produtos e Usuários (100% Preservados) */}
+        {/* Contadores Informativos de Produtos e Usuários */}
         <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="glass-panel px-4 py-2.5 rounded-xl border border-white/5 hover:border-purple-500/30 transition-all flex items-center gap-3 group"
+            className="bg-catalog-card px-4 py-2.5 rounded-2xl border border-catalog-gold/30 hover:border-catalog-gold/60 transition-all flex items-center gap-3 group shadow-sm"
           >
-            <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            <div className="p-2 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold">
               <PackageSearch className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-zinc-500 font-mono uppercase">Produtos Ativos</p>
-              <p className="text-sm font-bold text-white font-mono group-hover:text-purple-400 transition-colors">
+              <p className="text-[10px] text-catalog-muted font-mono uppercase tracking-wider">Produtos Ativos</p>
+              <p className="text-sm font-bold text-white font-mono group-hover:text-catalog-gold transition-colors">
                 {data.catalog.totalProducts} itens
               </p>
             </div>
@@ -83,14 +82,14 @@ export default async function AdminDashboardPage() {
 
           <Link
             href="/admin/customers"
-            className="glass-panel px-4 py-2.5 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all flex items-center gap-3 group"
+            className="bg-catalog-card px-4 py-2.5 rounded-2xl border border-catalog-gold/30 hover:border-catalog-gold/60 transition-all flex items-center gap-3 group shadow-sm"
           >
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-2 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-zinc-500 font-mono uppercase">Clientes Registrados</p>
-              <p className="text-sm font-bold text-white font-mono group-hover:text-emerald-400 transition-colors">
+              <p className="text-[10px] text-catalog-muted font-mono uppercase tracking-wider">Clientes</p>
+              <p className="text-sm font-bold text-white font-mono group-hover:text-catalog-gold transition-colors">
                 {data.catalog.totalCustomers} clientes
               </p>
             </div>
@@ -105,7 +104,7 @@ export default async function AdminDashboardPage() {
       />
 
       {/* ─── 2. Grid de KPIs Executivos (3 Colunas) ─────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Card 1: Financeiro & Gateway PIX */}
         <FinancialKpiCard financial={data.financial} />
 
@@ -113,56 +112,56 @@ export default async function AdminDashboardPage() {
         <LogisticsKpiCard logistics={data.logistics} />
 
         {/* Card 3: Funil de Pedidos & Conversão */}
-        <div className="glass-panel rounded-xl p-5 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 flex flex-col justify-between group">
+        <div className="bg-catalog-card rounded-2xl p-6 border border-catalog-gold/30 hover:border-catalog-gold/60 transition-all duration-300 flex flex-col justify-between group shadow-sm">
           <div>
             <div className="flex items-start justify-between mb-3">
-              <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <div className="p-2.5 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold">
                 <ShoppingCart className="w-5 h-5" />
               </div>
               <Link
                 href="/admin/orders"
-                className="text-xs text-zinc-400 hover:text-blue-400 font-mono flex items-center gap-1 transition-colors"
+                className="text-xs text-catalog-muted hover:text-catalog-gold font-mono flex items-center gap-1 transition-colors"
               >
                 <span>Histórico</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <p className="text-zinc-400 text-xs font-mono tracking-wider uppercase">
+            <p className="text-[10px] font-mono tracking-[0.2em] text-catalog-gold uppercase font-bold">
               Volume Total de Pedidos
             </p>
-            <p className="text-3xl font-bold tracking-tight text-blue-400 mt-1 font-mono">
+            <p className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white mt-1">
               {data.financial.totalOrdersCount}
             </p>
 
             {/* Subtotais do Funil de Pedidos */}
-            <div className="mt-4 pt-3 border-t border-white/5 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 flex items-center gap-1.5">
+            <div className="mt-4 pt-3 border-t border-catalog-gold/15 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-catalog-muted flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   Pedidos Pagos
                 </span>
-                <span className="font-mono text-emerald-400 font-medium">
+                <span className="text-emerald-400 font-medium">
                   {data.financial.paidOrdersCount}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-catalog-muted flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-catalog-gold" />
                   Pedidos Pendentes
                 </span>
-                <span className="font-mono text-amber-400 font-medium">
+                <span className="text-catalog-gold font-medium">
                   {data.financial.pendingOrdersCount}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 flex items-center gap-1.5">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-catalog-muted flex items-center gap-1.5">
                   <XCircle className="w-3.5 h-3.5 text-red-400" />
                   Pedidos Cancelados
                 </span>
-                <span className="font-mono text-red-400 font-medium">
+                <span className="text-red-400 font-medium">
                   {data.financial.cancelledOrdersCount}
                 </span>
               </div>
@@ -170,9 +169,9 @@ export default async function AdminDashboardPage() {
           </div>
 
           {/* Taxa de Conversão */}
-          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono">
-            <span className="text-zinc-500">Taxa de Conversão</span>
-            <span className="text-blue-400 font-bold">
+          <div className="mt-4 pt-3 border-t border-catalog-gold/15 flex items-center justify-between text-xs font-mono">
+            <span className="text-catalog-muted">Taxa de Conversão</span>
+            <span className="text-catalog-gold font-bold">
               {data.financial.paymentConversionRatePct}% liquidado
             </span>
           </div>
@@ -187,36 +186,36 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Card Operacional de Logística e Despacho */}
-        <div className="glass-panel rounded-xl p-5 border border-white/5 flex flex-col justify-between space-y-4">
+        <div className="bg-catalog-card rounded-2xl p-6 border border-catalog-gold/30 flex flex-col justify-between space-y-4 shadow-sm">
           <div>
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                <Store className="w-4 h-4 text-[#DDAF02]" />
+            <div className="flex items-center justify-between border-b border-catalog-gold/20 pb-3">
+              <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2 uppercase font-mono">
+                <Store className="w-4 h-4 text-catalog-gold" />
                 <span>Configuração de Expedição</span>
               </h3>
               <Link
                 href="/admin/settings"
-                className="text-[11px] text-[#DDAF02] hover:underline font-mono"
+                className="text-[11px] text-catalog-gold hover:underline font-mono uppercase tracking-wider"
               >
                 Ajustar
               </Link>
             </div>
 
-            <div className="space-y-3 mt-4 text-xs">
+            <div className="space-y-3 mt-4 text-xs font-mono">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">CEP de Origem (Saída)</span>
-                <span className="font-mono text-white">
+                <span className="text-catalog-muted">CEP de Origem (Saída)</span>
+                <span className="text-white font-semibold">
                   {data.logistics.providerStatus.originCep || '01001-000 (Padrão)'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Entrega Correios</span>
+                <span className="text-catalog-muted">Entrega Correios</span>
                 <span
-                  className={`font-mono text-[11px] px-2 py-0.5 rounded ${
+                  className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full ${
                     data.logistics.providerStatus.enableCorreios
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-zinc-800 text-zinc-500'
+                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/50'
+                      : 'bg-[#050B14] text-catalog-muted border border-white/5'
                   }`}
                 >
                   {data.logistics.providerStatus.enableCorreios ? 'Ativo (SEDEX/PAC)' : 'Desativado'}
@@ -224,12 +223,12 @@ export default async function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">J&T Express Matriz</span>
+                <span className="text-catalog-muted">J&T Express Matriz</span>
                 <span
-                  className={`font-mono text-[11px] px-2 py-0.5 rounded ${
+                  className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full ${
                     data.logistics.providerStatus.hasJtExpressMatrix
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-zinc-800 text-zinc-500'
+                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/50'
+                      : 'bg-[#050B14] text-catalog-muted border border-white/5'
                   }`}
                 >
                   {data.logistics.providerStatus.hasJtExpressMatrix ? '5.181 Tarifas' : 'Sem Matriz'}
@@ -237,12 +236,12 @@ export default async function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Retirada na Loja Física</span>
+                <span className="text-catalog-muted">Retirada na Loja Física</span>
                 <span
-                  className={`font-mono text-[11px] px-2 py-0.5 rounded ${
+                  className={`text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full ${
                     data.logistics.providerStatus.enablePickup
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-zinc-800 text-zinc-500'
+                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/50'
+                      : 'bg-[#050B14] text-catalog-muted border border-white/5'
                   }`}
                 >
                   {data.logistics.providerStatus.enablePickup ? 'Disponível (Grátis)' : 'Bloqueado'}
@@ -250,17 +249,17 @@ export default async function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-400">Tabela de Frete Local</span>
-                <span className="font-mono text-white">
+                <span className="text-catalog-muted">Tabela de Frete Local</span>
+                <span className="text-white font-semibold">
                   {data.logistics.providerStatus.localTableRulesCount} regras cadastradas
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+          <div className="pt-3 border-t border-catalog-gold/15 flex items-center justify-between text-[11px] font-mono text-catalog-muted">
             <span>Sincronização com armazém</span>
-            <span className="text-emerald-400">Em tempo real</span>
+            <span className="text-emerald-400 font-semibold">Em tempo real</span>
           </div>
         </div>
       </div>

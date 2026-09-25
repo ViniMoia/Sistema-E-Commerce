@@ -4,8 +4,8 @@ import * as React from 'react'
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet'
 import { Button, AlertBanner, Spinner, Badge } from '@/components/ui'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -101,29 +101,20 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
       return
     }
 
-    async function fetchOrder() {
+    const fetchOrder = async () => {
       try {
         setIsLoading(true)
         setError(null)
         const res = await fetch(`/api/admin/orders/${orderId}`)
         if (!res.ok) {
-          const errData = await res.json()
-          throw new Error(errData.error || 'Erro ao carregar detalhes do pedido')
+          throw new Error('Falha ao carregar detalhes do pedido')
         }
-        const json = await res.json()
-        if (json.success && json.data) {
-          setOrder(json.data)
-          setNotesValue(json.data.adminNotes || '')
-          setTrackingValue(json.data.trackingCode || '')
-        } else {
-          throw new Error('Dados do pedido não encontrados')
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Ocorreu um erro desconhecido ao carregar o pedido')
-        }
+        const data = await res.json()
+        setOrder(data)
+        setNotesValue(data.adminNotes || '')
+        setTrackingValue(data.trackingCode || '')
+      } catch (err: any) {
+        setError(err.message || 'Erro inesperado')
       } finally {
         setIsLoading(false)
       }
@@ -185,7 +176,17 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
   return (
     <Sheet open={Boolean(orderId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto bg-zinc-950 border-l border-white/10">
+      <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto bg-catalog-card border-l border-catalog-gold/45 text-catalog-text">
+        {/* Título e descrição acessíveis incondicionalmente presentes para conformidade estrita com o Radix UI */}
+        <div className="sr-only">
+          <SheetTitle>
+            {order ? `Detalhes do Pedido #${order.orderNumber}` : 'Carregando Detalhes do Pedido'}
+          </SheetTitle>
+          <SheetDescription>
+            Painel lateral de visualização e gerenciamento do pedido selecionado
+          </SheetDescription>
+        </div>
+
         {isLoading && (
           <div className="p-6 space-y-6">
             <Skeleton className="h-8 w-1/3 bg-white/5" />
@@ -203,22 +204,22 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
         {order && (
           <div className="flex flex-col min-h-full">
             {/* 1. HEADER */}
-            <div className="px-6 py-6 border-b border-white/10 bg-zinc-950 sticky top-0 z-10">
+            <div className="px-6 py-6 border-b border-catalog-gold/20 bg-[#050B14] sticky top-0 z-10">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <SheetTitle className="text-2xl font-bold tracking-tight text-zinc-100">
+                    <h2 className="text-2xl font-bold tracking-tight text-white uppercase font-mono">
                       Pedido #{order.orderNumber}
-                    </SheetTitle>
+                    </h2>
                     <Badge status={order.status} />
                   </div>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm font-mono text-catalog-muted">
                     {formatDate(order.createdAt)}
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#DDAF02]"
+                  className="rounded-full p-2 hover:bg-catalog-gold/15 text-catalog-gold transition-colors focus:outline-none focus:ring-1 focus:ring-catalog-gold"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -228,44 +229,44 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
             <div className="flex-1 p-6 space-y-8">
               {/* 2. CLIENTE */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Cliente
                 </h3>
-                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
-                  <p className="font-medium text-zinc-100">{order.customer?.name || order.user?.name || 'Cliente desconhecido'}</p>
-                  <p className="text-sm text-zinc-400 mt-1">{order.customer?.email || order.user?.email}</p>
+                <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25">
+                  <p className="font-medium text-white">{order.customer?.name || order.user?.name || 'Cliente desconhecido'}</p>
+                  <p className="text-sm text-catalog-muted mt-1 font-mono">{order.customer?.email || order.user?.email}</p>
                   {(order.customer?.phone || order.user?.phone) && (
-                    <p className="text-sm text-zinc-400 mt-1">{order.customer?.phone || order.user?.phone}</p>
+                    <p className="text-sm text-catalog-muted mt-1 font-mono">{order.customer?.phone || order.user?.phone}</p>
                   )}
                 </div>
               </section>
 
               {/* 3. PRODUTOS */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Produtos
                 </h3>
-                <div className="bg-white/[0.02] rounded-xl border border-white/5 overflow-hidden">
-                  <div className="divide-y divide-white/5">
+                <div className="bg-[#0B132B]/70 rounded-xl border border-catalog-gold/25 overflow-hidden">
+                  <div className="divide-y divide-catalog-gold/15">
                     {order.items.map(item => (
                       <div key={item.id} className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-sm text-zinc-200">{item.name}</p>
-                          <p className="text-xs text-zinc-400 mt-0.5">
+                          <p className="font-medium text-sm text-white">{item.name}</p>
+                          <p className="text-xs text-catalog-muted mt-0.5 font-mono">
                             {item.quantity}x {formatCurrency(item.price)}
                             {item.color && ` • Cor: ${item.color}`}
                             {item.size && ` • Tam: ${item.size}`}
                           </p>
                         </div>
-                        <span className="font-medium text-sm text-zinc-200">
+                        <span className="font-bold text-sm text-white font-mono">
                           {formatCurrency(item.quantity * item.price)}
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-white/[0.01] p-4 flex justify-between border-t border-white/5">
-                    <span className="text-sm font-medium text-zinc-400">Subtotal Produtos</span>
-                    <span className="text-sm font-medium text-zinc-100">
+                  <div className="bg-[#050B14] p-4 flex justify-between border-t border-catalog-gold/20">
+                    <span className="text-sm font-mono text-catalog-muted">Subtotal Produtos</span>
+                    <span className="text-sm font-mono font-bold text-white">
                       {formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}
                     </span>
                   </div>
@@ -274,30 +275,30 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 4. ENDEREÇO & MODALIDADE DE ENVIO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Modalidade & Entrega
                 </h3>
-                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5 space-y-3">
+                <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25 space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-zinc-500">Serviço de Envio:</span>
-                    <span className="font-semibold text-zinc-100">
+                    <span className="text-catalog-muted font-mono">Serviço de Envio:</span>
+                    <span className="font-semibold text-white">
                       {order.shippingServiceName || (order.deliveryType === 'PICKUP' ? 'Retirada na Loja' : order.deliveryType === 'NONE' ? 'A Combinar via WhatsApp' : 'Entrega')}
                     </span>
                   </div>
 
                   {order.shippingEstimatedDays ? (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-500">Prazo Prometido:</span>
-                      <span className="text-zinc-300 font-medium">
+                      <span className="text-catalog-muted font-mono">Prazo Prometido:</span>
+                      <span className="text-slate-300 font-medium font-mono">
                         {order.shippingEstimatedDays} dias úteis
                       </span>
                     </div>
                   ) : null}
 
                   {order.deliveryType === 'DELIVERY' && order.address && (
-                    <div className="pt-2 border-t border-white/5">
-                      <p className="text-xs text-zinc-400 mb-1 font-semibold">Endereço de Destino:</p>
-                      <p className="text-sm text-zinc-300 leading-relaxed">
+                    <div className="pt-2 border-t border-catalog-gold/15">
+                      <p className="text-xs text-catalog-gold mb-1 font-mono font-bold uppercase">Endereço de Destino:</p>
+                      <p className="text-sm text-slate-300 leading-relaxed">
                         {order.address.street}, {order.address.number}
                         {order.address.complement && ` - ${order.address.complement}`}
                         <br />
@@ -313,22 +314,22 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 5. RESUMO FINANCEIRO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Resumo Financeiro
                 </h3>
-                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5 space-y-2">
-                  <div className="flex justify-between text-sm text-zinc-400">
+                <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25 space-y-2">
+                  <div className="flex justify-between text-sm text-catalog-muted font-mono">
                     <span>Subtotal Produtos</span>
-                    <span>{formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}</span>
+                    <span className="text-white">{formatCurrency(order.items.reduce((acc, item) => acc + (item.quantity * item.price), 0))}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-zinc-400">
+                  <div className="flex justify-between text-sm text-catalog-muted font-mono">
                     <span>Frete ({order.shippingServiceName || 'Envio'})</span>
-                    <span className="font-medium text-zinc-100">
+                    <span className="font-medium text-white">
                       {order.freightValue && order.freightValue > 0 ? formatCurrency(order.freightValue) : 'Grátis (R$ 0,00)'}
                     </span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg text-[#DDAF02] pt-2 border-t border-white/5 mt-2">
-                    <span>Total do Pedido</span>
+                  <div className="flex justify-between font-bold text-lg text-white font-mono pt-2 border-t border-catalog-gold/20 mt-2">
+                    <span className="text-catalog-gold">Total do Pedido</span>
                     <span>{formatCurrency(order.total)}</span>
                   </div>
                 </div>
@@ -336,10 +337,10 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 6. RASTREAMENTO E CÓDIGO DE ENVIO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Código de Rastreamento (Correios / Transportadora)
                 </h3>
-                <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25">
                   {isEditingTracking ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -347,12 +348,12 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                         value={trackingValue}
                         onChange={(e) => setTrackingValue(e.target.value)}
                         placeholder="Ex: AA123456789BR"
-                        className="h-10 flex-1 rounded-lg border border-white/10 bg-black/40 px-3 text-sm font-mono text-zinc-100 focus:border-[#DDAF02] outline-none"
+                        className="h-10 flex-1 rounded-xl border border-catalog-gold/30 bg-[#050B14] px-3 text-sm font-mono text-white focus:border-catalog-gold outline-none"
                       />
-                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking} className="bg-[#DDAF02] text-black hover:bg-[#c49b02]">
+                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking} className="bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold">
                         {isSavingTracking ? <Spinner className="w-3 h-3" /> : 'Salvar'}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)}>
+                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)} className="border-catalog-gold/30 text-slate-300">
                         Cancelar
                       </Button>
                     </div>
@@ -361,13 +362,13 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                       {order.trackingCode ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm font-semibold text-zinc-100">
+                            <span className="font-mono text-sm font-semibold text-emerald-400">
                               {order.trackingCode}
                             </span>
                             {(() => {
                               const info = getTrackingInfo(order.trackingCode, order.shippingServiceName || order.shippingProvider);
                               return info?.carrier ? (
-                                <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-white/10 text-zinc-300 border border-white/10">
+                                <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30">
                                   {info.carrier}
                                 </span>
                               ) : null;
@@ -381,22 +382,22 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                                   href={info.trackingUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#DDAF02] hover:text-[#c49b02] px-2.5 py-1.5 rounded-lg bg-[#DDAF02]/10 border border-[#DDAF02]/20 hover:bg-[#DDAF02]/20 transition-colors"
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-catalog-gold hover:text-white px-2.5 py-1.5 rounded-lg bg-catalog-gold/10 border border-catalog-gold/30 hover:bg-catalog-gold/20 transition-colors"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                   Rastrear Objeto
                                 </a>
                               ) : null;
                             })()}
-                            <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-white/10 hover:border-[#DDAF02] hover:text-[#DDAF02]">
+                            <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-catalog-gold/30 hover:border-catalog-gold hover:text-catalog-gold text-slate-300">
                               Alterar
                             </Button>
                           </div>
                         </>
                       ) : (
                         <>
-                          <span className="text-zinc-500 italic text-sm">Nenhum código cadastrado</span>
-                          <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-white/10 hover:border-[#DDAF02] hover:text-[#DDAF02]">
+                          <span className="text-catalog-muted italic text-sm font-mono">Nenhum código cadastrado</span>
+                          <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-catalog-gold/30 hover:border-catalog-gold hover:text-catalog-gold text-slate-300">
                             Adicionar Rastreio
                           </Button>
                         </>
@@ -408,14 +409,14 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
               {/* 7. NOTAS INTERNAS */}
               <section className="space-y-3">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+                <div className="flex items-center justify-between border-b border-catalog-gold/20 pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold font-mono">
                     Notas Internas
                   </h3>
                   {!isEditingNotes && (
                     <button
                       onClick={() => setIsEditingNotes(true)}
-                      className="text-xs text-[#DDAF02] hover:underline"
+                      className="text-xs text-catalog-gold hover:underline font-mono"
                     >
                       Editar
                     </button>
@@ -427,40 +428,40 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                       value={notesValue}
                       onChange={(e) => setNotesValue(e.target.value)}
                       rows={3}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 p-3 text-sm text-zinc-100 focus:outline-none focus:border-[#DDAF02] resize-none"
+                      className="w-full rounded-xl border border-catalog-gold/30 bg-[#050B14] p-3 text-sm text-white focus:outline-none focus:border-catalog-gold resize-none"
                       placeholder="Adicione observações sobre o pedido..."
                     />
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setIsEditingNotes(false)}>
+                      <Button variant="outline" size="sm" onClick={() => setIsEditingNotes(false)} className="border-catalog-gold/30 text-slate-300">
                         Cancelar
                       </Button>
-                      <Button size="sm" onClick={handleSaveNotes} disabled={isSavingNotes} className="bg-[#DDAF02] text-black hover:bg-[#c49b02]">
+                      <Button size="sm" onClick={handleSaveNotes} disabled={isSavingNotes} className="bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold">
                         {isSavingNotes ? <Spinner className="w-4 h-4 mr-2" /> : null}
                         Salvar Notas
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-[#DDAF02]/5 rounded-xl p-4 border border-[#DDAF02]/20 text-sm text-zinc-300 whitespace-pre-wrap">
-                    {order.adminNotes || <span className="italic text-zinc-500">Nenhuma nota interna adicionada.</span>}
+                  <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25 text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                    {order.adminNotes || <span className="italic text-catalog-muted">Nenhuma nota interna adicionada.</span>}
                   </div>
                 )}
               </section>
 
               {/* 8. HISTÓRICO DE STATUS */}
               <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 border-b border-white/10 pb-2 font-mono">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Histórico de Status
                 </h3>
-                <div className="relative pl-4 space-y-6 pt-2 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-white/10">
+                <div className="relative pl-4 space-y-6 pt-2 before:absolute before:inset-y-0 before:left-[11px] before:w-[2px] before:bg-catalog-gold/20">
                   {(order.statusHistory || []).map((history) => (
                     <div key={history.id} className="relative">
-                      <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#DDAF02] ring-4 ring-zinc-950 mt-1.5" />
+                      <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#F0B40E] ring-4 ring-[#0F172A] mt-1.5" />
                       <div>
-                        <p className="text-sm font-medium text-zinc-100">
-                          Status atualizado para <span className="font-bold text-[#DDAF02]">{statusMap[history.status]?.label}</span>
+                        <p className="text-sm font-medium text-white font-mono">
+                          Status atualizado para <span className="font-bold text-catalog-gold">{statusMap[history.status]?.label}</span>
                         </p>
-                        <p className="text-xs text-zinc-400 mt-0.5">
+                        <p className="text-xs text-catalog-muted mt-0.5 font-mono">
                           {formatDate(history.createdAt)} por {history.performedBy?.name || 'Sistema'}
                         </p>
                       </div>
@@ -468,17 +469,16 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   ))}
                 </div>
               </section>
-
             </div>
 
             {/* 9. FOOTER ACTIONS */}
-            <div className="flex justify-end px-6 py-4 border-t border-white/10 bg-zinc-950 sticky bottom-0 z-10">
-              <Button
+            <div className="flex justify-end px-6 py-4 border-t border-catalog-gold/20 bg-[#050B14] sticky bottom-0 z-10">
+              <button
                 onClick={() => setIsStatusManagerOpen(true)}
-                className="bg-[#DDAF02] text-zinc-950 hover:bg-[#c2a001] font-semibold"
+                className="btn-shimmer px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40"
               >
                 Atualizar Status
-              </Button>
+              </button>
               <OrderStatusManager
                 orderId={order.id}
                 currentStatus={order.status}

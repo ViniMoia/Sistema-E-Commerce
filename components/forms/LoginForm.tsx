@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ContinentalLogo } from "@/components/brand/ContinentalLogo";
 import { loginSchema, LoginInput } from "@/lib/validators/auth";
+import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
@@ -58,53 +58,77 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-neutral-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold text-white tracking-tight mb-2">Acessar Conta</h2>
-        <p className="text-neutral-400 text-sm">Insira suas credenciais para entrar</p>
+    <div className="w-full max-w-md mx-auto bg-catalog-card border border-catalog-gold/45 rounded-[2rem] p-8 md:p-10 shadow-2xl backdrop-blur-2xl relative z-10 transition-all">
+      {/* Identidade Visual no Topo do Formulário */}
+      <div className="mb-8 text-center flex flex-col items-center">
+        <div className="mb-4">
+          <ContinentalLogo variant="symbol" className="h-12 w-auto" />
+        </div>
+        <span className="text-[10px] text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded mb-3 inline-block bg-catalog-gold/5">
+          Autenticação Segura
+        </span>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight uppercase">
+          Acessar Conta
+        </h2>
+        <p className="text-sm text-catalog-muted font-light mt-1">
+          Insira suas credenciais para entrar
+        </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-400 text-sm text-center">
-          {error}
+        <div className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+          <span>{error}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input 
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <label 
+              htmlFor="email" 
+              className="block text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase"
+            >
+              E-mail de Acesso
+            </label>
+            <input 
               id="email" 
               name="email" 
               type="email" 
               value={formData.email} 
               onChange={handleChange} 
-              placeholder="joao@exemplo.com"
-              className="focus-visible:ring-[#dbb501] focus-visible:border-[#dbb501] transition-all"
+              placeholder="seu.email@exemplo.com"
+              className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               required
+              autoComplete="email"
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
+              <label 
+                htmlFor="password" 
+                className="block text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase"
+              >
+                Senha
+              </label>
               <Link 
                 href="/forgot-password" 
-                className="text-xs text-[#dbb501] hover:text-[#dbb501]/80 transition-colors"
+                className="text-xs font-mono text-catalog-gold hover:text-white underline transition-colors"
               >
                 Esqueceu a senha?
               </Link>
             </div>
-            <Input 
+            <input 
               id="password" 
               name="password" 
               type="password" 
               value={formData.password} 
               onChange={handleChange} 
-              placeholder="Sua senha secreta"
-              className="focus-visible:ring-[#dbb501] focus-visible:border-[#dbb501] transition-all"
+              placeholder="Sua senha de acesso"
+              className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               required
+              autoComplete="current-password"
             />
           </div>
         </div>
@@ -113,23 +137,23 @@ export function LoginForm() {
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full flex items-center justify-center py-3 px-4 rounded-md bg-[#dbb501] text-black font-bold tracking-widest uppercase hover:bg-[#dbb501]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(219,181,1,0.3)] hover:shadow-[0_0_25px_rgba(219,181,1,0.5)]"
+            className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] hover:from-[#F5BD1E] hover:to-[#F0B40E] text-[#010E31] font-bold text-xs sm:text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] hover:shadow-[0_0_35px_rgba(240,180,14,0.6)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-[#F5BD1E]/40 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full border-2 border-black/20 border-t-black animate-spin"></span>
-                Entrando...
+                <span className="w-4 h-4 rounded-full border-2 border-[#010E31]/30 border-t-[#010E31] animate-spin"></span>
+                Acessando...
               </span>
             ) : (
-              "Entrar"
+              "Entrar na Conta"
             )}
           </button>
         </div>
 
-        <div className="mt-6 text-center text-sm text-neutral-400">
+        <div className="mt-8 text-center text-xs font-mono text-catalog-muted">
           Ainda não tem uma conta?{" "}
-          <Link href="/register" className="text-[#dbb501] hover:text-[#dbb501]/80 font-medium transition-colors">
-            Inscreva-se
+          <Link href="/register" className="text-catalog-gold font-bold hover:underline ml-1">
+            Criar Conta
           </Link>
         </div>
       </form>

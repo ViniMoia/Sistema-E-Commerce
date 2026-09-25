@@ -54,7 +54,7 @@ export default async function AdminLayout({
     .toUpperCase();
 
   return (
-    <div className="dark flex min-h-screen bg-[#050505] text-[#e5e5e5]">
+    <div className="dark flex min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30">
       <AdminSidebar
         adminName={user.name}
         adminInitials={initials}

@@ -14,6 +14,7 @@ export interface OrderItemSummary {
   quantity: number;
   color?: string | null;
   size?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface UserOrder {

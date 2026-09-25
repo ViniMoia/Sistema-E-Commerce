@@ -33,7 +33,7 @@ export const createProductSchema = z.object({
   imageUrl: z.string().url("URL da imagem inválida"),
   galleryUrls: z.array(z.string().url("URL inválida na galeria")).optional().default([]),
   stock: z.number().int().min(0),
-  lojaID: z.string().uuid("ID da loja inválido"),
+  lojaID: z.string().uuid("ID da loja inválido").optional(),
   variants: z.array(productVariantSchema).min(1, "O produto deve ter pelo menos uma variação"),
 });
 

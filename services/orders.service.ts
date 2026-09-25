@@ -25,8 +25,13 @@ export async function getUserOrders(userId: string, limit = 10, skip = 0, lojaId
             quantity: true,
             color: true,
             size: true,
-          }
-        }
+            product: {
+              select: {
+                imageUrl: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -51,7 +56,8 @@ export async function getUserOrders(userId: string, limit = 10, skip = 0, lojaId
         quantity: item.quantity,
         color: item.color,
         size: item.size,
-      }))
+        imageUrl: item.product?.imageUrl || null,
+      })),
     }));
   } catch (error) {
     console.error("Error fetching user orders:", error);

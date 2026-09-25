@@ -4,6 +4,7 @@ import * as React from 'react'
 import { CustomersTable } from '@/components/admin/customers/CustomersTable'
 import { AlertBanner } from '@/components/ui'
 import { CustomerProfilePage } from '@/components/admin/customers/CustomerProfilePage'
+import { Users, Search, Loader2 } from 'lucide-react'
 
 interface CustomerRow {
   id: string
@@ -34,7 +35,7 @@ export default function CustomersPage() {
     }
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search)
-    }, 400)
+    }, 350)
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
@@ -67,7 +68,7 @@ export default function CustomersPage() {
         setNextCursor(json.data.nextCursor)
         setHasMore(!!json.data.nextCursor)
       } else {
-        throw new Error('Formato de resposta inv\u00e1lido')
+        throw new Error('Formato de resposta inválido')
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -98,15 +99,27 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+    <div className="flex-1 space-y-8 p-6 md:p-10 max-w-7xl mx-auto">
+      {/* Cabeçalho Canônico Continental */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-catalog-gold/20 pb-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-100">
-            Clientes
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            Gerencie e visualize os dados dos seus clientes.
+          <div className="flex items-center gap-2 text-catalog-gold text-xs font-mono uppercase tracking-widest mb-1.5">
+            <Users className="w-3.5 h-3.5" />
+            <span>Gestão de Relacionamento (CRM)</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-continental-display tracking-tight text-white">
+            Clientes Continental
+          </h1>
+          <p className="text-catalog-muted mt-1 text-xs sm:text-sm font-light">
+            Base completa de clientes, métricas de consumo e histórico transacional individual.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted self-start sm:self-auto">
+          <span>Registros carregados:</span>
+          <span className="font-bold text-catalog-gold px-2.5 py-0.5 rounded-full bg-catalog-gold/15 border border-catalog-gold/40">
+            {customers.length} {customers.length === 1 ? 'cliente' : 'clientes'}
+          </span>
         </div>
       </div>
 
@@ -118,41 +131,68 @@ export default function CustomersPage() {
         />
       )}
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Buscar por nome ou email..."
-          value={search}
-          onChange={handleSearchChange}
-          className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dbb501] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-sm"
-        />
+      {/* Barra de Busca com Design System Continental */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full sm:max-w-md">
+          <Search className="w-4 h-4 text-catalog-gold absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, e-mail ou documento..."
+            value={search}
+            onChange={handleSearchChange}
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all shadow-inner"
+          />
+        </div>
+
+        {isLoading && (
+          <div className="flex items-center gap-2 text-xs font-mono text-catalog-gold animate-pulse self-start sm:self-auto">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Consultando base...</span>
+          </div>
+        )}
       </div>
 
+      {/* Tabela Canônica de Clientes */}
       <CustomersTable
         data={customers}
-        isLoading={isLoading}
+        isLoading={isLoading && customers.length === 0}
         onSelectCustomer={setSelectedCustomerId}
       />
 
+      {/* Paginação / Carregar Mais */}
       {hasMore && (
         <div className="flex justify-center pt-4">
           <button
             onClick={handleLoadMore}
             disabled={isLoading}
-            className="inline-flex items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 px-6 py-2 text-sm font-medium text-zinc-100 transition-colors hover:border-[#dbb501] hover:text-[#dbb501] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dbb501] disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full px-8 py-2.5 border border-catalog-gold/40 text-catalog-gold hover:bg-catalog-gold hover:text-black font-semibold text-xs font-mono transition-all shadow-[0_0_15px_rgba(240,180,14,0.15)] hover:shadow-[0_0_25px_rgba(240,180,14,0.35)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
           >
-            Carregar mais
+            {isLoading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Carregando...</span>
+              </>
+            ) : (
+              <span>Carregar mais clientes</span>
+            )}
           </button>
         </div>
       )}
 
+      {/* Drawer Lateral do Perfil do Cliente com Backdrop Blur */}
       {selectedCustomerId && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl border-l border-zinc-800 bg-zinc-950 shadow-xl">
-          <CustomerProfilePage
-            customerId={selectedCustomerId}
-            onClose={() => setSelectedCustomerId(null)}
+        <>
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 transition-opacity duration-300"
+            onClick={() => setSelectedCustomerId(null)}
           />
-        </div>
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl border-l border-catalog-gold/30 bg-[#070D18] shadow-2xl overflow-hidden animate-in slide-in-from-right duration-300">
+            <CustomerProfilePage
+              customerId={selectedCustomerId}
+              onClose={() => setSelectedCustomerId(null)}
+            />
+          </div>
+        </>
       )}
     </div>
   )

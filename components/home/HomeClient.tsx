@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
-import { getOptimizedImageUrl } from "@/lib/utils";
+import { getOptimizedImageUrl, formatProductTitle } from "@/lib/utils";
 import HeroVideo from "./HeroVideo";
 import { BrandMinimalistCarousel } from "@/components/catalog/BrandMinimalistCarousel";
 import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
@@ -11,6 +11,7 @@ import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters";
 import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
+import { ArrowLeft } from "lucide-react";
 
 export type Product = FilterableProduct;
 
@@ -187,12 +188,14 @@ export default function HomeClient({
               setSelectedSize(null);
               setSelectedColor(null);
             }}
-            className="flex items-center text-catalog-muted hover:text-catalog-text transition-colors mb-8 md:mb-12 group w-min"
+            className="inline-flex items-center text-catalog-muted hover:text-white transition-colors group w-fit cursor-pointer mb-8 md:mb-12"
           >
             <span className="group-hover:-translate-x-1 transition-transform duration-300">
-              <Icons.ArrowLeft />
+              <ArrowLeft className="w-4 h-4 text-catalog-gold" />
             </span>
-            <span className="ml-2 tracking-widest uppercase text-xs font-bold whitespace-nowrap">Voltar às compras</span>
+            <span className="ml-2 tracking-widest uppercase text-xs font-bold font-mono whitespace-nowrap">
+              Voltar às compras
+            </span>
           </button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-20 items-center">
@@ -246,13 +249,13 @@ export default function HomeClient({
             </div>
             
             {/* Product Info */}
-            <div className="space-y-6 md:space-y-8 animate-in" style={{ animationDelay: '0.2s' }}>
-              <div>
+            <div className="space-y-6 md:space-y-8 animate-in min-w-0 w-full" style={{ animationDelay: '0.2s' }}>
+              <div className="min-w-0 w-full">
                 <span className="text-catalog-gold bg-transparent px-3 py-1 rounded border border-catalog-gold/45 uppercase tracking-[0.2em] text-xs font-mono font-bold inline-block mb-4 md:mb-6">
                   Catálogo
                 </span>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-catalog-text leading-tight">
-                  {selectedProduct.name}
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-catalog-text leading-tight break-words [overflow-wrap:anywhere]">
+                  {formatProductTitle(selectedProduct.name)}
                 </h1>
               </div>
               
@@ -428,8 +431,8 @@ export default function HomeClient({
                           <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                             Produto
                           </span>
-                          <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase">
-                            {prod.name}
+                          <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
+                            {formatProductTitle(prod.name)}
                           </h4>
                           
                           <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">

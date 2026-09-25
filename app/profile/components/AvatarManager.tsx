@@ -1,104 +1,52 @@
 "use client";
 
-import { useState } from "react";
-import { Camera, Loader2 } from "lucide-react";
+import { ShieldCheck, User } from "lucide-react";
 import { UserProfile } from "../types";
-import { uploadAvatarAction } from "../actions";
-import { useToast } from "@/hooks/use-toast";
 
 interface AvatarManagerProps {
   user: UserProfile;
 }
 
 export function AvatarManager({ user }: AvatarManagerProps) {
-  const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarImageUrl || null);
-
-  const initials = user.name?.substring(0, 2).toUpperCase() || "US";
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const objectUrl = URL.createObjectURL(file);
-    const previousUrl = avatarUrl;
-    setAvatarUrl(objectUrl);
-
-    try {
-      const formData = new FormData();
-      formData.append("avatar", file);
-
-      const result = await uploadAvatarAction(formData);
-
-      if (!result.success) {
-        setAvatarUrl(previousUrl);
-        toast({
-          title: "Erro ao enviar foto",
-          description: result.error || "Não foi possível atualizar sua foto de perfil.",
-          variant: "destructive",
-        });
-      } else {
-        if (result.avatarUrl) {
-          setAvatarUrl(result.avatarUrl);
-        }
-        toast({
-          title: "Foto atualizada",
-          description: "Sua foto de perfil foi salva com sucesso!",
-        });
-      }
-    } catch (error: any) {
-      setAvatarUrl(previousUrl);
-      toast({
-        title: "Falha de rede",
-        description: error?.message || "Ocorreu um erro ao conectar ao servidor.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const avatarUrl = user.avatarImageUrl || null;
+  const initials = user.name?.substring(0, 2).toUpperCase() || "CT";
 
   return (
     <div className="flex flex-col items-center text-center space-y-4">
-      <div className="relative group cursor-pointer">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 bg-black/50 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-hover:border-[var(--primary)]/50">
+      {/* Círculo do Avatar — Somente leitura com acabamento metálico suave */}
+      <div className="relative select-none">
+        <div className="w-24 h-24 rounded-full overflow-hidden border border-catalog-gold/40 bg-gradient-to-br from-[#0B132B] to-[#070D18] shadow-lg shadow-black/60 flex items-center justify-center">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt="Avatar"
-              className={`w-full h-full object-cover ${
-                isUploading ? "opacity-50 blur-sm" : ""
-              } transition-all duration-300`}
+              className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-2xl font-bold text-zinc-300 tracking-wider">
-              {isUploading ? "" : initials}
+            <span className="text-2xl font-bold font-continental-display text-catalog-gold tracking-wider">
+              {initials}
             </span>
           )}
         </div>
-
-        <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer">
-          {isUploading ? (
-            <Loader2 className="w-6 h-6 text-[var(--primary)] animate-spin" />
-          ) : (
-            <Camera className="w-6 h-6 text-white" />
-          )}
-          <input
-            type="file"
-            accept="image/png, image/jpeg, image/webp"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-        </label>
       </div>
 
       <div>
-        <h3 className="font-medium text-lg text-white">{user.name}</h3>
-        <p className="text-sm text-zinc-400 capitalize">{user.role.toLowerCase()}</p>
+        <h3 className="font-bold font-continental-display text-lg text-white tracking-tight">
+          {user.name}
+        </h3>
+        {user.role === "ADMIN" ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-mono font-bold bg-catalog-gold/10 text-catalog-gold border border-catalog-gold/30 mt-1.5">
+            <ShieldCheck className="w-3 h-3 text-catalog-gold" />
+            Administrador
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-mono font-medium bg-white/5 text-neutral-300 border border-white/10 mt-1.5">
+            <User className="w-3 h-3 text-neutral-400" />
+            Cliente Continental
+          </span>
+        )}
       </div>
     </div>
   );
 }
+

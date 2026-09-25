@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { UploadCloud, Image as ImageIcon, Loader2, X, Link as LinkIcon } from "lucide-react";
+import { UploadCloud, Image as ImageIcon, Loader2, X, Link as LinkIcon, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface ProductImageUploadProps {
   value: string;
@@ -22,13 +20,11 @@ export function ProductImageUpload({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(true);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset input value so same file can be re-selected if needed
     e.target.value = "";
 
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
@@ -68,10 +64,9 @@ export function ProductImageUpload({
       }
 
       onChange(result.data.url);
-      setShowUrlInput(true);
       toast({
         title: "Upload concluído",
-        description: "Imagem vinculada com sucesso.",
+        description: "Imagem vinculada com sucesso ao produto.",
       });
     } catch (err: any) {
       toast({
@@ -85,74 +80,97 @@ export function ProductImageUpload({
   };
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       {/* Campo prioritário: Inserir URL manual */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-zinc-300 flex items-center justify-between">
+        <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <LinkIcon className="w-3.5 h-3.5 text-[var(--primary)]" />
-            URL da Imagem (CDN Nuvemshop / Externa)
+            <LinkIcon className="w-3.5 h-3.5 text-catalog-gold" />
+            {label} (URL da Imagem / CDN Externa)
           </span>
+          <span className="text-[10px] text-catalog-muted lowercase font-light">jpg, png, webp</span>
         </label>
-        <Input
-          type="url"
-          placeholder="https://dcdn-us.mitiendanube.com/... ou https://..."
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="text-xs bg-black/40 border-white/10 text-white placeholder-zinc-500 focus:border-[var(--primary)]"
-        />
-        <p className="text-[11px] text-zinc-500">
-          Cole a URL direta da foto hospedada na CDN da Nuvemshop, Cloudinary ou servidor externo.
-        </p>
-      </div>
-
-      {/* Visual Preview se houver valor */}
-      {value ? (
-        <div className="relative group rounded-xl border border-white/10 bg-black/40 p-2 overflow-hidden flex items-center gap-4">
-          <div className="w-20 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-white/5 shrink-0 relative flex items-center justify-center">
-            <img
-              src={value}
-              alt={label}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-zinc-400 truncate">{value}</p>
-            <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-              ✓ Imagem vinculada
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
+        <div className="relative">
+          <input
+            type="url"
+            placeholder="https://... ou cole a URL direta da foto"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-xs sm:text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
+          />
+          {value && (
+            <button
               type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                onChange("");
-              }}
-              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 h-8 w-8"
-              title="Remover imagem"
+              onClick={() => onChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-catalog-muted hover:text-white p-1"
+              title="Limpar imagem"
             >
               <X className="w-4 h-4" />
-            </Button>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Grid de Upload e Pré-Visualização com Palco Branco */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+        {/* Dropzone / Botão de Selecionar Arquivo Local (7 Colunas) */}
+        <div className="sm:col-span-7">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+          />
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="p-5 rounded-2xl border-2 border-dashed border-catalog-gold/30 bg-[#0B132B]/40 hover:bg-[#0B132B]/70 hover:border-catalog-gold cursor-pointer transition-all flex flex-col items-center justify-center text-center space-y-2 group"
+          >
+            {isUploading ? (
+              <Loader2 className="w-8 h-8 animate-spin text-catalog-gold" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold group-hover:scale-110 transition-transform">
+                <UploadCloud className="w-5 h-5" />
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                {isUploading ? "Enviando arquivo..." : "Fazer Upload de Foto Local"}
+              </p>
+              <p className="text-[11px] text-catalog-muted font-light mt-0.5">
+                PNG, JPG ou WEBP de até 5MB
+              </p>
+            </div>
           </div>
         </div>
-      ) : null}
 
-      {/* Input de arquivo invisível (mantido para compatibilidade futura com S3/R2) */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/png, image/jpeg, image/webp, image/gif"
-        onChange={handleFileSelect}
-        className="hidden"
-        disabled={isUploading}
-      />
+        {/* Palco Branco de Pré-Visualização Obrigatório (5 Colunas) */}
+        <div className="sm:col-span-5 flex flex-col items-center justify-center">
+          <div className="w-28 h-28 bg-white rounded-2xl p-2.5 shadow-xl border-2 border-catalog-gold/40 flex items-center justify-center relative overflow-hidden">
+            {value ? (
+              <img
+                src={value}
+                alt="Prévia do Produto"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src =
+                    "https://placehold.co/200x200/png?text=Imagem+Inv%C3%A1lida";
+                }}
+              />
+            ) : (
+              <div className="text-center text-slate-400 space-y-1">
+                <ImageIcon className="w-8 h-8 mx-auto opacity-40 text-slate-600" />
+                <span className="text-[10px] font-mono text-slate-500 uppercase block font-semibold">
+                  Palco Branco
+                </span>
+              </div>
+            )}
+          </div>
+          <span className="text-[10px] font-mono text-catalog-muted uppercase tracking-wider mt-2">
+            Pré-visualização Canônica
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
