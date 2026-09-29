@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AsaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
-import { asaasClient, AsaasClientError } from '@/services/asaas/asaas.client';
+import { AsaasClient, asaasClient, AsaasClientError } from '@/services/asaas/asaas.client';
 import { PaymentGatewayError } from '@/types/payment-gateway.types';
 import { createOrderSchema } from '@/lib/validators/checkout.validators';
 
@@ -34,6 +34,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
 
       const result = await adapter.createPixCharge({
         orderId: 'ord-uuid-1',
+        paymentReference: 'payment-reference-uuid-1',
         orderNumber: 1001,
         value: 150.0,
         customer: {
@@ -49,6 +50,9 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
       expect(result.pixQrCodeBase64).toBe('base64_pix_image');
       expect(result.pixPayload).toContain('br.gov.bcb.pix');
       expect(result.invoiceUrl).toBe('https://asaas.com/i/test999');
+      expect(asaasClient.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        externalReference: 'payment-reference-uuid-1',
+      }));
     });
 
     it('deve converter AsaasClientError em PaymentGatewayError descritivo', async () => {
@@ -61,6 +65,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
       await expect(
         adapter.createPixCharge({
           orderId: 'ord-uuid-2',
+          paymentReference: 'payment-reference-uuid-2',
           orderNumber: 1002,
           value: 200.0,
           customer: {
@@ -81,6 +86,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
       await expect(
         adapter.createPixCharge({
           orderId: 'ord-uuid-3',
+          paymentReference: 'payment-reference-uuid-3',
           orderNumber: 1003,
           value: 99.9,
           customer: {
@@ -128,6 +134,70 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
     });
   });
 
+  describe('findPaymentsByReference', () => {
+    it('maps every payment found for the stable external reference', async () => {
+      vi.spyOn(asaasClient, 'findPaymentsByExternalReference').mockResolvedValueOnce([{
+        id: 'pay_reference_1', customer: 'cus_test_123', billingType: 'PIX',
+        status: 'CONFIRMED', value: 150, netValue: 148,
+        dateCreated: '2026-09-29', dueDate: '2026-09-30',
+        externalReference: 'payment-reference-uuid-1',
+        confirmedDate: '2026-09-29T12:00:00Z',
+      }]);
+
+      const result = await adapter.findPaymentsByReference('payment-reference-uuid-1');
+
+      expect(asaasClient.findPaymentsByExternalReference)
+        .toHaveBeenCalledWith('payment-reference-uuid-1');
+      expect(result).toEqual([expect.objectContaining({
+        paymentId: 'pay_reference_1', status: 'CONFIRMED',
+        externalReference: 'payment-reference-uuid-1', billingType: 'PIX', value: 150,
+      })]);
+    });
+
+    it('uses the provider list endpoint with an encoded externalReference', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        object: 'list', hasMore: false, totalCount: 0, limit: 10, offset: 0, data: [],
+      }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new AsaasClient('https://sandbox.asaas.com/api/v3', 'sandbox-test-key');
+
+      await client.findPaymentsByExternalReference('reference/with spaces');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://sandbox.asaas.com/api/v3/payments?externalReference=reference%2Fwith%20spaces&limit=10&offset=0',
+        expect.objectContaining({ method: 'GET' })
+      );
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('refunds', () => {
+    it('envia o comando uma vez e lista o estado autoritativo dos estornos', async () => {
+      vi.spyOn(asaasClient, 'refundPayment').mockResolvedValueOnce({
+        id: 'pay_test_999', customer: 'cus_test_123', billingType: 'PIX',
+        status: 'REFUND_IN_PROGRESS', value: 150, netValue: 148,
+        dateCreated: '2026-09-29', dueDate: '2026-09-30',
+      } as any);
+      vi.spyOn(asaasClient, 'listPaymentRefunds').mockResolvedValueOnce([{
+        dateCreated: '2026-09-29 12:00:00', status: 'DONE', value: 50,
+        description: 'refund:intent-1',
+      }]);
+
+      const requested = await adapter.requestRefund({
+        paymentId: 'pay_test_999', value: 50, description: 'refund:intent-1',
+      });
+      const refunds = await adapter.listPaymentRefunds('pay_test_999');
+
+      expect(asaasClient.refundPayment).toHaveBeenCalledWith('pay_test_999', {
+        value: 50, description: 'refund:intent-1',
+      });
+      expect(requested).toMatchObject({ paymentId: 'pay_test_999', status: 'REFUND_IN_PROGRESS' });
+      expect(refunds).toEqual([expect.objectContaining({
+        status: 'DONE', value: 50, description: 'refund:intent-1',
+      })]);
+    });
+  });
+
   describe('Validação Zod de Checkout (Obrigatoriedade de CPF/CNPJ)', () => {
     const validBasePayload = {
       lojaID: 'loja-continental',
@@ -138,6 +208,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
       },
       items: [
         {
+          productId: 'prod-cera-1',
           name: 'Cera Automotiva',
           quantity: 1,
           price: 89.9,

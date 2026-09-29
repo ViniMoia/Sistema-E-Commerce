@@ -1,0 +1,2583 @@
+{
+  "date": "2026-09-29",
+  "legend": {
+    "C": "corrigido",
+    "P": "parcialmente corrigido",
+    "V": "persistente",
+    "R": "regressao",
+    "U": "nao verificado"
+  },
+  "baselineCounts": {
+    "C": 126,
+    "P": 52,
+    "V": 13,
+    "R": 1,
+    "U": 6
+  },
+  "sourceCounts": {
+    "C": 133,
+    "P": 48,
+    "V": 11,
+    "R": 0,
+    "U": 6
+  },
+  "groupCounts": {
+    "C": 15,
+    "P": 19,
+    "V": 1,
+    "R": 0,
+    "U": 1
+  },
+  "changedSourceIds": [
+    "DB-006",
+    "DB-013",
+    "INF-010",
+    "TST-002",
+    "TST-004",
+    "TST-008",
+    "OBS-012",
+    "CQ-011"
+  ],
+  "sources": [
+    {
+      "id": "DB-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "28 migrations aplicadas desde zero; migrate diff retornou No difference detected. SQL corretivo e schema atuais concordam.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Migration 20260926194600:87 remove índice residual; database-invariants persistiu duas variantes no mesmo pedido.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "services/order.service.ts:435 condiciona status; teste PostgreSQL admitiu um cancelamento e um estorno de estoque.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-004",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "app/api/webhooks/asaas/route.ts:235-300,579-627 usa estados/lease e finaliza após efeitos. Corrida webhook/worker passou no PostgreSQL.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "services/inventory.service.ts:99-135 propaga erro; teste real reverteu primeiro incremento quando a variante falhou.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Migration aditiva 20260929170000 + commerce-child-ownership: FK/tenant/owner, variantes e corrida pai/filho rejeitados.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "DB-007",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "operationKey e CHECKs protegem novas escritas; crédito repetido foi idempotente no PostgreSQL. Clawback insuficiente é bloqueado em loyalty.service.ts:492-507.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-008",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "product.service.ts:340-392 soma variantes e impede ajuste isolado; admin-invariants confirmou a soma. Banco ainda não deriva automaticamente estoque pai.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-009",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Cart.shippingCost é Decimal (schema:191); migration payment_workflow_state:40 inclui paymentFee na equação; testes rejeitam total inconsistente.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-010",
+      "status": "V",
+      "risk": "HIGH",
+      "evidence": "Migration 20260513203715_:1-28 documenta campos obrigatórios sem backfill e remoção de vínculos antigos. Banco vazio passar não prova upgrade de snapshot populado.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Chave User(email,lojaID) aceita mesmo e-mail em lojas diferentes e rejeita duplicata na mesma; teste real passou.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-012",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "cart.service.ts:34-49 serializa usuário; backend-invariants provou adições concorrentes. CPF ainda usa consulta seguida de update (customer.service.ts:303-330); Cart sem índice único parcial.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Desempate por id em clientes/pedidos; timestamps iguais e cinco páginas sem repetição.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "DB-014",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Customer usa groupBy/agregação (customer.service.ts:99,207); expiração carrega todas as carteiras com saldo (loyalty.service.ts:875).",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-015",
+      "status": "U",
+      "risk": "MEDIUM",
+      "evidence": "Profiler real passou; não houve EXPLAIN com distribuição representativa. Índices candidatos do relatório antigo não foram presumidos benéficos.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "SUSPECTED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-016",
+      "status": "U",
+      "risk": "MEDIUM",
+      "evidence": "supabase_rls_hardening.sql é arquivo avulso, fora de diretório migration.sql. PostgreSQL efêmero não reproduz papéis/grants da Data API.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "NOT VERIFIED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "DB-017",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": ".github/workflows/ci.yml:24-36,85-101 contém PostgreSQL, migrations, drift e integração; comandos equivalentes passaram nesta rodada.",
+      "origin": "DATABASE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "CheckoutForm.tsx:468 e api/checkout/route.ts:145 concordam em rota/payload/envelope; testes de contrato passaram.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "lib/utils/dto-sanitizer.ts e loja.service usam projeção pública; public-store-boundary/cache-tenant passaram.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "freight-quote.ts:44-88 e checkout.service.ts:613-645 assinam/verificam frete e total autoritativo.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "api/orders/route.ts:11 retorna 410; integração backend-invariants provou carrinho isolado/serializado.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-005",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Webhook valida valor/identidade (:304-354), inbox retomável; corrida com worker passou em PostgreSQL.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "order.service.ts:435 CAS; cancelamentos concorrentes produziram único efeito no teste real.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-007",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "Idempotency-Key obrigatório e fingerprint (:111, checkout.service:245); reconciliador persistido testado com PostgreSQL.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "loyalty/simulate/route.ts:18-41 deriva usuário/loja da sessão e rejeita campos extras.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "forgot-password usa getTenantCanonicalOrigin; auth.service.ts:147-208 limita tenant e origem.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "webhooks/asaas/simulate/route.ts:16-37 exige opt-in, admin e loja, bloqueia produção.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "cart.service.ts:34-49 usa lock por usuário; 20 adições concorrentes no teste real não duplicaram agregado.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-012",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "refund.service.ts:319-375 limita elegibilidade/política; shipped/delivered exigem operação manual (:474).",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "order.service.ts:349,415-493 grava deliveryType/tracking/histórico; admin e cliente delegam.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-014",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Há códigos de domínio em checkout/cart/order; outros handlers mantêm envelopes e erros próprios. loyalty/simulate/route.ts:44-46 devolve error.message.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-015",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "product.service.ts:122-205 implementa sort/desempate/página; catálogo limitado; product-pagination passou.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-016",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "lib/logger.ts possui redação; logger.test passou cobrindo PII e preservação de IDs.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "BE-017",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "Suítes locais agora executam; CI possui PostgreSQL. HTTP legado e E2E não foram provados nesta rodada.",
+      "origin": "BACKEND-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Rota /api/checkout e payload compartilhado; testes de contrato passaram.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "POST /api/orders encerrado com 410; checkout é entrada canônica.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-003",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Inbox finaliza depois dos efeitos; PostgreSQL validou webhook simultâneo com worker.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-004",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "checkout.service.ts:690-706 persiste referência/fila; worker recupera falha após commit; teste real passou.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "CAS e transação em order.service.ts:435-609; cancelamento concorrente passou.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Cotação assinada/expirada/vinculada e cache inclui valores; testes transactions-remediation/cache passaram.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-007",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Header e fingerprint impedem duplicação local; última unidade + retry provados no banco.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "restoreStock propaga exceções; rollback real preservou estoque.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Webhook schema, payment ID/referência, Decimal e billingType em route.ts:304-354.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "checkout.service.ts:635-645 recalcula juros/parcelas/fee; testes ignoram valores monetários do cliente.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "checkout.service.ts:183-199 falha sem gateway antes de reservar no fluxo normal; bypass é específico de testes.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-012",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "order-timeout.service.ts:57-141 distingue manual/gateway e consulta status; fila recupera ausência de payment ID.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-013",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "Crédito usa snapshot pointsEarned; chave única e crédito concorrente passaram no banco. Clawback insuficiente bloqueia.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-014",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "RefundIntent persistido; dois parciais, disputa de comandos e webhook/worker passaram no banco. Casos enviados/entregues ou disputa exigem manual.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-015",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Prisma Decimal e equação com fee; Cart.shippingCost já não é Float. Conversões Number continuam no adapter/cálculo parcelado.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CTR-016",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Payload preserva variantId, pedido conecta variante e reserva condicional baixa ambos; disputa de estoque passou.",
+      "origin": "COMMERCE-TRANSACTIONS-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "DTO público de loja/produto seleciona campos; public-store-boundary.test passou.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "checkout route:88-102 descarta identidade do body; checkout.service:523-546 recusa guest com e-mail existente.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "forgot-password/route.ts:80 usa origem canônica; auth.service:147-208 não faz fallback de tenant.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "loyalty/simulate:18-41 exige sessão e schema strict; identidade derivada no servidor.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "session.ts:127-130 compara loja ativa com loja do usuário.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "auth.service.ts:244-270 consome token via updateMany condicionado e revoga sessões na transação.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "deleteSession propaga falha; logout/route.ts:9-15 responde 503, não sucesso falso.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-008",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "rate-limit.ts:8 e :130-155 usam Map e IP informado por headers; validação de formato não autentica proxy.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "auth.service.ts:8-10,178-187 grava hash do reset; dev provider não imprime conteúdo sensível.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-010",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "upload/route.ts:13-44 exige admin, opt-in, bucket products e prefixo da loja.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "simulador exige admin/tenant e opt-in e bloqueia production (:16-37).",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-012",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "user.service.ts:17-76 verifica ator ativo/tenant, conta admins ativos e usa Serializable/retry.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "registerSchema e resetPassword exigem mínimo de 8; downgrade original removido.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-014",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "auth.service.ts:130-135 usa hash dummy válido e mensagem única no login.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "AUTH-015",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "create_test_admin.ts:11-42 exige parâmetros/opt-in e recusa conta existente. Scanner local sem candidatos permitidos.",
+      "origin": "AUTH-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Projeções públicas de loja/produto e testes negativos impedem campos privados citados.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Checkout ignora identidade guest arbitrária e não reutiliza conta pelo e-mail (checkout.service:523).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Origem canônica em forgot-password:80; template valida URL.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-004",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Bootstrap sem senha padrão, não eleva existente e não imprime segredo. Scanner local exit 0.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Simulação exige sessão/tenant e rejeita userID arbitrário.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Sessão resolve usuário/loja e falha fechada em mismatch (session.ts:127).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Reset persiste hash e dev provider omite corpo sensível.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Reset usa consumo condicional e revoga sessões atomicamente (:244-270).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Falha de revogação sobe ao logout e resulta em 503.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-010",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "Map local e headers de IP sem autenticação de proxy (rate-limit.ts:8,130-155).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Simulador opt-in/admin/tenant e indisponível em production.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-012",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Chave obrigatória, fingerprint, referência persistida; retry financeiro e concorrência passaram em DB.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-013",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Inbox retoma falha e marca PROCESSED após efeitos; concorrência webhook/worker passou.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-014",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Bucket arbitrário foi bloqueado e prefixo é tenant (upload:42-78).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-015",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Checkout/frete limitam itens e upload 5 MB; registerSchema mantém campos sem máximo e parse ocorre antes de alguns limites.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-016",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "password-reset.template.ts:3-28 escapa campos e valida URL; email-security passou.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-017",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "lib/csp.js:2-3 remove unsafe-eval só em production; unsafe-inline permanece.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-018",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Logger mascara PII, mas auth/register/route.ts:63 e loyalty/simulate:46 devolvem error.message; session.ts:140 ainda usa console.error bruto.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-019",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Login usa mensagem uniforme e reset mínimo igual; cadastro ainda informa duplicidade de e-mail (auth.service:43 e register catch).",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-020",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Despromoção exige ator ativo e transação Serializable com retry em user.service.ts:17-76.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "SEC-021",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "session.ts:11-35 guarda hash, cookie recebe token aleatório; testes session-security passaram.",
+      "origin": "SECURITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Checkout usa contrato canônico e result.data; frontend-checkout-contract aprovado.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "CheckoutForm.tsx:225,744-824 invalida frete anterior e oferece erro/retry/seleção obrigatória.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-003",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "sourceCartID e completeCheckoutCart persistem conclusão; PostgreSQL provou sobras de outra aba/retry. Store:59-73 publica evento e CartProvider:16-22 reconsulta.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-004",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Cards links, labels/radios e Dialog de confirmação presentes; frontend-auth/web-accessibility-contracts passaram.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-005",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "MobileMenu usa Sheet Radix controlado.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Existe rota /produto/[id] e links reais com metadata.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "app/page.tsx:19-43 pagina 12 itens no servidor; catálogo e filtros por URL.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "loyalty-client.ts:19-76 rejeita resposta inválida; widget/extrato exibem erro e retry.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "profile/page.tsx:31-32 e order.service.ts:698-723 paginam e contam por usuário/loja.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "cart.store.ts:26-27,75-94,121-173 discrimina erro e reverte otimista.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "HeroVideo:13-34 observa reduced-motion; CSS possui regra correspondente.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-012",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Formulários associam feedback e controles nomeados; testes frontend-auth-accessibility passaram.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Carrinho usa texto PT-BR e moeda BRL; testes frontend-cart-state aprovados.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-014",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "safe-next-path filtra destinos e LoginForm.tsx:51 navega para next interno.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "FUX-015",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Existem regressões de estado/contratos, mas nenhum runner browser/component/axe no package ou tests.",
+      "origin": "FRONTEND-UX-AUDIT.md",
+      "severity": "INFORMATIONAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Home usa página de 12 itens e product.service.ts:189 busca pageSize+1; performance-catalog passou.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-002",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "HeroVideo:5-54 difere src por 2 s, poster, preload none e conteúdo inicial visível.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-003",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "HomeClient usa Image/sizes mas unoptimized para hosts não permitidos; lint ainda aponta img em carrinho/checkout/admin.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "app/checkout/page.tsx resolve loja no servidor e CheckoutPageClient:12 faz import dinâmico.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-005",
+      "status": "C",
+      "risk": "MEDIUM",
+      "evidence": "Checkout limita itens e faz product.findMany (:411); reserva mantém locks determinísticos.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-006",
+      "status": "V",
+      "risk": "HIGH",
+      "evidence": "checkout.service.ts:779-1029 ainda espera gateway antes da resposta. Durabilidade não remove latência de criação/QR/dados.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "customer.service.ts:99,207 usa agregação em vez de históricos vitalícios; testes performance-customer-metrics passaram.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-008",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "cache.ts:14-16,119-138 limita 1000 entradas e coalesce promises; Map segue por processo.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-009",
+      "status": "U",
+      "risk": "MEDIUM",
+      "evidence": "Não houve EXPLAIN/buffers em dados representativos; índices existentes não foram avaliados por ganho real.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "PERF-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Prisma emite eventos; query-profiler.test mediu queries reais e encerrou observador; suíte consta do gate central.",
+      "origin": "PERFORMANCE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-001",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`.github/workflows/ci.yml:24,94-127`; `package.json:28`: PostgreSQL, migrations/diff, lint, tipos, unitários e seis suítes de integração entram no CI. A suíte nova de reconciliação PostgreSQL ainda não entra em `test:integration:core`.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Fixtures SHA-256 e token bruto; HTTP por endpoint em duas rodadas no Node22, com Host preservado por http.request.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "TST-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`tests/integration/database-invariants.test.ts`, `transactions-invariants.test.ts`, `payment-reconciliation-postgres.test.ts`: asserções em PostgreSQL real de rollback, última unidade, crédito e refund concorrentes; 26/26 no conjunto de sete arquivos.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-004",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Jornadas CDP reais locais executadas e evidências arquivadas; bootstrap/runner browser portátil e gate CI ainda pendentes.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "TST-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`tests/setup/db.ts:11-35,187-204`; `tests/integration/test-db-isolation.test.ts`: URLs explícitas iguais, banco local exato e cleanup limitado às lojas do run; teste real preservou sentinel de outro run.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/prisma.ts:8-25`; `tests/helpers/query-profiler.ts:10-35`; `tests/integration/query-profiler.test.ts`: eventos de query habilitados em teste, contagem positiva e unsubscribe passaram.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-007",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`tests/unit/header-spec.test.ts:4-60` ainda define arrays/classes/cores e testa esses mesmos valores sem importar/renderizar o header.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "HTTP anon/customer owner/non-owner/admin A/B com sessão persistida e recusa sem alteração de pedido.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "TST-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`tests/unit/asaas-webhook.test.ts:492` usa `vi.waitFor`; `tests/unit/asaas-customer.test.ts:62` restaura globals; fixtures de banco isoladas. 613 unitários e 26 integrações passaram nesta rodada.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "TST-010",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`tsconfig.json:9-10` mantém `strict:false`; `vitest.config.ts:4-10` sem provider/threshold de coverage. Typecheck bem-sucedido não mede cobertura nem strictness.",
+      "origin": "TESTING-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/inventory.service.ts:88-129`; `services/order.service.ts:435-505`; teste real de rollback de estoque passou.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/order.service.ts:683-685,728-730` lança ORDER_HISTORY_UNAVAILABLE; `app/profile/error.tsx:1` oferece recuperação; testes de histórico passaram.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Serviço duplicado `services/orders.service.ts` removido; `types/admin.types.ts:16` é contrato canônico; `tests/unit/architecture-boundaries.test.ts` passou.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-004",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`tsconfig.json:10` mantém strict false; fronteiras ainda usam casts em checkout/adapters.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-005",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`package.json:14` permite até 16 warnings; CI executa lint; execução etapa 01: 0 erros/15 warnings.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`.github/workflows/ci.yml:81-82` audita dependências de produção; `.github/dependabot.yml:1` versionado.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-007",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`components/checkout/CheckoutForm.tsx:81`; `services/checkout.service.ts:110`; `services/loyalty.service.ts:1`: coordenação de UI/pagamento/regras ainda extensa.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-008",
+      "status": "U",
+      "risk": "LOW",
+      "evidence": "`components/catalog/CatalogFilterBar.tsx:1`, `components/ui/input.tsx:1`, `textarea.tsx:1`, `separator.tsx:1`, `lib/supabase/server.ts:1` aparentam não ter consumidor em busca estática.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/providers/CartProvider.tsx:5`; `components/cart/CartDrawer.tsx:8` importam cart-context; teste arquitetural passou.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/cron-auth.ts:9`; três handlers cron importam o mesmo guard; testes de tokens ausentes/inválidos/válidos passaram.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "see original audit",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "CQ-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Node22.22.1/npm10.9.4 verificados e usados nos gates; instalação global preservada.",
+      "origin": "CODE-QUALITY-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "INF-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`prisma/migrations/` contém cadeia atual de 28 migrations; deploy do zero e diff para `prisma/schema.prisma` passaram no PostgreSQL descartável.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-002",
+      "status": "V",
+      "risk": "HIGH",
+      "evidence": "`prisma/migrations/20260513203715_/migration.sql:1-58` conserva operações incompatíveis com certos snapshots populados; `docs/operations/DEPLOYMENT-RUNBOOK.md:14-22` exige preflight e restore.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-003",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`Dockerfile:1` fixa base e usuário não root; `.github/workflows/ci.yml:94-136` tem gates e imagem; `docs/operations/DEPLOYMENT-RUNBOOK.md:24-51` cobre promoção/rollback.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-004",
+      "status": "U",
+      "risk": "HIGH",
+      "evidence": "`prisma/migrations/supabase_rls_hardening.sql:7-83` permanece fora da cadeia Prisma; `ops/database/verify-access.sql:1` oferece inspeção.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-005",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`scripts/create_test_admin.ts:1` exige opt-in e dados explícitos; scanner atual passou; registros de correção removeram valores da cópia de trabalho.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/email/index.ts:13`; `lib/email/providers/dev.provider.ts:16`; `scripts/start-runtime.mjs:10` valida contrato; testes de configuração/email passaram.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-007",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "`ops/scheduler/jobs.example.yml:1-57` declara reconciliação por minuto, timeout e expiração; endpoints versionados tratam falhas. O arquivo diz expressamente que não instala agenda.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-008",
+      "status": "U",
+      "risk": "HIGH",
+      "evidence": "`docs/operations/BACKUP-RESTORE-RUNBOOK.md:5-51` define RPO/RTO e ensaio isolado; nenhuma prova atual de backup/PITR foi acessada.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "NOT VERIFIED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/api/webhooks/asaas/simulate/route.ts:1` exige opt-in local, ADMIN e tenant; ambiente implantado bloqueado; testes do simulador passaram.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": ".env.example:95 documenta ALLOW_ASAAS_SANDBOX_WRITE=0; checker cobre 38 nomes.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "INF-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/api/health/live/route.ts:1`, `app/api/health/ready/route.ts:1`; readiness consulta DB com timeout; Dockerfile inclui healthcheck; testes negativos passaram.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-012",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`app/api/internal/metrics/route.ts:8-48` protege métricas com token; `ops/observability/alerts.example.yml:1` e alertas de refund versionados.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`.github/workflows/ci.yml:3-4,67-75` usa contents:read, actions por SHA e persist-credentials:false; dependabot e scan presentes.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "INF-014",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`lib/tenant.ts:49-65` ignora forwarded host sem provider allowlisted e rejeita cadeia ambígua; runbook exige proxy sobrescrevendo headers.",
+      "origin": "INFRASTRUCTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "SUSPECTED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/api/webhooks/asaas/route.ts:220-290,590-630` persiste inbox com lease e conclusão após efeitos; testes negativos e concorrência webhook/worker passaram.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/inventory.service.ts:88-129`; rollback real em `tests/integration/database-invariants.test.ts` impede cancelamento parcialmente efetivado.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-003",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "`services/checkout.service.ts:690`; `services/payment-reconciliation.service.ts:1` persistem intenção antes do gateway, estado ambíguo e recovery; duas claims/crash lógico passaram no PostgreSQL.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-004",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`lib/logger.ts:1` sanitiza estruturas/erros; `lib/session.ts:131` e `app/api/loyalty/simulate/route.ts:44` ainda usam console.error com objeto bruto.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Webhook e `services/order-timeout.service.ts:57-76` verificam resultado; transição concorrente/estorno único passaram.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-006",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`app/api/webhooks/asaas/route.ts:90-150,413-416` aguarda email e trata resultado; `lib/email/providers/resend.provider.ts:60` limita tempo.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/api/cron/orders-timeout/route.ts:68`, `loyalty-expiration/route.ts:78`, `payment-reconciliation/v1/route.ts:46` retornam 503 em falha parcial; unitários passaram.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/observability/request-context.ts:11-49` valida ID externo, cria UUID local, propaga contexto e devolve x-request-id; testes de correlação passaram.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-009",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`app/api/health/ready/route.ts:1`, `app/api/internal/metrics/route.ts:8-48` e `ops/observability/alerts.example.yml:1` oferecem probes/métricas/alertas.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-010",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`lib/email/providers/resend.provider.ts:60`, `services/asaas/asaas.client.ts:53`, provider Correios possuem timeout; não há deadline global ou circuit breaker geral.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-011",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`lib/prisma.ts:65-70` registra beforeExit; `scripts/start-runtime.mjs:1` encaminha sinais no modo subprocesso; não se provou drain de requisições no standalone.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-012",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Erros inesperados de cadastro, simulação, frete e endereço fechados; regressões com URL fictícia, sem detalhes internos.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "implementation-2026-09-29"
+    },
+    {
+      "id": "OBS-013",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`app/api/webhooks/asaas/route.ts:61-85` persiste payload allowlisted; IDs e intents financeiras permitem rastreio; runbooks orientam acesso/retencão.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "OBS-014",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Unitários de logger/health/cron/email e integrações reais de rollback, lease e recuperação passaram no conjunto 613+26.",
+      "origin": "OBSERVABILITY-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-001",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "`components/admin/orders/OrderStatusManager.tsx:99-122,149-173`; `app/api/admin/orders/[orderId]/refund/route.ts:12-35`; `services/refund.service.ts:325-375,474`: agora existe comando idempotente e UI integral, estados persistidos e reconciliação. Testes de refund concorrente passaram.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/freight.service.ts:1`; schema estrito e constraint; integração admin rejeitou frete negativo no PostgreSQL.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-003",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`services/loyalty.service.ts:60,578-692` usa UUID/operationKey, teto e dedup; concorrência real e UI contextual foram verificadas por código/testes.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/user.service.ts:26-74` revalida ator, conta ADMIN ACTIVE, transação Serializable com retry; testes negativos passaram.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/product.service.ts:347-392` preserva IDs, atualiza variantes e rejeita remoção; `components/admin/ProductForm.tsx:92,127-133` transmite IDs; integração mantém estoque agregado.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-006",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`services/product.service.ts:431-463` protege referências e audita delete transacional; integração bloqueou produto em carrinho; UI explicita exclusão física.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/loja.service.ts:65-95,144-171` usa select allowlisted sem correiosPassword; testes de DTO/settings passaram.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-008",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Produto, frete, papel, pedido/notas/rastreio gravam AuditLog; `services/loja.service.ts:109-171` e `app/api/admin/loyalty/config/route.ts:44-65` atualizam configuração sem a trilha uniforme.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/validators/order.validators.ts:15`; `services/order.service.ts:435-500` persiste rastreio junto de status/histórico; testes de transição passaram.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/product.service.ts:343-392` deriva soma de variantes; ProductForm exibe total derivado; integração admin provou estoque final coerente.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-011",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Unitários de admin/refund e quatro invariantes admin em PostgreSQL passaram; `tests/setup/auth.ts:27-42` e `tests/setup/db.ts:84-90` continuam incompatíveis com sessão por hash.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ADM-012",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`components/admin/AdminSidebar.tsx:28-77`; `lib/validators/product.ts:43-58` e ProductForm não fornecem CRUD/associação de categorias/marcas, embora existam modelos/filtros.",
+      "origin": "ADMIN-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/produto/[id]/page.tsx:12-31,66-70` carrega produto SSR por tenant e notFound; HomeClient usa Link; filtros/página em query string.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/layout.tsx:21`, `app/robots.ts:7-24`, `app/sitemap.ts:8-27` usam origem canônica do tenant e bloqueiam/retornam vazio sem origem confiável; testes SEO passaram.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/produto/[id]/page.tsx:39-62,93-116`; `lib/web-seo.ts:1` fornece metadata social e serialização JSON-LD; home inclui OnlineStore.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Layouts/páginas privados declaram robots noindex; `next.config.js:46` envia X-Robots-Tag para APIs; contratos SEO passaram.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/home/HomeClient.tsx:414` e card atual usam links de produto e botão de carrinho separados; contrato acessível passou.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/checkout/CheckoutForm.tsx:322,563-631,717-884` associa labels/IDs, aria-invalid/describedby e foco no primeiro erro.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-007",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/checkout/CheckoutForm.tsx:668-710,758-824` usa fieldsets, legends e radios nativos; teste de contrato passou.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/MobileMenu.tsx:24-45`, `BrandBottomSheet.tsx:28-39`, `CatalogFreeSidebar.tsx:270-345` usam Sheet/Radix controlado com títulos.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-009",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/layout.tsx:70-77` adiciona skip link/destino focável; páginas têm main/headings; testes de contrato passaram.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-010",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`components/home/HeroVideo.tsx:13` observa reduced motion; `app/globals.css:389` limita animações; conteúdo visível independe de autoplay.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-011",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`BrandMinimalistCarousel.tsx:50,80,123`; `app/globals.css:271,384` têm focus-visible nos pontos originais.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-012",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`lib/csp.js:2-8` mantém unsafe-inline em script/style; unsafe-eval somente fora de produção; object/frame/base/form endurecidos.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "WEB-013",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/not-found.tsx:1`, `app/error.tsx:1`, `app/global-error.tsx:1`, `app/profile/error.tsx:1` oferecem 404/erro/recuperação.",
+      "origin": "WEB-QUALITY-AUDIT.md",
+      "severity": "LOW",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-001",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/checkout-contract.ts:1`, `components/checkout/CheckoutForm.tsx:468`, `app/api/checkout/route.ts:109-145`: DTO, chave e envelope alinhados; unitários autoritativos passaram.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-002",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Cadeia de 28 migrations aplicada do zero e diff vazio no PostgreSQL descartável (etapa 02).",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "BLOCKER",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-003",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Cotação assinada vinculada ao contexto e valores recalculados no servidor; testes de frete/checkout e constraint admin passaram.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-004",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`app/api/orders/route.ts:1` encerra POST legado; `services/cart.service.ts:34-49` trava usuário/tenant; integrações comprovaram contenção de carrinho concorrente.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-005",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "Inbox retomável e efeitos idempotentes; `tests/integration/payment-reconciliation-postgres.test.ts` provou webhook concorrente com worker.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-006",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`services/order.service.ts:435` usa CAS transacional; testes reais provaram cancelamento concorrente, reposição única e rollback.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "CRITICAL",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-007",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "PaymentReconciliation/RefundIntent persistidos antes de chamada externa, leases/retry/recovery; integração de crash lógico e duas claims passou.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-008",
+      "status": "C",
+      "risk": "LOW",
+      "evidence": "`lib/order-transitions.ts:1`; `services/order.service.ts:435-500`; contrato strict e status/tracking/histórico canônicos; testes passaram.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-009",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "`services/loyalty.service.ts:492-507`; `services/refund.service.ts:365-375` bloqueiam saldo insuficiente; crédito/dedup passaram no DB.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-010",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "Aliases/ciclo de contexto foram corrigidos; `app/api/admin/loyalty/config/route.ts:44` ainda grava Prisma no handler; serviços centrais extensos.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-011",
+      "status": "V",
+      "risk": "MEDIUM",
+      "evidence": "`lib/cache.ts:1`, `lib/rate-limit.ts:1`: Maps por processo; LRU/single-flight melhoram apenas instância local.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "HIGH CONFIDENCE",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-012",
+      "status": "P",
+      "risk": "HIGH",
+      "evidence": "CI ampliado; 613 unitários e 26 integrações passaram. TST-002 confirmou fixture de sessão incompatível; INF-010 confirmou checker de ambiente falhando.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "HIGH",
+      "confidence": "CONFIRMED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    },
+    {
+      "id": "ARCH-013",
+      "status": "P",
+      "risk": "MEDIUM",
+      "evidence": "`ops/scheduler/jobs.example.yml:1`, `app/api/webhooks/asaas/route.ts:416`, `services/loyalty.service.ts:875`: agenda exemplo, email aguardado sem outbox, varredura de wallets sem batch.",
+      "origin": "ARCHITECTURE-AUDIT.md",
+      "severity": "MEDIUM",
+      "confidence": "SUSPECTED",
+      "evidenceRound": "inherited-revalidation-2026-09-29"
+    }
+  ],
+  "groups": [
+    {
+      "id": "FINAL-001",
+      "severity": "BLOCKER",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "05/08",
+      "closure": "Checkout PIX fake, falha offline, retry e confirmação concluídos; manter regressão e homologar fornecedor separadamente.",
+      "sourceIds": [
+        "ARCH-001",
+        "BE-001",
+        "CTR-001",
+        "FUX-001"
+      ]
+    },
+    {
+      "id": "FINAL-002",
+      "severity": "BLOCKER",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "03/12",
+      "closure": "29 migrations em banco descartável + diff sem diferenças; preflight negativo preservou dado inconsistente. Upgrade da base que será preservada continua no FINAL-003.",
+      "sourceIds": [
+        "ARCH-002",
+        "DB-001",
+        "INF-001"
+      ]
+    },
+    {
+      "id": "FINAL-003",
+      "severity": "CRITICAL",
+      "status": "V",
+      "risk": "HIGH",
+      "owner": "03 + responsável pelos dados",
+      "closure": "Risco condicionado à versão/dados que serão preservados. Inventariar origem e ensaiar cópia sanitizada; não extrapolar sucesso do banco vazio.",
+      "sourceIds": [
+        "DB-002",
+        "DB-010",
+        "INF-002"
+      ]
+    },
+    {
+      "id": "FINAL-004",
+      "severity": "CRITICAL",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "04 + financeiro",
+      "closure": "Homologar centavos/tarifas/parcelas com provedor; não houve cálculo financeiro externo nesta rodada.",
+      "sourceIds": [
+        "ARCH-003",
+        "DB-009",
+        "BE-003",
+        "CTR-006",
+        "CTR-010",
+        "CTR-015",
+        "FUX-002",
+        "ADM-002"
+      ]
+    },
+    {
+      "id": "FINAL-005",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "03/05",
+      "closure": "Invariantes físicas cobrem CartItem/OrderItem, variante-produto, endereço e carrinho de origem; negativos e concorrência passaram. Publicação exige inventário/preflight no destino, separado em FINAL-003.",
+      "sourceIds": [
+        "ARCH-004",
+        "DB-006",
+        "DB-011",
+        "BE-004",
+        "CTR-002",
+        "AUTH-005",
+        "SEC-006"
+      ]
+    },
+    {
+      "id": "FINAL-006",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "04/11",
+      "closure": "Provar redelivery real posteriormente; o defeito original de consumo prematuro não permanece.",
+      "sourceIds": [
+        "ARCH-005",
+        "DB-004",
+        "BE-005",
+        "CTR-003",
+        "CTR-009",
+        "SEC-013",
+        "OBS-001"
+      ]
+    },
+    {
+      "id": "FINAL-007",
+      "severity": "CRITICAL",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "03 + negócio",
+      "closure": "Definir unicidade de CPF e impor invariante adequada; não reabrir transição de pedido já corrigida.",
+      "sourceIds": [
+        "ARCH-006",
+        "DB-003",
+        "DB-012",
+        "BE-006",
+        "CTR-005"
+      ]
+    },
+    {
+      "id": "FINAL-008",
+      "severity": "CRITICAL",
+      "status": "P",
+      "risk": "HIGH",
+      "owner": "04/11 + operação",
+      "closure": "Homologar busca por referência e falhas ambíguas no provedor, instalar agenda/alertas e medir deadlines; ausência de worker no código é alegação superada.",
+      "sourceIds": [
+        "ARCH-007",
+        "BE-007",
+        "CTR-004",
+        "CTR-007",
+        "CTR-011",
+        "CTR-012",
+        "SEC-012",
+        "OBS-003",
+        "OBS-010"
+      ]
+    },
+    {
+      "id": "FINAL-009",
+      "severity": "CRITICAL",
+      "status": "P",
+      "risk": "HIGH",
+      "owner": "04/07 + financeiro",
+      "closure": "Validar provedor e operação de boleto, pedido enviado/entregue, disputa e pontos gastos; manual não equivale a estorno financeiro confirmado.",
+      "sourceIds": [
+        "DB-005",
+        "BE-012",
+        "CTR-008",
+        "CTR-014",
+        "CQ-001",
+        "OBS-002",
+        "OBS-005",
+        "ADM-001"
+      ]
+    },
+    {
+      "id": "FINAL-010",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "01/05",
+      "closure": "Revogação de exposição histórica permanece agrupada em FINAL-019; scanner não prova inexistência em todos os históricos.",
+      "sourceIds": [
+        "BE-002",
+        "AUTH-001",
+        "SEC-001",
+        "ADM-007"
+      ]
+    },
+    {
+      "id": "FINAL-011",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "02/04",
+      "closure": "Vínculo de conta futuro deve exigir posse; nenhum account linking externo executado.",
+      "sourceIds": [
+        "AUTH-002",
+        "SEC-002"
+      ]
+    },
+    {
+      "id": "FINAL-012",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "02/12",
+      "closure": "DNS/TLS do destino são requisitos de publicação; não alteram correção da entrada controlada pelo solicitante.",
+      "sourceIds": [
+        "BE-009",
+        "AUTH-003",
+        "SEC-003"
+      ]
+    },
+    {
+      "id": "FINAL-013",
+      "severity": "CRITICAL",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "13",
+      "closure": "Manter banco de teste exclusivo e validar ambiente antes de qualquer cleanup.",
+      "sourceIds": [
+        "TST-005"
+      ]
+    },
+    {
+      "id": "FINAL-014",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "HIGH",
+      "owner": "04/07 + negócio",
+      "closure": "Decidir e implementar tratamento de cashback já gasto, teto e reversão vinculada; governança depende do negócio.",
+      "sourceIds": [
+        "ARCH-009",
+        "DB-007",
+        "BE-008",
+        "CTR-013",
+        "AUTH-004",
+        "SEC-005",
+        "ADM-003"
+      ]
+    },
+    {
+      "id": "FINAL-015",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "03/07 + estoque",
+      "closure": "Reconciliar dados legados e definir fonte única física/ERP se aplicável; cenário de carrinho antigo do relatório de correção foi superado.",
+      "sourceIds": [
+        "DB-008",
+        "BE-011",
+        "CTR-016",
+        "FUX-003",
+        "ADM-010"
+      ]
+    },
+    {
+      "id": "FINAL-016",
+      "severity": "HIGH",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "02/13",
+      "closure": "Login/cookie no navegador e fixtures por hash comprovados. Entrega real de email não verificada.",
+      "sourceIds": [
+        "AUTH-006",
+        "AUTH-007",
+        "AUTH-009",
+        "SEC-007",
+        "SEC-008",
+        "SEC-009",
+        "SEC-021",
+        "INF-006"
+      ]
+    },
+    {
+      "id": "FINAL-017",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "01/06/12 + operação",
+      "closure": "Localhost de uma instância não demonstra falha horizontal; definir proxy/IP confiável e compartilhamento conforme topologia futura.",
+      "sourceIds": [
+        "ARCH-011",
+        "AUTH-008",
+        "SEC-010",
+        "SEC-015",
+        "PERF-005",
+        "PERF-008"
+      ]
+    },
+    {
+      "id": "FINAL-018",
+      "severity": "HIGH",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "01/05",
+      "closure": "Políticas ACL/storage e arquivo malicioso em ambiente real não testados; não houve upload ou simulador externo.",
+      "sourceIds": [
+        "BE-010",
+        "AUTH-010",
+        "AUTH-011",
+        "SEC-011",
+        "SEC-014",
+        "INF-009"
+      ]
+    },
+    {
+      "id": "FINAL-019",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "01/02 + titular das credenciais",
+      "closure": "Rotação/revogação de valores históricos e recuperação operacional não verificadas.",
+      "sourceIds": [
+        "AUTH-012",
+        "AUTH-015",
+        "SEC-004",
+        "SEC-020",
+        "INF-005",
+        "ADM-004"
+      ]
+    },
+    {
+      "id": "FINAL-020",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "13/15",
+      "closure": "622 unitários, 68 integrações atuais, HTTP e CDP local; reconciliação + invariantes novas entram no core CI. Falta bootstrap browser portátil/CI, coverage, mutation testing e outros navegadores.",
+      "sourceIds": [
+        "ARCH-012",
+        "DB-017",
+        "BE-017",
+        "FUX-015",
+        "TST-001",
+        "TST-002",
+        "TST-003",
+        "TST-004",
+        "TST-006",
+        "TST-007",
+        "TST-008",
+        "TST-009",
+        "TST-010",
+        "PERF-010",
+        "CQ-005",
+        "CQ-006",
+        "ADM-011",
+        "OBS-014"
+      ]
+    },
+    {
+      "id": "FINAL-021",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "HIGH",
+      "owner": "11/12 + operação",
+      "closure": "Agenda/heartbeat externo não comprovados; email sem outbox/retry durável pode perder notificação. Provar operação antes de atendimento contínuo.",
+      "sourceIds": [
+        "ARCH-013",
+        "INF-007",
+        "OBS-006",
+        "OBS-007"
+      ]
+    },
+    {
+      "id": "FINAL-022",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "10/03",
+      "closure": "Paginação com desempate e lotes de 100 em carteiras/ledger; medições locais de consultas passaram. Falta EXPLAIN/cardinalidade do destino, checkpoint durável e limites de duração do job.",
+      "sourceIds": [
+        "DB-013",
+        "DB-014",
+        "DB-015",
+        "BE-015",
+        "FUX-007",
+        "FUX-009",
+        "PERF-001",
+        "PERF-007",
+        "PERF-009"
+      ]
+    },
+    {
+      "id": "FINAL-023",
+      "severity": "HIGH",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "08/09",
+      "closure": "Labels administrativas associadas aos 14 controles e formulário testado no DOM; leitores assistivos e contraste completo por tenant não certificados.",
+      "sourceIds": [
+        "FUX-004",
+        "WEB-005",
+        "WEB-006",
+        "WEB-007"
+      ]
+    },
+    {
+      "id": "FINAL-024",
+      "severity": "HIGH",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "08/09",
+      "closure": "Defeito de retorno de foco foi reproduzido no browser e corrigido; trap/Escape/restauração ao disparador passaram no Chrome.",
+      "sourceIds": [
+        "FUX-005",
+        "WEB-008"
+      ]
+    },
+    {
+      "id": "FINAL-025",
+      "severity": "HIGH",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "09",
+      "closure": "Rastreamento/indexação externos não executados; taxonomia/slug continua decisão de produto.",
+      "sourceIds": [
+        "FUX-006",
+        "WEB-001",
+        "WEB-002"
+      ]
+    },
+    {
+      "id": "FINAL-026",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "07 + produto",
+      "closure": "Settings e fidelidade usam auditoria transacional sanitizada, ator/tenant/requestId; falha do insert reverte mutação. Retenção e políticas de administração/taxonomia continuam condicionais.",
+      "sourceIds": [
+        "ARCH-008",
+        "BE-013",
+        "ADM-005",
+        "ADM-006",
+        "ADM-008",
+        "ADM-009",
+        "ADM-012"
+      ]
+    },
+    {
+      "id": "FINAL-027",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "01/05/11",
+      "closure": "Console.error bruto removido dos caminhos server app/api, lib e services; Prisma não imprime payload de erro; fronteiras públicas testadas. Coletor, retenção, RBAC e expurgo histórico seguem pendentes.",
+      "sourceIds": [
+        "BE-014",
+        "BE-016",
+        "SEC-018",
+        "OBS-004",
+        "OBS-008",
+        "OBS-012",
+        "OBS-013"
+      ]
+    },
+    {
+      "id": "FINAL-028",
+      "severity": "MEDIUM",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "06/14",
+      "closure": "Strict incremental e decomposição por fluxo após testes; módulos sem uso aparente requerem análise de grafo antes de remoção.",
+      "sourceIds": [
+        "ARCH-010",
+        "CQ-003",
+        "CQ-004",
+        "CQ-007",
+        "CQ-008",
+        "CQ-009",
+        "CQ-010"
+      ]
+    },
+    {
+      "id": "FINAL-029",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "10/04",
+      "closure": "Checkout fake online medido em 166,8 ms (uma amostra), erro offline recuperável e foco corrigido. Isso não prova p95/p99/SLO do gateway.",
+      "sourceIds": [
+        "FUX-008",
+        "FUX-010",
+        "PERF-004",
+        "PERF-006",
+        "CQ-002"
+      ]
+    },
+    {
+      "id": "FINAL-030",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "10/08",
+      "closure": "Medições locais de imagens/recursos e reduced-motion realizadas; sem vídeo carregado em reduced-motion. LCP/CLS/INP representativos e ativos reais permanecem pendentes.",
+      "sourceIds": [
+        "FUX-011",
+        "PERF-002",
+        "PERF-003",
+        "WEB-010"
+      ]
+    },
+    {
+      "id": "FINAL-031",
+      "severity": "MEDIUM",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "09",
+      "closure": "Sem overflow nos recortes 375/768/1366/1440/1920; teste de largura equivalente a zoom200%. Contraste completo e leitores assistivos pendentes.",
+      "sourceIds": [
+        "FUX-012",
+        "WEB-009",
+        "WEB-011"
+      ]
+    },
+    {
+      "id": "FINAL-032",
+      "severity": "MEDIUM",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "09/01",
+      "closure": "Nonce/hash e rollout report-only com validação Next; não foi provada exploração XSS.",
+      "sourceIds": [
+        "SEC-016",
+        "SEC-017",
+        "WEB-003",
+        "WEB-004",
+        "WEB-012",
+        "WEB-013"
+      ]
+    },
+    {
+      "id": "FINAL-033",
+      "severity": "HIGH",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "12/11",
+      "closure": "Checker restaurado; Node22/npm10, build e SIGTERM/drain local passaram. Imagem Linux de ensaio não certifica imagem de release; DNS, backup/restore, métricas e rollout dependem de operação autorizada.",
+      "sourceIds": [
+        "INF-003",
+        "INF-008",
+        "INF-010",
+        "INF-011",
+        "INF-012",
+        "INF-013",
+        "INF-014",
+        "OBS-009",
+        "OBS-011",
+        "CQ-011"
+      ]
+    },
+    {
+      "id": "FINAL-034",
+      "severity": "HIGH",
+      "status": "U",
+      "risk": "HIGH",
+      "owner": "03/12 + titular do ambiente",
+      "closure": "Inspecionar políticas no destino autorizado e testar fronteiras; não inferir vazamento por falta de evidência externa.",
+      "sourceIds": [
+        "DB-016",
+        "INF-004"
+      ]
+    },
+    {
+      "id": "FINAL-035",
+      "severity": "MEDIUM",
+      "status": "P",
+      "risk": "MEDIUM",
+      "owner": "02 + produto",
+      "closure": "Definir resposta pública uniforme e avaliar enumeração/limites no fluxo completo; não enfraquecer validação de senha.",
+      "sourceIds": [
+        "AUTH-013",
+        "AUTH-014",
+        "SEC-019"
+      ]
+    },
+    {
+      "id": "FINAL-036",
+      "severity": "LOW",
+      "status": "C",
+      "risk": "LOW",
+      "owner": "08",
+      "closure": "Revisão visual/tradução completa continua fora do recorte comprovado.",
+      "sourceIds": [
+        "FUX-013",
+        "FUX-014"
+      ]
+    }
+  ]
+}

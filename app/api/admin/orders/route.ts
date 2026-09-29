@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ok, err } from '@/lib/api-response';
-import { requireAdmin } from '@/lib/auth-admin';
+import { requireAdmin } from '@/lib/auth/guards';
 import { listOrdersQuerySchema } from '@/lib/validators/order.validators';
 import { listOrdersForAdmin } from '@/services/order.service';
 

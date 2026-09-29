@@ -72,14 +72,14 @@ export function ForgotPasswordForm() {
       </div>
 
       {errorMessage && (
-        <div className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
+        <div id="forgot-password-error" role="alert" className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {isSubmitted ? (
-        <div className="text-center py-2 space-y-6">
+        <div className="text-center py-2 space-y-6" role="status" aria-live="polite">
           <div className="w-16 h-16 rounded-full bg-catalog-gold/15 border border-catalog-gold/50 flex items-center justify-center mx-auto text-catalog-gold shadow-[0_0_20px_rgba(240,180,14,0.25)]">
             <CheckCircle2 className="w-8 h-8" />
           </div>
@@ -101,10 +101,8 @@ export function ForgotPasswordForm() {
             >
               Enviar para outro e-mail
             </button>
-            <Link href="/login">
-              <button className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
-                Retornar ao Login
-              </button>
+            <Link href="/login" className="btn-shimmer block w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
+              Retornar ao Login
             </Link>
           </div>
         </div>
@@ -118,6 +116,7 @@ export function ForgotPasswordForm() {
               <Mail className="w-4 h-4 text-catalog-gold/60 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -125,6 +124,9 @@ export function ForgotPasswordForm() {
                 className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 required
                 autoFocus
+                autoComplete="email"
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? "forgot-password-error" : undefined}
               />
             </div>
           </div>

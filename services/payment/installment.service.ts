@@ -17,21 +17,22 @@ export function calculateSingleInstallment(
   customConfig?: Partial<PaymentConfig>
 ): { installmentValue: number; totalWithInterest: number; hasInterest: boolean } {
   const config = { ...getPaymentConfig(), ...customConfig };
+  const totalCents = Math.round(total * 100);
 
   if (count <= 1) {
     return {
-      installmentValue: total,
-      totalWithInterest: total,
+      installmentValue: totalCents / 100,
+      totalWithInterest: totalCents / 100,
       hasInterest: false,
     };
   }
 
   if (config.installmentAbsorbFees) {
     // Modo "Sem Juros": divide o valor diretamente
-    const rawVal = Math.round((total / count) * 100) / 100;
+    const rawVal = Math.round(totalCents / count) / 100;
     return {
       installmentValue: rawVal,
-      totalWithInterest: total,
+      totalWithInterest: totalCents / 100,
       hasInterest: false,
     };
   }
@@ -39,9 +40,10 @@ export function calculateSingleInstallment(
   // Modo com repasse de juros (Tabela Price padrão bancário)
   const i = config.installmentMonthlyRate;
   const factor = Math.pow(1 + i, count);
-  const pmt = total * ((i * factor) / (factor - 1));
-  const installmentValue = Math.round(pmt * 100) / 100;
-  const totalWithInterest = Math.round(installmentValue * count * 100) / 100;
+  const pmt = (totalCents / 100) * ((i * factor) / (factor - 1));
+  const installmentCents = Math.round(pmt * 100);
+  const installmentValue = installmentCents / 100;
+  const totalWithInterest = (installmentCents * count) / 100;
 
   return {
     installmentValue,

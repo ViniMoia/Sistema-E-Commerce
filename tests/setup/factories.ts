@@ -81,13 +81,14 @@ interface OrderItemInput {
 }
 
 export async function createTestOrderItem(data: OrderItemInput): Promise<OrderItem> {
-  const product = await prisma.product.findFirst()
-  const variant = await prisma.productVariants.findFirst()
+  const order = await prisma.order.findUniqueOrThrow({ where: { id: data.orderId }, select: { lojaID: true } })
+  const product = await prisma.product.findFirst({ where: { lojaID: order.lojaID } })
+  const variant = product ? await prisma.productVariants.findFirst({ where: { ProductID: product.id } }) : null
 
   return prisma.orderItem.create({
     data: {
       orderId: data.orderId,
-      productId: product?.id || '00000000-0000-0000-0000-000000000001',
+      productId: product?.id || null,
       name: data.name,
       quantity: data.quantity,
       price: data.price,

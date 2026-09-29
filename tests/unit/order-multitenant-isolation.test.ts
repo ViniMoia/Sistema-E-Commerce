@@ -194,9 +194,14 @@ describe('Blindagem Multi-Tenant e Eliminação de Vazamento Cross-Tenant (REV-0
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(410);
       const json = await res.json();
-      expect(json.error).toContain('Loja inválida ou inconsistente');
+      expect(json).toMatchObject({
+        code: 'CHECKOUT_ROUTE_REQUIRED',
+        checkoutPath: '/api/checkout',
+      });
+      expect(guards.requireAuth).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 });

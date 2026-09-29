@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useCartStore } from "@/store/cart.store";
-import { useCart } from "@/components/providers/CartProvider";
-import { getOptimizedImageUrl, formatProductTitle } from "@/lib/utils";
+import { CartRequestError, useCartStore } from "@/store/cart.store";
+import { useCart } from "@/components/providers/cart-context";
+import { canUseNextImageOptimization, formatProductTitle } from "@/lib/utils";
 import HeroVideo from "./HeroVideo";
 import { BrandMinimalistCarousel } from "@/components/catalog/BrandMinimalistCarousel";
 import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
@@ -12,6 +12,12 @@ import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters"
 import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { productPath } from "@/lib/web-seo";
+import type { CatalogFilterState } from "@/lib/catalog-query";
+import { toast } from "sonner";
 
 export type Product = FilterableProduct;
 
@@ -41,13 +47,29 @@ const Icons = {
 export default function HomeClient({
   initialProducts,
   initialBrands = [],
-  lojaInfo
+  lojaInfo,
+  initialSelectedProductId,
+  dedicatedProductPage = false,
+  initialCatalogFilters,
+  catalogPagination,
 }: {
   initialProducts: Product[];
   initialBrands?: BrandSummary[];
   lojaInfo: LojaInfo | null;
+  initialSelectedProductId?: string;
+  dedicatedProductPage?: boolean;
+  initialCatalogFilters?: CatalogFilterState;
+  catalogPagination?: {
+    totalCount: number;
+    filteredCount: number;
+    currentPage: number;
+    pageSize: number;
+  };
 }) {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const router = useRouter();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
+    () => initialProducts.find((product) => product.id === initialSelectedProductId) ?? null
+  );
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -80,6 +102,8 @@ export default function HomeClient({
   } = useProductFilters({
     initialProducts,
     initialBrands,
+    initialFilters: initialCatalogFilters,
+    serverPagination: catalogPagination,
   });
 
   const catalogSectionRef = useRef<HTMLElement | null>(null);
@@ -87,11 +111,14 @@ export default function HomeClient({
   // Transição de página com scroll suave de volta ao topo do catálogo
   const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
     if (catalogSectionRef.current) {
-      catalogSectionRef.current.scrollIntoView({ behavior: "smooth" });
+      catalogSectionRef.current.scrollIntoView({ behavior });
     } else {
       const el = document.getElementById("catalogo");
-      el?.scrollIntoView({ behavior: "smooth" });
+      el?.scrollIntoView({ behavior });
     }
   }, [setCurrentPage]);
 
@@ -157,7 +184,7 @@ export default function HomeClient({
 
     if (hasRealVariants && !selectedVariantId) {
       if (!selectedProduct) {
-        setSelectedProduct(prod);
+        router.push(productPath(prod.id));
         return;
       }
       alert("Por favor, selecione um tamanho e uma cor válidos antes de prosseguir.");
@@ -170,42 +197,65 @@ export default function HomeClient({
       await addToCart(variantIdToUse, prod.id, 1);
       setIsOpen(true);
     } catch (error) {
-      console.error(error);
+      if (error instanceof CartRequestError && error.code === "AUTH_REQUIRED") {
+        router.push(`/login?next=${encodeURIComponent(productPath(prod.id))}`);
+        return;
+      }
+      toast.error(error instanceof Error ? error.message : "Não foi possível adicionar o item ao carrinho.");
     }
   };
 
   // --- PRODUCT DETAILED VIEW ---
   if (selectedProduct) {
     return (
-      <div className="min-h-screen bg-catalog-bg text-catalog-text px-6 pt-24 pb-6 md:px-12 md:pt-28 md:pb-12 fade-in selection:bg-catalog-gold/30">
+      <main className="min-h-screen bg-catalog-bg text-catalog-text px-6 pt-24 pb-6 md:px-12 md:pt-28 md:pb-12 fade-in selection:bg-catalog-gold/30">
         <div className="max-w-7xl mx-auto">
 
           {/* Navigation */}
-          <button 
-            onClick={() => {
-              setSelectedProduct(null);
-              setSelectedVariantId(null);
-              setSelectedSize(null);
-              setSelectedColor(null);
-            }}
-            className="inline-flex items-center text-catalog-muted hover:text-white transition-colors group w-fit cursor-pointer mb-8 md:mb-12"
-          >
+          {dedicatedProductPage ? (
+            <Link
+              href="/#catalogo"
+              className="inline-flex items-center text-catalog-muted hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold transition-colors group w-fit cursor-pointer mb-8 md:mb-12 rounded"
+            >
+              <span className="group-hover:-translate-x-1 transition-transform duration-300">
+                <ArrowLeft className="w-4 h-4 text-catalog-gold" />
+              </span>
+              <span className="ml-2 tracking-widest uppercase text-xs font-bold font-mono whitespace-nowrap">
+                Voltar às compras
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProduct(null);
+                setSelectedVariantId(null);
+                setSelectedSize(null);
+                setSelectedColor(null);
+              }}
+              className="inline-flex items-center text-catalog-muted hover:text-white focus-visible:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold transition-colors group w-fit cursor-pointer mb-8 md:mb-12 rounded"
+            >
             <span className="group-hover:-translate-x-1 transition-transform duration-300">
               <ArrowLeft className="w-4 h-4 text-catalog-gold" />
             </span>
             <span className="ml-2 tracking-widest uppercase text-xs font-bold font-mono whitespace-nowrap">
               Voltar às compras
             </span>
-          </button>
+            </button>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-20 items-center">
             {/* Image & Gallery Column */}
             <div className="flex flex-col gap-4 animate-in" style={{ animationDelay: '0.1s' }}>
               {/* Main Image Container */}
               <div className="bg-catalog-card border border-catalog-gold/45 p-8 md:p-12 rounded-[2rem] flex justify-center shadow-xl relative overflow-hidden">
-                <img 
-                  src={getOptimizedImageUrl(activeImage || selectedProduct.imageUrl, 800, 800)} 
+                <Image
+                  src={activeImage || selectedProduct.imageUrl}
                   alt={selectedProduct.name}
+                  width={800}
+                  height={800}
+                  sizes="(max-width: 768px) 85vw, 45vw"
+                  unoptimized={!canUseNextImageOptimization(activeImage || selectedProduct.imageUrl)}
                   className="max-h-[50vh] md:max-h-[60vh] object-contain bg-white rounded-2xl p-6 transition-opacity duration-300"
                 />
               </div>
@@ -221,9 +271,13 @@ export default function HomeClient({
                         : 'border-catalog-gold/30 opacity-60 hover:opacity-100 scale-95'
                     }`}
                   >
-                    <img 
-                      src={getOptimizedImageUrl(selectedProduct.imageUrl, 100, 100)} 
+                    <Image
+                      src={selectedProduct.imageUrl}
                       alt="Principal"
+                      width={80}
+                      height={80}
+                      sizes="80px"
+                      unoptimized={!canUseNextImageOptimization(selectedProduct.imageUrl)}
                       className="w-20 h-20 object-cover bg-white"
                     />
                   </button>
@@ -237,9 +291,13 @@ export default function HomeClient({
                           : 'border-catalog-gold/30 opacity-60 hover:opacity-100 scale-95'
                       }`}
                     >
-                      <img 
-                        src={getOptimizedImageUrl(url, 100, 100)} 
+                      <Image
+                        src={url}
                         alt={`Galeria ${idx + 1}`}
+                        width={80}
+                        height={80}
+                        sizes="80px"
+                        unoptimized={!canUseNextImageOptimization(url)}
                         className="w-20 h-20 object-cover bg-white"
                       />
                     </button>
@@ -367,7 +425,7 @@ export default function HomeClient({
           </div>
 
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -375,12 +433,14 @@ export default function HomeClient({
 
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30 fade-in">
+      <main>
       
       {/* Hero Video Section with GSAP */}
       <HeroVideo />
 
       {/* Product List Showcase */}
       <section id="catalogo" ref={catalogSectionRef} className="py-10 md:py-16 bg-catalog-bg relative z-20">
+        <h2 className="sr-only">Catálogo de produtos</h2>
         {/* Carrossel Minimalista de Marcas Soltas no Topo (5 Marcas Simultâneas) */}
         <BrandMinimalistCarousel
           brands={brandsWithCounts}
@@ -413,27 +473,39 @@ export default function HomeClient({
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
                     {paginatedProducts.map((prod, index) => (
-                      <div 
+                      <article
                         key={prod.id}  
-                        onClick={() => setSelectedProduct(prod)}
-                        className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
+                        className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 focus-within:border-catalog-gold transition-all duration-300 group animate-in shadow-sm"
                         style={{ animationDelay: `${(index % 8) * 0.05}s` }}
                       >
-                        <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
-                          <img 
-                            src={getOptimizedImageUrl(prod.imageUrl, 400, 400)} 
-                            alt={prod.name} 
+                        <Link
+                          href={productPath(prod.id)}
+                          className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-catalog-gold"
+                          aria-label={`Ver detalhes de ${prod.name}`}
+                        >
+                          <Image
+                            src={prod.imageUrl}
+                            alt={prod.name}
+                            width={400}
+                            height={400}
+                            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, (max-width: 1536px) 30vw, 22vw"
+                            unoptimized={!canUseNextImageOptimization(prod.imageUrl)}
                             className="max-h-full object-contain group-hover:scale-[1.05] transition-transform duration-500" 
                           />
-                        </div>
+                        </Link>
                         
                         <div className="flex flex-col flex-1 justify-end relative">
                           <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                             Produto
                           </span>
-                          <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
-                            {formatProductTitle(prod.name)}
-                          </h4>
+                          <h3 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
+                            <Link
+                              href={productPath(prod.id)}
+                              className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold"
+                            >
+                              {formatProductTitle(prod.name)}
+                            </Link>
+                          </h3>
                           
                           <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
                             <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
@@ -444,12 +516,13 @@ export default function HomeClient({
                               }}
                               className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
                               title="Adicionar ao Carrinho"
+                              aria-label={`Adicionar ${prod.name} ao carrinho`}
                             >
                               <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
                             </button>
                           </div>
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
 
@@ -473,7 +546,7 @@ export default function HomeClient({
                       <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                   </div>
-                  <h4 className="text-xl font-semibold text-catalog-text mb-2">Nenhum produto encontrado</h4>
+                  <h3 className="text-xl font-semibold text-catalog-text mb-2">Nenhum produto encontrado</h3>
                   <p className="text-catalog-muted max-w-md mx-auto leading-relaxed text-sm">
                     Não encontramos nenhum produto que corresponda aos filtros ou termos pesquisados.
                     Tente selecionar outra marca, remover algumas etiquetas ou faixas de preço.
@@ -490,6 +563,7 @@ export default function HomeClient({
           </div>
         </div>
       </section>
+      </main>
 
       {/* Visual Footer */}
       <footer className="border-t border-catalog-gold/20 py-12 bg-catalog-bg relative overflow-hidden">

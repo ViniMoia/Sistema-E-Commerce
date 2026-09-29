@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma'
-import { revalidateTag } from 'next/cache'
 import { tenantCache } from '@/lib/cache'
+import { logger } from '@/lib/logger'
+import { persistAuditedSettings } from '@/services/store-settings-audit.service'
 
 export interface UpdateLojaSettingsParams {
   pixKey?: string | null
@@ -23,7 +24,6 @@ export interface UpdateLojaSettingsParams {
   originComplement?: string | null
   enableCorreios?: boolean
   correiosContractCode?: string | null
-  correiosPassword?: string | null
   enablePickup?: boolean
   enableNoFreight?: boolean
   additionalDays?: number
@@ -51,7 +51,6 @@ export interface LojaSettings {
   originComplement: string | null
   enableCorreios: boolean
   correiosContractCode: string | null
-  correiosPassword: string | null
   enablePickup: boolean
   enableNoFreight: boolean
   additionalDays: number
@@ -90,7 +89,6 @@ export async function getLojaSettings(lojaID: string): Promise<LojaSettings | nu
             originComplement: true,
             enableCorreios: true,
             correiosContractCode: true,
-            correiosPassword: true,
             enablePickup: true,
             enableNoFreight: true,
             additionalDays: true,
@@ -99,7 +97,7 @@ export async function getLojaSettings(lojaID: string): Promise<LojaSettings | nu
 
         return loja
       } catch (error) {
-        console.error('[GET_LOJA_SETTINGS]', error)
+        logger.error('Falha ao consultar configurações', error, { action: 'GET_LOJA_SETTINGS' })
         return null
       }
     },
@@ -112,10 +110,11 @@ export async function getLojaSettings(lojaID: string): Promise<LojaSettings | nu
  */
 export async function updateLojaSettings(
   lojaID: string,
-  params: UpdateLojaSettingsParams
+  params: UpdateLojaSettingsParams,
+  actorId: string,
 ): Promise<LojaSettings | null> {
   try {
-    const updated = await prisma.loja.update({
+    const updated = await persistAuditedSettings(lojaID, actorId, 'STORE_SETTINGS_UPDATE', Object.keys(params), tx => tx.loja.update({
       where: { id: lojaID },
       data: {
         ...(params.pixKey !== undefined && { pixKey: params.pixKey }),
@@ -137,7 +136,6 @@ export async function updateLojaSettings(
         ...(params.originComplement !== undefined && { originComplement: params.originComplement }),
         ...(params.enableCorreios !== undefined && { enableCorreios: params.enableCorreios }),
         ...(params.correiosContractCode !== undefined && { correiosContractCode: params.correiosContractCode }),
-        ...(params.correiosPassword !== undefined && { correiosPassword: params.correiosPassword }),
         ...(params.enablePickup !== undefined && { enablePickup: params.enablePickup }),
         ...(params.enableNoFreight !== undefined && { enableNoFreight: params.enableNoFreight }),
         ...(params.additionalDays !== undefined && { additionalDays: params.additionalDays }),
@@ -163,25 +161,18 @@ export async function updateLojaSettings(
         originComplement: true,
         enableCorreios: true,
         correiosContractCode: true,
-        correiosPassword: true,
         enablePickup: true,
         enableNoFreight: true,
         additionalDays: true,
       },
-    })
+    }))
 
     // Invalida cache da loja específica
     tenantCache.invalidateTenant(lojaID, 'settings')
 
-    try {
-      (revalidateTag as any)('tenant-settings')
-    } catch {
-      // no-op fora de contexto HTTP
-    }
-
     return updated
   } catch (error) {
-    console.error('[UPDATE_LOJA_SETTINGS]', error)
+    logger.error('Falha ao atualizar configurações', error, { action: 'UPDATE_LOJA_SETTINGS' })
     return null
   }
 }
@@ -189,7 +180,18 @@ export async function updateLojaSettings(
 /**
  * Consulta pública de loja por slug
  */
-export async function getLojaBySlug(slug: string): Promise<LojaSettings | null> {
+export interface PublicLoja {
+  id: string
+  name: string
+  slug: string
+  description: string
+  coverImageUrl: string
+  whatsappNumber: string | null
+  primaryColor: string | null
+  secondaryColor: string | null
+}
+
+export async function getLojaBySlug(slug: string): Promise<PublicLoja | null> {
   try {
     const loja = await prisma.loja.findUnique({
       where: { slug },
@@ -199,31 +201,15 @@ export async function getLojaBySlug(slug: string): Promise<LojaSettings | null> 
         slug: true,
         description: true,
         coverImageUrl: true,
-        pixKey: true,
-        pixKeyType: true,
         whatsappNumber: true,
         primaryColor: true,
         secondaryColor: true,
-        customDomain: true,
-        originCep: true,
-        originState: true,
-        originCity: true,
-        originDistrict: true,
-        originStreet: true,
-        originNumber: true,
-        originComplement: true,
-        enableCorreios: true,
-        correiosContractCode: true,
-        correiosPassword: true,
-        enablePickup: true,
-        enableNoFreight: true,
-        additionalDays: true,
       },
     })
 
     return loja
   } catch (error) {
-    console.error('[GET_LOJA_BY_SLUG]', error)
+    logger.error('[GET_LOJA_BY_SLUG]', error);
     return null
   }
 }

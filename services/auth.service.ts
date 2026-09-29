@@ -3,6 +3,13 @@ import bcrypt from "bcryptjs";
 import { LoginInput } from "@/lib/validators/auth";
 import { sanitizeUser, SafeUserDTO } from "@/lib/utils/dto-sanitizer";
 import { cleanDigits } from "@/lib/validators/cpf-cnpj";
+import { createHash, randomBytes } from "crypto";
+
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password-for-timing-only", 10);
+
+function hashRecoveryToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export async function registerUser(data: {
   name: string;
@@ -114,21 +121,10 @@ export async function loginUser(data: LoginInput & { lojaID: string }) {
     },
   });
 
-  // 3. Mitigação de enumeração de usuário (tempo constante para usuário inexistente)
-  if (!user) {
-    await bcrypt.compare(password, "$2b$10$invalidhashforsimulationlongenough");
-    throw new AuthError("Credenciais inválidas");
-  }
-
-  // 4. Regras de negócio
-  if (user.status === "BLOCKED") {
-    throw new AuthError("Usuário bloqueado");
-  }
-
-  // 5. Comparação segura de senha
-  const isValidPassword = await bcrypt.compare(password, user.password);
-
-  if (!isValidPassword) {
+  // Uma comparação bcrypt válida ocorre para todos os resultados e a resposta
+  // não distingue conta inexistente, bloqueada, pendente ou senha incorreta.
+  const isValidPassword = await bcrypt.compare(password, user?.password || DUMMY_PASSWORD_HASH);
+  if (!user || user.status !== "ACTIVE" || !isValidPassword) {
     throw new AuthError("Credenciais inválidas");
   }
 
@@ -145,7 +141,7 @@ export async function loginUser(data: LoginInput & { lojaID: string }) {
 export async function requestPasswordReset(data: {
   email: string;
   lojaID: string;
-  originUrl?: string;
+  originUrl: string;
 }): Promise<{ success: boolean }> {
   const normalizedEmail = data.email.toLowerCase().trim();
 
@@ -170,8 +166,8 @@ export async function requestPasswordReset(data: {
   }
 
   // 3. Geração de Token Criptograficamente Seguro (CSPRNG com 256 bits de entropia)
-  const crypto = await import("crypto");
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  const resetToken = randomBytes(32).toString("hex");
+  const resetTokenHash = hashRecoveryToken(resetToken);
   // 4. Expiração rígida de 1 hora
   const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -179,14 +175,26 @@ export async function requestPasswordReset(data: {
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      resetToken,
+      resetToken: resetTokenHash,
       resetTokenExpires,
     },
   });
 
   // 6. Montagem da URL de redefinição
-  const baseUrl = data.originUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const resetUrl = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${resetToken}`;
+  let configuredOrigin: URL;
+  try {
+    configuredOrigin = new URL(data.originUrl);
+  } catch {
+    throw new AuthError("Origem canônica inválida para recuperação de senha.");
+  }
+  const isLocalDevelopment =
+    process.env.NODE_ENV !== "production" &&
+    configuredOrigin.protocol === "http:" &&
+    ["localhost", "127.0.0.1"].includes(configuredOrigin.hostname);
+  if (configuredOrigin.protocol !== "https:" && !isLocalDevelopment) {
+    throw new AuthError("Origem canônica inválida para recuperação de senha.");
+  }
+  const resetUrl = `${configuredOrigin.origin}/reset-password?token=${resetToken}`;
 
   // 7. Envio do e-mail transacional
   const { emailService } = await import("@/lib/email");
@@ -210,17 +218,21 @@ export async function resetPassword(data: {
     throw new AuthError("Token de recuperação inválido ou inexistente.");
   }
 
-  if (!newPassword || newPassword.length < 6) {
-    throw new AuthError("A nova senha deve ter no mínimo 6 caracteres.");
+  if (!newPassword || newPassword.length < 8) {
+    throw new AuthError("A nova senha deve ter no mínimo 8 caracteres.");
   }
+
+  const normalizedToken = token.trim();
+  const resetTokenHash = hashRecoveryToken(normalizedToken);
 
   // 1. Localiza usuário com token válido e não expirado
   const user = await prisma.user.findFirst({
     where: {
-      resetToken: token.trim(),
+      resetToken: resetTokenHash,
       resetTokenExpires: {
         gt: new Date(),
       },
+      status: "ACTIVE",
     },
   });
 
@@ -228,23 +240,27 @@ export async function resetPassword(data: {
     throw new AuthError("Token de recuperação inválido ou expirado.");
   }
 
-  if (user.status === "BLOCKED") {
-    throw new AuthError("Usuário bloqueado. Entre em contato com o suporte.");
-  }
-
   // 2. Gera novo hash com salt 10
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   // 3. Atualização atômica (transação): redefine senha, invalida token e revoga sessões antigas
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: user.id },
+    const consumed = await tx.user.updateMany({
+      where: {
+        id: user.id,
+        resetToken: resetTokenHash,
+        resetTokenExpires: { gt: new Date() },
+        status: "ACTIVE",
+      },
       data: {
         password: hashedPassword,
         resetToken: null,
         resetTokenExpires: null,
       },
     });
+    if (consumed.count !== 1) {
+      throw new AuthError("Token de recuperação inválido ou expirado.");
+    }
 
     // Revoga todas as sessões anteriores para proteção contra hijacking
     await tx.session.deleteMany({

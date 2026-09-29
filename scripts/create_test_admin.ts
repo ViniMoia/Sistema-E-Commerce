@@ -1,75 +1,67 @@
 import prisma from "../lib/prisma";
 import bcrypt from "bcryptjs";
 
-async function main() {
-  const lojas = await prisma.loja.findMany();
-  console.log("Lojas encontradas:", lojas.map(l => ({ id: l.id, name: l.name, slug: l.slug })));
+function requiredEnvironmentVariable(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Variável obrigatória ausente: ${name}`);
+  return value;
+}
 
-  if (lojas.length === 0) {
-    throw new Error("Nenhuma loja encontrada no banco de dados.");
+async function main() {
+  if (process.env.ALLOW_ADMIN_BOOTSTRAP !== "true") {
+    throw new Error("Bootstrap administrativo desabilitado. Defina ALLOW_ADMIN_BOOTSTRAP=true explicitamente.");
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Este bootstrap local não pode ser executado em produção.");
   }
 
-  const activeLoja = lojas[0];
+  const lojaID = requiredEnvironmentVariable("BOOTSTRAP_LOJA_ID");
+  const adminEmail = requiredEnvironmentVariable("BOOTSTRAP_ADMIN_EMAIL").toLowerCase();
+  const rawPassword = requiredEnvironmentVariable("BOOTSTRAP_ADMIN_PASSWORD");
+  const adminName = process.env.BOOTSTRAP_ADMIN_NAME?.trim() || "Administrador local";
 
-  const adminEmail = "dev.admin@continental.com.br";
-  const rawPassword = "DevAdmin@2026#Continental";
-  const adminName = "Desenvolvedor Admin Teste";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+    throw new Error("BOOTSTRAP_ADMIN_EMAIL inválido.");
+  }
+  if (rawPassword.length < 12) {
+    throw new Error("BOOTSTRAP_ADMIN_PASSWORD deve ter pelo menos 12 caracteres.");
+  }
 
-  const hashedPassword = await bcrypt.hash(rawPassword, 10);
+  const loja = await prisma.loja.findUnique({
+    where: { id: lojaID },
+    select: { id: true },
+  });
+  if (!loja) throw new Error("Loja informada não existe.");
 
-  const existing = await prisma.user.findFirst({
-    where: {
+  const existing = await prisma.user.findUnique({
+    where: { email_lojaID: { email: adminEmail, lojaID } },
+    select: { id: true },
+  });
+  if (existing) {
+    throw new Error("A conta informada já existe; o bootstrap se recusa a alterar senha, status ou papel.");
+  }
+
+  const created = await prisma.user.create({
+    data: {
+      name: adminName,
       email: adminEmail,
-      lojaID: activeLoja.id,
+      password: await bcrypt.hash(rawPassword, 12),
+      role: "ADMIN",
+      status: "ACTIVE",
+      lojaID,
     },
+    select: { id: true, lojaID: true, role: true },
   });
 
-  if (existing) {
-    const updated = await prisma.user.update({
-      where: { id: existing.id },
-      data: {
-        role: "ADMIN",
-        status: "ACTIVE",
-        password: hashedPassword,
-        name: adminName,
-      },
-    });
-    console.log("Conta admin atualizada com sucesso:", {
-      id: updated.id,
-      name: updated.name,
-      email: updated.email,
-      role: updated.role,
-      loja: activeLoja.name,
-    });
-  } else {
-    const created = await prisma.user.create({
-      data: {
-        name: adminName,
-        email: adminEmail,
-        password: hashedPassword,
-        role: "ADMIN",
-        status: "ACTIVE",
-        lojaID: activeLoja.id,
-      },
-    });
-    console.log("Conta admin criada com sucesso:", {
-      id: created.id,
-      name: created.name,
-      email: created.email,
-      role: created.role,
-      loja: activeLoja.name,
-    });
-  }
-
-  console.log("SUCCESS_CREATION");
-  console.log(`EMAIL=${adminEmail}`);
-  console.log(`PASSWORD=${rawPassword}`);
+  // Não registrar e-mail nem senha. O operador já os forneceu por canal local.
+  console.log("Bootstrap administrativo concluído.", created);
 }
 
 main()
-  .catch((e) => {
-    console.error("Erro ao criar conta admin:", e);
-    process.exit(1);
+  .catch((error) => {
+    const message = error instanceof Error ? error.message : "Falha desconhecida no bootstrap administrativo.";
+    console.error(message);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

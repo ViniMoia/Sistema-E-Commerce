@@ -1,7 +1,9 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import * as productService from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validators/product";
+import { getLojaFromHeaders } from "@/lib/tenant";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -9,23 +11,43 @@ type RouteContext = { params: Promise<{ id: string }> };
 const SERVICE_ERRORS: Record<string, number> = {
   PRODUCT_NOT_FOUND: 404,
   STORE_NOT_FOUND: 404,
+  PRODUCT_IN_USE: 409,
+  VARIANT_REMOVAL_REQUIRES_ARCHIVE: 409,
+  VARIANT_NOT_FOUND: 409,
+  DUPLICATE_VARIANT_ID: 422,
+  STOCK_MANAGED_BY_VARIANTS: 422,
+};
+
+const SERVICE_ERROR_MESSAGES: Record<string, string> = {
+  PRODUCT_NOT_FOUND: "Produto não encontrado.",
+  STORE_NOT_FOUND: "Loja não encontrada.",
+  PRODUCT_IN_USE: "Produto com vendas ou carrinhos não pode ser excluído. Arquivamento ainda não está disponível.",
+  VARIANT_REMOVAL_REQUIRES_ARCHIVE: "Variantes existentes não podem ser removidas: preserve o histórico ou implemente arquivamento.",
+  VARIANT_NOT_FOUND: "Uma das variantes não pertence a este produto.",
+  DUPLICATE_VARIANT_ID: "A mesma variante foi enviada mais de uma vez.",
+  STOCK_MANAGED_BY_VARIANTS: "O estoque total é calculado pelas variantes.",
 };
 
 function handleServiceError(error: unknown): NextResponse {
   if (error instanceof Error && error.message in SERVICE_ERRORS) {
     return NextResponse.json(
-      { error: error.message },
+      { error: SERVICE_ERROR_MESSAGES[error.message], code: error.message },
       { status: SERVICE_ERRORS[error.message] }
     );
   }
-  console.error("[PRODUCTS_ID]", error);
+  logger.error("[PRODUCTS_ID]", error);
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }
 
 export async function GET(_req: Request, context: RouteContext) {
   try {
+    const loja = await getLojaFromHeaders();
+    if (!loja) {
+      return NextResponse.json({ error: "STORE_NOT_FOUND" }, { status: 404 });
+    }
+
     const params = await context.params;
-    const product = await productService.getProductById(params.id);
+    const product = await productService.getProductById(params.id, loja.id);
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
     return handleServiceError(error);
@@ -54,7 +76,12 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     // Passa o lojaID do admin autenticado para impedir alteração cross-tenant (TEN-002)
-    const product = await productService.updateProduct(params.id, parsed.data, guard.user.lojaID);
+    const product = await productService.updateProduct(
+      params.id,
+      parsed.data,
+      guard.user.lojaID,
+      guard.user.id
+    );
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
     return handleServiceError(error);
@@ -68,7 +95,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
     const params = await context.params;
     // Passa o lojaID do admin autenticado para impedir deleção cross-tenant (TEN-002)
-    await productService.deleteProduct(params.id, guard.user.lojaID);
+    await productService.deleteProduct(params.id, guard.user.lojaID, guard.user.id);
 
     // 204 No Content — body must be empty
     return new NextResponse(null, { status: 204 });

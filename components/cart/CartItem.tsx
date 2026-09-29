@@ -44,7 +44,7 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
             ) : null}
           </div>
           <p className="font-mono text-white shrink-0">
-            ${(item.price * item.quantity).toFixed(2)}
+            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.price * item.quantity)}
           </p>
         </div>
 
@@ -59,7 +59,8 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
                 }
               }}
               disabled={isLoading}
-              className="text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+              className="min-h-11 min-w-11 inline-flex items-center justify-center text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+              aria-label={item.quantity > 1 ? `Diminuir quantidade de ${item.productName}` : `Remover ${item.productName}`}
             >
               <Minus className="w-3 h-3" />
             </button>
@@ -67,7 +68,8 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
             <button
               onClick={() => onUpdateQuantity(item.variantID, item.quantity + 1)}
               disabled={isLoading}
-              className="text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+              className="min-h-11 min-w-11 inline-flex items-center justify-center text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+              aria-label={`Aumentar quantidade de ${item.productName}`}
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -76,11 +78,11 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
           <button
             onClick={() => onRemove(item.variantID)}
             disabled={isLoading}
-            className="text-neutral-500 hover:text-red-400 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest disabled:opacity-50"
-            aria-label="Remove item"
+            className="min-h-11 text-neutral-500 hover:text-red-400 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest disabled:opacity-50"
+            aria-label={`Remover ${item.productName} do carrinho`}
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Remove</span>
+            <span className="hidden sm:inline">Remover</span>
           </button>
         </div>
       </div>

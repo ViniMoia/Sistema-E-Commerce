@@ -347,4 +347,22 @@ describe('Endpoint de Cron: /api/cron/loyalty-expiration (Segurança & Execuçã
       })
     )
   })
+
+  it('deve retornar 503 e PARTIAL quando uma carteira falhar', async () => {
+    vi.spyOn(loyaltyService, 'processLoyaltyExpirations').mockResolvedValueOnce({
+      processedWallets: 2,
+      expiredCount: 1,
+      totalPointsExpired: 50,
+      errors: [{ userId: 'user-fail', lojaId: 'loja-continental-001', error: 'detalhe interno' }],
+    })
+
+    const res = await GET(new Request('http://localhost:3000/api/cron/loyalty-expiration', {
+      headers: { Authorization: `Bearer ${TEST_SECRET}` },
+    }))
+    const body = await res.json()
+
+    expect(res.status).toBe(503)
+    expect(body).toMatchObject({ success: false, status: 'PARTIAL', errorCount: 1 })
+    expect(body.errors).toBeUndefined()
+  })
 })

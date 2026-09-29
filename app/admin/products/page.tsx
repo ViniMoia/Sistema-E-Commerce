@@ -317,7 +317,7 @@ export default function AdminProductsPage() {
                   Excluir Produto
                 </h3>
                 <p className="text-xs text-catalog-muted mt-0.5">
-                  Esta ação desvinculará o produto do catálogo ativo.
+                  Exclusão física permitida somente para produtos sem vendas ou carrinhos.
                 </p>
               </div>
             </div>
@@ -329,6 +329,9 @@ export default function AdminProductsPage() {
                   style: "currency",
                   currency: "BRL",
                 }).format(Number(deleteTarget.price) || 0)}
+              </p>
+              <p className="text-catalog-muted mt-2 text-[11px]">
+                A exclusão é irreversível. Produtos com vendas ou presentes em carrinhos serão recusados pelo servidor.
               </p>
             </div>
 

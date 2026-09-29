@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Fidelidade & Pontos | Continental Produtos Estéticos Automotivos",
   description: "Consulte seu extrato de pontos e histórico de recompensas.",
+  robots: { index: false, follow: false },
 };
 
 export default async function LoyaltyProfilePage() {
@@ -18,7 +19,7 @@ export default async function LoyaltyProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-catalog-text pt-24 md:pt-28 pb-16 px-4 md:px-8 selection:bg-catalog-gold/30">
+    <main className="min-h-screen bg-[#050505] text-catalog-text pt-24 md:pt-28 pb-16 px-4 md:px-8 selection:bg-catalog-gold/30">
       <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
         <Link
           href="/profile"
@@ -36,7 +37,7 @@ export default async function LoyaltyProfilePage() {
           <LoyaltyHistoryView />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

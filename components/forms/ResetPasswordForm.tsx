@@ -20,7 +20,7 @@ export function ResetPasswordForm() {
 
   if (!token || token.trim().length < 10) {
     return (
-      <div className="w-full max-w-md mx-auto bg-catalog-card border border-catalog-gold/45 rounded-[2rem] p-8 md:p-10 shadow-2xl backdrop-blur-2xl relative z-10 text-center space-y-6">
+      <div className="w-full max-w-md mx-auto bg-catalog-card border border-catalog-gold/45 rounded-[2rem] p-8 md:p-10 shadow-2xl backdrop-blur-2xl relative z-10 text-center space-y-6" role="alert">
         <div className="w-16 h-16 rounded-full bg-red-950/40 border border-red-500/40 flex items-center justify-center mx-auto text-red-400">
           <AlertCircle className="w-8 h-8" />
         </div>
@@ -34,10 +34,8 @@ export function ResetPasswordForm() {
           </p>
         </div>
         <div className="pt-2">
-          <Link href="/forgot-password">
-            <button className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
-              Solicitar Novo Link
-            </button>
+          <Link href="/forgot-password" className="btn-shimmer block w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
+            Solicitar Novo Link
           </Link>
         </div>
       </div>
@@ -48,8 +46,8 @@ export function ResetPasswordForm() {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (password.length < 6) {
-      setErrorMessage("A nova senha deve ter no mínimo 6 caracteres.");
+    if (password.length < 8) {
+      setErrorMessage("A nova senha deve ter no mínimo 8 caracteres.");
       return;
     }
 
@@ -105,14 +103,14 @@ export function ResetPasswordForm() {
       </div>
 
       {errorMessage && (
-        <div className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
+        <div id="reset-password-error" role="alert" className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {isSuccess ? (
-        <div className="text-center py-2 space-y-6">
+        <div className="text-center py-2 space-y-6" role="status" aria-live="polite">
           <div className="w-16 h-16 rounded-full bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
             <CheckCircle2 className="w-8 h-8" />
           </div>
@@ -127,10 +125,8 @@ export function ResetPasswordForm() {
             </p>
           </div>
           <div className="pt-2">
-            <Link href="/login">
-              <button className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
-                Acessar minha conta agora
-              </button>
+            <Link href="/login" className="btn-shimmer block w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40">
+              Acessar minha conta agora
             </Link>
           </div>
         </div>
@@ -144,20 +140,24 @@ export function ResetPasswordForm() {
               <div className="relative">
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo de 6 caracteres"
+                  placeholder="Mínimo de 8 caracteres"
                   className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 pr-11 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                   required
-                  minLength={6}
+                  minLength={8}
                   autoFocus
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(errorMessage)}
+                  aria-describedby={errorMessage ? "reset-password-error" : undefined}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-catalog-muted hover:text-white transition-colors"
-                  tabIndex={-1}
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -170,13 +170,17 @@ export function ResetPasswordForm() {
               </label>
               <input
                 id="confirmPassword"
+                name="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repita a nova senha"
                 className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
                 required
-                minLength={6}
+                minLength={8}
+                autoComplete="new-password"
+                aria-invalid={Boolean(errorMessage)}
+                aria-describedby={errorMessage ? "reset-password-error" : undefined}
               />
             </div>
           </div>

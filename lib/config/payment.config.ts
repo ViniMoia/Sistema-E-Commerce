@@ -38,13 +38,31 @@ export interface PaymentConfig {
 }
 
 export function getPaymentConfig(): PaymentConfig {
+  const numberSetting = (
+    name: string,
+    fallback: number,
+    limits: { min: number; max: number; integer?: boolean }
+  ): number => {
+    const raw = process.env[name] || String(fallback);
+    const value = Number(raw);
+    if (
+      !Number.isFinite(value) ||
+      value < limits.min ||
+      value > limits.max ||
+      (limits.integer && !Number.isInteger(value))
+    ) {
+      throw new Error(`Configuração numérica inválida: ${name}`);
+    }
+    return value;
+  };
+
   return {
     installmentAbsorbFees: process.env.INSTALLMENT_ABSORB_FEES === 'true',
-    installmentMinValue: parseFloat(process.env.INSTALLMENT_MIN_VALUE || '20.00'),
-    installmentMaxCount: parseInt(process.env.INSTALLMENT_MAX_COUNT || '12', 10),
-    installmentMonthlyRate: parseFloat(process.env.INSTALLMENT_MONTHLY_RATE || '0.0299'),
-    boletoDueDays: parseInt(process.env.BOLETO_DUE_DAYS || '1', 10),
-    asaasMinValue: parseFloat(process.env.ASAAS_MIN_VALUE || '5.00'),
+    installmentMinValue: numberSetting('INSTALLMENT_MIN_VALUE', 20, { min: 0.01, max: 100000 }),
+    installmentMaxCount: numberSetting('INSTALLMENT_MAX_COUNT', 12, { min: 1, max: 24, integer: true }),
+    installmentMonthlyRate: numberSetting('INSTALLMENT_MONTHLY_RATE', 0.0299, { min: 0, max: 1 }),
+    boletoDueDays: numberSetting('BOLETO_DUE_DAYS', 1, { min: 1, max: 30, integer: true }),
+    asaasMinValue: numberSetting('ASAAS_MIN_VALUE', 5, { min: 0.01, max: 100000 }),
   };
 }
 

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { FreightOption, FreightQuoteRequest, IFreightProvider } from '@/types/freight';
 import prisma from '@/lib/prisma';
 
@@ -18,7 +19,7 @@ export class JtExpressProvider implements IFreightProvider {
       const count = await prisma.jtExpressRate.count();
       return count > 0;
     } catch (err) {
-      console.error('[JT_EXPRESS_AVAILABILITY_ERROR]', err);
+      logger.error('[JT_EXPRESS_AVAILABILITY_ERROR]', err);
       return false;
     }
   }
@@ -113,7 +114,7 @@ export class JtExpressProvider implements IFreightProvider {
         },
       ];
     } catch (error) {
-      console.error('[JT_EXPRESS_CALCULATION_ERROR]', error);
+      logger.error('[JT_EXPRESS_CALCULATION_ERROR]', error);
       return [];
     }
   }

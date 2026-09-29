@@ -42,6 +42,7 @@ export interface CreditEarnedPointsParams {
   userID: string
   orderId: string
   subtotal: number
+  points?: number
   description?: string
 }
 
@@ -66,6 +67,7 @@ export interface ManualAdjustmentParams {
   points: number // Positivo para crédito, negativo para débito
   description: string
   adminUserId: string
+  idempotencyKey: string
 }
 
 export interface LoyaltyStatementParams {

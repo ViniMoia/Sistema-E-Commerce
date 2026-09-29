@@ -9,23 +9,15 @@ import {
 } from '@/components/ui/dialog'
 import { AlertBanner, Spinner } from '@/components/ui'
 import { Check, Truck, Clock, CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
-
-type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+import { getValidTransitions, type OrderStatus } from '@/lib/order-transitions'
 
 export interface OrderStatusManagerProps {
   orderId: string
   currentStatus: OrderStatus
+  deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE'
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-}
-
-const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ['PAID', 'CANCELLED'],
-  PAID: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED'],
-  DELIVERED: [],
-  CANCELLED: []
 }
 
 const statusMap: Record<OrderStatus, { label: string; icon: any; color: string }> = {
@@ -39,6 +31,7 @@ const statusMap: Record<OrderStatus, { label: string; icon: any; color: string }
 export function OrderStatusManager({
   orderId,
   currentStatus,
+  deliveryType,
   isOpen,
   onClose,
   onSuccess
@@ -46,9 +39,14 @@ export function OrderStatusManager({
   const [selectedStatus, setSelectedStatus] = React.useState<OrderStatus | null>(null)
   const [trackingCode, setTrackingCode] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isRefunding, setIsRefunding] = React.useState(false)
+  const [refundReason, setRefundReason] = React.useState('')
+  const [refundOperationKey, setRefundOperationKey] = React.useState('')
   const [error, setError] = React.useState<string | null>(null)
 
-  const availableTransitions = VALID_TRANSITIONS[currentStatus] || []
+  const availableTransitions = getValidTransitions(currentStatus, deliveryType).filter(
+    (status) => !(currentStatus === 'PAID' && status === 'CANCELLED')
+  )
 
   React.useEffect(() => {
     if (isOpen) {
@@ -56,6 +54,9 @@ export function OrderStatusManager({
       setTrackingCode('')
       setError(null)
       setIsLoading(false)
+      setIsRefunding(false)
+      setRefundReason('')
+      setRefundOperationKey(`admin-refund-${crypto.randomUUID()}`)
     }
   }, [isOpen, currentStatus])
 
@@ -95,6 +96,33 @@ export function OrderStatusManager({
     }
   }
 
+  const handleFullRefund = async () => {
+    if (refundReason.trim().length < 3) {
+      setError('Informe o motivo do estorno.')
+      return
+    }
+    try {
+      setIsRefunding(true)
+      setError(null)
+      const res = await fetch(`/api/admin/orders/${orderId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': refundOperationKey,
+        },
+        body: JSON.stringify({ reason: refundReason.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Falha ao solicitar estorno.')
+      onSuccess()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao solicitar estorno.')
+    } finally {
+      setIsRefunding(false)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-md bg-catalog-card border border-catalog-gold/45 text-white rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
@@ -109,6 +137,40 @@ export function OrderStatusManager({
 
         <div className="space-y-5 py-2">
           {error && <AlertBanner variant="error" message={error} />}
+
+          {currentStatus === 'PAID' && (
+            <AlertBanner
+              variant="warning"
+              title="Cancelamento financeiro protegido"
+              message="Pedidos pagos só podem ser cancelados após confirmação do estorno pelo provedor de pagamento."
+            />
+          )}
+
+          {currentStatus === 'PAID' && (
+            <div className="space-y-3 rounded-xl border border-amber-500/35 bg-amber-950/20 p-3">
+              <label className="block text-xs font-mono text-amber-100">
+                Motivo do estorno integral
+                <textarea
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  className="mt-1 w-full rounded-lg border border-amber-500/30 bg-[#050B14] p-2 text-white"
+                />
+              </label>
+              <p className="text-[11px] text-amber-100/80">
+                A solicitacao nao cancela o pedido. A conclusao depende da confirmacao do provedor.
+              </p>
+              <button
+                type="button"
+                onClick={handleFullRefund}
+                disabled={isRefunding || refundReason.trim().length < 3}
+                className="rounded-full border border-amber-400/50 px-4 py-2 text-xs font-bold uppercase text-amber-100 disabled:opacity-40"
+              >
+                {isRefunding ? 'Solicitando...' : 'Solicitar estorno integral'}
+              </button>
+            </div>
+          )}
 
           {/* Status Atual */}
           <div className="p-3.5 rounded-xl bg-[#0B132B]/80 border border-catalog-gold/25 flex items-center justify-between text-xs font-mono">

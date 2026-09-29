@@ -16,11 +16,15 @@ vi.mock('@/lib/prisma', () => {
       order: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
       user: {
         findFirst: vi.fn(),
       },
       auditLog: {
+        create: vi.fn(),
+      },
+      orderStatusHistory: {
         create: vi.fn(),
       },
     },
@@ -37,7 +41,7 @@ describe('Proteção contra BOLA/IDOR e Isolamento de Recursos (TEN-002)', () =>
 
     // Admin da loja-B tenta editar produto da loja-A
     await expect(
-      updateProduct('prod-123', { name: 'Novo Nome' }, 'loja-B')
+      updateProduct('prod-123', { name: 'Novo Nome' }, 'loja-B', 'admin-B')
     ).rejects.toThrow('PRODUCT_NOT_FOUND')
   })
 
@@ -49,7 +53,7 @@ describe('Proteção contra BOLA/IDOR e Isolamento de Recursos (TEN-002)', () =>
 
     // Admin da loja-B tenta deletar produto da loja-A
     await expect(
-      deleteProduct('prod-123', 'loja-B')
+      deleteProduct('prod-123', 'loja-B', 'admin-B')
     ).rejects.toThrow('PRODUCT_NOT_FOUND')
   })
 

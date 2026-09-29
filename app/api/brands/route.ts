@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { getLojaFromHeaders } from "@/lib/tenant";
 import * as brandService from "@/services/brand.service";
@@ -18,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json(brands, { status: 200 });
   } catch (error) {
-    console.error("[BRANDS_GET]", error);
+    logger.error("[BRANDS_GET]", error);
     return NextResponse.json(
       { error: "Erro interno ao consultar marcas" },
       { status: 500 }

@@ -1,9 +1,11 @@
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { tenantCache } from '@/lib/cache'
+import { createFreightRuleSchema, updateFreightRuleSchema } from '@/lib/validators/admin-freight'
 
 export interface CreateFreightRuleParams {
   lojaID: string
+  actorId: string
   cityName: string
   value: number
 }
@@ -11,6 +13,7 @@ export interface CreateFreightRuleParams {
 export interface UpdateFreightRuleParams {
   id: string
   lojaID: string
+  actorId: string
   cityName?: string
   value?: number
 }
@@ -52,18 +55,35 @@ export async function listFreightRules(params: ListFreightRulesParams): Promise<
 }
 
 export async function createFreightRule(params: CreateFreightRuleParams): Promise<FreightRule> {
-  const exists = await prisma.freightRule.findFirst({
-    where: { lojaID: params.lojaID, cityName: params.cityName },
+  const validated = createFreightRuleSchema.parse({
+    cityName: params.cityName,
+    value: params.value,
   })
-  if (exists) {
-    throw new Error('Regra de frete já existe para esta loja e cidade.')
-  }
-  const rule = await prisma.freightRule.create({
-    data: {
-      lojaID: params.lojaID,
-      cityName: params.cityName,
-      value: new Prisma.Decimal(params.value),
-    },
+  const rule = await prisma.$transaction(async (tx) => {
+    const exists = await tx.freightRule.findFirst({
+      where: { lojaID: params.lojaID, cityName: validated.cityName },
+    })
+    if (exists) throw new Error('Regra de frete já existe para esta loja e cidade.')
+
+    const created = await tx.freightRule.create({
+      data: {
+        lojaID: params.lojaID,
+        cityName: validated.cityName,
+        value: new Prisma.Decimal(validated.value),
+      },
+    })
+    await tx.auditLog.create({
+      data: {
+        action: 'FREIGHT_RULE_CREATED',
+        actorId: params.actorId,
+        targetId: params.actorId,
+        entity: 'FreightRule',
+        entityId: created.id,
+        newValue: { cityName: created.cityName, value: created.value.toString() },
+        metadata: { lojaID: params.lojaID },
+      },
+    })
+    return created
   })
 
   // Invalida cache de frete do tenant
@@ -80,17 +100,33 @@ export async function createFreightRule(params: CreateFreightRuleParams): Promis
 }
 
 export async function updateFreightRule(params: UpdateFreightRuleParams): Promise<FreightRule | null> {
-  const existing = await prisma.freightRule.findUnique({ where: { id: params.id } })
-  if (!existing || existing.lojaID !== params.lojaID) {
-    return null
-  }
-  const data: Prisma.FreightRuleUpdateInput = {}
-  if (params.cityName !== undefined) data.cityName = params.cityName
-  if (params.value !== undefined) data.value = new Prisma.Decimal(params.value)
-  const updated = await prisma.freightRule.update({
-    where: { id: params.id },
-    data,
+  const validated = updateFreightRuleSchema.parse({
+    ...(params.cityName !== undefined ? { cityName: params.cityName } : {}),
+    ...(params.value !== undefined ? { value: params.value } : {}),
   })
+  const updated = await prisma.$transaction(async (tx) => {
+    const existing = await tx.freightRule.findUnique({ where: { id: params.id } })
+    if (!existing || existing.lojaID !== params.lojaID) return null
+
+    const data: Prisma.FreightRuleUpdateInput = {}
+    if (validated.cityName !== undefined) data.cityName = validated.cityName
+    if (validated.value !== undefined) data.value = new Prisma.Decimal(validated.value)
+    const changed = await tx.freightRule.update({ where: { id: params.id }, data })
+    await tx.auditLog.create({
+      data: {
+        action: 'FREIGHT_RULE_UPDATED',
+        actorId: params.actorId,
+        targetId: params.actorId,
+        entity: 'FreightRule',
+        entityId: changed.id,
+        previousValue: { cityName: existing.cityName, value: existing.value.toString() },
+        newValue: { cityName: changed.cityName, value: changed.value.toString() },
+        metadata: { lojaID: params.lojaID },
+      },
+    })
+    return changed
+  })
+  if (!updated) return null
 
   // Invalida cache de frete do tenant
   tenantCache.invalidateTenant(params.lojaID, 'freight')
@@ -105,12 +141,25 @@ export async function updateFreightRule(params: UpdateFreightRuleParams): Promis
   }
 }
 
-export async function deleteFreightRule(id: string, lojaID: string): Promise<FreightRule | null> {
-  const existing = await prisma.freightRule.findUnique({ where: { id } })
-  if (!existing || existing.lojaID !== lojaID) {
-    return null
-  }
-  const deleted = await prisma.freightRule.delete({ where: { id } })
+export async function deleteFreightRule(id: string, lojaID: string, actorId: string): Promise<FreightRule | null> {
+  const deleted = await prisma.$transaction(async (tx) => {
+    const existing = await tx.freightRule.findUnique({ where: { id } })
+    if (!existing || existing.lojaID !== lojaID) return null
+
+    await tx.auditLog.create({
+      data: {
+        action: 'FREIGHT_RULE_DELETED',
+        actorId,
+        targetId: actorId,
+        entity: 'FreightRule',
+        entityId: id,
+        previousValue: { cityName: existing.cityName, value: existing.value.toString() },
+        metadata: { lojaID },
+      },
+    })
+    return tx.freightRule.delete({ where: { id } })
+  })
+  if (!deleted) return null
 
   // Invalida cache de frete do tenant
   tenantCache.invalidateTenant(lojaID, 'freight')

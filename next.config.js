@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
+const { buildContentSecurityPolicy } = require('./lib/csp');
+
 const nextConfig = {
   output: 'standalone',
+  deploymentId: process.env.DEPLOYMENT_VERSION || undefined,
   serverExternalPackages: ['@prisma/client', 'prisma'],
   images: {
     remotePatterns: [
@@ -35,19 +38,13 @@ const nextConfig = {
     ],
   },
   async headers() {
-    const cspDirectives = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' blob: data: https://*.supabase.co https://via.placeholder.com https://images.unsplash.com https://api.qrserver.com https://*.mitiendanube.com https://dcdn-us.mitiendanube.com https://res.cloudinary.com",
-      "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co https://viacep.com.br https://api.asaas.com https://sandbox.asaas.com https://api.resend.com",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ');
+    const cspDirectives = buildContentSecurityPolicy();
 
     return [
+      {
+        source: '/api/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
       {
         source: '/:path*',
         headers: [

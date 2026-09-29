@@ -1,0 +1,27 @@
+# Referencia; requer collector autorizado e nao e aplicada automaticamente.
+groups:
+  - name: ecommerce-refunds
+    rules:
+      - alert: EcommerceRefundReconciliationOverSla
+        expr: refund_reconciliation_over_sla > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ha estornos acima do SLA de reconciliacao"
+
+      - alert: EcommerceRefundReconciliationRequired
+        expr: refund_reconciliation_backlog{status="reconciliation_required"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Estorno financeiro requer intervencao"
+
+      - alert: EcommerceRefundReconciliationCronMissing
+        expr: absent_over_time(cron_runs_total{job="refund_reconciliation_v1"}[10m])
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Heartbeat do reconciliador de estornos esta ausente"

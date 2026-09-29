@@ -1,13 +1,10 @@
+import { logger } from '@/lib/logger'
+import { Prisma } from '@prisma/client'
 import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
 import { requireAdmin } from '@/lib/auth/guards'
 import { updateFreightRule, deleteFreightRule } from '@/services/freight.service'
-import { z } from 'zod'
-
-const updateFreightRuleSchema = z.object({
-  cityName: z.string().min(1, 'Nome da cidade é obrigatório').optional(),
-  value: z.number().min(0, 'Valor de frete não pode ser negativo').optional(),
-})
+import { updateFreightRuleSchema } from '@/lib/validators/admin-freight'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -37,6 +34,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     const updated = await updateFreightRule({
       id,
       lojaID: adminResult.user.lojaID,
+      actorId: adminResult.user.id,
       cityName: parsed.data.cityName,
       value: parsed.data.value,
     })
@@ -47,7 +45,11 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     return ok(updated)
   } catch (e) {
-    return err((e as Error).message, 500)
+    logger.error('Freight rule mutation failed', e, { action: 'FREIGHT_RULE_FAILED' })
+    if ((e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') || (e instanceof Error && e.message === 'Regra de frete já existe para esta loja e cidade.')) {
+      return err('Regra de frete já existe para esta loja e cidade.', 409)
+    }
+    return err('Erro ao alterar regra de frete.', 500, 'INTERNAL_ERROR')
   }
 }
 
@@ -66,13 +68,17 @@ export async function DELETE(req: Request, context: RouteContext) {
   }
 
   try {
-    const deleted = await deleteFreightRule(id, adminResult.user.lojaID)
+    const deleted = await deleteFreightRule(id, adminResult.user.lojaID, adminResult.user.id)
     if (!deleted) {
       return err('Regra de frete não encontrada.', 404, 'NOT_FOUND')
     }
 
     return ok(deleted)
   } catch (e) {
-    return err((e as Error).message, 500)
+    logger.error('Freight rule mutation failed', e, { action: 'FREIGHT_RULE_FAILED' })
+    if ((e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') || (e instanceof Error && e.message === 'Regra de frete já existe para esta loja e cidade.')) {
+      return err('Regra de frete já existe para esta loja e cidade.', 409)
+    }
+    return err('Erro ao alterar regra de frete.', 500, 'INTERNAL_ERROR')
   }
 }

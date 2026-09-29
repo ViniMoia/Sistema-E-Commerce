@@ -1,11 +1,20 @@
 import { LoginForm } from "@/components/forms/LoginForm";
+import { getSafeNextPath } from "@/lib/safe-next-path";
 
 export const metadata = {
   title: "Login | Continental Produtos Estéticos",
   description: "Acesse sua conta para continuar.",
+  robots: { index: false, follow: true },
 };
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ next?: string | string[] }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const nextPath = getSafeNextPath(params.next);
+
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text flex flex-col relative overflow-hidden selection:bg-catalog-gold/30">
       {/* Background radial glow and ambient gradient */}
@@ -20,7 +29,7 @@ export default function LoginPage() {
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center pt-28 pb-16 px-4 md:px-6 relative z-10 w-full h-full fade-in">
-        <LoginForm />
+        <LoginForm nextPath={nextPath} />
       </main>
     </div>
   );

@@ -7,7 +7,7 @@ import { ContinentalLogo } from "@/components/brand/ContinentalLogo";
 import { loginSchema, LoginInput } from "@/lib/validators/auth";
 import { AlertCircle } from "lucide-react";
 
-export function LoginForm() {
+export function LoginForm({ nextPath = "/" }: { nextPath?: string }) {
   const router = useRouter();
   const [formData, setFormData] = useState<LoginInput>({
     email: "",
@@ -48,7 +48,7 @@ export function LoginForm() {
         throw new Error(data.error || "Erro ao fazer login");
       }
 
-      router.push("/");
+      router.replace(nextPath);
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Ocorreu um erro inesperado");
@@ -76,7 +76,7 @@ export function LoginForm() {
       </div>
 
       {error && (
-        <div className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
+        <div id="login-error" role="alert" className="mb-6 p-3.5 bg-red-950/40 border border-red-500/40 rounded-xl text-red-400 text-xs font-mono text-center flex items-center justify-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
@@ -101,6 +101,8 @@ export function LoginForm() {
               className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               required
               autoComplete="email"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "login-error" : undefined}
             />
           </div>
           
@@ -129,6 +131,8 @@ export function LoginForm() {
               className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
               required
               autoComplete="current-password"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "login-error" : undefined}
             />
           </div>
         </div>

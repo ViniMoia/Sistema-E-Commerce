@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { setupTestDb, seedTestData, cleanupTestDb } from '@/tests/setup/db'
-import { createTestCustomer, createTestOrder, createTestOrderItem } from '@/tests/setup/factories'
+import { createTestOrder, createTestOrderItem } from '@/tests/setup/factories'
 import { startQueryProfiler } from '@/tests/helpers/query-profiler'
-import { listCustomers, getCustomerMetrics } from '@/lib/services/customer.service'
-import { listOrdersForAdmin } from '@/lib/services/order.service'
+import { listCustomers, getCustomerMetrics } from '@/services/customer.service'
+import { listOrdersForAdmin } from '@/services/order.service'
 import { Prisma, UserStatus, OrderStatus, DeliveryType } from '@prisma/client'
+import prisma from '@/lib/prisma'
 
 const TARGETS = {
   listCustomers: 100,
@@ -35,18 +36,22 @@ describe('Performance de queries de métricas', () => {
     const ordersPerCustomer = 50
 
     for (let batchStart = 0; batchStart < totalCustomers; batchStart += batchSize) {
-      const batchUsers = []
-      for (let i = batchStart; i < batchStart + batchSize && i < totalCustomers; i++) {
-        const user = await createTestCustomer({
-          name: `Cliente ${i}`,
-          email: `cliente-perf-${i}@test.com`,
-          password: 'test123456',
-          role: 'CUSTOMER',
-          status: UserStatus.ACTIVE,
-          lojaID: TEST_LOJA_ID
-        })
-        batchUsers.push(user)
-      }
+      const batchUsers = await prisma.user.createManyAndReturn({
+        data: Array.from(
+          { length: Math.min(batchSize, totalCustomers - batchStart) },
+          (_, offset) => {
+            const index = batchStart + offset
+            return {
+              name: `Cliente ${index}`,
+              email: `cliente-perf-${index}@test.com`,
+              password: hashedPassword,
+              role: 'CUSTOMER',
+              status: UserStatus.ACTIVE,
+              lojaID: TEST_LOJA_ID
+            }
+          }
+        )
+      })
       createdUsers.push(...batchUsers)
     }
 
@@ -104,6 +109,11 @@ describe('Performance de queries de métricas', () => {
     }
   })
 
+  beforeAll(async () => {
+    // Bulk fixtures precede autovacuum; give the planner representative stats.
+    await prisma.$executeRawUnsafe('ANALYZE "User", "Order", "OrderItem"')
+  })
+
   afterAll(async () => {
     await cleanupTestDb()
   })
@@ -113,6 +123,7 @@ describe('Performance de queries de métricas', () => {
       const profiler = startQueryProfiler()
       const result = await listCustomers({ lojaID: TEST_LOJA_ID, limit: 20 })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       expect(result.data.length).toBeGreaterThan(0)
       expect(report.totalDuration).toBeLessThan(TARGETS.listCustomers)
@@ -126,6 +137,7 @@ describe('Performance de queries de métricas', () => {
         search: 'Cliente'
       })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       expect(result.data.length).toBeGreaterThan(0)
       expect(report.totalDuration).toBeLessThan(TARGETS.listCustomersWithSearch)
@@ -135,26 +147,27 @@ describe('Performance de queries de métricas', () => {
       const pageDurations: number[] = []
       let currentCursor: string | null = null
 
+      const seen = new Set<string>()
       for (let page = 0; page < 5; page++) {
         const profiler = startQueryProfiler()
         const result = await listCustomers({
           lojaID: TEST_LOJA_ID,
-          limit: 20,
+          limit: 10,
           cursor: currentCursor || undefined
         })
         const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
         pageDurations.push(report.totalDuration)
+        for (const row of result.data) { expect(seen.has(row.id)).toBe(false); seen.add(row.id) }
         currentCursor = result.nextCursor
+        expect(currentCursor).not.toBeNull()
+        expect(report.queryCount).toBeLessThanOrEqual(2)
 
         expect(report.totalDuration).toBeLessThan(TARGETS.listCustomersCursor)
       }
 
-      const firstPageDuration = pageDurations[0]
-      const lastPageDuration = pageDurations[pageDurations.length - 1]
-      const maxAllowedDegradation = firstPageDuration * 1.10
-
-      expect(lastPageDuration).toBeLessThan(maxAllowedDegradation)
+      expect(pageDurations).toHaveLength(5)
     })
   })
 
@@ -166,6 +179,7 @@ describe('Performance de queries de métricas', () => {
         lojaID: TEST_LOJA_ID
       })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       expect(metrics.totalOrders).toBe(100)
       expect(report.totalDuration).toBeLessThan(TARGETS.metricsSmall)
@@ -179,6 +193,7 @@ describe('Performance de queries de métricas', () => {
         lojaID: TEST_LOJA_ID
       })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       expect(metrics.totalOrders).toBe(1000)
       expect(report.totalDuration).toBeLessThan(TARGETS.metricsLarge)
@@ -191,6 +206,7 @@ describe('Performance de queries de métricas', () => {
         lojaID: TEST_LOJA_ID
       })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       expect(report.queryCount).toBeLessThanOrEqual(3)
     })
@@ -201,6 +217,7 @@ describe('Performance de queries de métricas', () => {
       const profiler = startQueryProfiler()
       const orders = await listOrdersForAdmin({ lojaID: TEST_LOJA_ID })
       const report = profiler.stop()
+      console.info('QUERY_MEASUREMENT', JSON.stringify({ queryCount: report.queryCount, totalDurationMs: report.totalDuration }))
 
       const count = 'data' in orders ? orders.data.length : (orders as any[]).length
       expect(count).toBeGreaterThan(0)

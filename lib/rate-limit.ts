@@ -102,6 +102,26 @@ function isValidIp(ip: string): boolean {
  * Prioriza cabeçalhos autênticos de borda e sanitiza contra injeção e IP spoofing (AUD2-003).
  */
 export function getClientIp(req: Request): string {
+  const trustedProxy = process.env.TRUSTED_PROXY_PROVIDER?.toLowerCase();
+
+  // Em produção, cabeçalhos de encaminhamento só têm autoridade quando a
+  // infraestrutura que os sobrescreve foi declarada explicitamente.
+  if (process.env.NODE_ENV === "production") {
+    if (trustedProxy === "cloudflare") {
+      const ip = req.headers.get("cf-connecting-ip")?.trim() || "";
+      return isValidIp(ip) ? ip : "untrusted-client";
+    }
+    if (trustedProxy === "vercel") {
+      const ip = req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "";
+      return isValidIp(ip) ? ip : "untrusted-client";
+    }
+    if (trustedProxy === "generic") {
+      const ip = req.headers.get("x-real-ip")?.trim() || "";
+      return isValidIp(ip) ? ip : "untrusted-client";
+    }
+    return "untrusted-client";
+  }
+
   // 1. Cabeçalhos de borda autenticados de CDNs / Proxies de infraestrutura confiáveis
   const cfConnectingIp = req.headers.get("cf-connecting-ip")?.trim();
   if (cfConnectingIp && isValidIp(cfConnectingIp)) {

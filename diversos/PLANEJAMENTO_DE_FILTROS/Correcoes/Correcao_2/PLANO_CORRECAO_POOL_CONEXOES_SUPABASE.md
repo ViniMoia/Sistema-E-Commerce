@@ -19,8 +19,8 @@ Error querying the database: FATAL: (EMAXCONNSSESSION) max clients reached in se
 ### 1.2. Causa Raiz
 No arquivo [`.env`](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/.env), a variável `DATABASE_URL` está configurada da seguinte forma:
 ```env
-DATABASE_URL="postgresql://postgres.hzewcqjjiglwpohdsjmq:AWDsxf%401423@aws-1-us-east-1.pooler.supabase.com:5432/postgres?connection_limit=2"
-DIRECT_URL="postgresql://postgres.hzewcqjjiglwpohdsjmq:AWDsxf%401423@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://[usuario]:[senha]@[pooler-host]:[porta]/[database]?connection_limit=2"
+DIRECT_URL="postgresql://[usuario]:[senha]@[direct-host]:[porta]/[database]"
 ```
 
 * **Session Mode (Porta 5432):** No host `aws-1-us-east-1.pooler.supabase.com`, a porta **`5432`** força o Supavisor / PgBouncer a operar em **Modo Sessão**. Nesse modo, cada conexão aberta pelo cliente retém um slot físico dedicado e exclusivo no banco durante todo o tempo de vida do processo. No Supabase, o Session Mode possui um teto rígido e global de **apenas 15 conexões** (`pool_size: 15`).

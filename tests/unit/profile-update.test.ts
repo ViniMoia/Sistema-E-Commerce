@@ -72,6 +72,27 @@ describe("Módulo de Atualização de Perfil do Cliente (ACT-P2-01)", () => {
         expect(result.data.cpfCnpj).toBe("52998224725");
       }
     });
+
+    it("deve descartar tentativa de mass assignment de identidade, papel e tenant", () => {
+      const result = updateProfileSchema.safeParse({
+        name: "Carlos Silva",
+        email: "atacante@teste.com",
+        role: "ADMIN",
+        status: "ACTIVE",
+        lojaID: "loja-alheia",
+        id: "outro-usuario",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({ name: "Carlos Silva", phone: null, cpfCnpj: null });
+        expect(result.data).not.toHaveProperty("email");
+        expect(result.data).not.toHaveProperty("role");
+        expect(result.data).not.toHaveProperty("status");
+        expect(result.data).not.toHaveProperty("lojaID");
+        expect(result.data).not.toHaveProperty("id");
+      }
+    });
   });
 
   describe("2. Camada de Serviço (updateUserProfile)", () => {

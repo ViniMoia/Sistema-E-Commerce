@@ -170,6 +170,26 @@ describe("Módulo de Armazenamento Supabase Storage (ACT-P2-02)", () => {
       expect(json.code).toBe("INVALID_FILE_TYPE");
     });
 
+    it("deve rejeitar bucket arbitrário mesmo para administrador", async () => {
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({
+        id: "admin-1",
+        role: "ADMIN",
+        lojaID: "loja-1",
+      } as any);
+
+      const formData = new FormData();
+      formData.append("file", new File(["fake"], "avatar.png", { type: "image/png" }));
+      formData.append("bucket", "avatars");
+      const res = await POST(new Request("http://localhost/api/upload", {
+        method: "POST",
+        body: formData,
+      }));
+
+      expect(res.status).toBe(400);
+      expect((await res.json()).code).toBe("INVALID_BUCKET");
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
+
     it("deve fazer upload com sucesso para ADMIN no bucket products", async () => {
       vi.mocked(getCurrentUser).mockResolvedValueOnce({
         id: "admin-1",

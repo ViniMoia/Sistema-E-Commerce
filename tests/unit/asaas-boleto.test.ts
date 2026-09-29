@@ -10,6 +10,8 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(prisma.paymentWebhookEvent, 'updateMany').mockResolvedValue({ count: 1 });
+    vi.spyOn(prisma.paymentReconciliation, 'upsert').mockResolvedValue({} as any);
     adapter = new AsaasPaymentAdapter();
     process.env.ASAAS_WEBHOOK_TOKEN = 'test_webhook_token_secure_123';
   });
@@ -37,6 +39,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
 
       const result = await adapter.createBoletoCharge({
         orderId: 'ord-bol-1',
+        paymentReference: 'payment-reference-bol-1',
         orderNumber: 3001,
         value: 250.0,
         customer: {
@@ -78,6 +81,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
 
       const result = await adapter.createBoletoCharge({
         orderId: 'ord-bol-fallback',
+        paymentReference: 'payment-reference-bol-fallback',
         orderNumber: 3002,
         value: 100.0,
         customer: {
@@ -95,6 +99,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
 
   describe('2. Ciclo de Vida e Webhook do Boleto Bancário', () => {
     it('deve cancelar o pedido quando o boleto vencer (PAYMENT_OVERDUE) liberando estoque', async () => {
+      vi.spyOn(prisma.paymentWebhookEvent, 'findUnique').mockResolvedValueOnce(null);
       vi.spyOn(prisma.paymentWebhookEvent, 'create').mockResolvedValueOnce({
         id: 'evt_overdue_1',
       } as any);
@@ -111,7 +116,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
         order: { id: 'ord-bol-vencido', status: 'CANCELLED' },
       } as any);
 
-      vi.spyOn(prisma.order, 'update').mockResolvedValueOnce({} as any);
+      vi.spyOn(prisma.order, 'update').mockResolvedValue({} as any);
 
       const req = new Request('http://localhost/api/webhooks/asaas', {
         method: 'POST',
@@ -143,6 +148,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
     });
 
     it('deve registrar nota administrativa em PAYMENT_AWAITING_RISK_ANALYSIS sem transicionar para PAID', async () => {
+      vi.spyOn(prisma.paymentWebhookEvent, 'findUnique').mockResolvedValueOnce(null);
       vi.spyOn(prisma.paymentWebhookEvent, 'create').mockResolvedValueOnce({
         id: 'evt_risk_1',
       } as any);

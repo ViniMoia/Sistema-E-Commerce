@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useCartStore } from '@/store/cart.store'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
 import {
@@ -51,7 +50,6 @@ interface ConfirmationOrder {
 
 export default function CheckoutConfirmationPage() {
   const router = useRouter()
-  const { clearCart } = useCartStore()
   const [order, setOrder] = useState<ConfirmationOrder | null>(null)
   const [copiedPix, setCopiedPix] = useState(false)
   const [copiedBoleto, setCopiedBoleto] = useState(false)
@@ -69,11 +67,9 @@ export default function CheckoutConfirmationPage() {
     try {
       const data = JSON.parse(rawData) as ConfirmationOrder
       setOrder(data)
-      clearCart()
     } catch {
       router.push('/')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Polling de status em tempo real
@@ -183,7 +179,7 @@ export default function CheckoutConfirmationPage() {
     : 'Próximo dia útil'
 
   return (
-    <div className="min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30 relative flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30 relative flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
       {/* Glow de Iluminação Continental no Topo */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-[radial-gradient(ellipse_at_top,rgba(240,180,14,0.08),transparent_65%)] pointer-events-none -z-0" />
 
@@ -415,7 +411,9 @@ export default function CheckoutConfirmationPage() {
         )}
 
         {/* Simulação em Homologação / Testes Dev */}
-        {process.env.NODE_ENV !== 'production' && paymentStatus === 'PENDING' && (
+          {process.env.NODE_ENV !== 'production' &&
+            process.env.NEXT_PUBLIC_ENABLE_WEBHOOK_SIMULATOR === 'true' &&
+            paymentStatus === 'PENDING' && (
           <div className="mb-6 w-full">
             <button
               type="button"
@@ -483,6 +481,6 @@ export default function CheckoutConfirmationPage() {
       <div className="relative z-10 text-center mt-8 text-xs font-mono text-catalog-muted">
         <p>© {new Date().getFullYear()} Continental Produtos Estéticos Automotivos. Todos os direitos reservados.</p>
       </div>
-    </div>
+    </main>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Award,
   Sparkles,
@@ -17,31 +17,32 @@ import {
   DollarSign
 } from 'lucide-react'
 import type { LoyaltyStatementResult, LoyaltyStatementItem } from '@/types/loyalty.types'
+import { readLoyaltyStatement } from '@/lib/loyalty-client'
 
 export function LoyaltyHistoryView() {
   const [statement, setStatement] = useState<LoyaltyStatementResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const limit = 10
 
-  const loadStatement = async (pageNumber: number) => {
+  const loadStatement = useCallback(async (pageNumber: number) => {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch(`/api/loyalty/wallet?page=${pageNumber}&limit=${limit}`)
-      const data = await res.json()
-      if (data.success && data.data) {
-        setStatement(data.data)
-      }
-    } catch (err) {
-      console.error('Erro ao carregar extrato de fidelidade:', err)
+      setStatement(await readLoyaltyStatement(res))
+    } catch {
+      setStatement(null)
+      setError('Não foi possível consultar seu saldo e extrato. Nenhum valor foi alterado; tente novamente.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadStatement(page)
-  }, [page])
+  }, [loadStatement, page])
 
   const getBadgeForType = (type: string, points: number) => {
     switch (type) {
@@ -89,6 +90,28 @@ export function LoyaltyHistoryView() {
     }
   }
 
+  if (loading && !statement) {
+    return (
+      <div className="rounded-2xl border border-catalog-gold/30 bg-catalog-card p-12 text-center text-catalog-muted" role="status">
+        <RefreshCw className="mx-auto mb-3 h-6 w-6 animate-spin text-catalog-gold" />
+        Carregando saldo e extrato de fidelidade...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-500/40 bg-red-950/30 p-8 text-center" role="alert">
+        <AlertCircle className="mx-auto mb-3 h-8 w-8 text-red-400" />
+        <h2 className="text-lg font-bold text-white">Fidelidade temporariamente indisponível</h2>
+        <p className="mx-auto mt-2 max-w-lg text-sm text-red-200">{error}</p>
+        <button type="button" onClick={() => loadStatement(page)} className="mt-5 min-h-11 rounded-full border border-red-300/40 px-5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/10">
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header com Título */}
@@ -110,6 +133,7 @@ export function LoyaltyHistoryView() {
           disabled={loading}
           className="p-2 rounded-xl bg-white/5 border border-white/10 text-catalog-muted hover:text-catalog-gold hover:border-catalog-gold/40 transition-all cursor-pointer self-start sm:self-auto"
           title="Atualizar extrato"
+          aria-label="Atualizar extrato de fidelidade"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-catalog-gold' : ''}`} />
         </button>
@@ -277,6 +301,7 @@ export function LoyaltyHistoryView() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
                 className="p-1.5 rounded-lg border border-catalog-gold/30 bg-[#0B132B] hover:border-catalog-gold text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="Página anterior do extrato"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -284,6 +309,7 @@ export function LoyaltyHistoryView() {
                 onClick={() => setPage((p) => Math.min(statement.totalPages, p + 1))}
                 disabled={page >= statement.totalPages || loading}
                 className="p-1.5 rounded-lg border border-catalog-gold/30 bg-[#0B132B] hover:border-catalog-gold text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="Próxima página do extrato"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

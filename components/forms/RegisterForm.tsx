@@ -73,11 +73,15 @@ export function RegisterForm() {
       newErrors.email = "E-mail inválido";
     }
     
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = "A senha deve ter no mínimo 6 caracteres";
+    if (formData.password && formData.password.length < 8) {
+      newErrors.password = "A senha deve ter no mínimo 8 caracteres";
     }
 
     setErrors(newErrors);
+    const firstInvalidField = Object.keys(newErrors)[0];
+    if (firstInvalidField) {
+      requestAnimationFrame(() => document.getElementById(firstInvalidField)?.focus());
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -152,9 +156,14 @@ export function RegisterForm() {
     return `${base} border border-catalog-gold/30 focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold`;
   };
 
+  const getErrorProps = (fieldName: string) => ({
+    "aria-invalid": Boolean(errors[fieldName]),
+    "aria-describedby": errors[fieldName] ? `${fieldName}-error` : undefined,
+  });
+
   if (isSuccess) {
     return (
-      <div className="w-full max-w-md mx-auto bg-catalog-card border border-catalog-gold/45 rounded-[2rem] p-8 md:p-10 shadow-2xl backdrop-blur-2xl relative z-10 text-center space-y-6">
+      <div className="w-full max-w-md mx-auto bg-catalog-card border border-catalog-gold/45 rounded-[2rem] p-8 md:p-10 shadow-2xl backdrop-blur-2xl relative z-10 text-center space-y-6" role="status" aria-live="polite">
         <div className="w-16 h-16 rounded-full bg-catalog-gold/15 border border-catalog-gold/50 flex items-center justify-center mx-auto text-catalog-gold shadow-[0_0_20px_rgba(240,180,14,0.25)]">
           <CheckCircle2 className="w-8 h-8" />
         </div>
@@ -174,10 +183,8 @@ export function RegisterForm() {
           </p>
         </div>
         <div className="pt-2">
-          <Link href="/">
-            <button className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-md hover:shadow-lg transition-all border border-[#F5BD1E]/40 cursor-pointer">
-              Ir para a Loja Agora
-            </button>
+          <Link href="/" className="btn-shimmer block w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-md hover:shadow-lg transition-all border border-[#F5BD1E]/40 cursor-pointer">
+            Ir para a Loja Agora
           </Link>
         </div>
       </div>
@@ -217,7 +224,7 @@ export function RegisterForm() {
       </div>
 
       {apiError && (
-        <div className="mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/40 flex items-center justify-center gap-2 text-center">
+        <div id="register-api-error" role="alert" className="mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/40 flex items-center justify-center gap-2 text-center">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           <p className="text-red-400 text-xs font-mono">{apiError}</p>
         </div>
@@ -241,9 +248,11 @@ export function RegisterForm() {
                 value={formData.name} 
                 onChange={handleChange} 
                 placeholder="Ex: João da Silva"
+                autoComplete="name"
+                {...getErrorProps("name")}
                 className={getInputClassName("name")}
               />
-              {errors.name && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.name}</p>}
+              {errors.name && <p id="name-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.name}</p>}
             </div>
             
             <div className="space-y-1.5">
@@ -257,9 +266,11 @@ export function RegisterForm() {
                 value={formData.email} 
                 onChange={handleChange} 
                 placeholder="joao@exemplo.com"
+                autoComplete="email"
+                {...getErrorProps("email")}
                 className={getInputClassName("email")}
               />
-              {errors.email && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.email}</p>}
+              {errors.email && <p id="email-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.email}</p>}
             </div>
           </div>
 
@@ -274,10 +285,13 @@ export function RegisterForm() {
                 type="password" 
                 value={formData.password} 
                 onChange={handleChange} 
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+                minLength={8}
+                {...getErrorProps("password")}
                 className={getInputClassName("password")}
               />
-              {errors.password && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.password}</p>}
+              {errors.password && <p id="password-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.password}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -290,9 +304,12 @@ export function RegisterForm() {
                 value={formData.phone} 
                 onChange={handleChange} 
                 placeholder="(00) 00000-0000"
+                type="tel"
+                autoComplete="tel"
+                {...getErrorProps("phone")}
                 className={getInputClassName("phone")}
               />
-              {errors.phone && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.phone}</p>}
+              {errors.phone && <p id="phone-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.phone}</p>}
             </div>
           </div>
         </div>
@@ -314,9 +331,12 @@ export function RegisterForm() {
                 value={formData.cep} 
                 onChange={handleChange} 
                 placeholder="00000-000"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                {...getErrorProps("cep")}
                 className={getInputClassName("cep")}
               />
-              {errors.cep && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.cep}</p>}
+              {errors.cep && <p id="cep-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.cep}</p>}
             </div>
 
             <div className="space-y-1.5 md:col-span-1">
@@ -330,9 +350,11 @@ export function RegisterForm() {
                 onChange={handleChange} 
                 placeholder="SP"
                 maxLength={2}
+                autoComplete="address-level1"
+                {...getErrorProps("state")}
                 className={getInputClassName("state")}
               />
-              {errors.state && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.state}</p>}
+              {errors.state && <p id="state-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.state}</p>}
             </div>
             
             <div className="space-y-1.5 md:col-span-2">
@@ -345,9 +367,11 @@ export function RegisterForm() {
                 value={formData.city} 
                 onChange={handleChange} 
                 placeholder="Sua cidade"
+                autoComplete="address-level2"
+                {...getErrorProps("city")}
                 className={getInputClassName("city")}
               />
-              {errors.city && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.city}</p>}
+              {errors.city && <p id="city-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.city}</p>}
             </div>
           </div>
 
@@ -362,9 +386,11 @@ export function RegisterForm() {
                 value={formData.district} 
                 onChange={handleChange} 
                 placeholder="Seu bairro"
+                autoComplete="address-level3"
+                {...getErrorProps("district")}
                 className={getInputClassName("district")}
               />
-              {errors.district && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.district}</p>}
+              {errors.district && <p id="district-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.district}</p>}
             </div>
             
             <div className="space-y-1.5">
@@ -377,9 +403,11 @@ export function RegisterForm() {
                 value={formData.street} 
                 onChange={handleChange} 
                 placeholder="Nome da sua rua"
+                autoComplete="address-line1"
+                {...getErrorProps("street")}
                 className={getInputClassName("street")}
               />
-              {errors.street && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.street}</p>}
+              {errors.street && <p id="street-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.street}</p>}
             </div>
           </div>
 
@@ -394,9 +422,11 @@ export function RegisterForm() {
                 value={formData.number} 
                 onChange={handleChange} 
                 placeholder="123"
+                autoComplete="address-line2"
+                {...getErrorProps("number")}
                 className={getInputClassName("number")}
               />
-              {errors.number && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.number}</p>}
+              {errors.number && <p id="number-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.number}</p>}
             </div>
             
             <div className="space-y-1.5 md:col-span-2">
@@ -409,6 +439,7 @@ export function RegisterForm() {
                 value={formData.complement} 
                 onChange={handleChange} 
                 placeholder="Apto, Bloco, etc."
+                autoComplete="address-line3"
                 className={getInputClassName("complement")}
               />
             </div>

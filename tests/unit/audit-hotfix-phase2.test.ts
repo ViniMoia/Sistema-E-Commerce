@@ -36,6 +36,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
     },
     loyaltyTransaction: {
+      findUnique: vi.fn(),
       create: vi.fn(),
     },
   },
@@ -47,15 +48,25 @@ vi.mock('@/lib/tenant', () => ({
 
 vi.mock('@/services/freight', () => ({
   freightOrchestrator: {
-    calculate: vi.fn().mockResolvedValue([
-      { serviceName: 'SEDEX', price: 25.5, estimatedDays: 2 },
-    ]),
+    calculate: vi.fn().mockResolvedValue({
+      options: [
+        {
+          providerId: 'CORREIOS',
+          serviceCode: 'SEDEX',
+          serviceName: 'SEDEX',
+          price: 25.5,
+          deliveryTimeInDays: 2,
+        },
+      ],
+      packageDetails: { weightInGrams: 2000, dimensions: '25x15x20 cm' },
+    }),
   },
 }));
 
 describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, AUD-007, AUD-008)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.FREIGHT_QUOTE_SECRET = 'test-only-freight-quote-secret-32-chars';
   });
 
   describe('AUD-006: Proteção Multi-Tenant e Rate Limit em GET /api/orders/[id]/status', () => {
@@ -137,6 +148,7 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
           points: 100,
           description: 'Bônus indevido',
           adminUserId: 'admin-1',
+          idempotencyKey: '11111111-1111-4111-8111-111111111111',
         })
       ).rejects.toThrow(LoyaltyError);
 
@@ -147,6 +159,7 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
           points: 100,
           description: 'Bônus indevido',
           adminUserId: 'admin-1',
+          idempotencyKey: '22222222-2222-4222-8222-222222222222',
         })
       ).rejects.toThrow(/não pertence a esta loja/);
     });
@@ -189,6 +202,7 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
         points: 100,
         description: 'Bônus fidelidade legítimo',
         adminUserId: 'admin-1',
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
       });
 
       expect(result.wallet.balance).toBe(300);
@@ -245,12 +259,50 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
       expect(prisma.product.findMany).toHaveBeenCalledTimes(1);
       expect(prisma.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: { in: expect.arrayContaining(['prod-1', 'prod-2']) } },
+          where: {
+            id: { in: expect.arrayContaining(['prod-1', 'prod-2']) },
+            lojaID: 'loja-1',
+          },
         })
       );
 
       // findUnique NUNCA deve ter sido chamado no loop
       expect(prisma.product.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('deve rejeitar 51 itens antes de consultar produtos ou provedor de frete', async () => {
+      const req = new Request('http://loja.com/api/freight/calculate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          destinationCep: '01001-000',
+          items: Array.from({ length: 51 }, (_, index) => ({
+            productId: `prod-${index}`,
+            quantity: 1,
+          })),
+        }),
+      });
+
+      const res = await freightCalculatePOST(req);
+      expect(res.status).toBe(400);
+      expect(prisma.product.findMany).not.toHaveBeenCalled();
+    });
+
+    it('deve bloquear loja do corpo divergente do tenant do domínio', async () => {
+      vi.mocked(tenantLib.getLojaFromHeaders).mockResolvedValueOnce({ id: 'loja-A' } as any);
+      const req = new Request('http://loja.com/api/freight/calculate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          lojaID: 'loja-B',
+          destinationCep: '01001-000',
+          items: [{ productId: 'prod-B', quantity: 1 }],
+        }),
+      });
+
+      const res = await freightCalculatePOST(req);
+      expect(res.status).toBe(403);
+      expect(prisma.product.findMany).not.toHaveBeenCalled();
     });
   });
 });

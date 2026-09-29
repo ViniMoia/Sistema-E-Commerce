@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -56,7 +57,7 @@ export async function GET(req: Request, context: RouteContext) {
       },
     });
   } catch (error) {
-    console.error('[ORDER_STATUS_POLL_ERROR]', error);
+    logger.error('[ORDER_STATUS_POLL_ERROR]', error);
     return NextResponse.json(
       { error: 'Erro ao consultar status do pedido' },
       { status: 500 }

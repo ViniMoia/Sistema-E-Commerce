@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { AlertBanner, Spinner } from '@/components/ui'
 import { FreightOption } from '@/types/freight'
 import { LoyaltyPointsWidget } from './LoyaltyPointsWidget'
@@ -23,9 +23,11 @@ import {
   Package,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { buildCheckoutPayload } from '@/lib/checkout-contract'
 
 export interface CartItem {
-  productId?: string
+  productId: string
+  variantId?: string
   name: string
   productName?: string
   quantity: number
@@ -69,10 +71,11 @@ export interface CheckoutResult {
 
 export interface CheckoutFormProps {
   lojaID: string
+  cartId: string
   pixKey: string
   whatsappNumber: string
   items?: CartItem[]
-  onOrderCreated: (result: CheckoutResult) => void
+  onOrderCreated: (result: CheckoutResult, sourceCartId: string) => void | Promise<void>
 }
 
 type Step = 1 | 2 | 3
@@ -80,6 +83,7 @@ export type PaymentMethodTab = 'PIX' | 'CREDIT_CARD' | 'BOLETO'
 
 export function CheckoutForm({
   lojaID,
+  cartId,
   pixKey,
   whatsappNumber,
   items = [],
@@ -88,16 +92,23 @@ export function CheckoutForm({
   const [step, setStep] = useState<Step>(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorFieldId, setErrorFieldId] = useState<string | null>(null)
+  const idempotencyKey = useRef(crypto.randomUUID())
 
   // Estados de Frete
   const [freightOptions, setFreightOptions] = useState<FreightOption[]>([])
   const [selectedFreight, setSelectedFreight] = useState<FreightOption | null>(null)
   const [isFetchingFreight, setIsFetchingFreight] = useState(false)
   const [isFetchingCep, setIsFetchingCep] = useState(false)
+  const [freightError, setFreightError] = useState<string | null>(null)
 
   // Estados de Fidelidade / Pontos
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0)
   const [pointsDiscountValue, setPointsDiscountValue] = useState<number>(0)
+  const handlePointsApplied = useCallback(({ pointsToRedeem: points, discountValue }: { pointsToRedeem: number; discountValue: number }) => {
+    setPointsToRedeem(points)
+    setPointsDiscountValue(discountValue)
+  }, [])
 
   // Meio de Pagamento Selecionado
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodTab>('PIX')
@@ -203,6 +214,48 @@ export function CheckoutForm({
     setFormData((prev) => ({ ...prev, phone: val }))
   }
 
+  const calculateFreight = useCallback(
+    async (cepDigits: string) => {
+      if (!lojaID || cepDigits.length !== 8) return
+      setIsFetchingFreight(true)
+      setFreightError(null)
+      setFreightOptions([])
+      setSelectedFreight(null)
+      try {
+        const res = await fetch('/api/freight/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lojaID,
+            destinationCep: cepDigits,
+            items: items.map((i) => ({
+              productId: i.productId,
+              variantId: i.variantId,
+              quantity: i.quantity,
+            })),
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Falha ao calcular o frete.')
+        const options = (data.data?.options || []).filter(
+          (option: FreightOption) => !['STORE_PICKUP', 'NONE'].includes(option.providerId)
+        )
+        if (options.length > 0) {
+          setFreightOptions(options)
+          const recommended = options.find((o: FreightOption) => o.isRecommended)
+          setSelectedFreight(recommended || options[0])
+        } else {
+          setFreightError('Nenhuma modalidade de entrega está disponível para este CEP.')
+        }
+      } catch {
+        setFreightError('Não foi possível calcular o frete. Verifique sua conexão e tente novamente.')
+      } finally {
+        setIsFetchingFreight(false)
+      }
+    },
+    [lojaID, items]
+  )
+
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value.replace(/\D/g, '')
     if (raw.length > 8) raw = raw.slice(0, 8)
@@ -212,6 +265,9 @@ export function CheckoutForm({
       ...prev,
       address: { ...prev.address, cep: formatted },
     }))
+    setFreightError(null)
+    setFreightOptions([])
+    setSelectedFreight(null)
 
     if (raw.length === 8) {
       setIsFetchingCep(true)
@@ -229,53 +285,15 @@ export function CheckoutForm({
               street: data.logradouro,
             },
           }))
-          calculateFreight(raw)
         }
-      } catch (err) {
-        console.error('Erro ao consultar CEP:', err)
+      } catch {
+        // O preenchimento automático é auxiliar; o cálculo canônico ainda pode funcionar.
       } finally {
         setIsFetchingCep(false)
+        void calculateFreight(raw)
       }
     }
   }
-
-  const calculateFreight = useCallback(
-    async (cepDigits: string) => {
-      if (!lojaID || cepDigits.length !== 8) return
-      setIsFetchingFreight(true)
-      setSelectedFreight(null)
-      try {
-        const res = await fetch('/api/freight/calculate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lojaId: lojaID,
-            destinationCep: cepDigits,
-            items: items.map((i) => ({
-              weightInKg: 0.5,
-              heightInCm: 10,
-              widthInCm: 15,
-              lengthInCm: 20,
-              quantity: i.quantity,
-            })),
-          }),
-        })
-        const data = await res.json()
-        if (data.options && data.options.length > 0) {
-          setFreightOptions(data.options)
-          const recommended = data.options.find((o: FreightOption) => o.isRecommended)
-          setSelectedFreight(recommended || data.options[0])
-        } else {
-          setFreightOptions([])
-        }
-      } catch (err) {
-        console.error('Erro ao calcular frete:', err)
-      } finally {
-        setIsFetchingFreight(false)
-      }
-    },
-    [lojaID, items]
-  )
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '')
@@ -298,24 +316,35 @@ export function CheckoutForm({
     setCardData((prev) => ({ ...prev, ccv: v }))
   }
 
+  const showValidationError = (message: string, fieldId: string) => {
+    setError(message)
+    setErrorFieldId(fieldId)
+    requestAnimationFrame(() => document.getElementById(fieldId)?.focus())
+  }
+
+  const clearValidationError = () => {
+    setError(null)
+    setErrorFieldId(null)
+  }
+
   const validateStep1 = () => {
     if (!formData.name.trim()) {
-      setError('Por favor, informe seu nome completo.')
+      showValidationError('Por favor, informe seu nome completo.', 'checkout-name')
       return false
     }
     if (!formData.email.trim() || !formData.email.includes('@')) {
-      setError('Por favor, informe um e-mail válido.')
+      showValidationError('Por favor, informe um e-mail válido.', 'checkout-email')
       return false
     }
     if (!formData.phone.trim() || cleanDigits(formData.phone).length < 10) {
-      setError('Por favor, informe um WhatsApp ou telefone com DDD.')
+      showValidationError('Por favor, informe um WhatsApp ou telefone com DDD.', 'checkout-phone')
       return false
     }
     if (!formData.cpfCnpj.trim() || !validateCpfCnpj(formData.cpfCnpj)) {
-      setError('Por favor, informe um CPF ou CNPJ válido para emissão do pedido.')
+      showValidationError('Por favor, informe um CPF ou CNPJ válido para emissão do pedido.', 'checkout-cpf-cnpj')
       return false
     }
-    setError(null)
+    clearValidationError()
     return true
   }
 
@@ -323,23 +352,29 @@ export function CheckoutForm({
     if (formData.deliveryType === 'DELIVERY') {
       const cleanCep = cleanDigits(formData.address.cep)
       if (cleanCep.length !== 8) {
-        setError('Por favor, informe um CEP válido com 8 dígitos.')
+        showValidationError('Por favor, informe um CEP válido com 8 dígitos.', 'checkout-postal-code')
         return false
       }
       if (!formData.address.street.trim() || !formData.address.number.trim()) {
-        setError('Por favor, informe a rua e o número para a entrega.')
+        showValidationError(
+          'Por favor, informe a rua e o número para a entrega.',
+          !formData.address.street.trim() ? 'checkout-address-line1' : 'checkout-address-number'
+        )
         return false
       }
       if (!formData.address.city.trim() || !formData.address.state.trim()) {
-        setError('Por favor, informe a cidade e o estado.')
+        showValidationError(
+          'Por favor, informe a cidade e o estado.',
+          !formData.address.city.trim() ? 'checkout-address-city' : 'checkout-address-state'
+        )
         return false
       }
       if (freightOptions.length > 0 && !selectedFreight) {
-        setError('Por favor, selecione uma modalidade de frete.')
+        showValidationError('Por favor, selecione uma modalidade de frete.', 'checkout-freight-0')
         return false
       }
     }
-    setError(null)
+    clearValidationError()
     return true
   }
 
@@ -347,29 +382,29 @@ export function CheckoutForm({
     if (paymentMethod === 'CREDIT_CARD') {
       const cleanNum = cleanDigits(cardData.number)
       if (!validateLuhn(cleanNum)) {
-        setError('Número de cartão de crédito inválido.')
+        showValidationError('Número de cartão de crédito inválido.', 'checkout-cc-number')
         return false
       }
       if (!cardData.holderName.trim()) {
-        setError('Informe o nome impresso no cartão de crédito.')
+        showValidationError('Informe o nome impresso no cartão de crédito.', 'checkout-cc-name')
         return false
       }
       const [mm, yy] = cardData.expiryDate.split('/')
       if (!mm || !yy || mm.length !== 2 || yy.length !== 2) {
-        setError('Validade do cartão deve estar no formato MM/AA.')
+        showValidationError('Validade do cartão deve estar no formato MM/AA.', 'checkout-cc-exp')
         return false
       }
       const expMonth = parseInt(mm, 10)
       if (expMonth < 1 || expMonth > 12) {
-        setError('Mês de validade do cartão inválido.')
+        showValidationError('Mês de validade do cartão inválido.', 'checkout-cc-exp')
         return false
       }
       if (cardData.ccv.length < 3) {
-        setError('Código de segurança (CVV) inválido.')
+        showValidationError('Código de segurança (CVV) inválido.', 'checkout-cc-csc')
         return false
       }
     }
-    setError(null)
+    clearValidationError()
     return true
   }
 
@@ -380,7 +415,7 @@ export function CheckoutForm({
   }
 
   const prevStep = () => {
-    setError(null)
+    clearValidationError()
     setStep((prev) => Math.max(1, prev - 1) as Step)
   }
 
@@ -388,28 +423,27 @@ export function CheckoutForm({
     if (!validateStep3()) return
 
     setIsLoading(true)
-    setError(null)
+    clearValidationError()
 
     try {
       const [expiryMonth, expiryYear] = cardData.expiryDate.split('/')
       const fullExpiryYear = expiryYear ? `20${expiryYear}` : ''
 
-      const payload = {
+      const payload = buildCheckoutPayload({
         lojaID,
-        customerName: formData.name,
-        customerEmail: formData.email,
-        customerPhone: cleanDigits(formData.phone),
-        customerCpfCnpj: cleanDigits(formData.cpfCnpj),
+        cartId,
+        customer: {
+          name: formData.name,
+          email: formData.email,
+          phone: cleanDigits(formData.phone),
+          cpfCnpj: cleanDigits(formData.cpfCnpj),
+        },
         deliveryType: formData.deliveryType,
         address: formData.deliveryType === 'DELIVERY' ? formData.address : undefined,
-        shippingCost: calculatedFreightCost,
-        shippingProvider: selectedFreight?.providerId || null,
-        shippingServiceName: selectedFreight?.serviceName || null,
-        shippingEstimatedDays: selectedFreight?.deliveryTimeInDays || null,
+        selectedFreight,
         paymentMethod,
         pointsToRedeem: pointsDiscountValue > 0 ? pointsToRedeem : 0,
-        pointsDiscountValue,
-        cardData:
+        creditCard:
           paymentMethod === 'CREDIT_CARD'
             ? {
                 holderName: cardData.holderName,
@@ -417,22 +451,26 @@ export function CheckoutForm({
                 expiryMonth,
                 expiryYear: fullExpiryYear,
                 ccv: cardData.ccv,
-                installments: selectedInstallment,
               }
             : undefined,
+        installments: selectedInstallment,
         items: items.map((i) => ({
-          productID: i.productId,
-          productName: i.productName || i.name,
+          productId: i.productId,
+          variantId: i.variantId,
+          name: i.productName || i.name,
           quantity: i.quantity,
           price: i.price,
           color: i.color,
           size: i.size,
         })),
-      }
+      })
 
-      const res = await fetch('/api/checkout/create-order', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey.current,
+        },
         body: JSON.stringify(payload),
       })
 
@@ -443,11 +481,14 @@ export function CheckoutForm({
       }
 
       toast.success('Pedido registrado com sucesso!')
-      onOrderCreated(result)
-    } catch (err: any) {
-      console.error('[CHECKOUT_SUBMIT_ERROR]', err)
-      setError(err.message || 'Erro inesperado ao registrar o pedido. Tente novamente.')
-      toast.error(err.message || 'Erro ao processar checkout.')
+      await onOrderCreated(result.data, cartId)
+    } catch (err: unknown) {
+      const message = err instanceof TypeError
+        ? 'Não foi possível conectar. Verifique sua conexão e tente novamente.'
+        : err instanceof Error ? err.message : 'Erro inesperado ao registrar o pedido. Tente novamente.'
+      setError(message)
+      toast.error(message)
+      requestAnimationFrame(() => document.getElementById('checkout-error-summary')?.focus())
     } finally {
       setIsLoading(false)
     }
@@ -455,6 +496,7 @@ export function CheckoutForm({
 
   return (
     <div className="w-full">
+      <h1 className="sr-only">Finalizar compra</h1>
       {/* Grid de 2 Colunas Canônico do Redesign Continental */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* COLUNA ESQUERDA: STEPPER & FORMULÁRIO (7 Colunas no Desktop) */}
@@ -494,7 +536,12 @@ export function CheckoutForm({
 
           {/* Banner de Erro */}
           {error && (
-            <div className="animate-in fade-in duration-300">
+            <div
+              id="checkout-error-summary"
+              tabIndex={-1}
+              className="animate-in fade-in duration-300"
+              aria-live="assertive"
+            >
               <AlertBanner variant="error" message={error} />
             </div>
           )}
@@ -517,12 +564,16 @@ export function CheckoutForm({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                <label htmlFor="checkout-name" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                   Nome Completo
                 </label>
                 <input
                   type="text"
+                  id="checkout-name"
                   name="name"
+                  autoComplete="name"
+                  aria-invalid={errorFieldId === 'checkout-name'}
+                  aria-describedby={errorFieldId === 'checkout-name' ? 'checkout-error-summary' : undefined}
                   value={formData.name}
                   onChange={handleInputChange}
                   className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
@@ -532,12 +583,17 @@ export function CheckoutForm({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                  <label htmlFor="checkout-email" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                     E-mail
                   </label>
                   <input
                     type="email"
+                    id="checkout-email"
                     name="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    aria-invalid={errorFieldId === 'checkout-email'}
+                    aria-describedby={errorFieldId === 'checkout-email' ? 'checkout-error-summary' : undefined}
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold transition-all"
@@ -545,12 +601,17 @@ export function CheckoutForm({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                  <label htmlFor="checkout-phone" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                     WhatsApp / Telefone
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    id="checkout-phone"
                     name="phone"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    aria-invalid={errorFieldId === 'checkout-phone'}
+                    aria-describedby={errorFieldId === 'checkout-phone' ? 'checkout-error-summary' : undefined}
                     value={formData.phone}
                     onChange={handlePhoneChange}
                     className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold font-mono transition-all"
@@ -561,12 +622,17 @@ export function CheckoutForm({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                <label htmlFor="checkout-cpf-cnpj" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                   CPF ou CNPJ
                 </label>
                 <input
                   type="text"
+                  id="checkout-cpf-cnpj"
                   name="cpfCnpj"
+                  autoComplete="off"
+                  inputMode="numeric"
+                  aria-invalid={errorFieldId === 'checkout-cpf-cnpj'}
+                  aria-describedby={errorFieldId === 'checkout-cpf-cnpj' ? 'checkout-error-summary cpf-cnpj-help' : 'cpf-cnpj-help'}
                   value={formData.cpfCnpj}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -578,7 +644,7 @@ export function CheckoutForm({
                   placeholder="000.000.000-00 ou 00.000.000/0000-00"
                   maxLength={18}
                 />
-                <p className="text-[11px] text-catalog-muted font-mono mt-1">
+                <p id="cpf-cnpj-help" className="text-[11px] text-catalog-muted font-mono mt-1">
                   Exigência do Banco Central e emissão de cobranças automotivas seguras.
                 </p>
               </div>
@@ -603,10 +669,10 @@ export function CheckoutForm({
               </div>
 
               {/* Seletor de Tipo de Envio */}
-              <div className="space-y-2">
-                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                   Forma de Envio
-                </label>
+                </legend>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { id: 'DELIVERY', label: 'Receber em Casa', desc: 'Correios ou J&T Express', icon: Truck },
@@ -616,37 +682,43 @@ export function CheckoutForm({
                     const isSelected = formData.deliveryType === type.id
                     const IconComponent = type.icon
                     return (
-                      <button
+                      <label
                         key={type.id}
-                        type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({ ...prev, deliveryType: type.id as any }))
-                          if (type.id !== 'DELIVERY') setSelectedFreight(null)
-                        }}
-                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
+                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-catalog-gold ${
                           isSelected
                             ? 'bg-catalog-gold/20 border-catalog-gold text-white shadow-[0_0_15px_rgba(240,180,14,0.2)]'
                             : 'bg-[#0B132B]/50 border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                         }`}
                       >
+                        <input
+                          type="radio"
+                          name="deliveryType"
+                          value={type.id}
+                          checked={isSelected}
+                          onChange={() => {
+                            setFormData((prev) => ({ ...prev, deliveryType: type.id as typeof prev.deliveryType }))
+                            if (type.id !== 'DELIVERY') setSelectedFreight(null)
+                          }}
+                          className="sr-only"
+                        />
                         <div className="flex items-center justify-between mb-2">
                           <IconComponent className={`w-5 h-5 ${isSelected ? 'text-catalog-gold' : 'text-catalog-muted'}`} />
                           {isSelected && <span className="w-2 h-2 rounded-full bg-catalog-gold shadow-[0_0_6px_#F0B40E]" />}
                         </div>
                         <span className="font-bold text-xs uppercase font-mono tracking-wider block">{type.label}</span>
                         <span className="text-[11px] text-catalog-muted mt-1 font-mono leading-tight">{type.desc}</span>
-                      </button>
+                      </label>
                     )
                   })}
                 </div>
-              </div>
+              </fieldset>
 
               {/* Formulário de Endereço quando Entrega */}
               {formData.deliveryType === 'DELIVERY' && (
                 <div className="space-y-4 pt-3 border-t border-catalog-gold/20">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                      <label htmlFor="checkout-postal-code" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                         CEP de Destino
                       </label>
                       {(isFetchingCep || isFetchingFreight) && (
@@ -657,7 +729,12 @@ export function CheckoutForm({
                     </div>
                     <input
                       type="text"
+                      id="checkout-postal-code"
                       name="address.cep"
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      aria-invalid={errorFieldId === 'checkout-postal-code'}
+                      aria-describedby={errorFieldId === 'checkout-postal-code' ? 'checkout-error-summary' : undefined}
                       value={formData.address.cep}
                       onChange={handleCepChange}
                       className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold font-mono transition-all"
@@ -667,11 +744,25 @@ export function CheckoutForm({
                   </div>
 
                   {/* Opções de Frete Calculadas */}
+                  {freightError && (
+                    <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-200">
+                      <span>{freightError}</span>
+                      <button
+                        type="button"
+                        onClick={() => void calculateFreight(cleanDigits(formData.address.cep))}
+                        disabled={isFetchingFreight || cleanDigits(formData.address.cep).length !== 8}
+                        className="min-h-11 shrink-0 rounded-full border border-red-300/40 px-4 font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  )}
+
                   {freightOptions.length > 0 && (
-                    <div className="space-y-2.5 pt-2">
-                      <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
+                    <fieldset className="space-y-2.5 pt-2">
+                      <legend className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
                         Opções de Envio Disponíveis
-                      </label>
+                      </legend>
                       <div className="space-y-2">
                         {freightOptions.map((opt, idx) => {
                           const isSelected =
@@ -679,15 +770,24 @@ export function CheckoutForm({
                             selectedFreight?.providerId === opt.providerId
 
                           return (
-                            <div
+                            <label
                               key={`${opt.providerId}_${opt.serviceCode}_${idx}`}
-                              onClick={() => setSelectedFreight(opt)}
-                              className={`p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
+                              className={`p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-catalog-gold ${
                                 isSelected
                                   ? 'border-2 border-catalog-gold bg-catalog-gold/20 shadow-[0_0_15px_rgba(240,180,14,0.2)]'
                                   : 'border-catalog-gold/30 bg-[#0B132B]/60 hover:border-catalog-gold/50'
                               }`}
                             >
+                              <input
+                                id={`checkout-freight-${idx}`}
+                                type="radio"
+                                name="freightOption"
+                                value={`${opt.providerId}:${opt.serviceCode}`}
+                                checked={isSelected}
+                                onChange={() => setSelectedFreight(opt)}
+                                className="sr-only"
+                                aria-describedby={errorFieldId === `checkout-freight-${idx}` ? 'checkout-error-summary' : undefined}
+                              />
                               <div className="flex items-center gap-3">
                                 <div
                                   className={`w-4 h-4 rounded-full border flex items-center justify-center ${
@@ -721,20 +821,24 @@ export function CheckoutForm({
                                   `R$ ${opt.price.toFixed(2)}`
                                 )}
                               </span>
-                            </div>
+                            </label>
                           )
                         })}
                       </div>
-                    </div>
+                    </fieldset>
                   )}
 
                   {/* Campos de Logradouro */}
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Estado</label>
+                      <label htmlFor="checkout-address-state" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Estado</label>
                       <input
                         type="text"
+                        id="checkout-address-state"
                         name="address.state"
+                        autoComplete="address-level1"
+                        aria-invalid={errorFieldId === 'checkout-address-state'}
+                        aria-describedby={errorFieldId === 'checkout-address-state' ? 'checkout-error-summary' : undefined}
                         value={formData.address.state}
                         onChange={handleInputChange}
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -742,10 +846,14 @@ export function CheckoutForm({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Cidade</label>
+                      <label htmlFor="checkout-address-city" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Cidade</label>
                       <input
                         type="text"
+                        id="checkout-address-city"
                         name="address.city"
+                        autoComplete="address-level2"
+                        aria-invalid={errorFieldId === 'checkout-address-city'}
+                        aria-describedby={errorFieldId === 'checkout-address-city' ? 'checkout-error-summary' : undefined}
                         value={formData.address.city}
                         onChange={handleInputChange}
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -755,10 +863,12 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Bairro</label>
+                    <label htmlFor="checkout-address-neighborhood" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Bairro</label>
                     <input
                       type="text"
+                      id="checkout-address-neighborhood"
                       name="address.neighborhood"
+                      autoComplete="address-level3"
                       value={formData.address.neighborhood}
                       onChange={handleInputChange}
                       className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -768,10 +878,14 @@ export function CheckoutForm({
 
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2 space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Rua / Logradouro</label>
+                      <label htmlFor="checkout-address-line1" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Rua / Logradouro</label>
                       <input
                         type="text"
+                        id="checkout-address-line1"
                         name="address.street"
+                        autoComplete="address-line1"
+                        aria-invalid={errorFieldId === 'checkout-address-line1'}
+                        aria-describedby={errorFieldId === 'checkout-address-line1' ? 'checkout-error-summary' : undefined}
                         value={formData.address.street}
                         onChange={handleInputChange}
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -779,10 +893,15 @@ export function CheckoutForm({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número</label>
+                      <label htmlFor="checkout-address-number" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número</label>
                       <input
                         type="text"
+                        id="checkout-address-number"
                         name="address.number"
+                        autoComplete="address-line2"
+                        inputMode="numeric"
+                        aria-invalid={errorFieldId === 'checkout-address-number'}
+                        aria-describedby={errorFieldId === 'checkout-address-number' ? 'checkout-error-summary' : undefined}
                         value={formData.address.number}
                         onChange={handleInputChange}
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -792,10 +911,12 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Complemento (Opcional)</label>
+                    <label htmlFor="checkout-address-complement" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Complemento (Opcional)</label>
                     <input
                       type="text"
+                      id="checkout-address-complement"
                       name="address.complement"
+                      autoComplete="address-line3"
                       value={formData.address.complement}
                       onChange={handleInputChange}
                       className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
@@ -828,65 +949,80 @@ export function CheckoutForm({
               <LoyaltyPointsWidget
                 lojaID={lojaID}
                 subtotal={subtotal}
-                onPointsApplied={({ pointsToRedeem, discountValue }) => {
-                  setPointsToRedeem(pointsToRedeem)
-                  setPointsDiscountValue(discountValue)
-                }}
+                onPointsApplied={handlePointsApplied}
               />
 
               {/* Grid Canônico de 3 Abas Seletores de Pagamento */}
-              <div className="space-y-3">
-                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+              <fieldset className="space-y-3">
+                <legend className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                   Escolha o Método de Pagamento
-                </label>
+                </legend>
 
                 <div className="grid grid-cols-3 gap-3">
                   {/* Aba 1: PIX */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('PIX')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                  <label
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-catalog-gold ${
                       paymentMethod === 'PIX'
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="PIX"
+                      checked={paymentMethod === 'PIX'}
+                      onChange={() => setPaymentMethod('PIX')}
+                      className="sr-only"
+                    />
                     <QrCode className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">PIX</span>
                     <span className="text-[10px] font-mono text-emerald-400">Imediato</span>
-                  </button>
+                  </label>
 
                   {/* Aba 2: Cartão de Crédito */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CREDIT_CARD')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                  <label
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-catalog-gold ${
                       paymentMethod === 'CREDIT_CARD'
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CREDIT_CARD"
+                      checked={paymentMethod === 'CREDIT_CARD'}
+                      onChange={() => setPaymentMethod('CREDIT_CARD')}
+                      className="sr-only"
+                    />
                     <CreditCard className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">Cartão</span>
                     <span className="text-[10px] font-mono text-catalog-muted">Até 12x</span>
-                  </button>
+                  </label>
 
                   {/* Aba 3: Boleto Bancário */}
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('BOLETO')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                  <label
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-catalog-gold ${
                       paymentMethod === 'BOLETO'
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="BOLETO"
+                      checked={paymentMethod === 'BOLETO'}
+                      onChange={() => setPaymentMethod('BOLETO')}
+                      className="sr-only"
+                    />
                     <FileText className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">Boleto</span>
                     <span className="text-[10px] font-mono text-catalog-muted">D+1</span>
-                  </button>
+                  </label>
                 </div>
-              </div>
+              </fieldset>
 
               {/* CONTEÚDO DA ABA SELECIONADA */}
 
@@ -919,9 +1055,15 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número do Cartão</label>
+                    <label htmlFor="checkout-cc-number" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número do Cartão</label>
                     <input
                       type="text"
+                      id="checkout-cc-number"
+                      name="cc-number"
+                      autoComplete="cc-number"
+                      inputMode="numeric"
+                      aria-invalid={errorFieldId === 'checkout-cc-number'}
+                      aria-describedby={errorFieldId === 'checkout-cc-number' ? 'checkout-error-summary' : undefined}
                       value={cardData.number}
                       onChange={handleCardNumberChange}
                       placeholder="0000 0000 0000 0000"
@@ -931,9 +1073,14 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Nome no Cartão</label>
+                    <label htmlFor="checkout-cc-name" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Nome no Cartão</label>
                     <input
                       type="text"
+                      id="checkout-cc-name"
+                      name="cc-name"
+                      autoComplete="cc-name"
+                      aria-invalid={errorFieldId === 'checkout-cc-name'}
+                      aria-describedby={errorFieldId === 'checkout-cc-name' ? 'checkout-error-summary' : undefined}
                       value={cardData.holderName}
                       onChange={(e) => setCardData((prev) => ({ ...prev, holderName: e.target.value.toUpperCase() }))}
                       placeholder="NOME COMO NO CARTÃO"
@@ -943,9 +1090,15 @@ export function CheckoutForm({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Validade (MM/AA)</label>
+                      <label htmlFor="checkout-cc-exp" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Validade (MM/AA)</label>
                       <input
                         type="text"
+                        id="checkout-cc-exp"
+                        name="cc-exp"
+                        autoComplete="cc-exp"
+                        inputMode="numeric"
+                        aria-invalid={errorFieldId === 'checkout-cc-exp'}
+                        aria-describedby={errorFieldId === 'checkout-cc-exp' ? 'checkout-error-summary' : undefined}
                         value={cardData.expiryDate}
                         onChange={handleCardExpiryChange}
                         placeholder="MM/AA"
@@ -954,9 +1107,15 @@ export function CheckoutForm({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">CVV</label>
+                      <label htmlFor="checkout-cc-csc" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">CVV</label>
                       <input
                         type="password"
+                        id="checkout-cc-csc"
+                        name="cc-csc"
+                        autoComplete="cc-csc"
+                        inputMode="numeric"
+                        aria-invalid={errorFieldId === 'checkout-cc-csc'}
+                        aria-describedby={errorFieldId === 'checkout-cc-csc' ? 'checkout-error-summary' : undefined}
                         value={cardData.ccv}
                         onChange={handleCardCcvChange}
                         placeholder="123"
@@ -967,8 +1126,10 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número de Parcelas</label>
+                    <label htmlFor="checkout-installments" className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Número de Parcelas</label>
                     <select
+                      id="checkout-installments"
+                      name="installments"
                       value={selectedInstallment}
                       onChange={(e) => setSelectedInstallment(parseInt(e.target.value, 10))}
                       className="w-full bg-[#050B14] border border-catalog-gold/30 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold cursor-pointer font-mono"

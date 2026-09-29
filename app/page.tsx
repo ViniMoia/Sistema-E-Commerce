@@ -1,31 +1,56 @@
 import React from "react";
 import { getLojaFromHeaders } from "@/lib/tenant";
-import { getProducts } from "@/services/product.service";
+import {
+  countProductsForTenant,
+  getCatalogProductsPage,
+} from "@/services/product.service";
 import { getBrandsWithProductCount } from "@/services/brand.service";
 import HomeClient from "@/components/home/HomeClient";
 import { notFound } from "next/navigation";
+import { getTenantCanonicalOrigin } from "@/lib/tenant";
+import { serializeJsonLd, toAbsoluteHttpUrl } from "@/lib/web-seo";
+import {
+  catalogStateToProductFilters,
+  parseCatalogSearchParams,
+  searchParamsToUrlSearchParams,
+} from "@/lib/catalog-query";
 
-export default async function EcommerceHomepage() {
+const CATALOG_PAGE_SIZE = 12;
+
+export default async function EcommerceHomepage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const activeLoja = await getLojaFromHeaders();
   if (!activeLoja) {
     notFound();
   }
 
-  // Fetch store products and brands on the server side
-  const [products, brands] = await Promise.all([
-    getProducts({ lojaId: activeLoja.id, all: true }),
+  const catalogFilters = parseCatalogSearchParams(
+    searchParamsToUrlSearchParams(await searchParams)
+  );
+  const productFilters = catalogStateToProductFilters(
+    catalogFilters,
+    activeLoja.id,
+    CATALOG_PAGE_SIZE
+  );
+
+  const [catalogPage, brands, totalProducts] = await Promise.all([
+    getCatalogProductsPage(productFilters),
     getBrandsWithProductCount({ lojaId: activeLoja.id }),
+    countProductsForTenant(activeLoja.id),
   ]);
 
-  // Map to serializable format for the client component
-  const formattedProducts = products.map((prod) => ({
+  const formattedProducts = catalogPage.data.map((prod) => ({
     id: prod.id,
+    lojaID: prod.lojaID,
     name: prod.name,
     price: Number(prod.price),
     description: prod.description,
     imageUrl: prod.imageUrl,
     stock: prod.stock,
-    galleryUrls: prod.galleryUrls,
+    galleryUrls: [],
     brandName: prod.brand?.name || null,
     brandSlug: prod.brand?.slug || null,
     tags: prod.tagsSearchCache || [],
@@ -44,11 +69,38 @@ export default async function EcommerceHomepage() {
     whatsappNumber: activeLoja.whatsappNumber,
   };
 
+  const canonicalOrigin = getTenantCanonicalOrigin(activeLoja);
+  const storeJsonLd = canonicalOrigin
+    ? {
+        "@context": "https://schema.org",
+        "@type": "OnlineStore",
+        name: activeLoja.name,
+        url: canonicalOrigin,
+        description: activeLoja.description,
+        image: toAbsoluteHttpUrl(activeLoja.coverImageUrl, canonicalOrigin) || undefined,
+      }
+    : null;
+
   return (
-    <HomeClient
-      initialProducts={formattedProducts}
-      initialBrands={brands}
-      lojaInfo={lojaInfo}
-    />
+    <>
+      {storeJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeJsonLd) }}
+        />
+      )}
+      <HomeClient
+        initialProducts={formattedProducts}
+        initialBrands={brands}
+        lojaInfo={lojaInfo}
+        initialCatalogFilters={catalogFilters}
+        catalogPagination={{
+          totalCount: totalProducts,
+          filteredCount: catalogPage.total,
+          currentPage: catalogPage.page,
+          pageSize: catalogPage.pageSize,
+        }}
+      />
+    </>
   );
 }

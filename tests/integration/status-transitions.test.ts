@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { setupTestDb, seedTestData, cleanupTestDb } from '@/tests/setup/db'
+import { setupTestDb, seedTestData, cleanupTestDb, testStoreHost } from '@/tests/setup/db'
 import { createDifferentStoreAdmin } from '@/tests/setup/auth'
 import { createTestOrder, createOrderStatusHistory } from '@/tests/setup/factories'
 import { patch } from '@/tests/helpers/request'
@@ -13,7 +13,8 @@ beforeAll(async () => {
   await setupTestDb()
   const seed = await seedTestData(TEST_LOJA_ID)
   adminHeaders = { 
-    Cookie: `session_id=${seed.adminUser.token}` 
+    Cookie: `session_id=${seed.adminUser.token}`,
+    Host: testStoreHost(TEST_LOJA_ID)
   }
 })
 
@@ -31,7 +32,7 @@ describe('Transições válidas', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       { headers: adminHeaders }
     )
     expect(res.status).toBe(200)
@@ -56,7 +57,7 @@ describe('Transições válidas', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'CANCELLED' },
+      { newStatus: 'CANCELLED' },
       { headers: adminHeaders }
     )
     expect(res.status).toBe(200)
@@ -81,7 +82,7 @@ describe('Transições válidas', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'SHIPPED', trackingCode: 'BR123456789' },
+      { newStatus: 'SHIPPED', trackingCode: 'BR123456789' },
       { headers: adminHeaders }
     )
     expect(res.status).toBe(200)
@@ -98,7 +99,7 @@ describe('Transições válidas', () => {
     expect(history?.status).toBe('SHIPPED')
   })
 
-  it('PAID → CANCELLED: cancela pedido pago',
+  it('PAID → CANCELLED: exige estorno confirmado antes de alterar estado',
     async () => {
     const order = await createTestOrder({
       lojaID: TEST_LOJA_ID,
@@ -107,20 +108,20 @@ describe('Transições válidas', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'CANCELLED' },
+      { newStatus: 'CANCELLED' },
       { headers: adminHeaders }
     )
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(409)
 
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
     })
-    expect(updated?.status).toBe('CANCELLED')
+    expect(updated?.status).toBe('PAID')
 
     const history = await prisma.orderStatusHistory.findFirst({
       where: { orderId: order.id }
     })
-    expect(history?.status).toBe('CANCELLED')
+    expect(history).toBeNull()
   })
 
   it('SHIPPED → DELIVERED: entrega confirmada',
@@ -132,7 +133,7 @@ describe('Transições válidas', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'DELIVERED' },
+      { newStatus: 'DELIVERED' },
       { headers: adminHeaders }
     )
     expect(res.status).toBe(200)
@@ -162,16 +163,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'SHIPPED' },
+      { newStatus: 'SHIPPED' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -196,16 +197,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'DELIVERED' },
+      { newStatus: 'DELIVERED' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -230,16 +231,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PENDING' },
+      { newStatus: 'PENDING' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -264,16 +265,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'DELIVERED' },
+      { newStatus: 'DELIVERED' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -298,16 +299,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'CANCELLED' },
+      { newStatus: 'CANCELLED' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -332,16 +333,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PENDING' },
+      { newStatus: 'PENDING' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -366,16 +367,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -400,16 +401,16 @@ describe('Transições inválidas', () => {
     
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PENDING' },
+      { newStatus: 'PENDING' },
       { headers: adminHeaders }
     )
     
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(422)
     
-    const body = res.body as { message?: string }
-    expect(body.message).toBeDefined()
-    expect(typeof body.message).toBe('string')
-    expect(body.message!.length).toBeGreaterThan(0)
+    const body = res.body as { error?: string }
+    expect(body.error).toBeDefined()
+    expect(typeof body.error).toBe('string')
+    expect(body.error!.length).toBeGreaterThan(0)
     
     const updated = await prisma.order.findUnique({
       where: { id: order.id }
@@ -431,7 +432,7 @@ describe('Segurança das transições', () => {
     })
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       {}
     )
     expect(res.status).toBe(401)
@@ -444,7 +445,7 @@ describe('Segurança das transições', () => {
     })
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       { headers: { Cookie: 'session_id=token-invalido' } }
     )
     expect(res.status).toBe(401)
@@ -464,7 +465,7 @@ describe('Segurança das transições', () => {
 
     const res = await patch(
       `/api/admin/orders/${order.id}/status`,
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       { headers: otherStore.headers }
     )
     expect(res.status).toBe(404)
@@ -483,7 +484,7 @@ describe('Segurança das transições', () => {
   it('orderId inexistente: retorna 404', async () => {
     const res = await patch(
       '/api/admin/orders/id-que-nao-existe/status',
-      { toStatus: 'PAID' },
+      { newStatus: 'PAID' },
       { headers: adminHeaders }
     )
     expect(res.status).toBe(404)

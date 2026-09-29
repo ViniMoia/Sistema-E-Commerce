@@ -5,6 +5,7 @@ import { createOrder } from '@/services/checkout.service';
 import { listCustomers, getCustomerProfile } from '@/services/customer.service';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { hashFreightItems, signFreightQuote } from '@/lib/freight-quote';
 
 vi.mock('@/lib/prisma', () => {
   return {
@@ -24,9 +25,11 @@ vi.mock('@/lib/prisma', () => {
       product: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       productVariants: {
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       freightRule: {
         findFirst: vi.fn(),
@@ -38,6 +41,7 @@ vi.mock('@/lib/prisma', () => {
         create: vi.fn(),
         update: vi.fn(),
         findUnique: vi.fn(),
+        groupBy: vi.fn(),
       },
     },
   };
@@ -46,9 +50,32 @@ vi.mock('@/lib/prisma', () => {
 describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.FREIGHT_QUOTE_SECRET = 'test-only-freight-secret-at-least-32-chars';
   });
 
   describe('1. Validação de Entrada (registerSchema)', () => {
+    it('descarta campos de identidade e papel enviados pelo cliente', () => {
+      const res = registerSchema.safeParse({
+        id: 'admin-escolhido-pelo-cliente',
+        name: 'Cliente Teste',
+        email: 'cliente@teste.com',
+        password: 'password123',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        lojaID: 'loja-alheia',
+        emailVerified: new Date().toISOString(),
+      });
+
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data).not.toHaveProperty('id');
+        expect(res.data).not.toHaveProperty('role');
+        expect(res.data).not.toHaveProperty('status');
+        expect(res.data).not.toHaveProperty('lojaID');
+        expect(res.data).not.toHaveProperty('emailVerified');
+      }
+    });
+
     it('deve aceitar cadastro com CPF válido formatado', () => {
       // CPF válido matemático gerado para teste
       const validCpf = '52998224725'; // ou formatado
@@ -96,6 +123,37 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
   });
 
   describe('2. Persistência no Cadastro (registerUser)', () => {
+    it('força CUSTOMER/ACTIVE e o tenant fornecido pelo servidor', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({ id: 'loja-servidor' } as any);
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
+        id: 'usr-safe',
+        name: 'Cliente Seguro',
+        email: 'safe@teste.com',
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        lojaID: 'loja-servidor',
+        addresses: [],
+      } as any);
+
+      await registerUser({
+        name: 'Cliente Seguro',
+        email: 'safe@teste.com',
+        password: 'password123',
+        lojaID: 'loja-servidor',
+        role: 'ADMIN',
+        status: 'BLOCKED',
+      } as any);
+
+      expect(prisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          lojaID: 'loja-servidor',
+          role: 'CUSTOMER',
+          status: 'ACTIVE',
+        }),
+      }));
+    });
+
     it('deve sanitizar o CPF/CNPJ removendo pontuações e gravar somente dígitos no banco', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({ id: 'loja-1' } as any);
@@ -163,7 +221,7 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
   });
 
   describe('3. Persistência no Checkout e Snapshot Histórico no Pedido (createOrder)', () => {
-    it('deve persistir cpfCnpj no User upsert e salvar snapshot customerCpfCnpj no Order.create', async () => {
+    it('deve persistir cpfCnpj no novo visitante e salvar snapshot customerCpfCnpj no Order.create', async () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
         id: 'loja-1',
         name: 'Loja Teste',
@@ -188,7 +246,8 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
         maxDays: 3,
       } as any);
 
-      vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
         id: 'usr-buyer-1',
         name: 'Comprador Exemplo',
         email: 'comprador@exemplo.com',
@@ -229,6 +288,16 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
         },
         items: [{ productId: 'prod-1', quantity: 1 }],
         deliveryType: 'DELIVERY',
+        freightQuoteToken: signFreightQuote({
+          lojaID: 'loja-1',
+          destinationCep: '80000000',
+          itemsHash: hashFreightItems([{ productId: 'prod-1', quantity: 1 }]),
+          providerId: 'LOCAL_TABLE',
+          serviceCode: 'LOCAL_fr-1',
+          serviceName: 'Entrega Local (Curitiba)',
+          price: '15.00',
+          deliveryTimeInDays: 1,
+        }),
         address: {
           cep: '80000-000',
           state: 'PR',
@@ -241,17 +310,15 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
 
       expect(result.success).toBe(true);
 
-      // Verifica que o User.upsert recebeu os dígitos limpos tanto no create quanto no update
-      expect(prisma.user.upsert).toHaveBeenCalledWith(
+      // Visitante novo é criado sem atualizar uma conta preexistente por e-mail.
+      expect(prisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: expect.objectContaining({
-            cpfCnpj: '52998224725',
-          }),
-          update: expect.objectContaining({
+          data: expect.objectContaining({
             cpfCnpj: '52998224725',
           }),
         })
       );
+      expect(prisma.user.upsert).not.toHaveBeenCalled();
 
       // Verifica que o Order.create salvou o snapshot imutável customerCpfCnpj
       expect(prisma.order.create).toHaveBeenCalledWith(
@@ -277,9 +344,14 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
           phone: '11977776666',
           cpfCnpj: '52998224725',
           createdAt: new Date('2026-09-01T10:00:00Z'),
-          orders: [{ total: new Prisma.Decimal('150.00'), createdAt: new Date() }],
         },
       ] as any);
+      ;(prisma.order.groupBy as any).mockResolvedValueOnce([{
+        userID: 'usr-10',
+        _count: { _all: 1 },
+        _sum: { total: new Prisma.Decimal('150.00') },
+        _max: { createdAt: new Date('2026-09-01T11:00:00Z') },
+      }] as any);
 
       const { data } = await listCustomers({ lojaID: 'loja-1' });
 

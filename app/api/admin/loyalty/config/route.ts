@@ -1,9 +1,11 @@
+import { createRequestLogContext, runWithLogContext, attachRequestId } from '@/lib/observability/request-context'
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { persistAuditedSettings } from '@/services/store-settings-audit.service'
 import { ok, err } from '@/lib/api-response'
 import { requireAdmin } from '@/lib/auth/guards'
 import { getLoyaltySettings, UpdateLoyaltyConfigSchema } from '@/services/loyalty.service'
 import { Prisma } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req)
@@ -13,12 +15,17 @@ export async function GET(req: Request) {
     const settings = await getLoyaltySettings(auth.user.lojaID)
     return ok(settings)
   } catch (error: any) {
-    console.error('[ADMIN_LOYALTY_CONFIG_GET_ERROR]', error)
-    return err(error?.message || 'Erro ao carregar configurações de fidelidade.', 500)
+    logger.error('Falha ao carregar configuraÃ§Ã£o de fidelidade', error, { action: 'ADMIN_LOYALTY_CONFIG_GET_ERROR' })
+    return err('Erro interno ao carregar configurações de fidelidade.', 500, 'LOYALTY_CONFIG_INTERNAL_ERROR')
   }
 }
 
 export async function PUT(req: Request) {
+  const context = createRequestLogContext(req.headers)
+  return runWithLogContext(context, async () => attachRequestId(await handleSettingsUpdate(req), context.requestId))
+}
+
+async function handleSettingsUpdate(req: Request) {
   const auth = await requireAdmin(req)
   if (auth instanceof NextResponse) return auth
 
@@ -38,7 +45,8 @@ export async function PUT(req: Request) {
   const data = parseResult.data
 
   try {
-    const updatedLoja = await prisma.loja.update({
+    const updatedLoja = await persistAuditedSettings(auth.user.lojaID, auth.user.id,
+      'LOYALTY_SETTINGS_UPDATE', Object.keys(data), tx => tx.loja.update({
       where: { id: auth.user.lojaID },
       data: {
         loyaltyEnabled: data.loyaltyEnabled,
@@ -56,7 +64,7 @@ export async function PUT(req: Request) {
         loyaltyMaxDiscountPct: true,
         loyaltyPointsExpiryDays: true,
       },
-    })
+    }))
 
     return ok({
       loyaltyEnabled: updatedLoja.loyaltyEnabled,
@@ -67,7 +75,7 @@ export async function PUT(req: Request) {
       loyaltyPointsExpiryDays: updatedLoja.loyaltyPointsExpiryDays,
     })
   } catch (error: any) {
-    console.error('[ADMIN_LOYALTY_CONFIG_PUT_ERROR]', error)
-    return err(error?.message || 'Erro ao atualizar configurações de fidelidade.', 500)
+    logger.error('Falha ao atualizar configuraÃ§Ã£o de fidelidade', error, { action: 'ADMIN_LOYALTY_CONFIG_PUT_ERROR' })
+    return err('Erro interno ao atualizar configurações de fidelidade.', 500, 'LOYALTY_CONFIG_INTERNAL_ERROR')
   }
 }

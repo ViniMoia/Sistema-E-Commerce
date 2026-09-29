@@ -17,12 +17,16 @@ import { getTrackingInfo } from "@/lib/freight/tracking-url";
 import { Badge } from "@/components/ui/primitives/Badge";
 import { OrderStatus } from "@prisma/client";
 import { getOptimizedImageUrl } from "@/lib/utils";
+import Link from "next/link";
+import { orderHistoryHref } from "@/lib/order-history-pagination";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 interface OrderHistoryListProps {
   orders: UserOrder[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
 }
 
-export function OrderHistoryList({ orders }: OrderHistoryListProps) {
+export function OrderHistoryList({ orders, pagination }: OrderHistoryListProps) {
   const [orderList, setOrderList] = useState<UserOrder[]>(orders);
   const [confirmModalOrder, setConfirmModalOrder] = useState<UserOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,7 +93,7 @@ export function OrderHistoryList({ orders }: OrderHistoryListProps) {
           </p>
         </div>
         <span className="text-xs font-mono text-catalog-muted">
-          {orderList.length} {orderList.length === 1 ? "pedido" : "pedidos"}
+          {pagination.total} {pagination.total === 1 ? "pedido" : "pedidos"}
         </span>
       </div>
 
@@ -242,31 +246,58 @@ export function OrderHistoryList({ orders }: OrderHistoryListProps) {
         })}
       </div>
 
-      {/* Modal Canônico de Confirmação de Recebimento */}
-      {confirmModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#070D18] border border-catalog-gold/30 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+      {pagination.totalPages > 1 && (
+        <nav aria-label="Paginação do histórico de pedidos" className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-catalog-gold/20 pt-5 text-xs font-mono text-catalog-muted">
+          <span>Página {pagination.page} de {pagination.totalPages}</span>
+          <div className="flex items-center gap-2">
+            {pagination.page > 1 ? (
+              <Link href={orderHistoryHref(pagination.page - 1)} className="inline-flex min-h-11 items-center rounded-full border border-catalog-gold/30 px-4 text-white hover:border-catalog-gold">
+                Anterior
+              </Link>
+            ) : (
+              <span aria-disabled="true" className="inline-flex min-h-11 items-center rounded-full border border-white/10 px-4 opacity-40">Anterior</span>
+            )}
+            {pagination.page < pagination.totalPages ? (
+              <Link href={orderHistoryHref(pagination.page + 1)} className="inline-flex min-h-11 items-center rounded-full border border-catalog-gold/30 px-4 text-white hover:border-catalog-gold">
+                Próxima
+              </Link>
+            ) : (
+              <span aria-disabled="true" className="inline-flex min-h-11 items-center rounded-full border border-white/10 px-4 opacity-40">Próxima</span>
+            )}
+          </div>
+        </nav>
+      )}
+
+      {/* Dialog canônico: foco, Escape, aria-modal e retorno ao acionador via Radix. */}
+      <Dialog
+        open={Boolean(confirmModalOrder)}
+        onOpenChange={(open) => {
+          if (!open && !isSubmitting) setConfirmModalOrder(null);
+        }}
+      >
+        {confirmModalOrder && (
+          <DialogContent className="bg-[#070D18] border border-catalog-gold/30 rounded-2xl max-w-md w-[calc(100%-2rem)] p-6 space-y-5 shadow-2xl text-white">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold shadow-[0_0_15px_rgba(240,180,14,0.2)]">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold font-continental-display text-white tracking-tight">
+                <DialogTitle className="text-lg font-bold font-continental-display text-white tracking-tight">
                   Confirmar Entrega
-                </h3>
+                </DialogTitle>
                 <p className="text-xs font-mono text-catalog-muted">
                   Pedido #{confirmModalOrder.orderNumber}
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-neutral-300 leading-relaxed font-light">
+            <DialogDescription className="text-xs text-neutral-300 leading-relaxed font-light">
               Você confirma que recebeu todos os produtos deste pedido em perfeitas condições?
               Esta ação atualizará o status do pedido para <strong className="text-emerald-400 font-semibold">Concluído</strong> de forma imediata e definitiva no sistema.
-            </p>
+            </DialogDescription>
 
             {modalError && (
-              <div className="flex items-center gap-2 p-3 text-xs font-mono text-red-400 bg-red-950/40 border border-red-500/30 rounded-xl">
+              <div role="alert" className="flex items-center gap-2 p-3 text-xs font-mono text-red-400 bg-red-950/40 border border-red-500/30 rounded-xl">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                 <span>{modalError}</span>
               </div>
@@ -300,9 +331,9 @@ export function OrderHistoryList({ orders }: OrderHistoryListProps) {
                 )}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

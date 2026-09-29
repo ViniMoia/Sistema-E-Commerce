@@ -17,9 +17,11 @@ vi.mock('@/lib/prisma', () => ({
     product: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     productVariants: {
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     user: {
       findUnique: vi.fn(),
@@ -35,6 +37,10 @@ vi.mock('@/lib/prisma', () => ({
     paymentWebhookEvent: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    paymentReconciliation: {
+      upsert: vi.fn(),
     },
     auditLog: {
       create: vi.fn(),
@@ -59,6 +65,8 @@ vi.mock('@/lib/tenant', () => ({
 describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correções (AUD2-001 a AUD2-008)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.paymentWebhookEvent.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.paymentReconciliation.upsert).mockResolvedValue({} as any);
   });
 
   describe('AUD2-001: Proteção Anti-IDOR / Anti-Impersonation no Checkout', () => {
@@ -166,15 +174,15 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
 
       const mockTx: any = {
         product: {
-          update: vi.fn(async ({ where }) => {
+          updateMany: vi.fn(async ({ where }) => {
             executionOrder.push(`P:${where.id}`);
-            return { id: where.id, stock: 10 };
+            return { count: 1 };
           }),
         },
         productVariants: {
-          update: vi.fn(async ({ where }) => {
+          updateMany: vi.fn(async ({ where }) => {
             executionOrder.push(`V:${where.id}`);
-            return { id: where.id, stock: 5 };
+            return { count: 1 };
           }),
         },
       };
@@ -207,7 +215,7 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
       process.env = { ...originalEnv, ASAAS_WEBHOOK_TOKEN: 'valid-test-token' };
     });
 
-    it('deve capturar colisão P2002 em webhook concorrente e retornar ALREADY_PROCESSED graciosamente', async () => {
+    it('deve capturar colisão P2002 sem declarar processamento concluído', async () => {
       vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
       // Simula erro de chave única (P2002) disparado quando duas requisições simultâneas tentam create
       const p2002Error: any = new Error('Unique constraint failed on the fields: (eventId)');
@@ -223,14 +231,14 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
         body: JSON.stringify({
           id: 'evt_concurrent_1',
           event: 'PAYMENT_RECEIVED',
-          payment: { id: 'pay_concurrent_1', status: 'RECEIVED' },
+          payment: { id: 'pay_concurrent_1', status: 'RECEIVED', value: 150 },
         }),
       });
 
       const res = await webhookPost(req);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(202);
       const json = await res.json();
-      expect(json.status).toBe('ALREADY_PROCESSED');
+      expect(json.status).toBe('PROCESSING');
       expect(json.received).toBe(true);
     });
 
@@ -243,6 +251,7 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
         id: 'ord_cancelled_10',
         status: 'CANCELLED',
         lojaID: 'loja_1',
+        userID: 'user_cancelled_10',
         total: new Prisma.Decimal('150.00'),
       } as any);
 
@@ -272,7 +281,7 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
         expect.objectContaining({
           data: expect.objectContaining({
             action: 'PAYMENT_RECEIVED_ON_CANCELLED_ORDER',
-            targetId: 'ord_cancelled_10',
+            targetId: 'user_cancelled_10',
           }),
         })
       );

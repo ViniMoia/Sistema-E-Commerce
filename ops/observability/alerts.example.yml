@@ -1,0 +1,94 @@
+# ConfiguraÃ§Ã£o de referÃªncia: nÃ£o Ã© aplicada automaticamente a nenhum ambiente.
+# Requer collector Prometheus autorizado agregando todas as rÃ©plicas.
+groups:
+  - name: ecommerce-refund-workflow
+    rules:
+      - alert: EcommerceRefundReconciliationOverSla
+        expr: refund_reconciliation_over_sla > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ha estornos acima do SLA de reconciliacao"
+
+      - alert: EcommerceRefundReconciliationRequired
+        expr: refund_reconciliation_backlog{status="reconciliation_required"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Estorno requer conciliacao manual"
+
+      - alert: EcommerceRefundConfirmedEffectsPending
+        expr: refund_confirmed_effects_pending > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Estorno confirmado ainda nao concluiu efeitos locais"
+
+  - name: ecommerce-critical-flows
+    rules:
+      - alert: EcommerceReadinessFailure
+        expr: sum(rate(readiness_checks_total{result="failure"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A aplicaÃ§Ã£o perdeu prontidÃ£o"
+
+      - alert: EcommerceCheckoutInternalFailure
+        expr: sum(rate(checkout_requests_total{result="internal_failure"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Checkout apresenta falha interna"
+
+      - alert: EcommerceWebhookFailure
+        expr: sum(rate(webhook_events_total{result="failed"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Webhook financeiro falhou"
+
+      - alert: EcommerceOrderTimeoutCronMissing
+        expr: absent_over_time(cron_runs_total{job="orders_timeout"}[30m])
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Heartbeat do cron de timeout estÃ¡ ausente"
+
+      - alert: EcommerceLoyaltyCronIncomplete
+        expr: sum(increase(cron_runs_total{job="loyalty_expiration",result=~"partial|failed"}[24h])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ExpiraÃ§Ã£o de pontos terminou incompleta"
+
+      - alert: EcommercePaymentReconciliationOverSla
+        expr: payment_reconciliation_over_sla > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HÃ¡ pagamentos ambÃ­guos acima do SLA de reconciliaÃ§Ã£o"
+
+      - alert: EcommercePaymentReconciliationDeadLetter
+        expr: payment_reconciliation_backlog{status=~"dead_letter|manual_review"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ReconciliaÃ§Ã£o financeira requer intervenÃ§Ã£o"
+
+      - alert: EcommercePaymentReconciliationCronMissing
+        expr: absent_over_time(cron_runs_total{job="payment_reconciliation_v1"}[10m])
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Heartbeat do reconciliador de pagamentos estÃ¡ ausente"

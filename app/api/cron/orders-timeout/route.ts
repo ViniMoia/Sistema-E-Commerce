@@ -1,79 +1,22 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
+import { validateCronAuth } from '@/lib/cron-auth';
 import { processExpiredOrders } from '@/services/order-timeout.service';
-
-/**
- * Validação segura de token Bearer utilizando comparação em tempo constante (timing attack safe).
- */
-function validateCronAuth(req: Request): { authorized: boolean; response?: NextResponse } {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    logger.error('CRON_SECRET não configurado no ambiente do servidor', undefined, {
-      action: 'CRON_SECURITY_ALERT',
-    });
-    return {
-      authorized: false,
-      response: NextResponse.json(
-        { error: 'Configuração de segurança do cron não inicializada no servidor.' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  const authHeader = req.headers.get('authorization');
-  let receivedToken: string | null = null;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    receivedToken = authHeader.slice(7).trim();
-  } else if (req.headers.get('x-cron-secret')) {
-    receivedToken = req.headers.get('x-cron-secret')!.trim();
-  }
-
-  if (!receivedToken) {
-    return {
-      authorized: false,
-      response: NextResponse.json(
-        { error: 'Token de autorização não fornecido.' },
-        { status: 401 }
-      ),
-    };
-  }
-
-  const bufReceived = Buffer.from(receivedToken);
-  const bufExpected = Buffer.from(cronSecret);
-
-  if (
-    bufReceived.length !== bufExpected.length ||
-    !crypto.timingSafeEqual(bufReceived, bufExpected)
-  ) {
-    logger.warn('Tentativa não autorizada de execução do cron de timeout', {
-      action: 'CRON_UNAUTHORIZED_ATTEMPT',
-      ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined,
-    });
-    return {
-      authorized: false,
-      response: NextResponse.json(
-        { error: 'Token de autorização inválido ou não autorizado.' },
-        { status: 401 }
-      ),
-    };
-  }
-
-  return { authorized: true };
-}
+import { incrementMetric } from '@/lib/observability/metrics';
 
 /**
  * Handler unificado para execução do cancelamento de pedidos expirados via Cron.
  * Suporta GET (padrão Vercel Cron) e POST (padrão webhook / curl).
  */
 async function handleCron(req: Request) {
-  const auth = validateCronAuth(req);
-  if (!auth.authorized) {
-    return auth.response!;
+  const auth = validateCronAuth(req, 'orders-timeout');
+  if ('response' in auth) {
+    return auth.response;
   }
 
   try {
+    const runId = crypto.randomUUID();
     const url = new URL(req.url);
     const batchSizeParam = url.searchParams.get('batchSize');
     const lojaID = url.searchParams.get('lojaID') || undefined;
@@ -91,15 +34,41 @@ async function handleCron(req: Request) {
       lojaID,
     });
 
-    return NextResponse.json({
-      success: summary.success,
-      processed: summary.processedCount,
-      cancelled: summary.cancelledCount,
-      errors: summary.errorCount,
-      cancelledOrderIds: summary.cancelledOrderIds,
-      executionTimeMs: summary.executionTimeMs,
+    const runStatus = summary.success
+      ? 'SUCCESS'
+      : summary.cancelledCount > 0
+        ? 'PARTIAL'
+        : 'FAILED';
+
+    if (!summary.success) {
+      logger.warn('Rotina de timeout concluída com falhas', {
+        action: 'CRON_ORDERS_TIMEOUT_INCOMPLETE',
+        runId,
+        runStatus,
+        errorCount: summary.errorCount,
+        processedCount: summary.processedCount,
+      });
+    }
+    incrementMetric('cron_runs_total', {
+      job: 'orders_timeout',
+      result: runStatus.toLowerCase(),
     });
+
+    return NextResponse.json(
+      {
+        success: summary.success,
+        status: runStatus,
+        runId,
+        processed: summary.processedCount,
+        cancelled: summary.cancelledCount,
+        errors: summary.errorCount,
+        cancelledOrderIds: summary.cancelledOrderIds,
+        executionTimeMs: summary.executionTimeMs,
+      },
+      { status: summary.success ? 200 : 503 }
+    );
   } catch (error: any) {
+    incrementMetric('cron_runs_total', { job: 'orders_timeout', result: 'failed' });
     logger.error('Erro na execução do endpoint de cron de timeout de pedidos', error, {
       action: 'CRON_EXECUTION_FAILED',
     });

@@ -19,17 +19,9 @@ import type {
   ListCustomersParams,
   CustomerMetrics,
 } from "@/types/admin.types";
-import { updateOrderStatus, OrderError } from "@/services/order.service";
+import { updateOrderStatus } from "@/services/order.service";
 
 // ─── Valid status transitions ─────────────────────────────────────────────────
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ["PAID", "CANCELLED"],
-  PAID: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["DELIVERED"],
-  DELIVERED: [],
-  CANCELLED: [],
-};
 
 // ─── 1. LIST ORDERS (admin) ────────────────────────────────────────────────────
 
@@ -80,56 +72,9 @@ export async function listOrders(params: ListOrdersParams) {
 // ─── 2. UPDATE ORDER STATUS (admin) ───────────────────────────────────────────
 
 export async function updateOrderStatusAdmin(
-  input: UpdateOrderStatusInput
+  input: UpdateOrderStatusInput & { lojaID: string }
 ): Promise<UpdateStatusResult> {
-  const { orderId, newStatus, performedById, ipAddress } = input;
-
-  // Resolve current order to validate transition
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    select: { id: true, status: true },
-  });
-
-  if (!order) {
-    return { success: false, error: "Order not found", code: "NOT_FOUND" };
-  }
-
-  const allowed = VALID_TRANSITIONS[order.status] ?? [];
-  if (!allowed.includes(newStatus)) {
-    return {
-      success: false,
-      error: `Transition ${order.status} → ${newStatus} is not allowed`,
-      code: "INVALID_TRANSITION",
-    };
-  }
-
-  try {
-    await updateOrderStatus({ orderId, newStatus, performedById });
-
-    // Audit the status change
-    await prisma.auditLog.create({
-      data: {
-        action: `ORDER_STATUS_CHANGED:${order.status}→${newStatus}`,
-        targetId: performedById,
-        actorId: performedById,
-        entity: "Order",
-        entityId: orderId,
-        metadata: {
-          orderId,
-          from: order.status,
-          to: newStatus,
-          ...(ipAddress && { ipAddress }),
-        },
-      },
-    });
-
-    return { success: true, order: { id: orderId, status: newStatus } };
-  } catch (err) {
-    if (err instanceof OrderError) {
-      return { success: false, error: err.message, code: "INVALID_TRANSITION" };
-    }
-    throw err;
-  }
+  return updateOrderStatus(input);
 }
 
 // ─── 3. LIST CUSTOMERS (admin) ────────────────────────────────────────────────

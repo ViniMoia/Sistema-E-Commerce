@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { OrderError } from "@/services/order.service";
 
@@ -20,6 +21,6 @@ export function handleOrderError(error: unknown): NextResponse {
     const status = ORDER_ERROR_MAP[code] ?? 400;
     return NextResponse.json({ error: code }, { status });
   }
-  console.error("[ORDER_SERVICE_ERROR]", error);
+  logger.error("[ORDER_SERVICE_ERROR]", error);
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }

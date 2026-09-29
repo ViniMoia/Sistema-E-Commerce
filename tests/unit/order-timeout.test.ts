@@ -6,17 +6,25 @@ import {
   DEFAULT_ASAAS_TIMEOUT_MINUTES,
   DEFAULT_MANUAL_TIMEOUT_HOURS,
 } from '@/services/order-timeout.service';
+import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
     order: {
       findMany: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
 
 vi.mock('@/services/order.service', () => ({
   updateOrderStatus: vi.fn(),
+}));
+
+vi.mock('@/services/asaas/asaas.adapter', () => ({
+  asaasPaymentAdapter: {
+    getPaymentStatus: vi.fn(),
+  },
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -32,6 +40,10 @@ describe('Motor de Timeout e Cancelamento Automático de Pedidos (PEND-FIN-003)'
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(asaasPaymentAdapter.getPaymentStatus).mockResolvedValue({
+      paymentId: 'pay-test',
+      status: 'OVERDUE',
+    });
   });
 
   it('deve buscar pedidos PENDING com os cutoffs corretos para Asaas (60m) e Manual (24h)', async () => {
@@ -52,10 +64,14 @@ describe('Motor de Timeout e Cancelamento Automático de Pedidos (PEND-FIN-003)'
     expect(queryArgs?.where?.OR).toEqual([
       {
         asaasPaymentId: { not: null },
+        paymentWorkflowStatus: {
+          in: ['AWAITING_PAYMENT', 'RECONCILIATION_REQUIRED', 'PROCESSING'],
+        },
         createdAt: { lte: expectedAsaasCutoff },
       },
       {
         asaasPaymentId: null,
+        paymentMethod: 'WHATSAPP_PIX',
         createdAt: { lte: expectedManualCutoff },
       },
     ]);
@@ -88,7 +104,7 @@ describe('Motor de Timeout e Cancelamento Automático de Pedidos (PEND-FIN-003)'
       newStatus: 'CANCELLED',
       performedById: 'SYSTEM_CRON_TIMEOUT',
       lojaID: 'loja-continental',
-      reason: 'Cancelamento automático por timeout de pagamento PIX (60m (Asaas PIX))',
+      reason: 'Cancelamento automático por timeout de pagamento (60m (Gateway Asaas))',
     });
 
     expect(summary.processedCount).toBe(1);
@@ -96,6 +112,58 @@ describe('Motor de Timeout e Cancelamento Automático de Pedidos (PEND-FIN-003)'
     expect(summary.errorCount).toBe(0);
     expect(summary.cancelledOrderIds).toEqual(['ord-asaas-1']);
     expect(summary.success).toBe(true);
+  });
+
+  it('não cancela por idade quando a cobrança continua PENDING no gateway', async () => {
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce([{
+      id: 'ord-active',
+      orderNumber: 111,
+      lojaID: 'loja-continental',
+      status: 'PENDING',
+      asaasPaymentId: 'pay-active',
+      paymentWorkflowStatus: 'AWAITING_PAYMENT',
+      createdAt: new Date('2026-09-22T10:00:00Z'),
+    }] as any);
+    vi.mocked(asaasPaymentAdapter.getPaymentStatus).mockResolvedValueOnce({
+      paymentId: 'pay-active',
+      status: 'PENDING',
+    });
+
+    const summary = await processExpiredOrders({ now: baseNow });
+
+    expect(orderService.updateOrderStatus).not.toHaveBeenCalled();
+    expect(summary.processedCount).toBe(1);
+    expect(summary.cancelledCount).toBe(0);
+  });
+
+  it('reconcilia como PAID quando o gateway já confirma a cobrança', async () => {
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce([{
+      id: 'ord-confirmed',
+      orderNumber: 112,
+      lojaID: 'loja-continental',
+      status: 'PENDING',
+      asaasPaymentId: 'pay-confirmed',
+      paymentWorkflowStatus: 'AWAITING_PAYMENT',
+      createdAt: new Date('2026-09-22T10:00:00Z'),
+    }] as any);
+    vi.mocked(asaasPaymentAdapter.getPaymentStatus).mockResolvedValueOnce({
+      paymentId: 'pay-confirmed',
+      status: 'CONFIRMED',
+      paidAt: baseNow,
+    });
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: true,
+      order: { id: 'ord-confirmed', status: 'PAID' },
+    });
+
+    const summary = await processExpiredOrders({ now: baseNow });
+
+    expect(orderService.updateOrderStatus).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: 'ord-confirmed',
+      newStatus: 'PAID',
+      paidAt: baseNow,
+    }));
+    expect(summary.cancelledCount).toBe(0);
   });
 
   it('deve cancelar com sucesso pedido WhatsApp PIX Manual expirado há mais de 24 horas', async () => {
@@ -121,7 +189,7 @@ describe('Motor de Timeout e Cancelamento Automático de Pedidos (PEND-FIN-003)'
       newStatus: 'CANCELLED',
       performedById: 'SYSTEM_CRON_TIMEOUT',
       lojaID: 'loja-continental',
-      reason: 'Cancelamento automático por timeout de pagamento PIX (24h (WhatsApp PIX Manual))',
+      reason: 'Cancelamento automático por timeout de pagamento (24h (WhatsApp PIX Manual))',
     });
 
     expect(summary.cancelledCount).toBe(1);

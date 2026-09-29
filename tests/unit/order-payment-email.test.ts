@@ -112,6 +112,7 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
 
     afterEach(() => {
       global.fetch = originalFetch;
+      vi.unstubAllEnvs();
     });
 
     it('deve avisar de forma segura e não quebrar se RESEND_API_KEY não estiver configurada', async () => {
@@ -128,7 +129,7 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
         json: async () => ({ id: 'resend-msg-12345' }),
       });
 
-      const resendService = new ResendEmailService('re_valid_key_123', 'loja@continental.com');
+      const resendService = new ResendEmailService('re_fixture_not_a_secret', 'loja@continental.com');
       const result = await resendService.sendOrderPaymentConfirmedEmail(baseParams);
 
       expect(result.success).toBe(true);
@@ -137,12 +138,28 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
 
       const [url, requestInit] = vi.mocked(global.fetch).mock.calls[0];
       expect(url).toBe('https://api.resend.com/emails');
-      expect((requestInit as any).headers['Authorization']).toBe('Bearer re_valid_key_123');
+      expect((requestInit as any).headers['Authorization']).toBe('Bearer re_fixture_not_a_secret');
 
       const body = JSON.parse((requestInit as any).body);
       expect(body.to).toEqual(['cliente@exemplo.com']);
       expect(body.subject).toContain('Pagamento Confirmado: Pedido #1054');
       expect(body.html).toContain('Continental');
+    });
+
+    it('deve abortar a chamada lenta no timeout configurado sem retry automático', async () => {
+      vi.stubEnv('EMAIL_PROVIDER_TIMEOUT_MS', '10');
+      global.fetch = vi.fn().mockImplementation((_url, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+        })
+      );
+
+      const resendService = new ResendEmailService('re_fixture_not_a_secret', 'loja@continental.com');
+      const result = await resendService.sendOrderPaymentConfirmedEmail(baseParams);
+
+      expect(result).toEqual({ success: false, error: 'EMAIL_PROVIDER_TIMEOUT' });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect((vi.mocked(global.fetch).mock.calls[0][1] as RequestInit).signal).toBeDefined();
     });
   });
 

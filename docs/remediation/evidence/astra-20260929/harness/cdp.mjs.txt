@@ -1,0 +1,21 @@
+
+import fs from 'node:fs';
+export async function connect(targetId) {
+ const pages=await(await fetch('http://127.0.0.1:9229/json')).json();
+ const page=targetId?pages.find(p=>p.id===targetId):pages.find(p=>p.type==='page');
+ const socket=new WebSocket(page.webSocketDebuggerUrl),pending=new Map();let next=0;
+ const errors=[];const requests=[];
+ socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result)}}else if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.text+' '+(m.params.exceptionDetails.exception?.description||''));else if(m.method==='Network.responseReceived')requests.push({url:m.params.response.url,status:m.params.response.status});};
+ await new Promise((r,j)=>{socket.onopen=r;socket.onerror=j});
+ const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++next;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}))});
+ await send('Page.enable');await send('Runtime.enable');await send('Network.enable');
+ await send('Network.setBlockedURLs',{urls:['https://*','http://*.com/*','http://*.invalid/*']});
+ const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value};
+ const wait=async(expression,ms=15000)=>{const start=Date.now();while(Date.now()-start<ms){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,100))}throw new Error('WAIT '+expression)};
+ const nav=async path=>{await send('Page.navigate',{url:'http://localhost:3209'+path});await wait('document.readyState==="complete"');};
+ const snapshot=()=>evaluate(`({url:location.href,title:document.title,text:document.body.innerText,inputs:[...document.querySelectorAll('input,select,button')].map(e=>({tag:e.tagName,id:e.id,type:e.type,text:e.innerText,name:e.name,value:e.value,aria:e.getAttribute('aria-label')}))})`);
+ const fill=async(selector,value)=>evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});if(!el)throw new Error('missing input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+ const click=async selector=>{const rect=await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)throw new Error('missing click');e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);await send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...rect});await send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...rect});};
+ const close=()=>{fs.appendFileSync('.tmp/astra-validation/browser-observations.jsonl',JSON.stringify({at:new Date().toISOString(),errors,requests})+'\n');socket.close()};
+ return {send,evaluate,wait,nav,snapshot,fill,click,close,id:page.id};
+}

@@ -104,6 +104,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         points: 0,
         description: 'Ajuste nulo',
         adminUserId: 'admin-123',
+        idempotencyKey: '11111111-1111-4111-8111-111111111111',
       })
       expect(invalid.success).toBe(false)
     })
@@ -115,6 +116,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         points: 500,
         description: 'Bônus de fidelidade',
         adminUserId: 'admin-123',
+        idempotencyKey: '22222222-2222-4222-8222-222222222222',
       })
       expect(credit.success).toBe(true)
 
@@ -124,6 +126,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         points: -100,
         description: 'Correção de lançamento duplicado',
         adminUserId: 'admin-123',
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
       })
       expect(debit.success).toBe(true)
     })

@@ -1,19 +1,25 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserOrders } from "@/services/orders.service";
+import { getUserOrderHistoryPage } from "@/services/order.service";
 import { ProfileLayout } from "./components/ProfileLayout";
 import { User, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { parseOrderHistoryPage } from "@/lib/order-history-pagination";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Minha Conta | Continental Produtos Estéticos Automotivos",
   description: "Gerencie seu perfil de cliente, endereços e acompanhe o histórico de pedidos.",
+  robots: { index: false, follow: false },
 };
 
-export default async function ProfilePage() {
+interface ProfilePageProps {
+  searchParams: Promise<{ ordersPage?: string | string[] }>;
+}
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -21,10 +27,12 @@ export default async function ProfilePage() {
   }
 
   // Consulta canônica de pedidos via camada de serviço
-  const orders = await getUserOrders(user.id, 10, 0, user.lojaID);
+  const params = await searchParams;
+  const requestedPage = parseOrderHistoryPage(params.ordersPage);
+  const orderHistory = await getUserOrderHistoryPage(user.id, requestedPage, 10, user.lojaID);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-catalog-text pt-24 md:pt-28 pb-16 px-4 md:px-8 selection:bg-catalog-gold/30">
+    <main className="min-h-screen bg-[#050505] text-catalog-text pt-24 md:pt-28 pb-16 px-4 md:px-8 selection:bg-catalog-gold/30">
       <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
         {/* Botão de Retorno / Voltar às Compras */}
         <Link
@@ -52,8 +60,13 @@ export default async function ProfilePage() {
           </p>
         </div>
 
-        <ProfileLayout user={user} orders={orders} />
+        <ProfileLayout
+          user={user}
+          orders={orderHistory.items}
+          orderPagination={orderHistory}
+          initialTab={params.ordersPage ? "orders" : "info"}
+        />
       </div>
-    </div>
+    </main>
   );
 }

@@ -52,14 +52,16 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Erro ao registrar novo usuário", error, {
       action: "AUTH_REGISTER",
       tenantId: activeLojaId,
     });
+    const message = error instanceof Error ? error.message : '';
+    const publicMessages = new Set(['Email já existente para esta loja', 'Loja não encontrada']);
     return NextResponse.json(
-      { error: error.message || "Erro ao registrar usuário" },
-      { status: 400 }
+      { error: publicMessages.has(message) ? message : 'Erro interno ao registrar usuário' },
+      { status: publicMessages.has(message) ? 400 : 500 }
     );
   }
 }

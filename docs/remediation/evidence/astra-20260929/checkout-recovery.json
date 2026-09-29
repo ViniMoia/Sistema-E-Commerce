@@ -1,0 +1,16 @@
+{
+  "offlineMessage": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+  "errorFocused": true,
+  "retryConfirmed": true,
+  "canonicalCartItems": 0,
+  "checkoutTiming": [
+    {
+      "durationMs": 0.5,
+      "transferBytes": 0
+    },
+    {
+      "durationMs": 166.80000001192093,
+      "transferBytes": 1259
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+import {spawn} from 'node:child_process';
+import http from 'node:http';
+const env={...process.env,NODE_OPTIONS:'--require /fixture-delay.cjs'};
+const child=spawn(process.execPath,['scripts/start-runtime.mjs'],{cwd:'/app',env,stdio:['ignore','pipe','pipe']});
+let output='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);
+const ended=new Promise(resolve=>child.on('exit',(code,signal)=>resolve({code,signal})));
+const request=path=>new Promise((resolve,reject)=>{const q=http.get('http://127.0.0.1:3000'+path,r=>{r.resume();r.on('end',()=>resolve(r.statusCode))});q.on('error',reject);q.setTimeout(5000,()=>q.destroy(new Error('timeout')))});
+try{
+ let ready=false;
+ for(let i=0;i<100;i++){try{if(await request('/api/health/live')===200){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
+ if(!ready)throw new Error('not ready '+output);
+ const start=Date.now();const inflight=request('/api/health/live?fixture-drain=1');
+ await new Promise(r=>setTimeout(r,200));child.kill('SIGTERM');
+ const status=await inflight;const exit=await Promise.race([ended,new Promise((_,reject)=>setTimeout(()=>reject(new Error('shutdown timeout')),10000))]);
+ let refused=false;try{await request('/api/health/live')}catch{refused=true}
+ if(status!==200||exit.code!==143||!refused||Date.now()-start<1500)throw new Error(JSON.stringify({status,exit,refused}));
+ console.log(JSON.stringify({test:'Next standalone SIGTERM in-flight drain',status,exit,refused,durationMs:Date.now()-start}));
+}catch(error){console.error(error.message);child.kill('SIGKILL');process.exitCode=1}

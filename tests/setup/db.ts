@@ -1,6 +1,8 @@
 import { UserStatus, OrderStatus, DeliveryType } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { randomBytes } from 'node:crypto'
+import { hashSessionToken } from '@/lib/session-token'
 
 interface SeededData {
   adminUser: { id: string; lojaID: string; token: string }
@@ -8,27 +10,43 @@ interface SeededData {
   orders: Array<{ id: string; status: string; userID: string }>
 }
 
-function isSafeTestDatabaseUrl(url: string | undefined): boolean {
-  if (!url) return false
-  const lower = url.toLowerCase()
-  // Proibir expressamente URLs que apontem para Supabase pooler, Neon DB ou produção se não explicitamente localhost / test
-  if ((lower.includes('supabase.com') || lower.includes('neon.tech')) && !lower.includes('test')) {
-    return false
-  }
+const seededStoreIds = new Set<string>()
+export function registerTestStore(id: string): void { seededStoreIds.add(id) }
+export function testStoreHost(id: string): string { return 'test-' + id.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '.audit.invalid' }
+
+function isLocalDisposableDatabase(url: URL): boolean {
+  const allowedHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
+  const database = decodeURIComponent(url.pathname.replace(/^\//, ''))
   return (
-    lower.includes('localhost') ||
-    lower.includes('127.0.0.1') ||
-    lower.includes('test') ||
-    lower.includes(':5432/ecommerce_test')
+    ['postgres:', 'postgresql:'].includes(url.protocol) &&
+    allowedHosts.has(url.hostname.toLowerCase()) &&
+    database === 'ecommerce_test' &&
+    (url.searchParams.get('schema') ?? 'public') === 'public'
   )
 }
 
 export function validateTestEnvironment(): string {
-  const testDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL
-  if (!testDbUrl || !isSafeTestDatabaseUrl(testDbUrl)) {
+  const testDbUrl = process.env.TEST_DATABASE_URL
+  const applicationDbUrl = process.env.DATABASE_URL
+  let parsedUrl: URL | undefined
+
+  try {
+    parsedUrl = testDbUrl ? new URL(testDbUrl) : undefined
+  } catch {
+    parsedUrl = undefined
+  }
+
+  if (
+    process.env.NODE_ENV !== 'test' ||
+    !testDbUrl ||
+    !applicationDbUrl ||
+    testDbUrl !== applicationDbUrl ||
+    !parsedUrl ||
+    !isLocalDisposableDatabase(parsedUrl)
+  ) {
     throw new Error(
-      `[SEGURANÇA BLOQUEADA] Tentativa de executar testes/limpeza em banco não autorizado! ` +
-      `Defina a variável TEST_DATABASE_URL apontando para um banco descartável local (ex: postgresql://postgres:postgres@localhost:5432/ecommerce_test).`
+      '[TEST_DATABASE_BLOCKED] TEST_DATABASE_URL e DATABASE_URL devem ser idênticas e apontar ' +
+      'para PostgreSQL local, banco ecommerce_test, schema public, com NODE_ENV=test.'
     )
   }
   return testDbUrl
@@ -40,7 +58,21 @@ export async function setupTestDb(): Promise<void> {
 }
 
 export async function seedTestData(lojaID: string): Promise<SeededData> {
+  validateTestEnvironment()
+  seededStoreIds.add(lojaID)
   const hashedPassword = await bcrypt.hash('test123456', 10)
+
+  await prisma.loja.upsert({
+    where: { id: lojaID },
+    update: {},
+    create: {
+      id: lojaID,
+      name: `Loja de teste ${lojaID}`,
+      slug: `test-${lojaID.toLowerCase().replace(/[^a-z0-9-]/g, '-')}`,
+      description: 'Fixture local descartável',
+      coverImageUrl: '/test-cover.jpg'
+    }
+  })
 
   const adminUser = await prisma.user.create({
     data: {
@@ -53,11 +85,24 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
     }
   })
 
-  const session = await prisma.session.create({
+  const token = randomBytes(32).toString('hex')
+  await prisma.session.create({
     data: {
-      id: `session-${adminUser.id}`,
+      id: hashSessionToken(token),
       userId: adminUser.id,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    }
+  })
+
+  const seedProduct = await prisma.product.create({
+    data: {
+      name: 'Produto fixture',
+      description: 'Produto local para integridade referencial dos pedidos de teste',
+      price: 100,
+      imageUrl: '/test-product.jpg',
+      stock: 100000,
+      lojaID,
+      userID: adminUser.id
     }
   })
 
@@ -106,14 +151,12 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
       }
     })
 
-    const orderNumber = i + 1
     const status = statuses[i % statuses.length]
     const deliveryType = deliveryTypes[i % deliveryTypes.length]
     const baseTotal = 50 + (i * 10) % 200
 
     const order = await prisma.order.create({
       data: {
-        orderNumber,
         userID: customer.id,
         addressID: address.id,
         lojaID,
@@ -129,7 +172,7 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
     await prisma.orderItem.create({
       data: {
         orderId: order.id,
-        productId: '00000000-0000-0000-0000-000000000001',
+        productId: seedProduct.id,
         name: `Produto ${i + 1}`,
         quantity: 1 + (i % 3),
         price: baseTotal
@@ -140,7 +183,7 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
   }
 
   return {
-    adminUser: { id: adminUser.id, lojaID: adminUser.lojaID, token: session.id },
+    adminUser: { id: adminUser.id, lojaID: adminUser.lojaID, token },
     customers,
     orders
   }
@@ -148,33 +191,27 @@ export async function seedTestData(lojaID: string): Promise<SeededData> {
 
 export async function cleanupTestDb(): Promise<void> {
   validateTestEnvironment()
-  await prisma.session.deleteMany({})
-  await prisma.orderStatusHistory.deleteMany({})
-  await prisma.orderItem.deleteMany({})
+  const lojaIDs = [...seededStoreIds]
+  if (lojaIDs.length === 0) return
 
-  const orders = await prisma.order.findMany({ select: { id: true } })
-  for (const order of orders) {
-    await prisma.address.deleteMany({ where: { orderId: order.id } })
-  }
+  const userFilter = { lojaID: { in: lojaIDs } }
+  const orderFilter = { lojaID: { in: lojaIDs } }
 
-  await prisma.order.deleteMany({})
-
-  const addressUserIds = await prisma.address.findMany({
-    where: { orderId: null },
-    select: { userID: true }
-  })
-  const userIdsWithAddresses = Array.from(new Set(addressUserIds.map(a => a.userID)))
-
+  await prisma.auditLog.deleteMany({ where: { OR: [{ actor: userFilter }, { target: userFilter }] } })
+  await prisma.loyaltyTransaction.deleteMany({ where: { lojaID: { in: lojaIDs } } })
+  await prisma.loyaltyWallet.deleteMany({ where: { lojaID: { in: lojaIDs } } })
+  await prisma.freightRule.deleteMany({ where: { lojaID: { in: lojaIDs } } })
+  await prisma.session.deleteMany({ where: { user: userFilter } })
+  await prisma.orderStatusHistory.deleteMany({ where: { order: orderFilter } })
+  await prisma.orderItem.deleteMany({ where: { order: orderFilter } })
   await prisma.address.deleteMany({
-    where: { orderId: null, userID: { in: userIdsWithAddresses } }
+    where: { OR: [{ orders: { some: orderFilter } }, { user: userFilter }] },
   })
+  await prisma.order.deleteMany({ where: orderFilter })
+  await prisma.product.deleteMany({ where: { lojaID: { in: lojaIDs } } })
+  await prisma.user.deleteMany({ where: userFilter })
+  await prisma.loja.deleteMany({ where: { id: { in: lojaIDs } } })
 
-  await prisma.user.deleteMany({
-    where: {
-      id: { not: '' }
-    }
-  })
-  await prisma.loja.deleteMany({})
-
+  seededStoreIds.clear()
   await prisma.$disconnect()
 }

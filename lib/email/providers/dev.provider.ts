@@ -6,6 +6,7 @@ import {
   OrderPaymentConfirmedEmailParams,
 } from "../email.types";
 import { renderPasswordResetEmail } from "../templates/password-reset.template";
+import { renderOrderPaymentConfirmedEmail } from "../templates/order-payment-confirmed.template";
 
 export interface RecordedEmail {
   options: SendEmailOptions;
@@ -25,13 +26,7 @@ export class DevEmailService implements IEmailService {
     });
 
     if (process.env.NODE_ENV !== "test") {
-      console.log(`\n================== [DEV TRANSACTIONAL EMAIL] ==================`);
-      console.log(`Para: ${Array.isArray(options.to) ? options.to.join(", ") : options.to}`);
-      console.log(`Assunto: ${options.subject}`);
-      console.log(`De: ${options.from || "default"}`);
-      console.log(`---------------------------------------------------------------`);
-      console.log(options.text || "(Apenas corpo HTML fornecido)");
-      console.log(`===============================================================\n`);
+      console.log("[DEV_EMAIL_RECORDED]", { messageId });
     }
 
     return {
@@ -52,8 +47,7 @@ export class DevEmailService implements IEmailService {
 
   async sendOrderPaymentConfirmedEmail(params: OrderPaymentConfirmedEmailParams): Promise<EmailResult> {
     const subject = `Pagamento Confirmado: Pedido #${params.orderNumber} - ${params.storeName || "Continental"}`;
-    const text = `Olá ${params.customerName},\n\nSeu pagamento de R$ ${params.totalValue.toFixed(2)} referente ao pedido #${params.orderNumber} foi confirmado com sucesso!\n\nAcompanhe seu pedido: ${params.orderUrl || "#"}`;
-    const html = `<p>Olá <strong>${params.customerName}</strong>,</p><p>Seu pagamento de <strong>R$ ${params.totalValue.toFixed(2)}</strong> referente ao pedido <strong>#${params.orderNumber}</strong> foi confirmado com sucesso!</p>`;
+    const { html, text } = renderOrderPaymentConfirmedEmail(params);
 
     return this.sendEmail({
       to: params.to,

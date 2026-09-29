@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
 import { FreightCartItemInput, FreightOption, FreightQuoteRequest, IFreightProvider } from '@/types/freight';
@@ -68,8 +69,10 @@ export class FreightOrchestratorService {
     const cartTotal = params.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0);
     const itemsCount = params.items.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
-    // 3. Cache identifier: versão + destino + peso + volume
-    const cacheKey = `v2_${cleanDestCep}_w${packages.weightInGrams}_v${packages.lengthCm}x${packages.widthCm}x${packages.heightCm}`;
+    // 3. O valor declarado também influencia provedores como a J&T. Não reutilize
+    // uma cotação entre carrinhos dimensionalmente iguais, mas com seguro diferente.
+    const cartTotalInCents = Math.round(cartTotal * 100);
+    const cacheKey = `v3_${cleanDestCep}_w${packages.weightInGrams}_v${packages.lengthCm}x${packages.widthCm}x${packages.heightCm}_c${cartTotalInCents}`;
 
     const cachedOptions = await tenantCache.getOrSet(
       params.lojaID,
@@ -103,7 +106,7 @@ export class FreightOrchestratorService {
             if (!isAvailable) return [];
             return await provider.calculateQuotes(quoteRequest);
           } catch (err) {
-            console.error(`[FREIGHT_PROVIDER_ERROR] Provedor ${provider.id} falhou:`, err);
+            logger.error('Freight provider failed', err, { action: 'FREIGHT_PROVIDER_ERROR', providerId: provider.id });
             return [];
           }
         });

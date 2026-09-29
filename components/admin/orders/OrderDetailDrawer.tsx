@@ -31,6 +31,17 @@ export interface OrderDetail {
   trackingCode: string | null
   adminNotes: string | null
   paymentMethod: string | null
+  paymentWorkflowStatus?: string
+  refundIntents?: Array<{
+    id: string
+    amount: number
+    kind: 'FULL' | 'PARTIAL'
+    status: 'REFUND_REQUESTED' | 'PROCESSING' | 'CONFIRMED' | 'FAILED' | 'RECONCILIATION_REQUIRED'
+    providerStatus: string | null
+    createdAt: string
+    confirmedAt: string | null
+    lastErrorCode: string | null
+  }>
   customer?: {
     name: string
     email: string
@@ -225,6 +236,26 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 </button>
               </div>
             </div>
+
+            {(order.refundIntents?.length ?? 0) > 0 && (
+              <div className="mx-6 mt-5 space-y-2 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-xs font-mono">
+                <p className="font-bold uppercase text-amber-200">Estornos financeiros</p>
+                {order.refundIntents!.map((refund) => (
+                  <div key={refund.id} className="flex items-center justify-between gap-3 text-slate-200">
+                    <span>{refund.kind === 'FULL' ? 'Integral' : 'Parcial'} — {formatCurrency(refund.amount)}</span>
+                    <span className={refund.status === 'CONFIRMED' ? 'text-emerald-400' : refund.status === 'FAILED' ? 'text-red-400' : 'text-amber-300'}>
+                      {refund.status === 'CONFIRMED'
+                        ? 'Confirmado'
+                        : refund.status === 'FAILED'
+                          ? 'Falhou'
+                          : refund.status === 'RECONCILIATION_REQUIRED'
+                            ? 'Requer conciliacao'
+                            : 'Em processamento'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex-1 p-6 space-y-8">
               {/* 2. CLIENTE */}
@@ -482,6 +513,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
               <OrderStatusManager
                 orderId={order.id}
                 currentStatus={order.status}
+                deliveryType={order.deliveryType}
                 isOpen={isStatusManagerOpen}
                 onClose={() => setIsStatusManagerOpen(false)}
                 onSuccess={() => {

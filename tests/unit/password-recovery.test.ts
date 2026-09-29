@@ -6,6 +6,7 @@ import { POST as forgotPasswordRoute } from "@/app/api/auth/forgot-password/rout
 import { POST as resetPasswordRoute } from "@/app/api/auth/reset-password/route";
 import { DevEmailService, ResendEmailService, setEmailService } from "@/lib/email";
 import * as tenant from "@/lib/tenant";
+import { createHash } from "crypto";
 
 vi.mock("@/lib/prisma", () => ({
   default: {
@@ -13,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     loja: {
       findFirst: vi.fn(),
@@ -23,7 +25,7 @@ vi.mock("@/lib/prisma", () => ({
     $transaction: vi.fn(async (callback) => {
       return callback({
         user: {
-          update: vi.fn(),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         },
         session: {
           deleteMany: vi.fn(),
@@ -35,6 +37,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/tenant", () => ({
   getLojaFromHeaders: vi.fn(),
+  getTenantCanonicalOrigin: vi.fn(),
 }));
 
 describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005)", () => {
@@ -44,6 +47,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
     vi.clearAllMocks();
     devEmailService = new DevEmailService();
     setEmailService(devEmailService);
+    vi.mocked(tenant.getTenantCanonicalOrigin).mockReturnValue("https://loja-a.exemplo.test");
   });
 
   describe("1. Testes de Serviço: requestPasswordReset", () => {
@@ -87,7 +91,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       expect(updateCall.where).toEqual({ id: "usr-123" });
       expect(updateCall.data.resetToken).toBeDefined();
       expect(typeof updateCall.data.resetToken).toBe("string");
-      expect((updateCall.data.resetToken as string).length).toBe(64); // 32 bytes hex = 64 chars
+      expect((updateCall.data.resetToken as string).length).toBe(64); // SHA-256 em hexadecimal
 
       // Valida expiração de aproximadamente 1 hora (+/- 10s)
       const expiresAt = updateCall.data.resetTokenExpires as Date;
@@ -100,8 +104,11 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       expect(sentEmail).toBeDefined();
       expect(sentEmail?.options.to).toBe("carlos@exemplo.com");
       expect(sentEmail?.options.subject).toContain("Redefinição de Senha");
-      expect(sentEmail?.options.html).toContain(updateCall.data.resetToken);
+      expect(sentEmail?.options.html).not.toContain(updateCall.data.resetToken);
       expect(sentEmail?.options.html).toContain("https://continentalestetica.com.br/reset-password?token=");
+      const rawToken = sentEmail?.options.html.match(/reset-password\?token=([a-f0-9]{64})/)?.[1];
+      expect(rawToken).toBeDefined();
+      expect(createHash("sha256").update(rawToken!).digest("hex")).toBe(updateCall.data.resetToken);
     });
 
     it("Defesa Anti-Enumeração: deve retornar sucesso uniforme quando o e-mail não existir na loja", async () => {
@@ -110,6 +117,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       const result = await requestPasswordReset({
         email: "inexistente@alvo.com",
         lojaID: "loja-continental-1",
+        originUrl: "https://continentalestetica.com.br",
       });
 
       // Retorno indistinguível de sucesso para o cliente
@@ -130,6 +138,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       const result = await requestPasswordReset({
         email: "infrator@teste.com",
         lojaID: "loja-1",
+        originUrl: "https://continentalestetica.com.br",
       });
 
       expect(result.success).toBe(true);
@@ -156,9 +165,9 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback: any) => {
         return callback({
           user: {
-            update: vi.fn().mockImplementation((args) => {
+            updateMany: vi.fn().mockImplementation((args) => {
               txUpdatePayload = args;
-              return args;
+              return { count: 1 };
             }),
           },
           session: {
@@ -180,7 +189,13 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
 
       // Validação do hash
       expect(txUpdatePayload).toBeDefined();
-      expect(txUpdatePayload.where).toEqual({ id: "usr-456" });
+      expect(txUpdatePayload.where).toEqual(expect.objectContaining({
+        id: "usr-456",
+        status: "ACTIVE",
+      }));
+      expect(txUpdatePayload.where.resetToken).toBe(
+        createHash("sha256").update(mockUser.resetToken).digest("hex")
+      );
       expect(txUpdatePayload.data.resetToken).toBeNull();
       expect(txUpdatePayload.data.resetTokenExpires).toBeNull();
 
@@ -209,15 +224,31 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
-    it("deve rejeitar senha menor que 6 caracteres", async () => {
+    it("deve rejeitar senha menor que 8 caracteres", async () => {
       await expect(
         resetPassword({
           token: "valid-token-long-enough-xyz",
-          newPassword: "12345",
+          newPassword: "1234567",
         })
       ).rejects.toThrow(AuthError);
 
       expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("deve consumir o token por compare-and-set e rejeitar uma segunda corrida", async () => {
+      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce({
+        id: "usr-race",
+        status: "ACTIVE",
+      } as any);
+      vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback: any) => callback({
+        user: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+        session: { deleteMany: vi.fn() },
+      }));
+
+      await expect(resetPassword({
+        token: "token-validado-em-duas-requisicoes",
+        newPassword: "SenhaNova123",
+      })).rejects.toThrow("Token de recuperação inválido ou expirado")
     });
   });
 
@@ -245,6 +276,40 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       const json = await res.json();
       expect(json.success).toBe(true);
       expect(json.message).toContain("instruções para redefinição");
+    });
+
+    it("ignora Origin e Referer do cliente ao montar o link de recuperação", async () => {
+      vi.mocked(tenant.getLojaFromHeaders).mockResolvedValueOnce({
+        id: "loja-1",
+        name: "Loja A",
+        slug: "loja-a",
+        customDomain: "loja-a.exemplo.test",
+      } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        id: "usr-1",
+        name: "Cliente",
+        email: "cliente@exemplo.test",
+        status: "ACTIVE",
+        loja: { name: "Loja A" },
+      } as any);
+      vi.mocked(prisma.user.update).mockResolvedValueOnce({} as any);
+
+      const req = new Request("http://localhost/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://atacante.exemplo.test",
+          Referer: "https://atacante.exemplo.test/isca",
+          "x-forwarded-for": "203.0.113.211",
+        },
+        body: JSON.stringify({ email: "cliente@exemplo.test" }),
+      });
+
+      const res = await forgotPasswordRoute(req);
+      expect(res.status).toBe(200);
+      const sentEmail = devEmailService.getLastEmail();
+      expect(sentEmail?.options.html).toContain("https://loja-a.exemplo.test/reset-password?token=");
+      expect(sentEmail?.options.html).not.toContain("atacante.exemplo.test");
     });
 
     it("deve rejeitar e-mail em formato inválido com 422", async () => {
@@ -337,7 +402,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
       });
       global.fetch = globalFetch;
 
-      const resendService = new ResendEmailService("re_teste_key_12345", "noreply@continental.com");
+      const resendService = new ResendEmailService("re_fixture_not_a_secret", "noreply@continental.com");
       const result = await resendService.sendEmail({
         to: "cliente@teste.com",
         subject: "Redefinir Senha",
@@ -351,7 +416,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
-            Authorization: "Bearer re_teste_key_12345",
+            Authorization: "Bearer re_fixture_not_a_secret",
           }),
         })
       );

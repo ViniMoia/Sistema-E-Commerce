@@ -3,6 +3,7 @@ import { debitRedeemedPoints, simulatePointsRedemption, LoyaltyError } from '@/s
 import { createOrder } from '@/services/checkout.service'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { hashFreightItems, signFreightQuote } from '@/lib/freight-quote'
 
 vi.mock('@/lib/prisma', () => {
   return {
@@ -14,10 +15,12 @@ vi.mock('@/lib/prisma', () => {
       product: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       productVariants: {
         findMany: vi.fn().mockResolvedValue([]),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       freightRule: {
         findFirst: vi.fn(),
@@ -48,6 +51,7 @@ vi.mock('@/lib/prisma', () => {
 describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pontos (Fase 6)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.FREIGHT_QUOTE_SECRET = 'test-only-freight-secret-at-least-32-chars'
     vi.mocked(prisma.productVariants.findMany).mockResolvedValue([])
   })
 
@@ -294,6 +298,16 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
         customer: { name: 'Cliente', email: 'c@teste.com', phone: '11999999999', userId: 'usr-1' },
         items: [{ productId: 'prod-1', quantity: 1 }],
         deliveryType: 'DELIVERY',
+        freightQuoteToken: signFreightQuote({
+          lojaID: 'loja-1',
+          destinationCep: '01001000',
+          itemsHash: hashFreightItems([{ productId: 'prod-1', quantity: 1 }]),
+          providerId: 'LOCAL_TABLE',
+          serviceCode: 'LOCAL_fr-1',
+          serviceName: 'Entrega Local (São Paulo)',
+          price: '30.00',
+          deliveryTimeInDays: 1,
+        }),
         address: {
           cep: '01001-000',
           state: 'SP',

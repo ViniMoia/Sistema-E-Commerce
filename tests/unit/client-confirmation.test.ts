@@ -3,22 +3,22 @@ import { POST } from '@/app/api/orders/[id]/confirm-delivery/route';
 import prisma from '@/lib/prisma';
 import * as guards from '@/lib/auth/guards';
 import { NextResponse } from 'next/server';
+import * as orderService from '@/services/order.service';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
     order: {
       findUnique: vi.fn(),
-      update: vi.fn(),
     },
-    auditLog: {
-      create: vi.fn(),
-    },
-    $transaction: vi.fn(),
   },
 }));
 
 vi.mock('@/lib/auth/guards', () => ({
   requireAuth: vi.fn(),
+}));
+
+vi.mock('@/services/order.service', () => ({
+  updateOrderStatus: vi.fn(),
 }));
 
 describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)', () => {
@@ -40,7 +40,7 @@ describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)',
 
   it('deve retornar 403 se o pedido pertencer a outro usuário (Defesa Anti-IDOR)', async () => {
     vi.mocked(guards.requireAuth).mockResolvedValueOnce({
-      user: { id: 'user_attacker', role: 'CUSTOMER', status: 'ACTIVE' } as any,
+      user: { id: 'user_attacker', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_1' } as any,
     });
 
     vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
@@ -61,9 +61,31 @@ describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)',
     expect(json.error).toContain('Acesso negado');
   });
 
+  it('deve retornar 404 se o pedido do mesmo usuário pertencer a outro tenant', async () => {
+    vi.mocked(guards.requireAuth).mockResolvedValueOnce({
+      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_A' } as any,
+    });
+
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
+      id: 'ord_cross_tenant',
+      orderNumber: 105,
+      userID: 'user_1',
+      lojaID: 'loja_B',
+      status: 'SHIPPED',
+      deliveryType: 'DELIVERY',
+    } as any);
+
+    const req = new Request('http://localhost/api/orders/ord_cross_tenant/confirm-delivery', { method: 'POST' });
+    const context = { params: Promise.resolve({ id: 'ord_cross_tenant' }) };
+
+    const res = await POST(req, context);
+    expect(res.status).toBe(404);
+    expect(orderService.updateOrderStatus).not.toHaveBeenCalled();
+  });
+
   it('deve retornar 400 se o pedido estiver em status PENDING (não enviado)', async () => {
     vi.mocked(guards.requireAuth).mockResolvedValueOnce({
-      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE' } as any,
+      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_1' } as any,
     });
 
     vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
@@ -86,8 +108,15 @@ describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)',
 
   it('deve confirmar recebimento com sucesso para pedido SHIPPED e registrar auditoria', async () => {
     vi.mocked(guards.requireAuth).mockResolvedValueOnce({
-      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE' } as any,
+      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_1' } as any,
     });
+
+    const mockUpdated = {
+      id: 'ord_shipped_1',
+      orderNumber: 103,
+      status: 'DELIVERED',
+      deliveredConfirmedAt: new Date(),
+    };
 
     vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
       id: 'ord_shipped_1',
@@ -97,15 +126,10 @@ describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)',
       status: 'SHIPPED',
       deliveryType: 'DELIVERY',
     } as any);
-
-    const mockUpdated = {
-      id: 'ord_shipped_1',
-      orderNumber: 103,
-      status: 'DELIVERED',
-      deliveredConfirmedAt: new Date(),
-    };
-
-    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockUpdated, {}]);
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: true,
+      order: mockUpdated as any,
+    });
 
     const req = new Request('http://localhost/api/orders/ord_shipped_1/confirm-delivery', { method: 'POST' });
     const context = { params: Promise.resolve({ id: 'ord_shipped_1' }) };
@@ -115,12 +139,45 @@ describe('Customer Order Confirmation (POST /api/orders/[id]/confirm-delivery)',
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(json.order.status).toBe('DELIVERED');
-    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(orderService.updateOrderStatus).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: 'ord_shipped_1',
+      newStatus: 'DELIVERED',
+      expectedUserID: 'user_1',
+      deliveredConfirmedById: 'user_1',
+      lojaID: 'loja_1',
+    }));
+  });
+
+  it('deve retornar 409 sem auditoria se outra operação alterar o pedido após a leitura', async () => {
+    vi.mocked(guards.requireAuth).mockResolvedValueOnce({
+      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_1' } as any,
+    });
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
+      id: 'ord_race',
+      orderNumber: 106,
+      userID: 'user_1',
+      lojaID: 'loja_1',
+      status: 'SHIPPED',
+      deliveryType: 'DELIVERY',
+    } as any);
+    vi.mocked(orderService.updateOrderStatus).mockResolvedValueOnce({
+      success: false,
+      error: 'O pedido foi alterado por outra operação.',
+      code: 'CONFLICT',
+    });
+
+    const res = await POST(
+      new Request('http://localhost/api/orders/ord_race/confirm-delivery', { method: 'POST' }),
+      { params: Promise.resolve({ id: 'ord_race' }) }
+    );
+
+    expect(res.status).toBe(409);
+    expect(orderService.updateOrderStatus).toHaveBeenCalledTimes(1);
   });
 
   it('deve retornar 400 se o pedido já estiver com status DELIVERED', async () => {
     vi.mocked(guards.requireAuth).mockResolvedValueOnce({
-      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE' } as any,
+      user: { id: 'user_1', role: 'CUSTOMER', status: 'ACTIVE', lojaID: 'loja_1' } as any,
     });
 
     vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({

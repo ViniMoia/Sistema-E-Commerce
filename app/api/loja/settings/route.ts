@@ -1,7 +1,11 @@
+import { createRequestLogContext, runWithLogContext, attachRequestId } from '@/lib/observability/request-context'
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getLojaSettings, updateLojaSettings } from "@/services/loja.service";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
+import { TENANT_SETTINGS_CACHE_TAG } from "@/lib/cache-tags";
+import { logger } from "@/lib/logger";
 
 const updateLojaSettingsSchema = z.object({
   pixKey: z.string().nullable().optional(),
@@ -24,7 +28,6 @@ const updateLojaSettingsSchema = z.object({
   originComplement: z.string().nullable().optional(),
   enableCorreios: z.boolean().optional(),
   correiosContractCode: z.string().nullable().optional(),
-  correiosPassword: z.string().nullable().optional(),
   enablePickup: z.boolean().optional(),
   enableNoFreight: z.boolean().optional(),
   additionalDays: z.number().int().nonnegative().optional(),
@@ -56,7 +59,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(settings, { status: 200 });
   } catch (error) {
-    console.error("[LOJA_SETTINGS_GET]", error);
+    logger.error('Falha nas configuracoes da loja', error, { action: 'LOJA_SETTINGS_GET' });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -68,6 +71,11 @@ export async function GET(request: Request) {
  * PUT /api/loja/settings
  */
 export async function PUT(request: Request) {
+  const context = createRequestLogContext(request.headers)
+  return runWithLogContext(context, async () => attachRequestId(await handleSettingsUpdate(request), context.requestId))
+}
+
+async function handleSettingsUpdate(request: Request) {
   try {
     const guard = await requireAdmin(request);
     if (guard instanceof NextResponse) return guard;
@@ -98,7 +106,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const updated = await updateLojaSettings(lojaID, parsed.data);
+    const updated = await updateLojaSettings(lojaID, parsed.data, guard.user.id);
     if (!updated) {
       return NextResponse.json(
         { error: "Failed to update loja settings" },
@@ -106,9 +114,17 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Next.js pertence à borda HTTP. Falha de invalidação não desfaz a
+    // atualização persistida; o cache local do tenant já foi invalidado.
+    try {
+      revalidateTag(TENANT_SETTINGS_CACHE_TAG, 'max');
+    } catch (error) {
+      logger.error('Falha nas configuracoes da loja', error, { action: 'LOJA_SETTINGS_REVALIDATE' });
+    }
+
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
-    console.error("[LOJA_SETTINGS_PUT]", error);
+    logger.error('Falha nas configuracoes da loja', error, { action: 'LOJA_SETTINGS_PUT' });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

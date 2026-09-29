@@ -12,17 +12,32 @@ interface CacheEntry<T> {
 }
 
 const memoryCache = new Map<string, CacheEntry<any>>();
+const inFlightRequests = new Map<string, Promise<unknown>>();
+const MAX_CACHE_ENTRIES = 1000;
+
+function removeExpiredEntries(now = Date.now()): void {
+  for (const [key, entry] of memoryCache.entries()) {
+    if (now > entry.expiresAt) {
+      memoryCache.delete(key);
+    }
+  }
+}
+
+function enforceCapacity(): void {
+  removeExpiredEntries();
+  while (memoryCache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = memoryCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    memoryCache.delete(oldestKey);
+  }
+}
 
 // Limpeza periódica de entradas expiradas
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of memoryCache.entries()) {
-      if (now > entry.expiresAt) {
-        memoryCache.delete(key);
-      }
-    }
-  }, 60000);
+  const cleanupTimer = setInterval(removeExpiredEntries, 60000);
+  if (typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
+    cleanupTimer.unref();
+  }
 }
 
 /**
@@ -47,6 +62,8 @@ export const tenantCache = {
       return null;
     }
 
+    memoryCache.delete(key);
+    memoryCache.set(key, entry);
     return entry.value as T;
   },
 
@@ -58,6 +75,8 @@ export const tenantCache = {
     ttlMs = 60000
   ): void {
     const key = buildTenantCacheKey(lojaID, resource, identifier);
+    memoryCache.delete(key);
+    enforceCapacity();
     memoryCache.set(key, {
       value,
       expiresAt: Date.now() + ttlMs,
@@ -100,14 +119,26 @@ export const tenantCache = {
       return cached;
     }
 
-    const fresh = await factory();
-    if (fresh !== null && fresh !== undefined) {
-      tenantCache.set(lojaID, resource, identifier, fresh, ttlMs);
-    }
-    return fresh;
+    const pending = inFlightRequests.get(key) as Promise<T> | undefined;
+    if (pending) return pending;
+
+    const request = factory()
+      .then(fresh => {
+        if (fresh !== null && fresh !== undefined) {
+          tenantCache.set(lojaID, resource, identifier, fresh, ttlMs);
+        }
+        return fresh;
+      })
+      .finally(() => {
+        inFlightRequests.delete(key);
+      });
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   clear(): void {
     memoryCache.clear();
+    inFlightRequests.clear();
   },
 };

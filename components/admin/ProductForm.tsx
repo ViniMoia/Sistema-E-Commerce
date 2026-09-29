@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
@@ -27,6 +27,7 @@ const productSchema = z.object({
   variants: z
     .array(
       z.object({
+        variantId: z.string().optional(),
         size: z.string().min(1, "Obrigatório"),
         color: z.string().min(1, "Obrigatória"),
         stock: z.number().int().min(0, "Inválido"),
@@ -85,6 +86,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       variants:
         initialData?.productVariants && initialData.productVariants.length > 0
           ? initialData.productVariants.map((v) => ({
+              variantId: v.id,
               size: v.size,
               color: v.color,
               stock: v.stock,
@@ -98,6 +100,11 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
     name: "variants",
     control: form.control,
   });
+  const watchedVariants = useWatch({ control: form.control, name: "variants" });
+  const totalVariantStock = watchedVariants.reduce(
+    (sum, variant) => sum + (variant.stock || 0),
+    0
+  );
 
   const {
     fields: galleryFields,
@@ -117,9 +124,10 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl,
-        stock: data.stock,
+        stock: data.variants.reduce((sum, variant) => sum + variant.stock, 0),
         lojaID: lojaID,
         variants: data.variants.map((v) => ({
+          id: v.variantId,
           size: v.size,
           color: v.color,
           stock: v.stock,
@@ -287,14 +295,15 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                      Estoque Geral Central
+                      Estoque Total (calculado pelas variantes)
                     </FormLabel>
                     <FormControl>
                       <input
                         type="number"
                         placeholder="100"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        value={totalVariantStock}
+                        readOnly
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
                       />
                     </FormControl>
@@ -403,9 +412,16 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    disabled={fields.length === 1}
+                    disabled={
+                      fields.length === 1 ||
+                      Boolean(form.getValues(`variants.${index}.variantId`))
+                    }
                     className="w-8 h-8 rounded-lg border border-red-500/30 bg-red-950/40 text-red-400 hover:bg-red-900/40 transition-colors flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Remover variante"
+                    title={
+                      form.getValues(`variants.${index}.variantId`)
+                        ? "Variantes existentes precisam de arquivamento para preservar o histórico."
+                        : "Remover variante nova"
+                    }
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -471,7 +487,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                   Excluir Produto
                 </h3>
                 <p className="text-xs text-catalog-muted mt-0.5">
-                  Esta ação desvinculará o produto do catálogo ativo.
+                  Exclusão física permitida somente para produtos sem vendas ou carrinhos.
                 </p>
               </div>
             </div>
@@ -481,7 +497,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                 {form.getValues("name") || initialData?.name || "Produto selecionado"}
               </p>
               <p className="text-catalog-muted mt-1 text-[11px]">
-                Esta ação é irreversível e removerá o item e suas variantes.
+                Esta ação é irreversível e removerá definitivamente o item e suas variantes. Produtos em uso serão recusados pelo servidor.
               </p>
             </div>
 

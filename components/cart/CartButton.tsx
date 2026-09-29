@@ -1,7 +1,7 @@
 "use client";
 
 import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/components/providers/CartProvider";
+import { useCart } from "@/components/providers/cart-context";
 import { useCartStore } from "@/store/cart.store";
 
 interface CartButtonProps {

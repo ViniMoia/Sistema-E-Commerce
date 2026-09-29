@@ -1,245 +1,134 @@
-import { describe, it, expect, vi } from 'vitest'
-import { addToCart, CartError } from '@/services/cart.service'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { addToCart } from '@/services/cart.service'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-vi.mock('@/lib/prisma', () => {
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    $transaction: vi.fn((callback) => callback(prisma)),
+    $queryRaw: vi.fn(),
+    productVariants: { findFirst: vi.fn() },
+    product: { findFirst: vi.fn() },
+    cart: { findFirst: vi.fn(), create: vi.fn() },
+    cartItem: { create: vi.fn(), update: vi.fn() },
+  },
+}))
+
+const lojaID = 'loja-1'
+
+function variant(overrides: Record<string, unknown> = {}) {
   return {
-    default: {
-      productVariants: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        create: vi.fn(),
-      },
-      product: {
-        findUnique: vi.fn(),
-      },
-      cart: {
-        findFirst: vi.fn(),
-        create: vi.fn(),
-      },
-      cartItem: {
-        create: vi.fn(),
-        update: vi.fn(),
-        findFirst: vi.fn(),
-        delete: vi.fn(),
-      },
+    id: 'var-1',
+    ProductID: 'prod-1',
+    stock: 10,
+    color: 'Preto',
+    size: 'M',
+    product: {
+      id: 'prod-1',
+      name: 'Camisa Autorizada',
+      price: new Prisma.Decimal('79.90'),
+      imageUrl: 'https://img.test/camisa.png',
+      stock: 10,
+      lojaID,
     },
+    ...overrides,
   }
-})
+}
 
-describe('Isolamento e Segurança do Carrinho de Compras (ARC-001)', () => {
-  it('deve rejeitar item se a variante não pertencer ao produto informado', async () => {
-    vi.mocked(prisma.productVariants.findUnique).mockResolvedValueOnce({
-      id: 'var-1',
-      ProductID: 'prod-A', // Pertence a prod-A
-      stock: 10,
-      product: { id: 'prod-A', lojaID: 'loja-1' },
-    } as any)
-
-    await expect(
-      addToCart('user-1', {
-        productID: 'prod-B', // Incompatível!
-        variantID: 'var-1',
-        quantity: 1,
-      })
-    ).rejects.toThrow('Invalid product or variant')
+describe('carrinho autoritativo e concorrente (BE-011)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'user-1' }] as any)
   })
 
-  it('deve rejeitar item se a quantidade solicitada exceder o estoque', async () => {
-    vi.mocked(prisma.productVariants.findUnique).mockResolvedValueOnce({
-      id: 'var-1',
-      ProductID: 'prod-1',
-      stock: 2, // Apenas 2 em estoque
-      product: { id: 'prod-1', lojaID: 'loja-1' },
-    } as any)
-
-    await expect(
-      addToCart('user-1', {
-        productID: 'prod-1',
-        variantID: 'var-1',
-        quantity: 5, // Solicita 5
-      })
-    ).rejects.toThrow('Insufficient stock')
+  it.each([0, -1, 1.5, 100])('rejeita quantidade inválida %s antes de tocar o banco', async (quantity) => {
+    await expect(addToCart('user-1', lojaID, {
+      productID: 'prod-1',
+      variantID: 'var-1',
+      quantity,
+    })).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 422 })
+    expect(prisma.$transaction).not.toHaveBeenCalled()
   })
 
-  it('deve bloquear mistura de produtos de lojas diferentes no mesmo carrinho', async () => {
-    vi.mocked(prisma.productVariants.findUnique).mockResolvedValueOnce({
-      id: 'var-2',
-      ProductID: 'prod-2',
-      stock: 10,
-      product: { id: 'prod-2', lojaID: 'loja-B' }, // Loja B
-    } as any)
+  it('rejeita produto/variante de outro tenant sem criar carrinho ou item', async () => {
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(null)
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce(null)
 
-    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
-      id: 'cart-1',
-      userID: 'user-1',
-      status: 'ACTIVE',
-      items: [
-        {
-          id: 'item-1',
-          variantID: 'var-1',
-          product: { lojaID: 'loja-A' }, // Já tem item da Loja A
-        },
-      ],
-    } as any)
+    await expect(addToCart('user-1', lojaID, {
+      productID: 'prod-other',
+      variantID: 'var-other',
+      quantity: 1,
+    })).rejects.toMatchObject({ code: 'PRODUCT_NOT_AVAILABLE', statusCode: 404 })
 
-    await expect(
-      addToCart('user-1', {
-        productID: 'prod-2',
-        variantID: 'var-2',
-        quantity: 1,
-      })
-    ).rejects.toThrow('Você só pode adicionar produtos de uma única loja')
+    expect(prisma.productVariants.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: 'var-other',
+        ProductID: 'prod-other',
+        product: { lojaID },
+      }),
+    }))
+    expect(prisma.cart.create).not.toHaveBeenCalled()
+    expect(prisma.cartItem.create).not.toHaveBeenCalled()
   })
 
-  it('deve usar o preço autoritativo do banco de dados ao criar o cartItem', async () => {
-    const dbPrice = new Prisma.Decimal('79.90')
-    vi.mocked(prisma.productVariants.findUnique).mockResolvedValueOnce({
-      id: 'var-1',
-      ProductID: 'prod-1',
-      stock: 10,
-      color: 'Preto',
-      size: 'M',
-      product: {
-        id: 'prod-1',
-        name: 'Camisa Autorizada',
-        price: dbPrice,
-        imageUrl: 'https://img.com/camisa.png',
-        lojaID: 'loja-1',
-      },
-    } as any)
+  it('não cria variante de catálogo quando o produto não possui variante comprável', async () => {
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(null)
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({ id: 'prod-1' } as any)
 
+    await expect(addToCart('user-1', lojaID, {
+      productID: 'prod-1',
+      quantity: 1,
+    })).rejects.toMatchObject({ code: 'PRODUCT_VARIANT_REQUIRED', statusCode: 409 })
+    expect((prisma.productVariants as any).create).toBeUndefined()
+    expect(prisma.cart.create).not.toHaveBeenCalled()
+  })
+
+  it('seleciona variante persistida e usa snapshot autoritativo do banco', async () => {
+    const storedVariant = variant()
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(storedVariant as any)
     vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
       id: 'cart-1',
       userID: 'user-1',
       status: 'ACTIVE',
       items: [],
     } as any)
-
     vi.mocked(prisma.cartItem.create).mockResolvedValueOnce({ id: 'item-1' } as any)
 
-    await addToCart('user-1', {
+    await addToCart('user-1', lojaID, { productID: 'prod-1', quantity: 2 })
+
+    expect(prisma.cartItem.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        cartID: 'cart-1',
+        productID: 'prod-1',
+        variantID: 'var-1',
+        quantity: 2,
+        price: storedVariant.product.price,
+        productName: storedVariant.product.name,
+      }),
+    })
+  })
+
+  it('incrementa o item existente sob o lock do usuário e respeita o menor estoque pai/variante', async () => {
+    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(
+      variant({ stock: 8, product: { ...variant().product, stock: 5 } }) as any
+    )
+    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
+      id: 'cart-1',
+      userID: 'user-1',
+      status: 'ACTIVE',
+      items: [{
+        id: 'item-1',
+        variantID: 'var-1',
+        quantity: 4,
+        product: { lojaID },
+      }],
+    } as any)
+
+    await expect(addToCart('user-1', lojaID, {
       productID: 'prod-1',
       variantID: 'var-1',
       quantity: 2,
-    })
-
-    expect(prisma.cartItem.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          cartID: 'cart-1',
-          price: dbPrice,
-          productName: 'Camisa Autorizada',
-          quantity: 2,
-        }),
-      })
-    )
-  })
-
-  it('deve permitir adicionar produto sem variante buscando variante existente automaticamente', async () => {
-    const dbPrice = new Prisma.Decimal('45.00')
-    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce({
-      id: 'var-default',
-      ProductID: 'prod-simples',
-      stock: 5,
-      color: 'Padrão',
-      size: 'Único',
-      product: {
-        id: 'prod-simples',
-        name: 'Cera Automotiva',
-        price: dbPrice,
-        stock: 5,
-        lojaID: 'loja-1',
-      },
-    } as any)
-
-    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
-      id: 'cart-1',
-      userID: 'user-1',
-      status: 'ACTIVE',
-      items: [],
-    } as any)
-
-    vi.mocked(prisma.cartItem.create).mockResolvedValueOnce({ id: 'item-simples' } as any)
-
-    await addToCart('user-1', {
-      productID: 'prod-simples',
-      quantity: 1,
-    })
-
-    expect(prisma.cartItem.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          cartID: 'cart-1',
-          variantID: 'var-default',
-          productID: 'prod-simples',
-          quantity: 1,
-        }),
-      })
-    )
-  })
-
-  it('deve criar variante padrão automaticamente se o produto não possuir nenhuma variante cadastrada', async () => {
-    const dbPrice = new Prisma.Decimal('120.00')
-    vi.mocked(prisma.productVariants.findFirst).mockResolvedValueOnce(null)
-    vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
-      id: 'prod-novo',
-      name: 'Polidor Especial',
-      price: dbPrice,
-      stock: 15,
-      lojaID: 'loja-1',
-    } as any)
-
-    vi.mocked(prisma.productVariants.create).mockResolvedValueOnce({
-      id: 'var-criada',
-      ProductID: 'prod-novo',
-      size: 'Único',
-      color: 'Padrão',
-      stock: 15,
-      product: {
-        id: 'prod-novo',
-        name: 'Polidor Especial',
-        price: dbPrice,
-        stock: 15,
-        lojaID: 'loja-1',
-      },
-    } as any)
-
-    vi.mocked(prisma.cart.findFirst).mockResolvedValueOnce({
-      id: 'cart-1',
-      userID: 'user-1',
-      status: 'ACTIVE',
-      items: [],
-    } as any)
-
-    vi.mocked(prisma.cartItem.create).mockResolvedValueOnce({ id: 'item-novo' } as any)
-
-    await addToCart('user-1', {
-      productID: 'prod-novo',
-      quantity: 2,
-    })
-
-    expect(prisma.productVariants.create).toHaveBeenCalledWith({
-      data: {
-        ProductID: 'prod-novo',
-        size: 'Único',
-        color: 'Padrão',
-        stock: 15,
-      },
-      include: { product: true },
-    })
-
-    expect(prisma.cartItem.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          cartID: 'cart-1',
-          variantID: 'var-criada',
-          productID: 'prod-novo',
-          quantity: 2,
-        }),
-      })
-    )
+    })).rejects.toMatchObject({ code: 'INSUFFICIENT_STOCK', statusCode: 409 })
+    expect(prisma.cartItem.update).not.toHaveBeenCalled()
   })
 })
-

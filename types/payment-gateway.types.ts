@@ -17,6 +17,7 @@ export interface PaymentCustomerData {
 
 export interface CreatePixChargeInput {
   orderId: string;
+  paymentReference: string;
   orderNumber: number;
   value: number;
   customer: PaymentCustomerData;
@@ -43,6 +44,7 @@ export interface CreditCardData {
 
 export interface CreateCreditCardChargeInput {
   orderId: string;
+  paymentReference: string;
   orderNumber: number;
   value: number;
   customer: PaymentCustomerData;
@@ -63,6 +65,7 @@ export interface CreditCardChargeResult {
 
 export interface CreateBoletoChargeInput {
   orderId: string;
+  paymentReference: string;
   orderNumber: number;
   value: number;
   customer: PaymentCustomerData;
@@ -83,10 +86,27 @@ export interface BoletoChargeResult {
 export interface PaymentStatusResult {
   paymentId: string;
   status: string;
+  externalReference?: string;
+  billingType?: string;
   paidAt?: Date;
   value?: number;
   netValue?: number;
   originalPayload?: unknown;
+}
+
+export interface RequestRefundInput {
+  paymentId: string;
+  value: number;
+  /** Referencia opaca persistida; nao deve conter PII nem texto livre. */
+  description: string;
+}
+
+export interface PaymentRefundResult {
+  status: string;
+  value: number;
+  description?: string;
+  createdAt?: Date;
+  effectiveAt?: Date;
 }
 
 export class PaymentGatewayError extends Error {
@@ -123,4 +143,16 @@ export interface PaymentGateway {
    * Consulta o status atualizado de uma cobrança no gateway.
    */
   getPaymentStatus(paymentId: string): Promise<PaymentStatusResult>;
+
+  /**
+   * Localiza efeitos de uma tentativa anterior pela referência persistida antes
+   * do POST. Nunca cria uma nova cobrança.
+   */
+  findPaymentsByReference(paymentReference: string): Promise<PaymentStatusResult[]>;
+
+  /** O retorno do POST prova aceite, nao conclusao do estorno. */
+  requestRefund(input: RequestRefundInput): Promise<PaymentStatusResult>;
+
+  /** Fonte autoritativa para conclusao e conciliacao de estornos. */
+  listPaymentRefunds(paymentId: string): Promise<PaymentRefundResult[]>;
 }

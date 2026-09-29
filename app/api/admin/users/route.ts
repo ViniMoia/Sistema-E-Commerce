@@ -1,6 +1,7 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { ok, err } from "@/lib/api-response";
-import { requireAdmin } from "@/lib/auth-admin";
+import { requireAdmin } from "@/lib/auth/guards";
 import { listCustomers } from "@/services/admin.service";
 
 export async function GET(req: Request) {
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
     
     return ok(result);
   } catch (error) {
-    console.error("[ADMIN_USERS_GET]", error);
+    logger.error("[ADMIN_USERS_GET]", error);
     return err("Internal Server Error", 500, "INTERNAL_ERROR");
   }
 }

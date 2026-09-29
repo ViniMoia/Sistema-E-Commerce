@@ -1,12 +1,22 @@
 import { ok, err } from '@/lib/api-response'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getCurrentUser } from '@/lib/session'
-import { simulatePointsRedemption, SimulateLoyaltyRedeemSchema } from '@/services/loyalty.service'
+import { LoyaltyError, simulatePointsRedemption } from '@/services/loyalty.service'
+import { logger } from '@/lib/logger'
+import { z } from 'zod'
+
+const publicSimulationSchema = z.object({
+  subtotal: z.number().positive('Subtotal deve ser maior que zero'),
+  requestedPoints: z.number().int().min(0, 'Pontos solicitados não podem ser negativos'),
+}).strict()
 
 export async function POST(request: Request) {
   // Proteção contra spam de simulação: 30 requisições/minuto
   const rateLimitResponse = checkRateLimit(request, 'loyalty_simulate', 30, 60000)
   if (rateLimitResponse) return rateLimitResponse
+
+  const currentUser = await getCurrentUser()
+  if (!currentUser) return err('Não autenticado.', 401)
 
   let body: unknown
   try {
@@ -15,7 +25,7 @@ export async function POST(request: Request) {
     return err('JSON inválido.', 400)
   }
 
-  const parseResult = SimulateLoyaltyRedeemSchema.safeParse(body)
+  const parseResult = publicSimulationSchema.safeParse(body)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
     return err(issue ? issue.message : 'Dados de simulação inválidos.', 400)
@@ -23,19 +33,17 @@ export async function POST(request: Request) {
 
   const data = parseResult.data
 
-  // Identificar se há um usuário com sessão ativa
-  const currentUser = await getCurrentUser()
-  const resolvedUserId = currentUser ? currentUser.id : data.userID
-
   try {
     const result = await simulatePointsRedemption({
       ...data,
-      userID: resolvedUserId,
+      lojaID: currentUser.lojaID,
+      userID: currentUser.id,
     })
 
     return ok(result)
-  } catch (error: any) {
-    console.error('[LOYALTY_SIMULATE_ERROR]', error)
-    return err(error?.message || 'Erro ao simular resgate de pontos.', 400)
+  } catch (error: unknown) {
+    logger.error('Falha ao simular resgate de pontos', error, { action: 'LOYALTY_SIMULATE_ERROR' })
+    if (error instanceof LoyaltyError) return err(error.message, 400, error.code)
+    return err('Erro interno ao simular resgate de pontos.', 500, 'LOYALTY_SIMULATE_INTERNAL_ERROR')
   }
 }

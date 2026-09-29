@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.3 seconds
+Output:
 # DOCUMENTAÇÃO TÉCNICA DO SISTEMA — CONTINENTAL E-COMMERCE
 
 > **Versão da Plataforma:** 1.0.0-rc  
@@ -206,11 +209,6 @@ Localização: `app/admin/products/` e `services/product.service.ts`
 
 ---
 
-## 8. CONTA DE TESTES HOMOLOGADA
+## 8. BOOTSTRAP ADMINISTRATIVO LOCAL
 
-Para auditoria manual e testes automatizados no painel administrativo:
-* **URL de Login**: [`/login`](http://localhost:3000/login)
-* **E-mail**: `dev.admin@continental.com.br`
-* **Senha**: `DevAdmin@2026#Continental`
-* **Papel**: `ADMIN`
-* **Loja Vinculada**: Continental Produtos Estéticos Automotivos (`536bfa58-0531-49e8-9209-3a046281e516`)
+Credenciais de teste não são versionadas. Para criar uma conta nova em ambiente local, use `scripts/create_test_admin.ts` com confirmação e variáveis de ambiente efêmeras. O script é bloqueado em produção, não altera contas existentes e não registra e-mail ou senha.

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
 import { requireAuth } from '@/lib/auth/guards'
 import { getStatement } from '@/services/loyalty.service'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const auth = await requireAuth(req)
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
 
     return ok(statement)
   } catch (error: any) {
-    console.error('[LOYALTY_WALLET_ERROR]', error)
-    return err(error?.message || 'Erro ao carregar carteira de pontos.', 500)
+    logger.error('Falha ao carregar carteira de pontos', error, { action: 'LOYALTY_WALLET_ERROR' })
+    return err('Erro interno ao carregar carteira de pontos.', 500, 'LOYALTY_WALLET_INTERNAL_ERROR')
   }
 }

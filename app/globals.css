@@ -16,6 +16,25 @@ html, body {
   scroll-behavior: smooth;
 }
 
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1000;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #050505;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
 /* Keyframe Animations */
 @keyframes slideUpBlur {
   0% { opacity: 0; transform: translateY(30px); filter: blur(10px); }
@@ -249,6 +268,12 @@ html, body {
   border: 1px solid #B8A06A;
 }
 
+.whatsapp-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 7px #005829;
+}
+
 .whatsapp-btn:hover .whatsapp-icon-container {
   animation: whatsappWiggle 0.6s ease-in-out;
 }
@@ -284,6 +309,7 @@ html, body {
 }
 
 .whatsapp-btn:hover .whatsapp-tooltip,
+.whatsapp-btn:focus-visible .whatsapp-tooltip,
 .whatsapp-tooltip.active {
   opacity: 1;
   transform: translateX(0);
@@ -349,8 +375,37 @@ html, body {
   pointer-events: none;
 }
 
-.nav-trace-link:hover::after {
+.nav-trace-link:hover::after,
+.nav-trace-link:focus-visible::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+.nav-trace-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-in,
+  .fade-in {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
 }
 

@@ -56,6 +56,7 @@ export function LoyaltyAdminView() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [adjusting, setAdjusting] = useState(false)
+  const adjustmentIntentRef = React.useRef<{ fingerprint: string; key: string } | null>(null)
   const [activeTab, setActiveTab] = useState<'config' | 'adjust' | 'history'>('config')
 
   // Form State para Configurações
@@ -137,15 +138,31 @@ export function LoyaltyAdminView() {
       return
     }
 
+    const points = Number(adjustForm.points)
+    const userID = adjustForm.userID.trim()
+    const description = adjustForm.description.trim()
+    const fingerprint = JSON.stringify({ userID, points, description })
+    if (adjustmentIntentRef.current?.fingerprint !== fingerprint) {
+      adjustmentIntentRef.current = { fingerprint, key: crypto.randomUUID() }
+    }
+
+    const pointValue = report?.settings?.loyaltyPointValue ?? Number(configForm.loyaltyPointValue)
+    const monetaryValue = Math.abs(points) * pointValue
+    const confirmed = window.confirm(
+      `Confirme o ajuste irreversível no ledger:\n\nCliente: ${userID}\nPontos: ${points > 0 ? '+' : ''}${points}\nValor equivalente: ${formatCurrency(monetaryValue)}\nMotivo: ${description}`
+    )
+    if (!confirmed) return
+
     setAdjusting(true)
     try {
       const res = await fetch('/api/admin/loyalty/adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userID: adjustForm.userID.trim(),
-          points: Number(adjustForm.points),
-          description: adjustForm.description.trim(),
+          userID,
+          points,
+          description,
+          idempotencyKey: adjustmentIntentRef.current.key,
         }),
       })
 
@@ -153,6 +170,7 @@ export function LoyaltyAdminView() {
       if (data.success) {
         toast.success(`Ajuste de saldo realizado! Novo saldo: ${data.data.newBalance} pts`)
         setAdjustForm({ userID: '', points: 100, description: '' })
+        adjustmentIntentRef.current = null
         loadData()
       } else {
         toast.error(data.error || 'Erro ao executar ajuste.')

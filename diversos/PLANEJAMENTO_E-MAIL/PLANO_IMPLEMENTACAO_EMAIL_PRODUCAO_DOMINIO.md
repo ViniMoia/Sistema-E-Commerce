@@ -100,7 +100,7 @@ No servidor de produção (ou arquivo `.env` definitivo):
 # E-MAIL PRODUCTION CONFIGURATION (RESEND)
 # -----------------------------------------------------------------------------
 # Chave de produção gerada na conta do domínio verificado
-RESEND_API_KEY=re_prod_XXXXXXXXXXXXXXXXXXXXXXXX
+RESEND_API_KEY=configure-no-secret-manager
 
 # Remetente com nome de exibição amigável e domínio corporativo
 EMAIL_FROM="Continental Models <pedidos@continentalmodels.com.br>"

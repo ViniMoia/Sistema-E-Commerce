@@ -7,6 +7,14 @@ import {
 } from "../email.types";
 import { renderPasswordResetEmail } from "../templates/password-reset.template";
 import { renderOrderPaymentConfirmedEmail } from "../templates/order-payment-confirmed.template";
+import { logger } from "@/lib/logger";
+import { incrementMetric } from "@/lib/observability/metrics";
+
+function emailProviderTimeoutMs(): number {
+  const configured = Number(process.env.EMAIL_PROVIDER_TIMEOUT_MS || 8000);
+  if (!Number.isFinite(configured)) return 8000;
+  return Math.min(30000, Math.max(100, Math.trunc(configured)));
+}
 
 export class ResendEmailService implements IEmailService {
   private apiKey: string;
@@ -19,7 +27,13 @@ export class ResendEmailService implements IEmailService {
 
   async sendEmail(options: SendEmailOptions): Promise<EmailResult> {
     if (!this.apiKey) {
-      console.warn("[ResendEmailService] RESEND_API_KEY não está configurada no ambiente. E-mail não enviado.");
+      logger.warn("Provider transacional de e-mail não configurado", {
+        action: "EMAIL_PROVIDER_NOT_CONFIGURED",
+      });
+      incrementMetric("email_provider_requests_total", {
+        provider: "resend",
+        result: "not_configured",
+      });
       return {
         success: false,
         error: "RESEND_API_KEY não configurada no servidor.",
@@ -43,27 +57,48 @@ export class ResendEmailService implements IEmailService {
           html: options.html,
           text: options.text,
         }),
+        signal: AbortSignal.timeout(emailProviderTimeoutMs()),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("[ResendEmailService] Erro retornado pela API do Resend:", data);
+        logger.warn("Provider de e-mail rejeitou a mensagem", {
+          action: "EMAIL_PROVIDER_REJECTED",
+          provider: "RESEND",
+          statusCode: response.status,
+        });
+        incrementMetric("email_provider_requests_total", {
+          provider: "resend",
+          result: "rejected",
+        });
         return {
           success: false,
-          error: data?.message || "Erro desconhecido retornado pelo Resend",
+          error: "EMAIL_PROVIDER_REJECTED",
         };
       }
 
+      incrementMetric("email_provider_requests_total", {
+        provider: "resend",
+        result: "success",
+      });
       return {
         success: true,
         messageId: data.id,
       };
     } catch (error: any) {
-      console.error("[ResendEmailService] Exceção ao enviar e-mail via Resend:", error);
+      const timedOut = error?.name === "AbortError" || error?.name === "TimeoutError";
+      logger.error("Falha ao enviar e-mail pelo provider transacional", error, {
+        action: timedOut ? "EMAIL_PROVIDER_TIMEOUT" : "EMAIL_PROVIDER_REQUEST_FAILED",
+        provider: "RESEND",
+      });
+      incrementMetric("email_provider_requests_total", {
+        provider: "resend",
+        result: timedOut ? "timeout" : "failed",
+      });
       return {
         success: false,
-        error: error.message || "Falha de rede ao conectar com a API do Resend",
+        error: timedOut ? "EMAIL_PROVIDER_TIMEOUT" : "EMAIL_PROVIDER_REQUEST_FAILED",
       };
     }
   }

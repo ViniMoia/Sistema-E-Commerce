@@ -6,6 +6,9 @@ export type AsaasPaymentStatus =
   | 'CONFIRMED'
   | 'OVERDUE'
   | 'REFUNDED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUND_REQUESTED'
+  | 'REFUND_IN_PROGRESS'
   | 'RECEIVED_IN_CASH_UNDONE'
   | 'CHARGEBACK_REQUESTED'
   | 'CHARGEBACK_DISPUTE'
@@ -23,6 +26,9 @@ export type AsaasWebhookEventType =
   | 'PAYMENT_DELETED'
   | 'PAYMENT_RESTORED'
   | 'PAYMENT_REFUNDED'
+  | 'PAYMENT_PARTIALLY_REFUNDED'
+  | 'PAYMENT_REFUND_IN_PROGRESS'
+  | 'PAYMENT_REFUND_DENIED'
   | 'PAYMENT_RECEIVED_IN_CASH_UNDONE'
   | 'PAYMENT_CHARGEBACK_REQUESTED'
   | 'PAYMENT_CHARGEBACK_DISPUTE'
@@ -91,6 +97,40 @@ export interface AsaasPaymentResponse {
   nossoNumero?: string;
   identificationField?: string;
   installmentNumber?: number;
+}
+
+export interface AsaasPaymentListResponse {
+  object: string;
+  hasMore: boolean;
+  totalCount: number;
+  limit: number;
+  offset: number;
+  data: AsaasPaymentResponse[];
+}
+
+export type AsaasPaymentRefundStatus =
+  | 'PENDING'
+  | 'AWAITING_CRITICAL_ACTION_AUTHORIZATION'
+  | 'AWAITING_CUSTOMER_EXTERNAL_AUTHORIZATION'
+  | 'CANCELLED'
+  | 'DONE';
+
+export interface AsaasPaymentRefundResponse {
+  dateCreated: string;
+  status: AsaasPaymentRefundStatus;
+  value: number;
+  description?: string;
+  effectiveDate?: string;
+  transactionReceiptUrl?: string;
+}
+
+export interface AsaasPaymentRefundListResponse {
+  object: string;
+  hasMore: boolean;
+  totalCount: number;
+  limit: number;
+  offset: number;
+  data: AsaasPaymentRefundResponse[];
 }
 
 export interface AsaasPixQrCodeResponse {

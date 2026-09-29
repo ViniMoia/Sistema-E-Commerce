@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import * as productService from "@/services/product.service";
@@ -27,13 +28,23 @@ export async function GET(request: Request) {
     }
 
     // Sobrescreve o filtro lojaId com a loja ativa resolvida para segurança
-    const products = await productService.getProducts({
+    const products = await productService.getProductsPage({
       ...parsed.data,
       lojaId: activeLoja.id,
     });
-    return NextResponse.json(products, { status: 200 });
+    return NextResponse.json(products.data, {
+      status: 200,
+      headers: {
+        "X-Total-Count": String(products.total),
+        "X-Page": String(products.page),
+        "X-Page-Size": String(products.pageSize),
+        "X-Has-Next-Page": String(products.hasNextPage),
+        ...(products.nextCursor ? { "X-Next-Cursor": products.nextCursor } : {}),
+        "Access-Control-Expose-Headers": "X-Total-Count, X-Page, X-Page-Size, X-Has-Next-Page, X-Next-Cursor",
+      },
+    });
   } catch (error) {
-    console.error("[PRODUCTS_GET]", error);
+    logger.error("[PRODUCTS_GET]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -67,7 +78,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (error: unknown) {
-    console.error("[PRODUCTS_POST]", error);
+    logger.error("[PRODUCTS_POST]", error);
 
     if (error instanceof Error && error.message === "STORE_NOT_FOUND") {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });

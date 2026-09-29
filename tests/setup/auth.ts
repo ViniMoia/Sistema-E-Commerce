@@ -1,29 +1,38 @@
 import prisma from '@/lib/prisma'
+import { registerTestStore } from '@/tests/setup/db'
 import bcrypt from 'bcryptjs'
+import { randomBytes } from 'node:crypto'
+import { hashSessionToken } from '@/lib/session-token'
 
 async function createAdminSession(lojaID: string): Promise<string> {
-  const hashedPassword = await bcrypt.hash('test123456', 10)
-
-  const adminUser = await prisma.user.create({
-    data: {
-      name: 'Admin Test',
-      email: `admin-${lojaID.substring(0, 8)}@test.com`,
-      password: hashedPassword,
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      lojaID
-    }
+  let adminUser = await prisma.user.findFirst({
+    where: { lojaID, role: 'ADMIN', status: 'ACTIVE' }
   })
 
-  const session = await prisma.session.create({
+  if (!adminUser) {
+    const hashedPassword = await bcrypt.hash('test123456', 10)
+    adminUser = await prisma.user.create({
+      data: {
+        name: 'Admin Test',
+        email: `admin-${lojaID.substring(0, 8)}@test.com`,
+        password: hashedPassword,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        lojaID
+      }
+    })
+  }
+
+  const token = randomBytes(32).toString('hex')
+  await prisma.session.create({
     data: {
-      id: `session-${adminUser.id}`,
+      id: hashSessionToken(token),
       userId: adminUser.id,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
     }
   })
 
-  return session.id
+  return token
 }
 
 export async function createAdminToken(lojaID: string): Promise<string> {
@@ -50,12 +59,14 @@ export async function createDifferentStoreAdmin(): Promise<{
     }
   })
 
+  registerTestStore(otherLoja.id)
   const sessionId = await createAdminSession(otherLoja.id)
 
   return {
     lojaID: otherLoja.id,
     headers: {
-      Cookie: `session_id=${sessionId}`
+      Cookie: `session_id=${sessionId}`,
+      Host: `${otherLoja.slug}.audit.invalid`
     }
   }
 }

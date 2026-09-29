@@ -16,17 +16,23 @@ vi.mock('@/lib/prisma', () => {
       product: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
       productVariants: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
       order: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
         create: vi.fn(),
       },
       auditLog: {
+        create: vi.fn(),
+      },
+      orderStatusHistory: {
         create: vi.fn(),
       },
       loyaltyWallet: {
@@ -47,13 +53,13 @@ vi.mock('@/lib/prisma', () => {
 describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 })
+    vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 1 })
+    vi.mocked(prisma.productVariants.updateMany).mockResolvedValue({ count: 1 })
   })
 
   describe('InventoryService.reserveStock', () => {
     it('deve reservar estoque com sucesso decrementando produto e variante de forma atômica', async () => {
-      vi.mocked(prisma.product.update).mockResolvedValueOnce({ id: 'prod-1', stock: 3 } as any)
-      vi.mocked(prisma.productVariants.update).mockResolvedValueOnce({ id: 'var-1', stock: 3 } as any)
-
       await expect(
         InventoryService.reserveStock(
           [{ productId: 'prod-1', variantId: 'var-1', quantity: 2 }],
@@ -61,13 +67,13 @@ describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () =>
         )
       ).resolves.toBeUndefined()
 
-      expect(prisma.product.update).toHaveBeenCalledWith({
-        where: { id: 'prod-1' },
+      expect(prisma.product.updateMany).toHaveBeenCalledWith({
+        where: { id: 'prod-1', stock: { gte: 2 } },
         data: { stock: { decrement: 2 } },
       })
 
-      expect(prisma.productVariants.update).toHaveBeenCalledWith({
-        where: { id: 'var-1' },
+      expect(prisma.productVariants.updateMany).toHaveBeenCalledWith({
+        where: { id: 'var-1', ProductID: 'prod-1', stock: { gte: 2 } },
         data: { stock: { decrement: 2 } },
       })
     })
@@ -102,9 +108,59 @@ describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () =>
         data: { stock: { increment: 2 } },
       })
     })
+
+    it('deve propagar falha de qualquer incremento para a transação chamadora reverter tudo', async () => {
+      vi.mocked(prisma.product.update).mockResolvedValueOnce({ id: 'prod-1', stock: 5 } as any)
+      vi.mocked(prisma.productVariants.update).mockRejectedValueOnce(new Error('variant missing'))
+
+      await expect(
+        InventoryService.restoreStock(
+          [{ productId: 'prod-1', variantId: 'var-missing', quantity: 2 }],
+          prisma as any
+        )
+      ).rejects.toThrow('variant missing')
+    })
+
+    it('falha fechado quando o produto historico nao pode mais receber o estoque', async () => {
+      await expect(
+        InventoryService.restoreStock(
+          [{ productId: '', quantity: 1 }],
+          prisma as any
+        )
+      ).rejects.toMatchObject({ code: 'INVENTORY_REFERENCE_MISSING' })
+
+      expect(prisma.product.update).not.toHaveBeenCalled()
+      expect(prisma.productVariants.update).not.toHaveBeenCalled()
+    })
   })
 
   describe('updateOrderStatus (Eliminação do Duplo Decremento e Estorno)', () => {
+    it('deve retornar conflito sem executar efeitos quando outro processo vencer a transição', async () => {
+      vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
+        id: 'ord-race',
+        status: 'PENDING',
+        userID: 'user-1',
+        lojaID: 'loja-1',
+        subtotal: new Prisma.Decimal('100.00'),
+        pointsEarned: 0,
+        pointsRedeemed: 0,
+        items: [{ productId: 'prod-1', productVariantsId: 'var-1', quantity: 1 }],
+      } as any)
+      vi.mocked(prisma.order.updateMany).mockResolvedValueOnce({ count: 0 })
+
+      const result = await updateOrderStatus({
+        orderId: 'ord-race',
+        newStatus: 'CANCELLED',
+        performedById: 'admin-1',
+        lojaID: 'loja-1',
+      })
+
+      expect(result).toMatchObject({ success: false, code: 'CONFLICT' })
+      expect(prisma.product.update).not.toHaveBeenCalled()
+      expect(prisma.productVariants.update).not.toHaveBeenCalled()
+      expect(prisma.auditLog.create).not.toHaveBeenCalled()
+    })
+
     it('deve transicionar pedido para PAID sem tentar decrementar estoque novamente (mesmo com estoque pós-reserva = 0)', async () => {
       // Simula o caso crítico: item com 1 unidade que ficou com estoque 0 após o checkout
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
@@ -200,7 +256,7 @@ describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () =>
       })
     })
 
-    it('deve estornar estoque quando um pedido PAID for cancelado', async () => {
+    it('não altera pedido, estoque ou pontos quando admin tenta cancelar pedido PAID sem estorno', async () => {
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'ord-paid-cancel',
         status: 'PAID',
@@ -217,20 +273,6 @@ describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () =>
         ],
       } as any)
 
-      // Na busca interna do refundOrderPoints
-      vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
-        id: 'ord-paid-cancel',
-        orderNumber: 1003,
-        lojaID: 'loja-1',
-        userID: 'user-1',
-        loyaltyTransactions: [],
-      } as any)
-
-      vi.mocked(prisma.order.update).mockResolvedValueOnce({
-        id: 'ord-paid-cancel',
-        status: 'CANCELLED',
-      } as any)
-
       const result = await updateOrderStatus({
         orderId: 'ord-paid-cancel',
         newStatus: 'CANCELLED',
@@ -238,16 +280,40 @@ describe('Ciclo de Vida de Inventário e Autoridade de Estoque (REV-001)', () =>
         lojaID: 'loja-1',
       })
 
-      expect(result.success).toBe(true)
+      expect(result).toMatchObject({ success: false, code: 'REFUND_REQUIRED' })
+      expect(prisma.order.updateMany).not.toHaveBeenCalled()
+      expect(prisma.product.update).not.toHaveBeenCalled()
+      expect(prisma.productVariants.update).not.toHaveBeenCalled()
+      expect(prisma.loyaltyTransaction.create).not.toHaveBeenCalled()
+      expect(prisma.auditLog.create).not.toHaveBeenCalled()
+    })
 
-      expect(prisma.product.update).toHaveBeenCalledWith({
-        where: { id: 'prod-3' },
-        data: { stock: { increment: 1 } },
+    it('nao aplica cancelamento local se chargeback concorre com a confirmacao do estorno', async () => {
+      vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
+        id: 'ord-refund-chargeback',
+        status: 'PAID',
+        userID: 'user-1',
+        lojaID: 'loja-1',
+        deliveryType: 'PICKUP',
+        subtotal: new Prisma.Decimal('100.00'),
+        pointsEarned: 0,
+        pointsRedeemed: 0,
+        pointsDiscountValue: new Prisma.Decimal('0'),
+        asaasPaymentStatus: 'CHARGEBACK_REQUESTED',
+        items: [{ id: 'item-4', productId: 'prod-4', productVariantsId: null, quantity: 1 }],
+      } as any)
+
+      const result = await updateOrderStatus({
+        orderId: 'ord-refund-chargeback',
+        newStatus: 'CANCELLED',
+        performedById: 'SYSTEM_REFUND_RECONCILIATION',
+        lojaID: 'loja-1',
+        paymentRefundConfirmed: true,
       })
-      expect(prisma.productVariants.update).toHaveBeenCalledWith({
-        where: { id: 'var-3' },
-        data: { stock: { increment: 1 } },
-      })
+
+      expect(result).toMatchObject({ success: false, code: 'FINANCIAL_REVIEW_REQUIRED' })
+      expect(prisma.order.updateMany).not.toHaveBeenCalled()
+      expect(prisma.product.update).not.toHaveBeenCalled()
     })
   })
 })

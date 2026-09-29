@@ -17,9 +17,11 @@ vi.mock('@/lib/prisma', () => {
         findUnique: vi.fn(),
         findMany: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       productVariants: {
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       freightRule: {
         findFirst: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('@/lib/prisma', () => {
       user: {
         upsert: vi.fn(),
         findUnique: vi.fn(),
+        create: vi.fn(),
       },
       address: {
         create: vi.fn(),
@@ -127,6 +130,7 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
 
       const result = await adapter.createCreditCardCharge({
         orderId: 'ord-cc-1',
+        paymentReference: 'payment-reference-cc-1',
         orderNumber: 2001,
         value: 120.0,
         customer: {
@@ -166,6 +170,7 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
       await expect(
         adapter.createCreditCardCharge({
           orderId: 'ord-cc-fail',
+          paymentReference: 'payment-reference-cc-fail',
           orderNumber: 2002,
           value: 80.0,
           customer: {
@@ -204,7 +209,8 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
       } as any);
 
       const mockUser = { id: 'usr-1', name: 'Comprador', email: 'c@t.com', phone: '11999999999' };
-      vi.mocked(prisma.user.upsert).mockResolvedValueOnce(mockUser as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prisma.user.create).mockResolvedValueOnce(mockUser as any);
 
       vi.mocked(prisma.order.create).mockResolvedValueOnce({
         id: 'ord-barato-1',

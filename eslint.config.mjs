@@ -4,6 +4,10 @@ import nextVitals from 'eslint-config-next/core-web-vitals'
 const eslintConfig = defineConfig([
   ...nextVitals,
   {
+    plugins: {
+      'react-hooks': nextVitals[0].plugins['react-hooks'],
+      '@next/next': nextVitals[0].plugins['@next/next'],
+    },
     rules: {
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'warn',
@@ -12,6 +16,7 @@ const eslintConfig = defineConfig([
     },
   },
   globalIgnores([
+    '.tmp/**',
     '.next/**',
     'out/**',
     'build/**',

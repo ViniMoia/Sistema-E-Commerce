@@ -12,10 +12,12 @@ import { UserProfile, UserOrder } from "../types";
 interface ProfileLayoutProps {
   user: UserProfile;
   orders: UserOrder[];
+  orderPagination: { page: number; pageSize: number; total: number; totalPages: number };
+  initialTab?: "info" | "orders" | "loyalty";
 }
 
-export function ProfileLayout({ user, orders }: ProfileLayoutProps) {
-  const [activeTab, setActiveTab] = useState<"info" | "orders" | "loyalty">("info");
+export function ProfileLayout({ user, orders, orderPagination, initialTab = "info" }: ProfileLayoutProps) {
+  const [activeTab, setActiveTab] = useState<"info" | "orders" | "loyalty">(initialTab);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -51,7 +53,7 @@ export function ProfileLayout({ user, orders }: ProfileLayoutProps) {
               <span>Meus Pedidos</span>
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#050B14] border border-catalog-gold/30 text-catalog-gold font-bold">
-              {orders.length}
+              {orderPagination.total}
             </span>
           </button>
 
@@ -90,8 +92,8 @@ export function ProfileLayout({ user, orders }: ProfileLayoutProps) {
         {activeTab === "info" && <ProfileForm user={user} />}
         
         {activeTab === "orders" && (
-          <div className="animate-in fade-in duration-300">
-            <OrderHistoryList orders={orders} />
+          <div id="pedidos" className="animate-in fade-in duration-300">
+            <OrderHistoryList orders={orders} pagination={orderPagination} />
           </div>
         )}
 

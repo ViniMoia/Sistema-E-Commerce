@@ -45,6 +45,7 @@ export interface FreightOption {
   description?: string;       // Detalhes adicionais (ex: "Retirar no balcão da loja")
   isRecommended?: boolean;    // Badge de destaque (ex: melhor custo-benefício)
   carrier?: string;           // Nome da transportadora
+  quoteToken?: string;        // Prova assinada pelo servidor; não contém segredo
 }
 
 export interface IFreightProvider {

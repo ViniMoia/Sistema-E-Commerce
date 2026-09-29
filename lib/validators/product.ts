@@ -8,20 +8,36 @@ export const productVariantSchema = z.object({
 });
 
 export const productFiltersSchema = z.object({
-  name: z.string().optional(),
-  minPrice: z.coerce.number().optional(),
-  maxPrice: z.coerce.number().optional(),
-  lojaId: z.string().optional(),
-  brandSlug: z.string().optional(),
+  name: z.string().trim().max(120).optional(),
+  minPrice: z.coerce.number().finite().min(0).optional(),
+  maxPrice: z.coerce.number().finite().min(0).optional(),
+  lojaId: z.string().max(100).optional(),
+  brandSlug: z.string().trim().max(100).optional(),
   tags: z
     .union([
-      z.array(z.string()),
-      z.string().transform((str) => str.split(",").map((s) => s.trim()).filter(Boolean))
+      z.array(z.string().trim().min(1).max(100)).max(20),
+      z.string().max(1000).transform((str) => str.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20))
     ])
     .optional(),
-  page: z.coerce.number().int().min(1).optional().default(1),
+  page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional().default(24),
+  cursor: z.string().uuid().optional(),
   sortBy: z.enum(["relevance", "price_asc", "price_desc", "newest"]).optional().default("newest"),
+}).strict().superRefine((value, context) => {
+  if (value.minPrice !== undefined && value.maxPrice !== undefined && value.minPrice > value.maxPrice) {
+    context.addIssue({
+      code: "custom",
+      path: ["maxPrice"],
+      message: "maxPrice deve ser maior ou igual a minPrice",
+    });
+  }
+  if (value.cursor && value.page !== undefined) {
+    context.addIssue({
+      code: "custom",
+      path: ["page"],
+      message: "Use cursor ou page, não ambos",
+    });
+  }
 });
 
 export const catalogFilterQuerySchema = productFiltersSchema;

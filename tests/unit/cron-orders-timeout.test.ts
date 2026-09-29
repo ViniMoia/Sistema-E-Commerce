@@ -112,14 +112,16 @@ describe('Endpoint de Cron: /api/cron/orders-timeout (Segurança & SecOps)', () 
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       success: true,
+      status: 'SUCCESS',
       processed: 3,
       cancelled: 3,
       errors: 0,
       cancelledOrderIds: ['ord-1', 'ord-2', 'ord-3'],
       executionTimeMs: 45,
     });
+    expect(body.runId).toMatch(/^[0-9a-f-]{36}$/);
 
     expect(timeoutService.processExpiredOrders).toHaveBeenCalledWith({
       batchSize: undefined,
@@ -223,5 +225,26 @@ describe('Endpoint de Cron: /api/cron/orders-timeout (Segurança & SecOps)', () 
 
     const body = await res.json();
     expect(body.error).toContain('Erro interno ao processar rotina de timeout');
+  });
+
+  it('deve sinalizar falha parcial como indisponibilidade retriável, sem ocultar o erro', async () => {
+    vi.mocked(timeoutService.processExpiredOrders).mockResolvedValueOnce({
+      success: false,
+      processedCount: 2,
+      cancelledCount: 1,
+      errorCount: 1,
+      cancelledOrderIds: ['ord-ok'],
+      errors: [{ orderId: 'ord-fail', error: 'falha fictícia' }],
+      executionTimeMs: 30,
+    });
+
+    const res = await GET(new Request('http://localhost:3000/api/cron/orders-timeout', {
+      headers: { Authorization: `Bearer ${TEST_SECRET}` },
+    }));
+    const body = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(body).toMatchObject({ success: false, status: 'PARTIAL', errors: 1 });
+    expect(JSON.stringify(body)).not.toContain('falha fictícia');
   });
 });

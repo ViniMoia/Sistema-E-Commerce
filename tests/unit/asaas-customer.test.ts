@@ -3,6 +3,7 @@ import { AsaasClient, AsaasClientError, asaasClient } from '@/services/asaas/asa
 import { createOrder } from '@/services/checkout.service';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { hashFreightItems, signFreightQuote } from '@/lib/freight-quote';
 
 vi.mock('@/lib/prisma', () => {
   return {
@@ -14,15 +15,19 @@ vi.mock('@/lib/prisma', () => {
       product: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       productVariants: {
         update: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       freightRule: {
         findFirst: vi.fn(),
       },
       user: {
         upsert: vi.fn(),
+        findUnique: vi.fn(),
+        create: vi.fn(),
       },
       address: {
         create: vi.fn(),
@@ -46,6 +51,7 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
       ...originalEnv,
       ASAAS_API_URL: 'https://sandbox.asaas.com/api/v3',
       ASAAS_API_KEY: 'test-api-key',
+      FREIGHT_QUOTE_SECRET: 'test-only-freight-secret-at-least-32-chars',
     };
     mockFetch = vi.fn();
     global.fetch = mockFetch;
@@ -53,6 +59,7 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    vi.unstubAllGlobals();
   });
 
   describe('AsaasClient.findCustomerByEmail', () => {
@@ -278,7 +285,8 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
         maxDays: 4,
       } as any);
 
-      vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prisma.user.create).mockResolvedValueOnce({
         id: 'user-1',
         name: 'Carlos Cliente',
         email: 'carlos@cliente.com',
@@ -351,6 +359,16 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
         },
         items: [{ productId: 'prod-100', quantity: 1 }],
         deliveryType: 'DELIVERY',
+        freightQuoteToken: signFreightQuote({
+          lojaID: 'loja-1',
+          destinationCep: '01310100',
+          itemsHash: hashFreightItems([{ productId: 'prod-100', quantity: 1 }]),
+          providerId: 'LOCAL_TABLE',
+          serviceCode: 'LOCAL_fr-1',
+          serviceName: 'Entrega Local (São Paulo)',
+          price: '20.00',
+          deliveryTimeInDays: 2,
+        }),
         address: {
           cep: '01310-100',
           state: 'SP',

@@ -1,5 +1,12 @@
 name: CI/CD Quality Gates & Security Pipeline
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, master, develop]
@@ -10,33 +17,97 @@ jobs:
   validate-and-test:
     name: Validation, Security & Quality Gates
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ecommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
 
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ecommerce_test?schema=public"
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/ecommerce_test?schema=public"
-      SESSION_SECRET: "test-super-secret-key-that-is-at-least-32-chars-long"
+      TEST_DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ecommerce_test?schema=public"
+      APP_ENV: "test"
+      PLATFORM_DOMAIN: "ci.invalid"
+      NEXT_PUBLIC_APP_URL: "https://ci.invalid"
+      FREIGHT_QUOTE_SECRET: "ci-only-freight-secret-32-characters"
+      ASAAS_API_KEY: "$aact_ci_only_not_a_real_credential"
+      ASAAS_API_URL: "https://api.asaas.com/v3"
+      ASAAS_WEBHOOK_TOKEN: "ci-only-webhook-token-32-characters"
+      CRON_SECRET: "ci-only-cron-secret-32-characters-long"
+      RESEND_API_KEY: "re_ci_only_not_a_real_credential"
+      EMAIL_FROM: "CI <ci@ci.invalid>"
+      OBSERVABILITY_TOKEN: "ci-only-observability-token-32-chars"
+      ENABLE_DIRECT_UPLOAD: "false"
+      ENABLE_WEBHOOK_SIMULATOR: "false"
+      NEXT_PUBLIC_ENABLE_WEBHOOK_SIMULATOR: "false"
+      ALLOW_ADMIN_BOOTSTRAP: "false"
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version-file: ".nvmrc"
           cache: "npm"
+
+      - name: Reject Potential Secrets
+        run: npm run security:secrets
 
       - name: Install Dependencies
         run: npm ci
 
+      - name: Audit Production Dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Validate Prisma Schema
         run: npx prisma validate
+
+      - name: Validate Production Environment Contract
+        run: npm run validate:env -- --target production --migration
+
+      - name: Check Environment Documentation Drift
+        run: npm run validate:env-contract
+
+      - name: Apply Migrations to Ephemeral PostgreSQL
+        run: npx prisma migrate deploy
+
+      - name: Detect Migration Drift
+        run: npx prisma migrate diff --from-url "$DIRECT_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
 
       - name: TypeScript Typecheck
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run Unit Tests
         run: npm test
 
+      - name: Run Core PostgreSQL Integration Tests
+        run: npm run test:integration:core
+
       - name: Production Build
         run: npm run build
+        env:
+          SKIP_RUNTIME_ENV_VALIDATION: "build-only"
+
+      - name: Build Reproducible Runtime Image
+        run: docker build --tag "ecommerce:${GITHUB_SHA}" .
+
+      - name: Verify Runtime Uses Non-root User
+        run: test "$(docker image inspect --format '{{.Config.User}}' "ecommerce:${GITHUB_SHA}")" = "nextjs"

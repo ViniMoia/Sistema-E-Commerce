@@ -26,9 +26,12 @@ export function BrandMinimalistCarousel({
     if (scrollContainerRef.current) {
       // Desliza aproximadamente a largura de 1 slot de marca
       const itemWidth = scrollContainerRef.current.clientWidth / 5;
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth";
       scrollContainerRef.current.scrollBy({
         left: direction === "left" ? -itemWidth * 2 : itemWidth * 2,
-        behavior: "smooth",
+        behavior,
       });
     }
   };
@@ -44,7 +47,7 @@ export function BrandMinimalistCarousel({
           type="button"
           onClick={() => handleScroll("left")}
           aria-label="Marca anterior"
-          className="shrink-0 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-catalog-gold/40 bg-[#050B14]/80 hover:bg-catalog-gold text-catalog-gold hover:text-black flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-110 active:scale-95 focus:outline-none"
+          className="shrink-0 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-catalog-gold/40 bg-[#050B14]/80 hover:bg-catalog-gold text-catalog-gold hover:text-black flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <svg
             className="w-5 h-5 -ml-0.5"
@@ -74,7 +77,7 @@ export function BrandMinimalistCarousel({
                 type="button"
                 onClick={() => onSelectBrand(isSelected ? null : brand.slug)}
                 title={brand.name}
-                className="group relative flex-shrink-0 w-1/5 min-w-[160px] sm:min-w-[180px] lg:min-w-[200px] h-20 sm:h-24 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer focus:outline-none px-4"
+                className="group relative flex-shrink-0 w-1/5 min-w-[160px] sm:min-w-[180px] lg:min-w-[200px] h-20 sm:h-24 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold focus-visible:ring-inset px-4"
               >
                 {/* Logo Solta com Efeito de Hover e Ativo */}
                 <div
@@ -117,7 +120,7 @@ export function BrandMinimalistCarousel({
           type="button"
           onClick={() => handleScroll("right")}
           aria-label="Próxima marca"
-          className="shrink-0 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-catalog-gold/40 bg-[#050B14]/80 hover:bg-catalog-gold text-catalog-gold hover:text-black flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-110 active:scale-95 focus:outline-none"
+          className="shrink-0 z-20 w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-catalog-gold/40 bg-[#050B14]/80 hover:bg-catalog-gold text-catalog-gold hover:text-black flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.8)] hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <svg
             className="w-5 h-5 -mr-0.5"

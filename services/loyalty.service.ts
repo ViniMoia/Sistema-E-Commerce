@@ -38,15 +38,27 @@ export const SimulateLoyaltyRedeemSchema = z.object({
   requestedPoints: z.number().int().min(0, 'Pontos solicitados não podem ser negativos'),
 })
 
+export const DEFAULT_MAX_MANUAL_ADJUSTMENT_POINTS = 100_000
+
+function getMaxManualAdjustmentPoints(): number {
+  const configured = Number(process.env.ADMIN_LOYALTY_MAX_ADJUSTMENT_POINTS)
+  return Number.isSafeInteger(configured) && configured > 0
+    ? configured
+    : DEFAULT_MAX_MANUAL_ADJUSTMENT_POINTS
+}
+
 export const AdjustLoyaltyBalanceSchema = z.object({
   lojaID: z.string().min(1, 'lojaID é obrigatório'),
   userID: z.string().min(1, 'userID é obrigatório'),
   points: z.number().int().refine((val) => val !== 0, {
     message: 'A quantidade de pontos para ajuste não pode ser zero',
+  }).refine((val) => Math.abs(val) <= getMaxManualAdjustmentPoints(), {
+    message: 'A quantidade de pontos excede o limite permitido para um único ajuste',
   }),
   description: z.string().min(3, 'Descrição deve ter no mínimo 3 caracteres').max(255),
   adminUserId: z.string().min(1, 'adminUserId é obrigatório'),
-})
+  idempotencyKey: z.string().uuid('idempotencyKey deve ser um UUID válido'),
+}).strict()
 
 export const UpdateLoyaltyConfigSchema = z.object({
   loyaltyEnabled: z.boolean(),
@@ -311,7 +323,12 @@ export async function creditEarnedPoints(
     const settings = await getLoyaltySettings(lojaID, client)
     if (!settings.loyaltyEnabled) return null
 
-    const pointsToCredit = calculatePointsEarned(subtotal, settings.loyaltyEarnRate)
+    const pointsToCredit = params.points === undefined
+      ? calculatePointsEarned(subtotal, settings.loyaltyEarnRate)
+      : params.points
+    if (!Number.isInteger(pointsToCredit) || pointsToCredit < 0) {
+      throw new LoyaltyError('INVALID_POINTS', 'Quantidade de pontos do pedido é inválida.')
+    }
     if (pointsToCredit <= 0) return null
 
     // 1. Garantir existência da carteira
@@ -346,6 +363,7 @@ export async function creditEarnedPoints(
         lojaID,
         userID,
         orderId,
+        operationKey: `order:${orderId}:EARN`,
         type: LoyaltyTxType.EARN,
         points: pointsToCredit,
         balanceAfter: wallet.balance,
@@ -415,6 +433,7 @@ export async function debitRedeemedPoints(
         lojaID,
         userID,
         orderId,
+        operationKey: `order:${orderId}:REDEEM`,
         type: LoyaltyTxType.REDEEM,
         points: -points, // Negativo para débito
         balanceAfter: updatedWallet.balance,
@@ -467,20 +486,38 @@ export async function refundOrderPoints(
     if (earnTx && earnTx.points > 0) {
       const pointsToRefund = earnTx.points
 
-      const wallet = await client.loyaltyWallet.update({
-        where: { lojaID_userID: { lojaID, userID: order.userID } },
+      // O cashback pode ter sido gasto entre a solicitacao e a confirmacao do
+      // estorno. A guarda atomica impede saldo negativo; a transacao externa
+      // reverte tambem estoque/status e encaminha o caso para reconciliacao.
+      const claimed = await client.loyaltyWallet.updateMany({
+        where: {
+          lojaID,
+          userID: order.userID,
+          balance: { gte: pointsToRefund },
+        },
         data: {
           balance: { decrement: pointsToRefund },
           lifetimeEarn: { decrement: pointsToRefund },
           version: { increment: 1 },
         },
       })
+      if (claimed.count !== 1) {
+        throw new LoyaltyError(
+          'EARNED_POINTS_ALREADY_SPENT',
+          'Cashback ganho neste pedido ja foi gasto; clawback manual necessario.'
+        )
+      }
+      const wallet = await client.loyaltyWallet.findUnique({
+        where: { lojaID_userID: { lojaID, userID: order.userID } },
+      })
+      if (!wallet) throw new LoyaltyError('WALLET_NOT_FOUND', 'Carteira de fidelidade nao encontrada.')
 
       const refundEarnTx = await client.loyaltyTransaction.create({
         data: {
           lojaID,
           userID: order.userID,
           orderId,
+          operationKey: `order:${orderId}:REFUND_EARN`,
           type: LoyaltyTxType.REFUND_EARN,
           points: -pointsToRefund,
           balanceAfter: wallet.balance,
@@ -509,6 +546,7 @@ export async function refundOrderPoints(
           lojaID,
           userID: order.userID,
           orderId,
+          operationKey: `order:${orderId}:REFUND_REDEEM`,
           type: LoyaltyTxType.REFUND_REDEEM,
           points: pointsToRestore,
           balanceAfter: wallet.balance,
@@ -537,7 +575,28 @@ export async function adjustPointsManually(
   tx?: Prisma.TransactionClient
 ) {
   const validated = AdjustLoyaltyBalanceSchema.parse(params)
-  const { lojaID, userID, points, description, adminUserId } = validated
+  const { lojaID, userID, points, description, adminUserId, idempotencyKey } = validated
+  const operationKey = `admin-adjust:${lojaID}:${idempotencyKey}`
+  const expectedDescription = `[Ajuste Admin ${adminUserId.slice(0, 8)}] ${description}`
+
+  const assertSameIntent = (transaction: {
+    lojaID: string
+    userID: string
+    points: number
+    description: string
+  }) => {
+    if (
+      transaction.lojaID !== lojaID ||
+      transaction.userID !== userID ||
+      transaction.points !== points ||
+      transaction.description !== expectedDescription
+    ) {
+      throw new LoyaltyError(
+        'IDEMPOTENCY_CONFLICT',
+        'A chave de idempotência já foi usada com dados diferentes.'
+      )
+    }
+  }
 
   const runOperation = async (client: Prisma.TransactionClient) => {
     // 0. Validar filiação do usuário à loja (AUD-007): impede poluição de carteira entre lojas
@@ -551,6 +610,21 @@ export async function adjustPointsManually(
           `O usuário informado não pertence a esta loja ou não existe.`
         )
       }
+    }
+
+    const existingTransaction = await client.loyaltyTransaction.findUnique({
+      where: { operationKey },
+    })
+    if (existingTransaction) {
+      assertSameIntent(existingTransaction)
+
+      const replayWallet = await client.loyaltyWallet.findUnique({
+        where: { lojaID_userID: { lojaID, userID } },
+      })
+      if (!replayWallet) {
+        throw new LoyaltyError('WALLET_NOT_FOUND', 'Carteira do ajuste idempotente não encontrada.')
+      }
+      return { wallet: replayWallet, transaction: existingTransaction, idempotentReplay: true }
     }
 
     const settings = await getLoyaltySettings(lojaID, client)
@@ -582,20 +656,44 @@ export async function adjustPointsManually(
         points,
         balanceAfter: updatedWallet.balance,
         monetaryValue: new Prisma.Decimal(monetaryValue),
-        description: `[Ajuste Admin ${adminUserId.slice(0, 8)}] ${description}`,
+        description: expectedDescription,
+        operationKey,
       },
     })
 
     return {
       wallet: updatedWallet,
       transaction,
+      idempotentReplay: false,
     }
   }
 
   if (tx) {
     return await runOperation(tx)
   } else {
-    return await prisma.$transaction(runOperation)
+    try {
+      return await prisma.$transaction(runOperation)
+    } catch (error) {
+      // Duas requisições simultâneas podem ambas observar ausência antes de a
+      // constraint única arbitrar a vencedora. A transação perdedora é
+      // revertida integralmente e responde com o lançamento vencedor.
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
+        const existingTransaction = await prisma.loyaltyTransaction.findUnique({
+          where: { operationKey },
+        })
+        if (existingTransaction) {
+          assertSameIntent(existingTransaction)
+          const replayWallet = await prisma.loyaltyWallet.findUnique({
+            where: { lojaID_userID: { lojaID, userID } },
+          })
+          if (!replayWallet) {
+            throw new LoyaltyError('WALLET_NOT_FOUND', 'Carteira do ajuste idempotente não encontrada.')
+          }
+          return { wallet: replayWallet, transaction: existingTransaction, idempotentReplay: true }
+        }
+      }
+      throw error
+    }
   }
 }
 
@@ -615,9 +713,7 @@ export async function getStatement(
         lojaID,
         userID,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip,
       take,
     }),
@@ -669,31 +765,26 @@ export async function calculateExpiredPointsForUser(
 ): Promise<number> {
   if (currentBalance <= 0) return 0
 
-  const earnTransactions = await client.loyaltyTransaction.findMany({
-    where: {
-      lojaID,
-      userID,
-      type: LoyaltyTxType.EARN,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      points: true,
-      expiresAt: true,
-    },
-  })
-
   let needed = currentBalance
   let unexpiredPoints = 0
-
-  for (const tx of earnTransactions) {
-    const contrib = Math.min(tx.points, needed)
-    if (!tx.expiresAt || tx.expiresAt > now) {
-      unexpiredPoints += contrib
+  let cursor: string | undefined
+  const batchSize = 100
+  while (needed > 0) {
+    const earnTransactions = await client.loyaltyTransaction.findMany({
+      where: { lojaID, userID, type: LoyaltyTxType.EARN },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      take: batchSize,
+      select: { id: true, points: true, expiresAt: true },
+    })
+    for (const tx of earnTransactions) {
+      const contrib = Math.min(tx.points, needed)
+      if (!tx.expiresAt || tx.expiresAt > now) unexpiredPoints += contrib
+      needed -= contrib
+      if (needed <= 0) break
     }
-    needed -= contrib
-    if (needed <= 0) break
+    if (earnTransactions.length < batchSize) break
+    cursor = earnTransactions[earnTransactions.length - 1].id
   }
 
   const expiredPoints = currentBalance - unexpiredPoints
@@ -774,50 +865,53 @@ export async function processLoyaltyExpirations(
     ...(options.lojaID ? { lojaID: options.lojaID } : {}),
   }
 
-  const walletsWithBalance = await prisma.loyaltyWallet.findMany({
-    where: whereClause,
-    select: {
-      id: true,
-      lojaID: true,
-      userID: true,
-      balance: true,
-    },
-  })
-
   let processedWallets = 0
   let expiredCount = 0
   let totalPointsExpired = 0
   const errors: Array<{ userId: string; lojaId: string; error: string }> = []
 
-  for (const wallet of walletsWithBalance) {
-    try {
-      processedWallets++
-      const pointsToExpire = await calculateExpiredPointsForUser(
-        wallet.lojaID,
-        wallet.userID,
-        wallet.balance,
-        now
-      )
+  // Keyset rather than offset: expiring a balance removes it from the filter.
+  // A creation cutoff prevents newly-created wallets from extending this run.
+  const batchSize = 100
+  let cursor: string | undefined
+  while (true) {
+    const walletsWithBalance = await prisma.loyaltyWallet.findMany({
+      where: { ...whereClause, createdAt: { lte: now }, ...(cursor ? { id: { gt: cursor } } : {}) },
+      orderBy: { id: 'asc' }, take: batchSize,
+      select: { id: true, lojaID: true, userID: true, balance: true },
+    })
+    for (const wallet of walletsWithBalance) {
+      try {
+        processedWallets++
+        const pointsToExpire = await calculateExpiredPointsForUser(
+          wallet.lojaID,
+          wallet.userID,
+          wallet.balance,
+          now
+        )
 
-      if (pointsToExpire > 0) {
-        const result = await expireUserPoints({
-          lojaID: wallet.lojaID,
-          userID: wallet.userID,
-          points: pointsToExpire,
-        })
+        if (pointsToExpire > 0) {
+          const result = await expireUserPoints({
+            lojaID: wallet.lojaID,
+            userID: wallet.userID,
+            points: pointsToExpire,
+          })
 
-        if (result) {
-          expiredCount++
-          totalPointsExpired += result.pointsExpired
+          if (result) {
+            expiredCount++
+            totalPointsExpired += result.pointsExpired
+          }
         }
+      } catch (err: any) {
+        errors.push({
+          userId: wallet.userID,
+          lojaId: wallet.lojaID,
+          error: err?.message || 'Erro ao processar expiração da carteira',
+        })
       }
-    } catch (err: any) {
-      errors.push({
-        userId: wallet.userID,
-        lojaId: wallet.lojaID,
-        error: err?.message || 'Erro ao processar expiração da carteira',
-      })
     }
+    if (walletsWithBalance.length < batchSize) break
+    cursor = walletsWithBalance[walletsWithBalance.length - 1].id
   }
 
   return {

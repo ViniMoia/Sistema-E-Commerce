@@ -82,37 +82,38 @@ export async function listCustomers(
     where,
     take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
       cpfCnpj: true,
-      createdAt: true,
-      orders: {
-        where: { lojaID },
-        select: {
-          total: true,
-          createdAt: true
-        }
-      }
+      createdAt: true
     }
   })
 
   const hasMore = users.length > take
   const results = hasMore ? users.slice(0, -1) : users
+  const orderMetrics = results.length > 0
+    ? await prisma.order.groupBy({
+        by: ['userID'],
+        where: {
+          lojaID,
+          userID: { in: results.map(user => user.id) }
+        },
+        _count: { _all: true },
+        _sum: { total: true },
+        _max: { createdAt: true }
+      })
+    : []
+  const metricsByUserId = new Map(orderMetrics.map(metric => [metric.userID, metric]))
 
   const data: CustomerRow[] = results.map(user => {
-    const totalOrders = user.orders.length
-    const totalSpent = user.orders.reduce(
-      (sum, order) => sum + Number(order.total),
-      0
-    )
-    const sortedOrders = [...user.orders].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    const lastOrderAt = sortedOrders[0]?.createdAt.toISOString() || null
+    const metrics = metricsByUserId.get(user.id)
+    const totalOrders = metrics?._count._all ?? 0
+    const totalSpent = Number(metrics?._sum.total ?? 0)
+    const lastOrderAt = metrics?._max.createdAt?.toISOString() ?? null
 
     return {
       id: user.id,
@@ -202,64 +203,56 @@ export async function getCustomerMetrics(
 ): Promise<CustomerMetrics> {
   const { customerId, lojaID } = params
 
-  const [orders, firstOrder] = await Promise.all([
-    prisma.order.findMany({
+  const [orderGroups, mostBoughtProducts] = await Promise.all([
+    prisma.order.groupBy({
       where: {
         userID: customerId,
         lojaID
       },
-      select: {
-        total: true,
-        deliveryType: true,
-        status: true,
-        createdAt: true,
-        items: {
-          select: {
-            name: true,
-            quantity: true
-          }
-        }
-      }
+      by: ['deliveryType', 'status'],
+      _count: { _all: true },
+      _sum: { total: true },
+      _min: { createdAt: true },
+      _max: { createdAt: true }
     }),
-    prisma.order.findFirst({
+    prisma.orderItem.groupBy({
+      by: ['name'],
       where: {
-        userID: customerId,
-        lojaID
+        order: {
+          userID: customerId,
+          lojaID
+        }
       },
-      orderBy: { createdAt: 'asc' },
-      select: { createdAt: true }
+      _sum: { quantity: true },
+      orderBy: [
+        { _sum: { quantity: 'desc' } },
+        { name: 'asc' }
+      ],
+      take: 1
     })
   ])
 
-  if (orders.length === 0) {
+  if (orderGroups.length === 0) {
     throw new Error('Cliente não encontrado.')
   }
 
-  const totalOrders = orders.length
-  const totalSpent = orders.reduce(
-    (sum, order) => sum + Number(order.total),
-    0
-  )
+  const totalOrders = orderGroups.reduce((sum, group) => sum + group._count._all, 0)
+  const totalSpent = orderGroups.reduce((sum, group) => sum + Number(group._sum.total ?? 0), 0)
   const averageOrderValue = totalSpent / totalOrders
 
-  const sortedOrders = [...orders].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
-  const lastOrderAt = sortedOrders[0]?.createdAt.toISOString() || null
-  const firstOrderAt = firstOrder?.createdAt.toISOString() || null
-
-  const productCount: Record<string, number> = {}
-  orders.forEach(order => {
-    order.items.forEach(item => {
-      productCount[item.name] = (productCount[item.name] || 0) + item.quantity
-    })
-  })
-  const mostBoughtProduct =
-    Object.entries(productCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+  const createdDates = orderGroups.flatMap(group => [group._min.createdAt, group._max.createdAt])
+    .filter((value): value is Date => value !== null)
+  const firstOrderAt = createdDates.length > 0
+    ? new Date(Math.min(...createdDates.map(date => date.getTime()))).toISOString()
+    : null
+  const lastOrderAt = createdDates.length > 0
+    ? new Date(Math.max(...createdDates.map(date => date.getTime()))).toISOString()
+    : null
+  const mostBoughtProduct = mostBoughtProducts[0]?.name ?? null
 
   const deliveryCount: Record<string, number> = {}
-  orders.forEach(order => {
-    deliveryCount[order.deliveryType] = (deliveryCount[order.deliveryType] || 0) + 1
+  orderGroups.forEach(group => {
+    deliveryCount[group.deliveryType] = (deliveryCount[group.deliveryType] || 0) + group._count._all
   })
   const preferredDeliveryType = (
     Object.entries(deliveryCount).sort((a, b) => b[1] - a[1])[0]?.[0] as
@@ -268,7 +261,9 @@ export async function getCustomerMetrics(
       | undefined
   ) || null
 
-  const cancelledOrders = orders.filter(o => o.status === 'CANCELLED').length
+  const cancelledOrders = orderGroups
+    .filter(group => group.status === 'CANCELLED')
+    .reduce((sum, group) => sum + group._count._all, 0)
 
   return {
     totalOrders,

@@ -48,30 +48,38 @@ export class InventoryService {
       const quantity = Math.max(1, Math.floor(item.quantity));
 
       // Decremento atômico no produto pai com salvaguarda contra estoque negativo / condição de corrida (AUD-003)
-      const updatedProduct = await tx.product.update({
-        where: { id: item.productId },
+      const updatedProduct = await tx.product.updateMany({
+        where: {
+          id: item.productId,
+          ...(_lojaID ? { lojaID: _lojaID } : {}),
+          stock: { gte: quantity },
+        },
         data: {
           stock: { decrement: quantity },
         },
       });
 
-      if (updatedProduct && typeof updatedProduct.stock === 'number' && updatedProduct.stock < 0) {
+      if (updatedProduct.count !== 1) {
         throw new InventoryError(
           'INSUFFICIENT_STOCK',
-          `Estoque insuficiente para o produto "${updatedProduct.name || item.productId}". Disponibilidade esgotada concorrentemente.`
+          `Estoque insuficiente para o produto "${item.name || item.productId}". Disponibilidade esgotada concorrentemente.`
         );
       }
 
       // Decremento atômico na variante (se especificada) com salvaguarda de concorrência (AUD-003)
       if (item.variantId) {
-        const updatedVariant = await tx.productVariants.update({
-          where: { id: item.variantId },
+        const updatedVariant = await tx.productVariants.updateMany({
+          where: {
+            id: item.variantId,
+            ProductID: item.productId,
+            stock: { gte: quantity },
+          },
           data: {
             stock: { decrement: quantity },
           },
         });
 
-        if (updatedVariant && typeof updatedVariant.stock === 'number' && updatedVariant.stock < 0) {
+        if (updatedVariant.count !== 1) {
           throw new InventoryError(
             'INSUFFICIENT_STOCK',
             `Estoque insuficiente para a variação selecionada. Disponibilidade esgotada concorrentemente.`
@@ -96,34 +104,30 @@ export class InventoryService {
     });
 
     for (const item of sortedItems) {
+      if (!item.productId) {
+        throw new InventoryError(
+          'INVENTORY_REFERENCE_MISSING',
+          'Nao foi possivel restaurar estoque: o item do pedido nao possui produto vinculado.'
+        );
+      }
       const quantity = Math.max(1, Math.floor(item.quantity));
 
-      // 1. Incrementa estoque do produto pai (se productId existir)
-      if (item.productId) {
-        try {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { increment: quantity },
-            },
-          });
-        } catch (err) {
-          console.warn(`[INVENTORY_RESTORE_WARNING] Falha ao incrementar produto pai ${item.productId}:`, err);
-        }
-      }
+      // Qualquer falha deve escapar para que a transação externa reverta todos
+      // os incrementos, o status do pedido e os efeitos de fidelidade.
+      await tx.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: { increment: quantity },
+        },
+      });
 
-      // 2. Incrementa estoque da variante (se variantId existir)
       if (item.variantId) {
-        try {
-          await tx.productVariants.update({
-            where: { id: item.variantId },
-            data: {
-              stock: { increment: quantity },
-            },
-          });
-        } catch (err) {
-          console.warn(`[INVENTORY_RESTORE_WARNING] Falha ao incrementar variante ${item.variantId}:`, err);
-        }
+        await tx.productVariants.update({
+          where: { id: item.variantId },
+          data: {
+            stock: { increment: quantity },
+          },
+        });
       }
     }
   }

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/guards';
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { updateOrderNotes } from '@/services/order.service';
+import { logger } from '@/lib/logger';
 
 const updateNotesSchema = z.object({
-  adminNotes: z.string().nullable().optional(),
-});
+  adminNotes: z.string().trim().max(2000).nullable(),
+}).strict();
 
 export async function PATCH(
   request: Request,
@@ -16,36 +17,30 @@ export async function PATCH(
     if (guard instanceof NextResponse) return guard;
 
     const { orderId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
 
     const parsed = updateNotesSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Dados inválidos', details: parsed.error.issues },
-        { status: 400 }
+        { status: 422 }
       );
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const updated = await updateOrderNotes({
+      orderId,
+      lojaID: guard.user.lojaID,
+      actorId: guard.user.id,
+      adminNotes: parsed.data.adminNotes || null,
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown',
     });
-
-    if (!order || order.lojaID !== guard.user.lojaID) {
-      return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 });
-    }
-
-    const updated = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        adminNotes: parsed.data.adminNotes || null,
-      },
-    });
+    if (!updated) return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 });
 
     return NextResponse.json({ success: true, data: updated }, { status: 200 });
   } catch (error: any) {
-    console.error('[ORDER_NOTES_UPDATE_ERROR]', error);
+    logger.error('Falha ao atualizar notas do pedido', error, { action: 'ORDER_NOTES_UPDATE_ERROR' });
     return NextResponse.json(
-      { error: error.message || 'Erro ao atualizar notas internas' },
+      { error: 'Erro interno ao atualizar notas.' },
       { status: 500 }
     );
   }

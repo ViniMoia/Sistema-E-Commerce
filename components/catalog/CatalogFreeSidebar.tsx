@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import React, { useState } from "react";
 import { CATALOG_TAGS } from "./FilterTagPills";
 import { BrandSummary } from "./BrandHoverFlyout";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export interface PriceRangeOption {
   id: string;
@@ -50,11 +56,6 @@ export function CatalogFreeSidebar({
   filteredProductsCount,
 }: CatalogFreeSidebarProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const hasActiveFilters = Boolean(
     selectedBrand ||
@@ -93,6 +94,7 @@ export function CatalogFreeSidebar({
           </div>
           <input
             type="text"
+            aria-label="Buscar produtos"
             placeholder="Buscar produtos..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -265,7 +267,7 @@ export function CatalogFreeSidebar({
   );
 
   return (
-    <>
+    <Sheet open={isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
       {/* ─── DESKTOP: LATERAL LIVRE NÃO-ENCAPSULADA (STICKY) ─── */}
       <aside
         aria-label="Filtros Laterais do Catálogo"
@@ -280,6 +282,8 @@ export function CatalogFreeSidebar({
           <div className="relative flex-1">
             <input
               type="text"
+              id="catalog-search-mobile"
+              aria-label="Buscar produtos"
               placeholder="Buscar produtos..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -296,71 +300,50 @@ export function CatalogFreeSidebar({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-mono tracking-wider uppercase transition-all shrink-0 ${
-              hasActiveFilters
-                ? "bg-catalog-gold text-black font-bold border-catalog-gold"
-                : "bg-[#0B132B]/80 border-catalog-gold/40 text-catalog-gold"
-            }`}
-          >
-            <span>Filtros</span>
-            {activeFiltersCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-black text-catalog-gold text-[9px] font-bold flex items-center justify-center">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-mono tracking-wider uppercase transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-catalog-gold ${
+                hasActiveFilters
+                  ? "bg-catalog-gold text-black font-bold border-catalog-gold"
+                  : "bg-[#0B132B]/80 border-catalog-gold/40 text-catalog-gold"
+              }`}
+            >
+              <span>Filtros</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-black text-catalog-gold text-[9px] font-bold flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          </SheetTrigger>
         </div>
       </div>
 
-      {/* ─── MOBILE DRAWER VIA PORTAL ─── */}
-      {isMobileDrawerOpen &&
-        mounted &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-50 lg:hidden flex"
-            role="dialog"
-            aria-modal="true"
+      <SheetContent
+        side="left"
+        className="lg:hidden w-full max-w-xs p-0 bg-[#050B14] border-catalog-gold/40 text-white flex flex-col"
+      >
+        <div className="p-4 pr-14 border-b border-catalog-gold/30 shrink-0">
+          <SheetTitle className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+            Filtros e categorias
+          </SheetTitle>
+          <SheetDescription className="sr-only">
+            Refine o catálogo por busca, marca, categoria e preço.
+          </SheetDescription>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">{renderFreeSidebarContent()}</div>
+        <div className="p-4 border-t border-catalog-gold/20 shrink-0 bg-[#050B14]">
+          <button
+            onClick={() => setIsMobileDrawerOpen(false)}
+            type="button"
+            className="w-full py-2.5 rounded-xl bg-catalog-gold text-black font-mono font-bold text-xs uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-              onClick={() => setIsMobileDrawerOpen(false)}
-            />
-
-            <div className="relative w-full max-w-xs bg-[#050B14] border-r border-catalog-gold/40 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-300">
-              <div className="flex items-center justify-between p-4 border-b border-catalog-gold/30 shrink-0">
-                <span className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                  Filtros & Categorias
-                </span>
-                <button
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  type="button"
-                  className="w-7 h-7 rounded-full bg-white/5 border border-catalog-gold/30 text-gray-300 hover:text-white flex items-center justify-center font-bold text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4">
-                {renderFreeSidebarContent()}
-              </div>
-
-              <div className="p-4 border-t border-catalog-gold/20 shrink-0 bg-[#050B14]">
-                <button
-                  onClick={() => setIsMobileDrawerOpen(false)}
-                  type="button"
-                  className="w-full py-2.5 rounded-xl bg-catalog-gold text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_#B8A06A]"
-                >
-                  Ver {filteredProductsCount} Resultados
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-    </>
+            Ver {filteredProductsCount} resultados
+          </button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

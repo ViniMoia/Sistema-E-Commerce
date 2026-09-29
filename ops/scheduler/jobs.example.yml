@@ -1,0 +1,48 @@
+# Contrato provider-neutral. Este arquivo NÃO agenda jobs por si só.
+# Traduzir para o scheduler autorizado e guardar CRON_SECRET no secret manager.
+jobs:
+  # O endpoint versionado executa cobrancas ambiguas e intents de estorno.
+  - id: payment-reconciliation-v1
+    schedule: "* * * * *"
+    method: POST
+    path: /api/cron/payment-reconciliation/v1
+    authorization:
+      scheme: Bearer
+      secret_ref: CRON_SECRET
+    timeout_seconds: 55
+    retry:
+      on_status: [503]
+      maximum_attempts: 2
+      backoff_seconds: [15, 30]
+    concurrency: allow
+    alert_if_no_success_minutes: 5
+
+  - id: orders-timeout
+    schedule: "*/5 * * * *"
+    method: POST
+    path: /api/cron/orders-timeout
+    authorization:
+      scheme: Bearer
+      secret_ref: CRON_SECRET
+    timeout_seconds: 30
+    retry:
+      on_status: [503]
+      maximum_attempts: 3
+      backoff_seconds: [30, 120, 300]
+    concurrency: forbid
+    alert_if_no_success_minutes: 15
+
+  - id: loyalty-expiration
+    schedule: "15 3 * * *"
+    method: POST
+    path: /api/cron/loyalty-expiration
+    authorization:
+      scheme: Bearer
+      secret_ref: CRON_SECRET
+    timeout_seconds: 60
+    retry:
+      on_status: [503]
+      maximum_attempts: 3
+      backoff_seconds: [60, 300, 900]
+    concurrency: forbid
+    alert_if_no_success_minutes: 1500

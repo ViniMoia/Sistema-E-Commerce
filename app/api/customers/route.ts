@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ok, err } from "@/lib/api-response";
-import { requireAdmin } from "@/lib/auth-admin";
+import { requireAdmin } from "@/lib/auth/guards";
 import { listCustomers } from "@/services/customer.service";
 import { logger } from "@/lib/logger";
 

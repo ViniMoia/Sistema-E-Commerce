@@ -1,5 +1,6 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
-import { getLojaBySlug } from "@/lib/services/loja.service";
+import { getLojaBySlug } from "@/services/loja.service";
 
 /**
  * GET /api/loja/[slug]
@@ -31,7 +32,7 @@ export async function GET(
 
     return NextResponse.json(loja, { status: 200 });
   } catch (error) {
-    console.error("[LOJA_GET_BY_SLUG]", error);
+    logger.error("[LOJA_GET_BY_SLUG]", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

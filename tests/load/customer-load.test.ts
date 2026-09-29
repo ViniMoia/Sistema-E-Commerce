@@ -21,13 +21,14 @@ describe('Testes de carga — customer endpoints', () => {
     const allCreated: Array<{ id: string }> = []
     for (let i = 0; i < 10; i++) {
       const batch = await Promise.all(
-        Array.from({ length: 100 }, () =>
-          createTestCustomer({
-            name: `Cliente ${allCreated.length}`,
-            email: `cliente-load-${allCreated.length}@test.com`,
+        Array.from({ length: 100 }, (_, offset) => {
+          const index = allCreated.length + offset
+          return createTestCustomer({
+            name: `Cliente ${index}`,
+            email: `cliente-load-${index}@test.com`,
             lojaID: TEST_LOJA_ID
           })
-        )
+        })
       )
       allCreated.push(...batch)
     }

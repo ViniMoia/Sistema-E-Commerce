@@ -1,0 +1,1 @@
+{"test":"Next standalone SIGTERM in-flight drain","status":200,"exit":{"code":143,"signal":null},"refused":true,"durationMs":7738}

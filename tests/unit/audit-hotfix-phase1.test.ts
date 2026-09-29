@@ -4,7 +4,7 @@ import { updateOrderStatus } from '@/services/order.service';
 import { POST as checkoutPOST } from '@/app/api/checkout/route';
 import prisma from '@/lib/prisma';
 import * as tenantLib from '@/lib/tenant';
-import * as checkoutService from '@/lib/services/checkout.service';
+import * as checkoutService from '@/services/checkout.service';
 import * as loyaltyService from '@/services/loyalty.service';
 
 vi.mock('@/lib/prisma', () => ({
@@ -17,18 +17,24 @@ vi.mock('@/lib/prisma', () => ({
     }),
     product: {
       update: vi.fn(),
+      updateMany: vi.fn(),
       findUnique: vi.fn(),
     },
     productVariants: {
       update: vi.fn(),
+      updateMany: vi.fn(),
       findUnique: vi.fn(),
     },
     order: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       create: vi.fn(),
     },
     auditLog: {
+      create: vi.fn(),
+    },
+    orderStatusHistory: {
       create: vi.fn(),
     },
     loyaltyWallet: {
@@ -45,7 +51,7 @@ vi.mock('@/lib/tenant', () => ({
   getLojaFromHeaders: vi.fn(),
 }));
 
-vi.mock('@/lib/services/checkout.service', () => ({
+vi.mock('@/services/checkout.service', () => ({
   createOrder: vi.fn(),
 }));
 
@@ -57,35 +63,24 @@ vi.mock('@/services/loyalty.service', () => ({
 describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-003, AUD-004)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 });
   });
 
   describe('AUD-003: Blindagem contra Concorrência e Sobrevenda (Race Condition)', () => {
     it('deve disparar InventoryError(INSUFFICIENT_STOCK) se o produto pai resultar em estoque negativo', async () => {
-      vi.mocked(prisma.product.update).mockResolvedValue({
-        id: 'prod-esgotado',
-        name: 'Produto Concorrente',
-        stock: -1, // Simula decremento simultâneo além do estoque
-      } as any);
+      vi.mocked(prisma.product.updateMany).mockResolvedValue({ count: 0 });
 
       await expect(
         InventoryService.reserveStock(
-          [{ productId: 'prod-esgotado', quantity: 1 }],
+          [{ productId: 'prod-esgotado', quantity: 1, name: 'Produto Concorrente' }],
           prisma as any
         )
       ).rejects.toThrow('Estoque insuficiente para o produto "Produto Concorrente"');
     });
 
     it('deve disparar InventoryError(INSUFFICIENT_STOCK) se a variante resultar em estoque negativo', async () => {
-      vi.mocked(prisma.product.update).mockResolvedValueOnce({
-        id: 'prod-pai',
-        name: 'Camisa Polo',
-        stock: 0,
-      } as any);
-
-      vi.mocked(prisma.productVariants.update).mockResolvedValueOnce({
-        id: 'var-esgotada',
-        stock: -1,
-      } as any);
+      vi.mocked(prisma.product.updateMany).mockResolvedValueOnce({ count: 1 });
+      vi.mocked(prisma.productVariants.updateMany).mockResolvedValueOnce({ count: 0 });
 
       await expect(
         InventoryService.reserveStock(
@@ -204,7 +199,10 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
 
       const req = new Request('http://alpha.com/api/checkout', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'idempotency-key': 'audit-hotfix-valid-checkout-0001',
+        },
         body: JSON.stringify({
           lojaID: 'loja-legitima-1',
           deliveryType: 'PICKUP',

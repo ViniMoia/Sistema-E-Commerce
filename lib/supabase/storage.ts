@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 export const ALLOWED_IMAGE_TYPES = [
@@ -64,7 +65,7 @@ export async function uploadFileToStorage({
   });
 
   if (error || !data) {
-    console.error(`[SupabaseStorage] Erro ao fazer upload para o bucket '${bucket}':`, error);
+    logger.error('Storage upload failed', error, { action: 'STORAGE_UPLOAD_FAILED' });
     throw new Error(error?.message || "Falha ao salvar arquivo no Supabase Storage.");
   }
 

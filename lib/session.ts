@@ -1,8 +1,12 @@
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { randomBytes } from "crypto";
+import { hashSessionToken } from "@/lib/session-token";
+import { logger } from "@/lib/logger";
+export { hashSessionToken } from "@/lib/session-token";
 import * as React from "react";
 import { sanitizeUser, SafeUserDTO } from "@/lib/utils/dto-sanitizer";
+import { getLojaFromHeaders } from "@/lib/tenant";
 
 // 7 dias de expiração de sessão
 const SESSION_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -19,18 +23,15 @@ export async function createSession(userId: string) {
 
   // 1. Invalidar sessão anterior se existente
   if (existingSessionId) {
-    try {
-      await prisma.session.deleteMany({
-        where: { id: existingSessionId },
-      });
-    } catch {
-      // no-op se a sessão já não existia
-    }
+    await prisma.session.deleteMany({
+      where: { id: hashSessionToken(existingSessionId) },
+    });
   }
 
   // 2. Gerar novo identificador criptograficamente seguro de 256 bits
   const expiresAt = new Date(Date.now() + SESSION_EXPIRATION_MS);
-  const sessionId = randomBytes(32).toString("hex");
+  const sessionToken = randomBytes(32).toString("hex");
+  const sessionId = hashSessionToken(sessionToken);
 
   const session = await prisma.session.create({
     data: {
@@ -41,7 +42,7 @@ export async function createSession(userId: string) {
   });
 
   // 3. Gravar novo cookie de sessão com flags de segurança reforçadas
-  cookieStore.set("session_id", session.id, {
+  cookieStore.set("session_id", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     expires: expiresAt,
@@ -60,13 +61,9 @@ export async function deleteSession() {
   const sessionId = cookieStore.get("session_id")?.value;
 
   if (sessionId) {
-    try {
-      await prisma.session.deleteMany({
-        where: { id: sessionId },
-      });
-    } catch (error) {
-      console.error("Falha ao deletar sessão do banco:", error);
-    }
+    await prisma.session.deleteMany({
+      where: { id: hashSessionToken(sessionId) },
+    });
   }
 
   cookieStore.delete("session_id");
@@ -87,7 +84,7 @@ export const getCurrentUser = cacheFn(async (): Promise<SafeUserDTO | null> => {
 
     if (!sessionId) return null;
     const session = await prisma.session.findUnique({
-      where: { id: sessionId },
+      where: { id: hashSessionToken(sessionId) },
       include: {
         user: {
           select: {
@@ -120,12 +117,17 @@ export const getCurrentUser = cacheFn(async (): Promise<SafeUserDTO | null> => {
       return null;
     }
 
+    const activeLoja = await getLojaFromHeaders();
+    if (!activeLoja || activeLoja.id !== session.user.lojaID) {
+      return null;
+    }
+
     return sanitizeUser(session.user);
   } catch (error: any) {
     if (error?.message?.includes("cookies") || error?.digest === "DYNAMIC_SERVER_USAGE") {
       return null;
     }
-    console.error("Falha ao consultar sessão/usuário:", error);
+    logger.error("Falha ao consultar sessão/usuário", error, { action: "SESSION_LOOKUP_FAILED" });
     return null;
   }
 });

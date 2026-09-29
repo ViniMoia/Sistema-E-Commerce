@@ -3,6 +3,8 @@
  * Gera logs estruturados em formato JSON com correlação de tenant, usuário e requisição.
  */
 
+import { getLogContext } from '@/lib/observability/request-context'
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface LogContext {
@@ -28,21 +30,62 @@ export function maskCpfCnpj(doc: string): string {
   return '***.***.***-**';
 }
 
+export function maskEmail(email: string): string {
+  const [localPart, domain] = email.split('@');
+  if (!localPart || !domain) return '[EMAIL_REDACTED]';
+  const visible = localPart.slice(0, Math.min(2, localPart.length));
+  return `${visible}***@${domain.toLowerCase()}`;
+}
+
+export function sanitizeLogText(value: string): string {
+  return value
+    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s@]+@/gi, '$1[REDACTED]@')
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[EMAIL_REDACTED]')
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '[DOCUMENT_REDACTED]')
+    .replace(/\b\d{2}\.?\d{3}\.?\d{3}[\/]?\d{4}-?\d{2}\b/g, '[DOCUMENT_REDACTED]')
+    .replace(/(?<![A-Fa-f0-9])(?:\+?55[\s-]*)?\(?\d{2}\)?[\s-]*9?\d{4}[-\s]?\d{4}(?![A-Fa-f0-9])/g, '[PHONE_REDACTED]')
+    .replace(/(bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
+    .replace(/((?:[?&]|\b)(?:token|api[_-]?key|secret|password|cookie|session)=)[^&\s;]+/gi, '$1[REDACTED]')
+    .replace(/((?:reset|access|refresh|webhook)?[_-]?token\s*[:=]\s*)[^\s,;]+/gi, '$1[REDACTED]');
+}
+
 export function sanitizeLogValue(key: string, value: unknown): unknown {
+  const lowerKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (
+    lowerKey.includes('apikey') ||
+    lowerKey.includes('secret') ||
+    lowerKey.includes('password') ||
+    lowerKey.includes('token') ||
+    lowerKey.includes('auth') ||
+    lowerKey.includes('cookie') ||
+    lowerKey.includes('session') ||
+    lowerKey.includes('credential') ||
+    lowerKey.includes('cardnumber') ||
+    lowerKey === 'payload' ||
+    lowerKey === 'body' ||
+    lowerKey === 'html' ||
+    lowerKey === 'text' ||
+    lowerKey === 'content'
+  ) {
+    return '[REDACTED]';
+  }
+  if (
+    lowerKey.includes('email') ||
+    lowerKey.includes('phone') ||
+    lowerKey.includes('telefone') ||
+    lowerKey.includes('address') ||
+    lowerKey.includes('endereco') ||
+    lowerKey.includes('street') ||
+    lowerKey.includes('cep') ||
+    lowerKey.includes('document') ||
+    lowerKey.includes('cpf') ||
+    lowerKey.includes('cnpj')
+  ) {
+    return '[PII_REDACTED]';
+  }
+
   if (typeof value === 'string') {
-    const lowerKey = key.toLowerCase();
-    if (lowerKey.includes('cpf') || lowerKey.includes('cnpj') || lowerKey.includes('document')) {
-      return maskCpfCnpj(value);
-    }
-    if (
-      lowerKey.includes('apikey') ||
-      lowerKey.includes('secret') ||
-      lowerKey.includes('password') ||
-      lowerKey.includes('token') ||
-      lowerKey.includes('auth')
-    ) {
-      return '[REDACTED]';
-    }
+    return sanitizeLogText(value);
   }
 
   if (value && typeof value === 'object' && !(value instanceof Date)) {
@@ -93,6 +136,7 @@ export class Logger {
   ): StructuredLog {
     const mergedContext = {
       ...this.defaultContext,
+      ...getLogContext(),
       ...context,
     };
 
@@ -101,19 +145,19 @@ export class Logger {
     const logEntry: StructuredLog = {
       timestamp: new Date().toISOString(),
       level,
-      message,
+      message: sanitizeLogText(message),
       ...(Object.keys(sanitized).length > 0 ? { context: sanitized } : {}),
     };
 
     if (err instanceof Error) {
       logEntry.error = {
-        name: err.name,
-        message: err.message,
-        stack: err.stack,
+        name: sanitizeLogText(err.name),
+        message: sanitizeLogText(err.message),
+        stack: err.stack ? sanitizeLogText(err.stack) : undefined,
       };
     } else if (typeof err === "string") {
       logEntry.error = {
-        message: err,
+        message: sanitizeLogText(err),
       };
     }
 

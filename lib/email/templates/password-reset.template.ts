@@ -1,10 +1,33 @@
 import { PasswordResetEmailParams } from "../email.types";
 
-export function renderPasswordResetEmail(params: PasswordResetEmailParams): { html: string; text: string } {
-  const storeName = params.storeName || "Continental Produtos Estéticos Automotivos";
-  const firstName = params.name ? params.name.split(" ")[0] : "Cliente";
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-  const text = `Olá, ${firstName}!\n\nRecebemos uma solicitação para redefinir a senha da sua conta na ${storeName}.\n\nPara cadastrar uma nova senha, acesse o link abaixo (válido por 1 hora):\n${params.resetUrl}\n\nSe você não solicitou a redefinição de senha, ignore esta mensagem. Sua conta permanece segura.\n\nAtenciosamente,\nEquipe ${storeName}`;
+function validateResetUrl(value: string): string {
+  const url = new URL(value);
+  const localHttp =
+    url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  if (url.protocol !== "https:" && !localHttp) {
+    throw new Error("URL de redefinição inválida.");
+  }
+  return url.toString();
+}
+
+export function renderPasswordResetEmail(params: PasswordResetEmailParams): { html: string; text: string } {
+  const plainStoreName = params.storeName || "Continental Produtos Estéticos Automotivos";
+  const plainFirstName = params.name ? params.name.split(" ")[0] : "Cliente";
+  const resetUrl = validateResetUrl(params.resetUrl);
+  const storeName = escapeHtml(plainStoreName);
+  const firstName = escapeHtml(plainFirstName);
+  const safeResetUrl = escapeHtml(resetUrl);
+
+  const text = `Olá, ${plainFirstName}!\n\nRecebemos uma solicitação para redefinir a senha da sua conta na ${plainStoreName}.\n\nPara cadastrar uma nova senha, acesse o link abaixo (válido por 1 hora):\n${resetUrl}\n\nSe você não solicitou a redefinição de senha, ignore esta mensagem. Sua conta permanece segura.\n\nAtenciosamente,\nEquipe ${plainStoreName}`;
 
   const html = `
 <!DOCTYPE html>
@@ -117,7 +140,7 @@ export function renderPasswordResetEmail(params: PasswordResetEmailParams): { ht
         <p>Recebemos uma solicitação para redefinir a senha da sua conta de acesso. Para definir uma nova senha com segurança, clique no botão abaixo:</p>
         
         <div class="button-container">
-          <a href="${params.resetUrl}" class="button" target="_blank">Redefinir Minha Senha</a>
+          <a href="${safeResetUrl}" class="button" target="_blank" rel="noopener noreferrer">Redefinir Minha Senha</a>
         </div>
 
         <div class="note">
@@ -127,7 +150,7 @@ export function renderPasswordResetEmail(params: PasswordResetEmailParams): { ht
 
         <p style="margin-top: 24px; font-size: 12px; color: #737373;">
           Se o botão não funcionar, copie e cole o link a seguir em seu navegador:<br/>
-          <a href="${params.resetUrl}" class="link-alt">${params.resetUrl}</a>
+          <a href="${safeResetUrl}" class="link-alt">${safeResetUrl}</a>
         </p>
       </div>
       <div class="footer">

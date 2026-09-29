@@ -22,44 +22,45 @@ export function validateLuhn(cardNumber: string): boolean {
 }
 
 const cartItemSchema = z.object({
-  productId: z.string().optional(),
-  name: z.string().min(1),
-  quantity: z.number().int().positive(),
-  price: z.number().positive(),
-  color: z.string().optional(),
-  size: z.string().optional(),
-  variantId: z.string().optional(),
-});
+  productId: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  quantity: z.number().int().positive().max(100),
+  price: z.number().positive().max(10_000_000),
+  color: z.string().max(80).optional(),
+  size: z.string().max(80).optional(),
+  variantId: z.string().max(100).optional(),
+}).strict();
 
 const customerSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-  email: z.string().email('E-mail inválido'),
-  phone: z.string().min(10, 'Telefone deve ter no mínimo 10 dígitos'),
+  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(150),
+  email: z.string().email('E-mail inválido').max(255),
+  phone: z.string().min(10, 'Telefone deve ter no mínimo 10 dígitos').max(20),
   cpfCnpj: z
     .string('CPF ou CNPJ é obrigatório para emissão do pagamento')
-    .min(11, 'CPF ou CNPJ é obrigatório')
+    .min(11, 'CPF ou CNPJ é obrigatório').max(20)
     .refine((val) => validateCpfCnpj(val), {
       message: 'CPF ou CNPJ inválido. Verifique os dígitos informados.',
     }),
-  userId: z.string().optional(),
-});
+  userId: z.string().max(100).optional(),
+}).strict();
 
 const addressSchema = z.object({
-  state: z.string().min(2, 'Estado (UF) é obrigatório'),
-  city: z.string().min(2, 'Cidade é obrigatória'),
-  neighborhood: z.string().min(2, 'Bairro é obrigatório'),
-  street: z.string().min(2, 'Rua é obrigatória'),
-  number: z.string().min(1, 'Número é obrigatório'),
-  complement: z.string().optional(),
+  state: z.string().min(2, 'Estado (UF) é obrigatório').max(2),
+  city: z.string().min(2, 'Cidade é obrigatória').max(100),
+  neighborhood: z.string().min(2, 'Bairro é obrigatório').max(100),
+  street: z.string().min(2, 'Rua é obrigatória').max(150),
+  number: z.string().min(1, 'Número é obrigatório').max(30),
+  complement: z.string().max(100).optional(),
   cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
-});
+}).strict();
 
 export const creditCardSchema = z
   .object({
-    holderName: z.string().min(3, 'Nome impresso no cartão deve ter no mínimo 3 caracteres'),
+    holderName: z.string().min(3, 'Nome impresso no cartão deve ter no mínimo 3 caracteres').max(150),
     number: z
       .string()
       .min(13, 'Número do cartão inválido')
+      .max(25, 'Número do cartão inválido')
       .refine((val) => validateLuhn(val), {
         message: 'Número de cartão de crédito inválido.',
       }),
@@ -86,26 +87,21 @@ export const creditCardSchema = z
 
 export const createOrderSchema = z
   .object({
-    lojaID: z.string().min(1),
+    lojaID: z.string().min(1).max(100),
+    cartId: z.string().uuid('ID do carrinho inválido').optional(),
     customer: customerSchema,
-    items: z.array(cartItemSchema).min(1),
+    items: z.array(cartItemSchema).min(1).max(50, 'O pedido excede o limite de 50 itens.'),
     address: addressSchema.optional(),
     deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']),
-    freightValue: z.number().nonnegative().optional(),
-    shippingCost: z.number().nonnegative().optional(),
-    shippingProvider: z.string().optional(),
-    shippingServiceName: z.string().optional(),
-    shippingEstimatedDays: z.number().int().nonnegative().optional(),
+    freightQuoteToken: z.string().min(32).max(4096).optional(),
     paymentMethod: z
       .enum(['PIX', 'CREDIT_CARD', 'BOLETO', 'WHATSAPP_PIX'])
       .default('PIX')
       .optional(),
     creditCard: creditCardSchema.optional(),
     installments: z.number().int().min(1).max(12).default(1).optional(),
-    installmentValue: z.number().positive().optional(),
-    pixKey: z.string().optional(),
-    pointsToRedeem: z.number().int().nonnegative().optional(),
-  })
+    pointsToRedeem: z.number().int().nonnegative().max(100_000_000).optional(),
+  }).strict()
   .superRefine((data, ctx) => {
     if (data.paymentMethod === 'CREDIT_CARD' && !data.creditCard) {
       ctx.addIssue({

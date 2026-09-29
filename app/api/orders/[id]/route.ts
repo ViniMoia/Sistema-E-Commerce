@@ -21,7 +21,7 @@ export async function GET(req: Request, context: RouteContext) {
 
     // Controle de Acesso em Nível de Objeto (BOLA/IDOR - TEN-002):
     // - ADMINs só podem visualizar pedidos de sua própria loja
-    // - CUSTOMERs só podem visualizar pedidos que lhes pertencem
+    // - CUSTOMERs só podem visualizar pedidos que lhes pertencem no tenant da sessão
     if (guard.user.role === "ADMIN") {
       if (order.lojaID !== guard.user.lojaID) {
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -29,6 +29,9 @@ export async function GET(req: Request, context: RouteContext) {
     } else {
       if (order.userID !== guard.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (order.lojaID !== guard.user.lojaID) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
     }
 
@@ -70,7 +73,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     if (result.success === false) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.code === "NOT_FOUND" ? 404 : 422 }
+        { status: result.code === "NOT_FOUND" ? 404 : result.code === "CONFLICT" ? 409 : 422 }
       );
     }
 

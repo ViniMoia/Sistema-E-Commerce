@@ -3,6 +3,7 @@ import { ForgotPasswordForm } from "@/components/forms/ForgotPasswordForm";
 export const metadata = {
   title: "Recuperar Senha | Continental Produtos Estéticos",
   description: "Redefina a senha de acesso da sua conta com segurança.",
+  robots: { index: false, follow: true },
 };
 
 export default function ForgotPasswordPage() {

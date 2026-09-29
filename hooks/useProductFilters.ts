@@ -2,6 +2,12 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
+import { useRouter } from "next/navigation";
+import {
+  buildCatalogQueryString,
+  parseCatalogSearchParams,
+  type CatalogFilterState,
+} from "@/lib/catalog-query";
 
 export interface FilterableProduct {
   id: string;
@@ -30,6 +36,13 @@ export interface UseProductFiltersOptions {
   initialBrands?: BrandSummary[];
   enableUrlSync?: boolean;
   pageSize?: number;
+  initialFilters?: CatalogFilterState;
+  serverPagination?: {
+    totalCount: number;
+    filteredCount: number;
+    currentPage: number;
+    pageSize: number;
+  };
 }
 
 export interface UseProductFiltersReturn {
@@ -123,13 +136,7 @@ export const BRAND_REGEX: Record<string, RegExp> = {
  * Utilitário seguro para extração de parâmetros de filtros e paginação a partir da URL.
  * Trata tanto query params padrão (?marca=...) quanto params acoplados ao hash (#catalogo?marca=...).
  */
-function extractFiltersFromLocation(): {
-  brand: string | null;
-  tags: string[];
-  search: string;
-  priceRange: string | null;
-  page: number;
-} {
+function extractFiltersFromLocation(): CatalogFilterState {
   if (typeof window === "undefined") {
     return { brand: null, tags: [], search: "", priceRange: null, page: 1 };
   }
@@ -145,50 +152,7 @@ function extractFiltersFromLocation(): {
     }
   }
 
-  const brand =
-    searchParams.get("marca") ||
-    searchParams.get("brand") ||
-    searchParams.get("brandSlug") ||
-    null;
-
-  const rawTags =
-    searchParams.getAll("tags").concat(searchParams.getAll("tag")).join(",");
-  const tags = rawTags
-    ? rawTags
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter(Boolean)
-    : [];
-
-  const search =
-    searchParams.get("busca") ||
-    searchParams.get("search") ||
-    searchParams.get("q") ||
-    "";
-
-  const priceRange =
-    searchParams.get("preco") ||
-    searchParams.get("price") ||
-    searchParams.get("priceRange") ||
-    null;
-
-  // Sanitização estrita do número da página contra valores negativos, NaN ou injeções
-  const rawPage = searchParams.get("pagina") || searchParams.get("page");
-  let page = 1;
-  if (rawPage) {
-    const parsed = parseInt(rawPage, 10);
-    if (!isNaN(parsed) && parsed >= 1) {
-      page = parsed;
-    }
-  }
-
-  return {
-    brand: brand ? brand.toLowerCase().trim() : null,
-    tags,
-    search: search.trim(),
-    priceRange: priceRange ? priceRange.trim() : null,
-    page,
-  };
+  return parseCatalogSearchParams(searchParams);
 }
 
 /**
@@ -200,18 +164,31 @@ export function useProductFilters({
   initialBrands = [],
   enableUrlSync = true,
   pageSize: customPageSize,
+  initialFilters,
+  serverPagination,
 }: UseProductFiltersOptions): UseProductFiltersReturn {
-  const pageSize = customPageSize && customPageSize > 0 ? customPageSize : DEFAULT_PAGE_SIZE;
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const router = useRouter();
+  const pageSize = serverPagination?.pageSize ??
+    (customPageSize && customPageSize > 0 ? customPageSize : DEFAULT_PAGE_SIZE);
+  const [searchQuery, setSearchQuery] = useState(initialFilters?.search ?? "");
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(initialFilters?.brand ?? null);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialFilters?.tags ?? []);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
+    initialFilters?.priceRange ?? null
+  );
+  const [currentPage, setCurrentPage] = useState<number>(
+    initialFilters?.page ?? serverPagination?.currentPage ?? 1
+  );
   const isHydratedRef = useRef(false);
 
   // ─── 1. Deep Linking: Leitura Inicial dos Parâmetros da URL na Montagem ──────
   useEffect(() => {
     if (typeof window === "undefined" || !enableUrlSync) return;
+
+    if (initialFilters) {
+      isHydratedRef.current = true;
+      return;
+    }
 
     const initial = extractFiltersFromLocation();
 
@@ -232,7 +209,22 @@ export function useProductFilters({
     }
 
     isHydratedRef.current = true;
-  }, [enableUrlSync]);
+  }, [enableUrlSync, initialFilters]);
+
+  useEffect(() => {
+    if (!initialFilters) return;
+    setSelectedBrand(initialFilters.brand);
+    setSelectedTags(initialFilters.tags);
+    setSearchQuery(initialFilters.search);
+    setSelectedPriceRange(initialFilters.priceRange);
+    setCurrentPage(initialFilters.page);
+  }, [
+    initialFilters?.brand,
+    initialFilters?.search,
+    initialFilters?.priceRange,
+    initialFilters?.page,
+    initialFilters?.tags.join(","),
+  ]);
 
   // ─── 2. Sincronização Reativa Bidirecional: Estado -> URL (replaceState) ─────
   useEffect(() => {
@@ -241,25 +233,13 @@ export function useProductFilters({
     }
 
     const timer = setTimeout(() => {
-      const params = new URLSearchParams();
-
-      if (selectedBrand) {
-        params.set("marca", selectedBrand);
-      }
-      if (selectedTags.length > 0) {
-        params.set("tags", selectedTags.join(","));
-      }
-      if (searchQuery.trim()) {
-        params.set("busca", searchQuery.trim());
-      }
-      if (selectedPriceRange) {
-        params.set("preco", selectedPriceRange);
-      }
-      if (currentPage > 1) {
-        params.set("pagina", String(currentPage));
-      }
-
-      const queryString = params.toString();
+      const queryString = buildCatalogQueryString({
+        brand: selectedBrand,
+        tags: selectedTags,
+        search: searchQuery,
+        priceRange: selectedPriceRange,
+        page: currentPage,
+      });
       const currentHash = window.location.hash.split("?")[0] || "#catalogo";
       const pathname = window.location.pathname;
 
@@ -270,7 +250,11 @@ export function useProductFilters({
       const currentFullUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
       if (currentFullUrl !== newUrl) {
-        window.history.replaceState(null, "", newUrl);
+        if (serverPagination) {
+          router.replace(newUrl, { scroll: false });
+        } else {
+          window.history.replaceState(null, "", newUrl);
+        }
       }
     }, 180);
 
@@ -282,6 +266,8 @@ export function useProductFilters({
     selectedPriceRange,
     currentPage,
     enableUrlSync,
+    router,
+    serverPagination,
   ]);
 
   // ─── 3. Suporte ao Histórico do Navegador (Botões Voltar/Avançar) ───────────
@@ -328,6 +314,7 @@ export function useProductFilters({
 
   // ─── 5. Contagem dinâmica e em tempo real por marca para o Flyout ────────────
   const brandsWithCounts = useMemo(() => {
+    if (serverPagination) return initialBrands;
     return initialBrands.map((b) => {
       const count = initialProducts.filter((p) => {
         const text = `${p.name} ${p.description || ""}`;
@@ -335,10 +322,11 @@ export function useProductFilters({
       }).length;
       return { ...b, productCount: count > 0 ? count : b.productCount };
     });
-  }, [initialBrands, initialProducts]);
+  }, [initialBrands, initialProducts, serverPagination]);
 
   // ─── 6. Cálculo derivado dos produtos filtrados ──────────────────────────────
   const filteredProducts = useMemo(() => {
+    if (serverPagination) return initialProducts;
     return initialProducts.filter((prod) => {
       const text = `${prod.name} ${prod.description || ""}`;
 
@@ -380,7 +368,7 @@ export function useProductFilters({
 
       return true;
     });
-  }, [initialProducts, searchQuery, selectedBrand, selectedTags, selectedPriceRange]);
+  }, [initialProducts, searchQuery, selectedBrand, selectedTags, selectedPriceRange, serverPagination]);
 
   const hasActiveFilters = Boolean(
     selectedBrand ||
@@ -390,16 +378,18 @@ export function useProductFilters({
   );
 
   // ─── 7. Paginação Segura com Bounds Clamping (12 produtos por página) ─────────
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const effectiveFilteredCount = serverPagination?.filteredCount ?? filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(effectiveFilteredCount / pageSize));
   const safeCurrentPage = Math.min(Math.max(1, Math.floor(Number(currentPage) || 1)), totalPages);
 
   const paginatedProducts = useMemo(() => {
+    if (serverPagination) return initialProducts;
     const start = (safeCurrentPage - 1) * pageSize;
     return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, safeCurrentPage, pageSize]);
+  }, [filteredProducts, initialProducts, safeCurrentPage, pageSize, serverPagination]);
 
-  const startIndex = filteredProducts.length > 0 ? (safeCurrentPage - 1) * pageSize + 1 : 0;
-  const endIndex = Math.min(safeCurrentPage * pageSize, filteredProducts.length);
+  const startIndex = effectiveFilteredCount > 0 ? (safeCurrentPage - 1) * pageSize + 1 : 0;
+  const endIndex = Math.min(safeCurrentPage * pageSize, effectiveFilteredCount);
 
   const handleSetPage = useCallback(
     (page: number) => {
@@ -429,7 +419,7 @@ export function useProductFilters({
     startIndex,
     endIndex,
     hasActiveFilters,
-    totalCount: initialProducts.length,
-    filteredCount: filteredProducts.length,
+    totalCount: serverPagination?.totalCount ?? initialProducts.length,
+    filteredCount: effectiveFilteredCount,
   };
 }

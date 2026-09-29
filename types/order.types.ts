@@ -1,4 +1,4 @@
-import { Prisma, OrderStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 // ─── Input Types ──────────────────────────────────────────────────────────────
 
@@ -9,16 +9,33 @@ export interface CreateOrderInput {
   lojaID: string;
 }
 
-export interface UpdateOrderStatusInput {
-  orderID: string;
-  newStatus: OrderStatus;
-}
-
 export interface GetUserOrdersParams {
   userID: string;
   lojaID: string;
   limit?: number;
   skip?: number;
+}
+
+export interface OrderItemSummary {
+  name: string;
+  price: number;
+  quantity: number;
+  color?: string | null;
+  size?: string | null;
+  imageUrl?: string | null;
+}
+
+export interface UserOrder {
+  id: string;
+  orderNumber: number;
+  status: string;
+  total: number;
+  createdAt: Date;
+  trackingCode?: string | null;
+  deliveryType?: 'DELIVERY' | 'PICKUP' | 'NONE' | null;
+  shippingServiceName?: string | null;
+  deliveredConfirmedAt?: Date | string | null;
+  items: OrderItemSummary[];
 }
 
 // ─── Return Types (derivados do Prisma para garantir sincronia com o schema) ──

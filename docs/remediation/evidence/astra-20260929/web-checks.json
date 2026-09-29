@@ -1,0 +1,26 @@
+{
+  "checks": [
+    {
+      "width": 1366,
+      "scrollWidth": 1366,
+      "unlabelled": 0
+    },
+    {
+      "width": 1920,
+      "scrollWidth": 1920,
+      "unlabelled": 0
+    },
+    {
+      "zoomEquivalent": "200% at 1366px",
+      "width": 683,
+      "scrollWidth": 668
+    }
+  ],
+  "motion": {
+    "reducedMotion": true,
+    "videoSources": [
+      ""
+    ],
+    "hydrated": true
+  }
+}

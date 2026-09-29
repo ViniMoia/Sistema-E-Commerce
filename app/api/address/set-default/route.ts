@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/guards";
@@ -32,11 +33,12 @@ export async function POST(req: Request) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("[SET_DEFAULT_ADDRESS_ERROR]", error);
+  } catch (error: unknown) {
+    logger.error('Default address update failed', error, { action: 'SET_DEFAULT_ADDRESS_ERROR' });
+    const denied = error instanceof Error && error.message === 'Endereço não encontrado ou acesso não autorizado';
     return NextResponse.json(
-      { error: error.message || "Erro ao definir endereço padrão" },
-      { status: 400 }
+      { error: denied ? "Endereço não encontrado ou acesso não autorizado" : "Erro ao definir endereço padrão" },
+      { status: denied ? 400 : 500 }
     );
   }
 }

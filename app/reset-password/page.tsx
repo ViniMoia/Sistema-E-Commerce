@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 export const metadata = {
   title: "Definir Nova Senha | Continental Produtos Estéticos",
   description: "Crie uma nova senha de acesso para sua conta.",
+  robots: { index: false, follow: false },
 };
 
 function ResetPasswordFallback() {

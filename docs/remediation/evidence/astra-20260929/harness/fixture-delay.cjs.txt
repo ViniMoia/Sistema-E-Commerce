@@ -1,0 +1,1 @@
+const http=require('node:http');const emit=http.Server.prototype.emit;http.Server.prototype.emit=function(event,...args){if(event==='request'&&args[0].url.includes('fixture-drain=1')){setTimeout(()=>emit.call(this,event,...args),1800);return true}return emit.call(this,event,...args)};

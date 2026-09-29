@@ -4,6 +4,7 @@ import { ok, err } from '@/lib/api-response'
 import { requireAdmin } from '@/lib/auth/guards'
 import { getLoyaltySettings, calculateDiscountFromPoints } from '@/services/loyalty.service'
 import { LoyaltyTxType } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
   const auth = await requireAdmin(req)
@@ -113,7 +114,7 @@ export async function GET(req: Request) {
       })),
     })
   } catch (error: any) {
-    console.error('[ADMIN_LOYALTY_REPORTS_ERROR]', error)
-    return err(error?.message || 'Erro ao gerar relatório de fidelidade.', 500)
+    logger.error('Falha ao gerar relatÃ³rio de fidelidade', error, { action: 'ADMIN_LOYALTY_REPORTS_ERROR' })
+    return err('Erro interno ao gerar relatório de fidelidade.', 500, 'LOYALTY_REPORT_INTERNAL_ERROR')
   }
 }

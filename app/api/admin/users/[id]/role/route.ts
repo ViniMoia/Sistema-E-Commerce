@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/guards";
@@ -15,6 +16,8 @@ const SERVICE_ERRORS: Record<string, number> = {
   USER_BLOCKED: 422,
   ROLE_ALREADY_SET: 422,
   LAST_ADMIN: 422,
+  ACTOR_NOT_AUTHORIZED: 403,
+  ROLE_UPDATE_CONFLICT: 409,
 };
 
 function handleServiceError(error: unknown): NextResponse {
@@ -40,7 +43,7 @@ function handleServiceError(error: unknown): NextResponse {
     }
   }
 
-  console.error("[ADMIN_USERS_ROLE_PATCH]", error);
+  logger.error("[ADMIN_USERS_ROLE_PATCH]", error);
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }
 

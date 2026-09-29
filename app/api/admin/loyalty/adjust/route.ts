@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
   const parseResult = AdjustLoyaltyBalanceSchema.safeParse(rawData)
   if (!parseResult.success) {
     const issue = parseResult.error.issues[0]
-    return err(issue ? issue.message : 'Dados de ajuste inválidos.', 400)
+    return err(issue ? issue.message : 'Dados de ajuste inválidos.', 422, 'VALIDATION_ERROR')
   }
 
   try {
@@ -34,7 +35,11 @@ export async function POST(req: Request) {
       transactionId: result.transaction.id,
     })
   } catch (error: any) {
-    console.error('[ADMIN_LOYALTY_ADJUST_ERROR]', error)
-    return err(error?.message || 'Erro ao realizar ajuste manual de saldo.', 400)
+    logger.error('[ADMIN_LOYALTY_ADJUST_ERROR]', error);
+    return err(
+      error?.message || 'Erro ao realizar ajuste manual de saldo.',
+      error?.code === 'IDEMPOTENCY_CONFLICT' ? 409 : 400,
+      error?.code
+    )
   }
 }

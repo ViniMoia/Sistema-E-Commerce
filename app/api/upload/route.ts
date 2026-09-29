@@ -14,6 +14,9 @@ export async function POST(req: Request) {
   if (!user) {
     return err("Não autorizado. Faça login para enviar arquivos.", 401, "UNAUTHORIZED");
   }
+  if (user.role !== "ADMIN") {
+    return err("Permissão negada. Apenas administradores podem enviar imagens de produtos.", 403, "FORBIDDEN");
+  }
 
   // Feature gate conservativo: Upload direto em standby temporário.
   // A aplicação opera com imagens por URLs externas (Nuvemshop/CDNs). Código preservado para futuro S3/R2.
@@ -28,15 +31,16 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const bucket = (formData.get("bucket") as string) || "products";
+    const requestedBucket = formData.get("bucket");
+    const bucket = typeof requestedBucket === "string" ? requestedBucket : "products";
 
     if (!file) {
       return err("Nenhum arquivo enviado.", 400, "NO_FILE");
     }
 
-    // Controle de acesso por bucket
-    if (bucket === "products" && user.role !== "ADMIN") {
-      return err("Permissão negada. Apenas administradores podem enviar imagens de produtos.", 403, "FORBIDDEN");
+    // O bucket é uma decisão do servidor, não um namespace arbitrário do cliente.
+    if (bucket !== "products") {
+      return err("Bucket de upload inválido.", 400, "INVALID_BUCKET");
     }
 
     // Validação de formato (MIME)
@@ -85,6 +89,6 @@ export async function POST(req: Request) {
       userId: user.id,
       tenantId: user.lojaID,
     });
-    return err(error.message || "Falha ao processar upload da imagem.", 500, "UPLOAD_ERROR");
+    return err("Falha ao processar upload da imagem.", 500, "UPLOAD_ERROR");
   }
 }

@@ -1,17 +1,18 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resetPassword, AuthError } from "@/services/auth.service";
-import { rateLimit } from "@/lib/rate-limit";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { createHash } from "crypto";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(10, "Token de recuperação inválido."),
-  password: z.string().min(6, "A nova senha deve ter no mínimo 6 caracteres."),
+  password: z.string().min(8, "A nova senha deve ter no mínimo 8 caracteres."),
 });
 
 export async function POST(req: Request) {
   // 1. Rate Limiting por IP para mitigar ataques de força bruta sobre tokens
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "anonymous-client";
+  const ip = getClientIp(req);
   const rl = rateLimit(`reset-password:${ip}`, 10, 15 * 60 * 1000);
 
   if (!rl.success) {
@@ -48,6 +49,15 @@ export async function POST(req: Request) {
     );
   }
 
+  const tokenKey = createHash("sha256").update(parsed.data.token).digest("hex");
+  const tokenLimit = rateLimit(`reset-password-token:${tokenKey}`, 5, 15 * 60 * 1000);
+  if (!tokenLimit.success) {
+    return NextResponse.json(
+      { error: "Muitas tentativas de redefinição de senha. Aguarde antes de tentar novamente." },
+      { status: 429, headers: { "Retry-After": String(tokenLimit.retryAfter) } }
+    );
+  }
+
   try {
     const result = await resetPassword({
       token: parsed.data.token,
@@ -63,7 +73,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("[POST /api/auth/reset-password] Erro inesperado:", error);
+    logger.error("[POST /api/auth/reset-password] Erro inesperado:", error);
     return NextResponse.json(
       { error: "Ocorreu um erro ao redefinir a senha. Tente novamente mais tarde." },
       { status: 500 }

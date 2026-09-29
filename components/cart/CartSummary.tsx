@@ -70,7 +70,7 @@ export function CartSummary({
           onClick={onContinueShopping}
           className="w-full rounded-none border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white uppercase tracking-widest text-xs py-6"
         >
-          Continue Shopping
+          Continuar Comprando
         </Button>
       </div>
     </div>

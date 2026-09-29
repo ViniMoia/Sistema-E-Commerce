@@ -1,0 +1,11 @@
+Historical migrations: 28 from zero. New migration rejected invalid data.
+ preserved_rows 
+----------------
+              1
+(1 row)
+
+ new_triggers 
+--------------
+            0
+(1 row)
+

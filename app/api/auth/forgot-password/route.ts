@@ -1,9 +1,10 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { getLojaFromHeaders } from "@/lib/tenant";
+import { getLojaFromHeaders, getTenantCanonicalOrigin } from "@/lib/tenant";
 import { requestPasswordReset } from "@/services/auth.service";
-import { rateLimit } from "@/lib/rate-limit";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { createHash } from "crypto";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Formato de e-mail inválido"),
@@ -11,8 +12,7 @@ const forgotPasswordSchema = z.object({
 
 export async function POST(req: Request) {
   // 1. Rate Limiting por IP (Mitigação de E-mail Bombing e DoS)
-  const forwardedFor = req.headers.get("x-forwarded-for");
-  const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "anonymous-client";
+  const ip = getClientIp(req);
   const rl = rateLimit(`forgot-password:${ip}`, 5, 15 * 60 * 1000); // 5 requisições a cada 15 min
 
   if (!rl.success) {
@@ -52,31 +52,37 @@ export async function POST(req: Request) {
   try {
     // 3. Resolução de contexto multi-tenant
     const activeLoja = await getLojaFromHeaders();
-    let lojaID = activeLoja?.id || process.env.NEXT_PUBLIC_LOJA_ID;
-
-    if (!lojaID) {
-      // Fallback seguro para primeira loja cadastrada
-      const defaultStore = await prisma.loja.findFirst({
-        select: { id: true },
-      });
-      lojaID = defaultStore?.id;
-    }
-
-    if (!lojaID) {
+    if (!activeLoja) {
       return NextResponse.json(
         { error: "Contexto de loja não identificado." },
-        { status: 400 }
+        { status: 404 }
       );
     }
 
-    // 4. Resolução da URL base para o link do e-mail
-    const origin = req.headers.get("origin") || req.headers.get("referer");
-    const originUrl = origin ? new URL(origin).origin : process.env.NEXT_PUBLIC_APP_URL;
+    const accountKey = createHash("sha256")
+      .update(`${activeLoja.id}:${parsed.data.email.toLowerCase().trim()}`)
+      .digest("hex");
+    const accountLimit = rateLimit(`forgot-password-account:${accountKey}`, 3, 15 * 60 * 1000);
+    if (!accountLimit.success) {
+      return NextResponse.json({
+        success: true,
+        message: "Se o e-mail informado estiver cadastrado em nossa loja, você receberá as instruções para redefinição de senha em alguns instantes.",
+      });
+    }
+
+    // 4. Origem canônica derivada exclusivamente de configuração confiável.
+    const originUrl = getTenantCanonicalOrigin(activeLoja);
+    if (!originUrl) {
+      return NextResponse.json(
+        { error: "Origem canônica da loja não configurada." },
+        { status: 503 }
+      );
+    }
 
     // 5. Execução do serviço com proteção anti-enumeração
     await requestPasswordReset({
       email: parsed.data.email,
-      lojaID,
+      lojaID: activeLoja.id,
       originUrl,
     });
 
@@ -90,7 +96,7 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("[POST /api/auth/forgot-password] Erro inesperado:", error);
+    logger.error("[POST /api/auth/forgot-password] Erro inesperado:", error);
     return NextResponse.json(
       {
         error: "Ocorreu um erro interno ao processar a solicitação. Tente novamente mais tarde.",

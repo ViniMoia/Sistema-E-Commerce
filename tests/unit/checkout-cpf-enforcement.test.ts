@@ -3,7 +3,7 @@ import { createOrderSchema } from '@/lib/validators/checkout.validators';
 import { POST } from '@/app/api/checkout/route';
 import * as tenantLib from '@/lib/tenant';
 import * as sessionLib from '@/lib/session';
-import * as checkoutService from '@/lib/services/checkout.service';
+import * as checkoutService from '@/services/checkout.service';
 
 vi.mock('@/lib/tenant', () => ({
   getLojaFromHeaders: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('@/lib/session', () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock('@/lib/services/checkout.service', () => ({
+vi.mock('@/services/checkout.service', () => ({
   createOrder: vi.fn(),
 }));
 
@@ -184,13 +184,90 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
 
       expect(result.success).toBe(true);
     });
+
+    it('deve rejeitar 51 itens e quantidade unitária acima de 100', () => {
+      const customer = {
+        ...validBasePayload.customer,
+        cpfCnpj: '529.982.247-25',
+      };
+      const tooManyItems = createOrderSchema.safeParse({
+        ...validBasePayload,
+        customer,
+        items: Array.from({ length: 51 }, (_, index) => ({
+          productId: `prod-${index}`,
+          name: 'Produto',
+          quantity: 1,
+          price: 10,
+        })),
+      });
+      const excessiveQuantity = createOrderSchema.safeParse({
+        ...validBasePayload,
+        customer,
+        items: [{ productId: 'prod-1', name: 'Produto', quantity: 101, price: 10 }],
+      });
+
+      expect(tooManyItems.success).toBe(false);
+      expect(excessiveQuantity.success).toBe(false);
+    });
   });
 
   describe('Comportamento HTTP da Rota (POST /api/checkout)', () => {
+    it('exige cartId e deriva owner/tenant da sessão no checkout autenticado', async () => {
+      vi.mocked(sessionLib.getCurrentUser).mockResolvedValueOnce({
+        id: 'user-session-1',
+        lojaID: 'loja-continental-1',
+      } as any);
+      const withoutCart = await POST(new Request('http://localhost:3000/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'authenticated-checkout-without-cart-0001',
+        },
+        body: JSON.stringify({
+          ...validBasePayload,
+          customer: { ...validBasePayload.customer, cpfCnpj: '529.982.247-25' },
+        }),
+      }));
+      expect(withoutCart.status).toBe(400);
+      await expect(withoutCart.json()).resolves.toMatchObject({ code: 'CART_ID_REQUIRED' });
+      expect(checkoutService.createOrder).not.toHaveBeenCalled();
+
+      vi.mocked(sessionLib.getCurrentUser).mockResolvedValueOnce({
+        id: 'user-session-1',
+        lojaID: 'loja-continental-1',
+      } as any);
+      vi.mocked(checkoutService.createOrder).mockResolvedValueOnce({
+        success: true,
+        order: { id: 'order-session-1', orderNumber: 2002, total: 159.8 } as any,
+      });
+      const cartId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+      const withCart = await POST(new Request('http://localhost:3000/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'authenticated-checkout-with-cart-0002',
+        },
+        body: JSON.stringify({
+          ...validBasePayload,
+          cartId,
+          customer: { ...validBasePayload.customer, cpfCnpj: '529.982.247-25' },
+        }),
+      }));
+      expect(withCart.status).toBe(200);
+      expect(checkoutService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+        lojaID: 'loja-continental-1',
+        cartId,
+        customer: expect.objectContaining({ userId: 'user-session-1' }),
+      }));
+    });
+
     it('deve responder HTTP 400 com mensagem clara quando CPF/CNPJ for omitido', async () => {
       const req = new Request('http://localhost:3000/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'cpf-valid-checkout-request-0001',
+        },
         body: JSON.stringify({
           ...validBasePayload,
           customer: {
@@ -248,7 +325,10 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
 
       const req = new Request('http://localhost:3000/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'cpf-valid-checkout-request-0002',
+        },
         body: JSON.stringify({
           ...validBasePayload,
           customer: {
@@ -260,10 +340,27 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
 
       const res = await POST(req);
       expect(res.status).toBe(200);
+      expect(res.headers.get('x-request-id')).toMatch(/^[0-9a-f-]{36}$/);
 
       const json = await res.json();
       expect(json.success).toBe(true);
       expect(checkoutService.createOrder).toHaveBeenCalled();
+    });
+
+    it('deve substituir correlation header invÃ¡lido e devolver referÃªncia interna segura', async () => {
+      const req = new Request('http://localhost:3000/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': '<script>'.repeat(40),
+        },
+        body: JSON.stringify({}),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(400);
+      expect(res.headers.get('x-request-id')).toMatch(/^[0-9a-f-]{36}$/);
+      expect(res.headers.get('x-request-id')).not.toContain('<script>');
     });
   });
 });

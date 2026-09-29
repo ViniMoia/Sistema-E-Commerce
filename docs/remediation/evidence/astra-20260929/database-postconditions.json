@@ -1,0 +1,37 @@
+{
+  "orders": 2,
+  "uniqueFakePayments": 2,
+  "completedCarts": 2,
+  "remainingStock": 98,
+  "auditAction": "STORE_SETTINGS_UPDATE",
+  "auditMetadata": {
+    "lojaID": "e9ec4b92-8bdf-4c27-bd06-758f86d18b98",
+    "requestId": "7406af2f-b9ef-40b4-ab17-78b28b93857a",
+    "changedFields": [
+      "additionalDays",
+      "correiosContractCode",
+      "coverImageUrl",
+      "customDomain",
+      "description",
+      "enableCorreios",
+      "enableNoFreight",
+      "enablePickup",
+      "name",
+      "originCep",
+      "originCity",
+      "originComplement",
+      "originDistrict",
+      "originNumber",
+      "originState",
+      "originStreet",
+      "pixKey",
+      "pixKeyType",
+      "primaryColor",
+      "secondaryColor",
+      "slug",
+      "whatsappNumber"
+    ]
+  },
+  "auditedAdditionalDays": 2,
+  "leaksPrivateValue": false
+}

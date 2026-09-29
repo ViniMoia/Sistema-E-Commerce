@@ -8,6 +8,8 @@ import {
   BoletoChargeResult,
   PaymentStatusResult,
   PaymentGatewayError,
+  RequestRefundInput,
+  PaymentRefundResult,
 } from '@/types/payment-gateway.types';
 import { asaasClient, AsaasClientError } from '@/services/asaas/asaas.client';
 import { calculateBusinessDueDate } from '@/services/payment/due-date.service';
@@ -47,7 +49,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
         value: Number(input.value),
         dueDate: dueDateStr,
         description: input.description || `Pedido #${input.orderNumber} - Continental`,
-        externalReference: input.orderId,
+        externalReference: input.paymentReference || input.orderId,
       });
 
       // 4. Obter o QR Code e linha Copia e Cola
@@ -143,7 +145,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
         value: Number(input.value),
         dueDate: todayStr,
         description: input.description || `Pedido #${input.orderNumber} - Continental`,
-        externalReference: input.orderId,
+        externalReference: input.paymentReference || input.orderId,
         creditCard: {
           holderName: input.creditCard.holderName.trim().toUpperCase(),
           number: cleanCardNumber,
@@ -255,7 +257,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
         value: Number(input.value),
         dueDate: dueDateStr,
         description: input.description || `Pedido #${input.orderNumber} - Continental`,
-        externalReference: input.orderId,
+        externalReference: input.paymentReference || input.orderId,
       });
 
       // 4. Buscar linha digitável e código de barras
@@ -347,6 +349,8 @@ export class AsaasPaymentAdapter implements PaymentGateway {
       return {
         paymentId: payment.id,
         status: payment.status,
+        externalReference: payment.externalReference,
+        billingType: payment.billingType,
         paidAt: paidDateRaw ? new Date(paidDateRaw) : undefined,
         value: payment.value,
         netValue: payment.netValue,
@@ -372,6 +376,125 @@ export class AsaasPaymentAdapter implements PaymentGateway {
         500,
         'UNEXPECTED_GATEWAY_ERROR',
         err
+      );
+    }
+  }
+
+  async findPaymentsByReference(paymentReference: string): Promise<PaymentStatusResult[]> {
+    const startTime = Date.now();
+    try {
+      const payments = await asaasClient.findPaymentsByExternalReference(paymentReference);
+      logger.info('Cobranças consultadas por referência no Asaas', {
+        action: 'ASAAS_PAYMENT_REFERENCE_CHECKED',
+        paymentReference,
+        resultCount: payments.length,
+        durationMs: Date.now() - startTime,
+      });
+      return payments.map((payment) => ({
+        paymentId: payment.id,
+        status: payment.status,
+        externalReference: payment.externalReference,
+        billingType: payment.billingType,
+        paidAt: payment.confirmedDate
+          ? new Date(payment.confirmedDate)
+          : payment.paymentDate
+            ? new Date(payment.paymentDate)
+            : payment.clientPaymentDate
+              ? new Date(payment.clientPaymentDate)
+              : undefined,
+        value: payment.value,
+        netValue: payment.netValue,
+        originalPayload: payment,
+      }));
+    } catch (err: any) {
+      logger.error('Falha ao consultar cobranças por referência no Asaas', err, {
+        action: 'ASAAS_PAYMENT_REFERENCE_CHECK_FAILED',
+        paymentReference,
+        durationMs: Date.now() - startTime,
+      });
+      if (err instanceof AsaasClientError) {
+        throw new PaymentGatewayError(
+          `Falha ao consultar referência no Asaas: ${err.message}`,
+          err.statusCode,
+          'ASAAS_REFERENCE_QUERY_ERROR',
+          err.errors
+        );
+      }
+      throw new PaymentGatewayError(
+        err?.message || 'Erro inesperado ao consultar referência no gateway',
+        500,
+        'UNEXPECTED_GATEWAY_ERROR',
+        err
+      );
+    }
+  }
+
+  async requestRefund(input: RequestRefundInput): Promise<PaymentStatusResult> {
+    const startTime = Date.now();
+    try {
+      const payment = await asaasClient.refundPayment(input.paymentId, {
+        value: input.value,
+        description: input.description,
+      });
+      logger.info('Solicitacao de estorno enviada ao Asaas', {
+        action: 'ASAAS_REFUND_REQUESTED',
+        asaasPaymentId: input.paymentId,
+        durationMs: Date.now() - startTime,
+      });
+      return {
+        paymentId: payment.id,
+        status: payment.status,
+        externalReference: payment.externalReference,
+        billingType: payment.billingType,
+        value: payment.value,
+        netValue: payment.netValue,
+        originalPayload: payment,
+      };
+    } catch (err: any) {
+      logger.error('Falha ao solicitar estorno no Asaas', err, {
+        action: 'ASAAS_REFUND_REQUEST_FAILED',
+        asaasPaymentId: input.paymentId,
+        durationMs: Date.now() - startTime,
+      });
+      if (err instanceof AsaasClientError) {
+        throw new PaymentGatewayError(
+          `Falha ao solicitar estorno no Asaas: ${err.message}`,
+          err.statusCode,
+          err.errors?.[0]?.code || 'ASAAS_REFUND_ERROR',
+          err.errors
+        );
+      }
+      throw new PaymentGatewayError(
+        err?.message || 'Erro inesperado ao solicitar estorno',
+        undefined,
+        'AMBIGUOUS_REFUND_ERROR'
+      );
+    }
+  }
+
+  async listPaymentRefunds(paymentId: string): Promise<PaymentRefundResult[]> {
+    try {
+      const refunds = await asaasClient.listPaymentRefunds(paymentId);
+      return refunds.map((refund) => ({
+        status: refund.status,
+        value: refund.value,
+        description: refund.description,
+        createdAt: refund.dateCreated ? new Date(refund.dateCreated) : undefined,
+        effectiveAt: refund.effectiveDate ? new Date(refund.effectiveDate) : undefined,
+      }));
+    } catch (err: any) {
+      if (err instanceof AsaasClientError) {
+        throw new PaymentGatewayError(
+          `Falha ao consultar estornos no Asaas: ${err.message}`,
+          err.statusCode,
+          'ASAAS_REFUND_QUERY_ERROR',
+          err.errors
+        );
+      }
+      throw new PaymentGatewayError(
+        err?.message || 'Erro inesperado ao consultar estornos',
+        undefined,
+        'AMBIGUOUS_REFUND_QUERY_ERROR'
       );
     }
   }

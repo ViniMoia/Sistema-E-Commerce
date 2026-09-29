@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import prisma from '@/lib/prisma'
+import { subscribeToPrismaQueries } from '@/lib/prisma'
 
 export interface QueryReport {
   queryCount: number
@@ -17,13 +17,11 @@ export function startQueryProfiler(): { stop(): QueryReport } {
     })
   }
 
-  // @ts-ignore - Prisma types require log configuration to allow this
-  prisma.$on('query', queryHandler)
+  const unsubscribe = subscribeToPrismaQueries(queryHandler)
 
   return {
     stop(): QueryReport {
-      // @ts-ignore
-      prisma.$off('query', queryHandler)
+      unsubscribe()
 
       const totalDuration = queries.reduce((sum, q) => sum + q.duration, 0)
 

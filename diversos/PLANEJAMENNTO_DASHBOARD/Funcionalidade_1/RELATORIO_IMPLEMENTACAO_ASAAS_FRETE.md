@@ -150,7 +150,7 @@ ASAAS_API_URL="https://sandbox.asaas.com/api/v3"
 # ASAAS_API_URL="https://api.asaas.com/v3" # Produção
 
 # Chave de API gerada no painel do Asaas (Menu Integrações -> Chaves de API)
-ASAAS_API_KEY="$aact_YTU5YTE0M2M6N2Nm..."
+ASAAS_API_KEY="configure-no-secret-manager"
 
 # Token de autenticação configurado na URL de Webhook no painel do Asaas
 ASAAS_WEBHOOK_TOKEN="seu-token-secreto-definido-no-asaas"

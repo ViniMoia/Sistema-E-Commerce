@@ -79,7 +79,7 @@ describe("Segurança HTTP, CSP e Observabilidade (Fase 5 - ACT-P3-01 e ACT-P3-02
       expect(log.error?.message).toBe("Falha no banco");
       expect(log.context?.action).toBe("TEST_ACTION");
       expect(log.context?.tenantId).toBe("loja-123");
-      expect(log.context?.document).toBe("529.***.***-25");
+      expect(log.context?.document).toBe("[PII_REDACTED]");
     });
   });
 });

@@ -12,7 +12,7 @@ Este diretório contém a documentação técnica oficial e estruturada do proje
    * **Modelo de Dados Relacional**: Tabelas do Prisma, chaves primárias, índices e relacionamentos.
    * **Multi-Tenancy**: Resolução de domínios, isolamento de dados e regras de tenant.
    * **Módulos de Domínio**: Checkout, Asaas (PIX, Cartão, Boleto), Fidelidade, Frete e Catálogo de Produtos.
-   * **Credenciais de Teste**: Dados de acesso da conta de administrador homologada para auditoria.
+   * **Bootstrap local**: o procedimento exige variáveis de ambiente efêmeras; credenciais não são documentadas nem versionadas.
 
 2. [GUIA_AUDITORIA_E_VULNERABILIDADES_CODEX.md](file:///c:/Diversos/TI/Trabalhos/2026/Sistemas/Projeto/DOCUMENTACAO_TECINICA/GUIA_AUDITORIA_E_VULNERABILIDADES_CODEX.md)
    * **Instruções para o Codex**: Diretrizes de execução, comandos de teste e checagem de tipos estáticos.
@@ -28,15 +28,13 @@ Este diretório contém a documentação técnica oficial e estruturada do proje
 # 1. Checagem estática de tipos TypeScript (deve retornar 0 erros)
 npx tsc --noEmit
 
-# 2. Execução da suíte de testes unitários (49 suítes, 364 testes)
+# 2. Execução da suíte de testes unitários
 npm run test:unit
 
 # 3. Inicialização do servidor em modo de desenvolvimento
 npm run dev
 ```
 
-## Credenciais do Administrador de Testes
-* **URL**: `/login`
-* **E-mail**: `dev.admin@continental.com.br`
-* **Senha**: `DevAdmin@2026#Continental`
-* **Role**: `ADMIN`
+## Bootstrap administrativo local
+
+O script `scripts/create_test_admin.ts` é bloqueado em produção, não contém valores padrão e nunca altera uma conta existente. A execução local exige confirmação explícita e as variáveis `BOOTSTRAP_LOJA_ID`, `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWORD`. Não registre esses valores em arquivos, histórico de shell ou logs.

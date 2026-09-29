@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 describe('Mecanismo de Rate Limiting e Proteção de Borda (SEC-005)', () => {
+  afterEach(() => vi.unstubAllEnvs())
   it('deve permitir requisições dentro do limite configurado', () => {
     const key = `test_user_${Date.now()}`
     const res1 = rateLimit(key, 3, 5000)
@@ -36,5 +37,31 @@ describe('Mecanismo de Rate Limiting e Proteção de Borda (SEC-005)', () => {
     })
     const ip = getClientIp(req)
     expect(ip).toBe('203.0.113.195')
+  })
+
+  it('ignora todos os headers forjáveis em produção sem proxy explicitamente confiável', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('TRUSTED_PROXY_PROVIDER', '')
+    const req = new Request('https://loja.exemplo.test/api/auth/login', {
+      headers: {
+        'cf-connecting-ip': '198.51.100.1',
+        'x-vercel-forwarded-for': '198.51.100.2',
+        'x-forwarded-for': '198.51.100.3',
+        'x-real-ip': '198.51.100.4',
+      },
+    })
+    expect(getClientIp(req)).toBe('untrusted-client')
+  })
+
+  it('aceita somente o header do provedor declarado em produção', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('TRUSTED_PROXY_PROVIDER', 'cloudflare')
+    const req = new Request('https://loja.exemplo.test/api/auth/login', {
+      headers: {
+        'cf-connecting-ip': '198.51.100.10',
+        'x-vercel-forwarded-for': '198.51.100.20',
+      },
+    })
+    expect(getClientIp(req)).toBe('198.51.100.10')
   })
 })

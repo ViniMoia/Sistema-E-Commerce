@@ -65,6 +65,7 @@ midia/
 /app/generated/prisma
 
 # Tooling and daemon caches
+/.tmp/
 .claude/
 .claude-flow/
 .swarm/

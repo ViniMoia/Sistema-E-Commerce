@@ -1,77 +1,37 @@
-import { describe, it, expect } from "vitest";
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, it, expect, vi } from 'vitest'
+import { Header } from '@/components/Header'
+import { ConditionalHeader } from '@/components/ConditionalHeader'
+import { getCurrentUser } from '@/lib/session'
+import { usePathname } from 'next/navigation'
 
-describe("Continental Header Specification Suite", () => {
-  it("validates button order: Cart -> Login -> Registro (left-to-right)", () => {
-    const buttonOrder = ["cart", "login", "registro"];
-    expect(buttonOrder[0]).toBe("cart");
-    expect(buttonOrder[1]).toBe("login");
-    expect(buttonOrder[2]).toBe("registro");
-  });
+vi.mock('@/lib/session', () => ({ getCurrentUser: vi.fn() }))
+vi.mock('next/navigation', () => ({ usePathname: vi.fn() }))
+vi.mock('@/components/cart/CartButton', () => ({ CartButton: () => React.createElement('a', { href: '/cart' }, 'Cart') }))
+vi.mock('@/components/MobileMenu', () => ({ MobileMenu: () => null }))
+vi.mock('@/components/brand/ContinentalLogo', () => ({ ContinentalLogo: () => null }))
 
-  it("validates unboxed button contract (no capsule/pill wrapper)", () => {
-    const unboxedClasses = "relative inline-flex items-center justify-center p-1.5";
-    expect(unboxedClasses).not.toContain("rounded-full border border-white/10");
-    expect(unboxedClasses).not.toContain("bg-black/40");
-  });
-
-  it("validates nav-trace-link micro-interaction styling contract with white trace", () => {
-    const linkClass = "nav-trace-link text-xs sm:text-sm font-semibold uppercase tracking-[0.10em]";
-    expect(linkClass).toContain("nav-trace-link");
-    expect(linkClass).toContain("uppercase");
-    expect(linkClass).toContain("tracking-[0.10em]");
-
-    // Trace color is white, matching the letters of the words
-    const traceColor = "#FFFFFF";
-    const textColor = "#FFFFFF";
-    expect(traceColor).toBe(textColor);
-  });
-
-  it("validates Continental brand logo is configured as symbol-only variant in header", () => {
-    const logoConfig = {
-      variant: "symbol",
-      symbolSrc: "/brand/continental-symbol.png",
-      squareFaviconSrc: "/brand/continental-symbol-square.png",
-    };
-
-    expect(logoConfig.variant).toBe("symbol");
-    expect(logoConfig.symbolSrc).toBe("/brand/continental-symbol.png");
-  });
-
-  it("validates Continental brand logo tokens according to Brand Book", () => {
-    const brandTokens = {
-      yellow: "#F0B40E",
-      blue: "#0030E0",
-      navy: "#010E31",
-      slate: "#0F172A",
-      fontFamily: "Montserrat, sans-serif",
-      displayWeight: 800,
-      trackingWide: "+0.16em",
-      catalogBg: "#000000",
-    };
-
-    expect(brandTokens.yellow).toBe("#F0B40E");
-    expect(brandTokens.blue).toBe("#0030E0");
-    expect(brandTokens.catalogBg).toBe("#000000");
-    expect(brandTokens.displayWeight).toBe(800);
-  });
-
-  it("validates ConditionalHeader reveal behavior contract", () => {
-    const isHomePage = true;
-    let isRevealed = !isHomePage;
-
-    // Initially hidden on home
-    expect(isRevealed).toBe(false);
-
-    // When hero-car-illuminated event fires
-    const onHeroReveal = () => {
-      isRevealed = true;
-    };
-    onHeroReveal();
-    expect(isRevealed).toBe(true);
-
-    // On non-home page, revealed immediately
-    const isInternalPage = false;
-    const internalRevealed = !isInternalPage;
-    expect(internalRevealed).toBe(true);
-  });
-});
+describe('Rendered header navigation', () => {
+  it('renders cart, login and registration in order for guests', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null)
+    const html = renderToStaticMarkup(await Header())
+    const nav = html.slice(html.indexOf('<nav'))
+    expect(nav.indexOf('href="/cart"')).toBeLessThan(nav.indexOf('href="/login"'))
+    expect(nav.indexOf('href="/login"')).toBeLessThan(nav.indexOf('href="/register"'))
+    expect(nav).not.toContain('href="/admin"')
+  })
+  it.each(['CUSTOMER', 'ADMIN'])('renders authorized navigation for %s', async role => {
+    vi.mocked(getCurrentUser).mockResolvedValue({ id: 'fixture', name: 'Fixture', role } as Awaited<ReturnType<typeof getCurrentUser>>)
+    const html = renderToStaticMarkup(await Header())
+    expect(html).toContain('href="/profile"')
+    expect(html).toContain('action="/api/auth/logout"')
+    expect(html.includes('href="/admin"')).toBe(role === 'ADMIN')
+    expect(html).not.toContain('href="/login"')
+  })
+  it.each([['/', true], ['/cart', true], ['/admin/orders', false]])('renders header visibility for %s', (path, visible) => {
+    vi.mocked(usePathname).mockReturnValue(path as string)
+    const html = renderToStaticMarkup(React.createElement(ConditionalHeader, null, 'HEADER_FIXTURE'))
+    expect(html.includes('HEADER_FIXTURE')).toBe(visible)
+  })
+})

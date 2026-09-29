@@ -6,6 +6,9 @@ import type {
   AsaasCustomerListResponse,
   AsaasCreateCustomerPayload,
   AsaasBoletoIdentificationFieldResponse,
+  AsaasPaymentListResponse,
+  AsaasPaymentRefundListResponse,
+  AsaasPaymentRefundResponse,
 } from '@/types/asaas.types';
 
 export class AsaasClientError extends Error {
@@ -216,6 +219,61 @@ export class AsaasClient {
     }
 
     return (await res.json()) as AsaasPaymentResponse;
+  }
+
+  /** Busca cobranças por externalReference para reconciliar respostas ambíguas. */
+  async findPaymentsByExternalReference(
+    paymentReference: string
+  ): Promise<AsaasPaymentResponse[]> {
+    const url = `${this.baseUrl}/payments?externalReference=${encodeURIComponent(paymentReference)}&limit=10&offset=0`;
+    const res = await this.request(url, { method: 'GET' });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new AsaasClientError(
+        `Falha ao buscar cobrança por referência: ${res.statusText}`,
+        res.status,
+        errorData.errors
+      );
+    }
+
+    const data = (await res.json()) as AsaasPaymentListResponse;
+    return Array.isArray(data.data) ? data.data : [];
+  }
+
+  async refundPayment(
+    paymentId: string,
+    payload: { value: number; description: string }
+  ): Promise<AsaasPaymentResponse> {
+    const url = `${this.baseUrl}/payments/${encodeURIComponent(paymentId)}/refund`;
+    const res = await this.request(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new AsaasClientError(
+        `Falha ao solicitar estorno no Asaas: ${res.statusText}`,
+        res.status,
+        errorData.errors
+      );
+    }
+    return (await res.json()) as AsaasPaymentResponse;
+  }
+
+  async listPaymentRefunds(paymentId: string): Promise<AsaasPaymentRefundResponse[]> {
+    const url = `${this.baseUrl}/payments/${encodeURIComponent(paymentId)}/refunds`;
+    const res = await this.request(url, { method: 'GET' });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new AsaasClientError(
+        `Falha ao consultar estornos no Asaas: ${res.statusText}`,
+        res.status,
+        errorData.errors
+      );
+    }
+    const data = (await res.json()) as AsaasPaymentRefundListResponse;
+    return Array.isArray(data.data) ? data.data : [];
   }
 
   /**

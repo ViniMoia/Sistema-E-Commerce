@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import prisma from "@/lib/prisma";
+import { getLojaSettings } from "@/services/loja.service";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,13 +9,11 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!user || !user.lojaID) {
     return {
       title: "Painel Admin",
+      robots: { index: false, follow: false },
     };
   }
 
-  const loja = await prisma.loja.findUnique({
-    where: { id: user.lojaID },
-    select: { name: true },
-  });
+  const loja = await getLojaSettings(user.lojaID);
 
   const name = loja?.name || "E-Commerce";
 
@@ -24,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | Admin — ${name}`,
       default: `Painel Admin | ${name}`,
     },
+    robots: { index: false, follow: false },
   };
 }
 
@@ -40,10 +39,7 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const loja = await prisma.loja.findUnique({
-    where: { id: user.lojaID },
-    select: { name: true },
-  });
+  const loja = await getLojaSettings(user.lojaID);
   const lojaName = loja?.name || "Admin";
 
   const initials = user.name

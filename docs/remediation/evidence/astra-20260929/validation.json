@@ -1,0 +1,107 @@
+{
+  "date": "2026-09-29",
+  "runtime": {
+    "node": "22.22.1",
+    "npm": "10.9.4",
+    "next": "16.3.5",
+    "postgres": "16"
+  },
+  "isolation": {
+    "databasePort": 55439,
+    "databaseDisposable": true,
+    "databaseStorage": "tmpfs",
+    "externalIntegrationCalls": false,
+    "prismaCliDotenvNotice": true,
+    "databaseUrlsExplicitlyOverridden": true,
+    "buildEnvFilesAbsent": true,
+    "applicationDatabaseMigrated": false,
+    "deployed": false
+  },
+  "checks": {
+    "unit": {
+      "files": 93,
+      "passed": 622,
+      "failed": 0
+    },
+    "integration": {
+      "files": 11,
+      "tests": 68,
+      "passed": 68,
+      "exitCode": 0,
+      "start": "2026-09-29T13:59:11-03:00",
+      "durationSeconds": 17.29,
+      "measurements": {
+        "customersMs": 11,
+        "searchMs": 8,
+        "cursorPagesMs": [
+          5,
+          5,
+          5,
+          3,
+          4
+        ],
+        "metrics100Ms": 13,
+        "metrics1000Ms": 10,
+        "ordersMs": 10
+      }
+    },
+    "types": {
+      "exitCode": 0
+    },
+    "lint": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 15
+    },
+    "environment": {
+      "exitCode": 0,
+      "names": 38
+    },
+    "secretScanner": {
+      "exitCode": 0
+    },
+    "migrations": {
+      "applied": 29,
+      "diff": "No difference detected",
+      "negativePreflight": {
+        "previousMigrations": 28,
+        "rejected": true,
+        "rowsPreserved": 1,
+        "newTriggers": 0
+      }
+    },
+    "build": {
+      "exitCode": 0,
+      "pages": 51,
+      "bundler": "webpack"
+    },
+    "shutdown": {
+      "status": 200,
+      "exitCode": 143,
+      "refusedAfterExit": true,
+      "durationMs": 7738,
+      "scope": "HTTP drain in local Linux image with current runtime/build mounted read-only; network disabled"
+    }
+  },
+  "publicationApproved": false,
+  "sourceCounts": {
+    "C": 133,
+    "P": 48,
+    "V": 11,
+    "R": 0,
+    "U": 6
+  },
+  "groupCounts": {
+    "C": 15,
+    "P": 19,
+    "V": 1,
+    "R": 0,
+    "U": 1
+  },
+  "cleanup": {
+    "ownedChromeClosed": true,
+    "ownedServerStopped": true,
+    "disposableContainerStoppedAndAutoRemoved": true,
+    "applicationDatabaseUntouched": true
+  }
+}

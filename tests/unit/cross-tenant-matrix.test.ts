@@ -19,6 +19,7 @@ vi.mock('@/lib/prisma', () => {
       order: {
         findUnique: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
       user: {
         findFirst: vi.fn(),
@@ -34,6 +35,9 @@ vi.mock('@/lib/prisma', () => {
       auditLog: {
         create: vi.fn(),
       },
+      orderStatusHistory: {
+        create: vi.fn(),
+      },
     },
   }
 })
@@ -41,6 +45,7 @@ vi.mock('@/lib/prisma', () => {
 describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 })
     tenantCache.clear()
   })
 
@@ -57,7 +62,7 @@ describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
       } as any)
 
       await expect(
-        updateProduct('prod-loja-a-1', { name: 'Hack Name' }, lojaB)
+        updateProduct('prod-loja-a-1', { name: 'Hack Name' }, lojaB, 'admin-b')
       ).rejects.toThrow('PRODUCT_NOT_FOUND')
     })
 
@@ -68,7 +73,7 @@ describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
       } as any)
 
       await expect(
-        deleteProduct('prod-loja-a-2', lojaB)
+        deleteProduct('prod-loja-a-2', lojaB, 'admin-b')
       ).rejects.toThrow('PRODUCT_NOT_FOUND')
     })
 
@@ -117,6 +122,7 @@ describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
       const result = await updateFreightRule({
         id: 'freight-rule-1',
         lojaID: lojaB,
+        actorId: 'admin-b',
         value: 10.00,
       })
 
@@ -130,7 +136,7 @@ describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
       } as any)
 
       const { deleteFreightRule } = await import('@/services/freight.service')
-      const result = await deleteFreightRule('freight-rule-1', lojaB)
+      const result = await deleteFreightRule('freight-rule-1', lojaB, 'admin-b')
 
       expect(result).toBeNull()
     })
@@ -169,7 +175,7 @@ describe('Matriz de Prontidão e Isolamento Cross-Tenant (Fase 6)', () => {
   describe('3. Invariantes Monetárias e Inviolabilidade Decimal (DB-003, SEC-002)', () => {
     it('Cenário 3.1: Preços negativos são rejeitados na camada de serviço de produto', async () => {
       await expect(
-        updateProduct('prod-1', { price: -50 }, 'loja-a')
+        updateProduct('prod-1', { price: -50 }, 'loja-a', 'admin-a')
       ).rejects.toThrow()
     })
   })

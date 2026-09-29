@@ -3,6 +3,7 @@ import { RegisterForm } from "@/components/forms/RegisterForm";
 export const metadata = {
   title: "Registro | Continental Produtos Estéticos",
   description: "Crie sua conta para acessar ofertas exclusivas.",
+  robots: { index: false, follow: true },
 };
 
 export default function RegisterPage() {

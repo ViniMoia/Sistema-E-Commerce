@@ -48,6 +48,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
     description: '',
   });
   const [isAdjusting, setIsAdjusting] = useState(false);
+  const adjustmentIntentRef = React.useRef<{ fingerprint: string; key: string } | null>(null);
 
   // Salvar Configuração Rápida
   const handleSaveConfig = async (e: React.FormEvent) => {
@@ -96,6 +97,20 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
       return;
     }
 
+    const userID = adjustState.userID.trim();
+    const points = Number(adjustState.points);
+    const description = adjustState.description.trim();
+    const fingerprint = JSON.stringify({ userID, points, description });
+    if (adjustmentIntentRef.current?.fingerprint !== fingerprint) {
+      adjustmentIntentRef.current = { fingerprint, key: crypto.randomUUID() };
+    }
+
+    const equivalent = Math.abs(points) * loyalty.settings.loyaltyPointValue;
+    const confirmed = window.confirm(
+      `Confirme o ajuste irreversível no ledger:\n\nCliente: ${userID}\nPontos: ${points > 0 ? '+' : ''}${points}\nValor equivalente: ${formatBRL(equivalent)}\nMotivo: ${description}`
+    );
+    if (!confirmed) return;
+
     setIsAdjusting(true);
 
     try {
@@ -103,9 +118,10 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userID: adjustState.userID.trim(),
-          points: Number(adjustState.points),
-          description: adjustState.description.trim(),
+          userID,
+          points,
+          description,
+          idempotencyKey: adjustmentIntentRef.current.key,
         }),
       });
 
@@ -115,6 +131,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
           `Ajuste de ${adjustState.points > 0 ? '+' : ''}${adjustState.points} pontos realizado!`
         );
         setAdjustState({ userID: '', points: 100, description: '' });
+        adjustmentIntentRef.current = null;
       } else {
         toast.error(json.error || 'Erro ao processar ajuste de pontos.');
       }

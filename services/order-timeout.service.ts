@@ -1,6 +1,8 @@
 import prisma from '@/lib/prisma';
 import { updateOrderStatus } from '@/services/order.service';
 import { logger } from '@/lib/logger';
+import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
+import type { PaymentGateway } from '@/types/payment-gateway.types';
 
 export const DEFAULT_ASAAS_TIMEOUT_MINUTES = 60;
 export const DEFAULT_MANUAL_TIMEOUT_HOURS = 24;
@@ -12,6 +14,7 @@ export interface ProcessExpiredOrdersOptions {
   asaasTimeoutMinutes?: number;
   manualTimeoutHours?: number;
   now?: Date;
+  paymentGateway?: PaymentGateway;
 }
 
 export interface OrderTimeoutSummary {
@@ -41,6 +44,7 @@ export async function processExpiredOrders(
   const asaasTimeoutMinutes = options?.asaasTimeoutMinutes ?? DEFAULT_ASAAS_TIMEOUT_MINUTES;
   const manualTimeoutHours = options?.manualTimeoutHours ?? DEFAULT_MANUAL_TIMEOUT_HOURS;
   const batchSize = Math.min(options?.batchSize ?? DEFAULT_BATCH_SIZE, 100);
+  const paymentGateway = options?.paymentGateway ?? asaasPaymentAdapter;
 
   const asaasCutoff = new Date(referenceDate.getTime() - asaasTimeoutMinutes * 60 * 1000);
   const manualCutoff = new Date(referenceDate.getTime() - manualTimeoutHours * 60 * 60 * 1000);
@@ -57,10 +61,14 @@ export async function processExpiredOrders(
         OR: [
           {
             asaasPaymentId: { not: null },
+            paymentWorkflowStatus: {
+              in: ['AWAITING_PAYMENT', 'RECONCILIATION_REQUIRED', 'PROCESSING'],
+            },
             createdAt: { lte: asaasCutoff },
           },
           {
             asaasPaymentId: null,
+            paymentMethod: 'WHATSAPP_PIX',
             createdAt: { lte: manualCutoff },
           },
         ],
@@ -73,6 +81,8 @@ export async function processExpiredOrders(
         lojaID: true,
         status: true,
         asaasPaymentId: true,
+        paymentMethod: true,
+        paymentWorkflowStatus: true,
         createdAt: true,
       },
     });
@@ -80,11 +90,57 @@ export async function processExpiredOrders(
     for (const order of candidateOrders) {
       const isAsaas = order.asaasPaymentId !== null;
       const timeoutLabel = isAsaas
-        ? `${asaasTimeoutMinutes}m (Asaas PIX)`
+        ? `${asaasTimeoutMinutes}m (Gateway Asaas)`
         : `${manualTimeoutHours}h (WhatsApp PIX Manual)`;
-      const reason = `Cancelamento automático por timeout de pagamento PIX (${timeoutLabel})`;
+      const reason = `Cancelamento automático por timeout de pagamento (${timeoutLabel})`;
+      let gatewayPaymentStatus: string | null = null;
 
       try {
+        if (isAsaas) {
+          const payment = await paymentGateway.getPaymentStatus(order.asaasPaymentId!);
+          gatewayPaymentStatus = payment.status;
+          if (payment.status === 'RECEIVED' || payment.status === 'CONFIRMED') {
+            const paidResult = await updateOrderStatus({
+              orderId: order.id,
+              newStatus: 'PAID',
+              performedById: 'SYSTEM_CRON_RECONCILIATION',
+              lojaID: order.lojaID,
+              paidAt: payment.paidAt ?? referenceDate,
+              reason: `Pagamento confirmado durante reconciliação (${payment.status}).`,
+            });
+            if (paidResult.success === false) throw new Error(paidResult.error);
+            await prisma.order.update({
+              where: { id: order.id },
+              data: {
+                paymentWorkflowStatus: 'CONFIRMED',
+                paymentLastError: null,
+                paymentReconciledAt: referenceDate,
+              },
+            });
+            continue;
+          }
+
+          if (!['OVERDUE', 'REFUNDED'].includes(payment.status)) {
+            if (order.paymentWorkflowStatus !== 'AWAITING_PAYMENT') {
+              await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                  paymentWorkflowStatus: 'AWAITING_PAYMENT',
+                  paymentLastError: null,
+                  paymentReconciledAt: referenceDate,
+                },
+              });
+            }
+            logger.info('Cobrança ainda ativa no gateway; pedido preservado', {
+              action: 'ORDER_TIMEOUT_PAYMENT_STILL_ACTIVE',
+              orderId: order.id,
+              asaasPaymentId: order.asaasPaymentId,
+              paymentStatus: payment.status,
+            });
+            continue;
+          }
+        }
+
         const result = await updateOrderStatus({
           orderId: order.id,
           newStatus: 'CANCELLED',
@@ -94,6 +150,15 @@ export async function processExpiredOrders(
         });
 
         if (result.success) {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              paymentWorkflowStatus:
+                gatewayPaymentStatus === 'REFUNDED' ? 'REFUNDED' : 'DECLINED',
+              paymentLastError: null,
+              paymentReconciledAt: referenceDate,
+            },
+          });
           cancelledOrderIds.push(order.id);
           logger.info('Pedido cancelado por timeout de pagamento com sucesso', {
             action: 'ORDER_TIMEOUT_CANCELLED',

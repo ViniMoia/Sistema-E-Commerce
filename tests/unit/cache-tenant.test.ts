@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { tenantCache, buildTenantCacheKey } from '@/lib/cache'
 
 describe('Cache Distribuído Tenant-Aware (SCL-003)', () => {
@@ -43,5 +43,41 @@ describe('Cache Distribuído Tenant-Aware (SCL-003)', () => {
     tenantCache.set('loja-1', 'promo', 'banner', { active: true }, -1000) // Já expirado
     const expired = tenantCache.get(buildTenantCacheKey('loja-1', 'promo', 'banner'))
     expect(expired).toBeNull()
+  })
+
+  it('coalesce misses concorrentes da mesma chave e tenant', async () => {
+    const factory = vi.fn(async () => ({ value: 'fresh' }))
+
+    const results = await Promise.all(
+      Array.from({ length: 100 }, () =>
+        tenantCache.getOrSet('loja-1', 'settings', 'coalesced', factory)
+      )
+    )
+
+    expect(factory).toHaveBeenCalledTimes(1)
+    expect(results.every(result => result.value === 'fresh')).toBe(true)
+  })
+
+  it('remove uma promise com falha para permitir tentativa posterior', async () => {
+    const factory = vi.fn()
+      .mockRejectedValueOnce(new Error('falha transitória'))
+      .mockResolvedValueOnce({ recovered: true })
+
+    await expect(
+      tenantCache.getOrSet('loja-1', 'settings', 'retry', factory)
+    ).rejects.toThrow('falha transitória')
+    await expect(
+      tenantCache.getOrSet('loja-1', 'settings', 'retry', factory)
+    ).resolves.toEqual({ recovered: true })
+    expect(factory).toHaveBeenCalledTimes(2)
+  })
+
+  it('limita o cache e remove as entradas menos recentes', () => {
+    for (let index = 0; index < 1001; index += 1) {
+      tenantCache.set('loja-1', 'bounded', String(index), index)
+    }
+
+    expect(tenantCache.get(buildTenantCacheKey('loja-1', 'bounded', '0'))).toBeNull()
+    expect(tenantCache.get(buildTenantCacheKey('loja-1', 'bounded', '1000'))).toBe(1000)
   })
 })

@@ -14,10 +14,10 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").trim(),
-  email: z.string().email("E-mail inválido").trim().toLowerCase(),
+  name: z.string().trim().max(150).min(2, "Nome deve ter pelo menos 2 caracteres").trim(),
+  email: z.string().max(255).email("E-mail inválido").trim().toLowerCase(),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
-  phone: z.string().optional(),
+  phone: z.string().max(20).optional(),
   cpfCnpj: z
     .string()
     .optional()

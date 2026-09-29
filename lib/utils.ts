@@ -26,6 +26,24 @@ export function getOptimizedImageUrl(url: string, width: number, height?: number
   return url;
 }
 
+export function canUseNextImageOptimization(url: string): boolean {
+  if (url.startsWith("/")) return true;
+
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return (
+      hostname.endsWith(".supabase.co") ||
+      hostname === "via.placeholder.com" ||
+      hostname === "images.unsplash.com" ||
+      hostname === "api.qrserver.com" ||
+      hostname.endsWith(".mitiendanube.com") ||
+      hostname === "res.cloudinary.com"
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Insere caracteres de quebra suave (\u200B - zero-width space) após delimitadores como '/'
  * para permitir que o navegador quebre linhas em termos compostos longos sem estourar o container.

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextResponse } from "next/server";
 import { getLojaFromHeaders } from "@/lib/tenant";
 
@@ -20,7 +21,7 @@ export async function GET() {
       secondaryColor: loja.secondaryColor,
     });
   } catch (error) {
-    console.error("[LOJA_ACTIVE_GET]", error);
+    logger.error("[LOJA_ACTIVE_GET]", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

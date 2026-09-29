@@ -1,0 +1,18 @@
+
+const fs=require('fs');const delegate=globalThis.fetch;let paymentCounter=0;const payments=new Map();
+globalThis.fetch=async(input,options={})=>{
+ const u=new URL(typeof input==='string'?input:input.url||input);
+ if(u.hostname==='audit.invalid' && u.pathname.startsWith('/v3/')){
+  const method=options.method||'GET';const body=options.body?JSON.parse(options.body):{};
+  fs.appendFileSync(__dirname+'/fake-provider-calls.log',method+' '+u.pathname+'\n');
+  let data;
+  if(u.pathname==='/v3/customers')data=method==='GET'?{data:[]}:{id:'cus_fixture'};
+  else if(u.pathname==='/v3/payments'&&method==='POST'){data={...body,id:'pay_fixture_'+process.pid+'_'+(++paymentCounter),status:'PENDING'};payments.set(data.id,data)}
+  else if(u.pathname.endsWith('/pixQrCode'))data={encodedImage:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n1sAAAAASUVORK5CYII=',payload:'PIX-FIXTURE-NOT-PAYABLE',expirationDate:'2026-09-30 23:59:59'};
+  else if(u.pathname==='/v3/payments')data={data:[...payments.values()].filter(p=>p.externalReference===u.searchParams.get('externalReference'))};
+  else data=payments.get(u.pathname.split('/').pop())||{};
+  return Response.json(data);
+ }
+ if(u.hostname==='api.resend.com'){fs.appendFileSync(__dirname+'/fake-provider-calls.log','FAKE_EMAIL\n');return Response.json({id:'email-fixture'})}
+ return delegate(input,options);
+};

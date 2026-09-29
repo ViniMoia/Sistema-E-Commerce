@@ -41,7 +41,6 @@ export default function AdminSettingsPage() {
     originComplement: string | null;
     enableCorreios: boolean;
     correiosContractCode: string | null;
-    correiosPassword: string | null;
     enablePickup: boolean;
     enableNoFreight: boolean;
     additionalDays: number;
@@ -56,7 +55,7 @@ export default function AdminSettingsPage() {
     loadUserAndSettings();
   }, []);
 
-  const loadUserAndSettings = async () => {
+  async function loadUserAndSettings() {
     try {
       const res = await fetch('/api/loja/settings');
       if (!res.ok) {
@@ -91,7 +90,6 @@ export default function AdminSettingsPage() {
           originComplement: null,
           enableCorreios: true,
           correiosContractCode: null,
-          correiosPassword: null,
           enablePickup: true,
           enableNoFreight: true,
           additionalDays: 0,
@@ -167,7 +165,6 @@ export default function AdminSettingsPage() {
           originNumber: settings.originNumber === '' ? null : settings.originNumber,
           originComplement: settings.originComplement === '' ? null : settings.originComplement,
           correiosContractCode: settings.correiosContractCode === '' ? null : settings.correiosContractCode,
-          correiosPassword: settings.correiosPassword === '' ? null : settings.correiosPassword,
           additionalDays: Number(settings.additionalDays) || 0,
         }),
       });
@@ -281,10 +278,10 @@ export default function AdminSettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                <label htmlFor="settings-pixKey" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                   Chave PIX
                 </label>
-                <input
+                <input id="settings-pixKey"
                   type="text"
                   value={settings.pixKey ?? ''}
                   onChange={(e) => setSettings((p) => (p ? { ...p, pixKey: e.target.value } : p))}
@@ -294,10 +291,10 @@ export default function AdminSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                <label htmlFor="settings-pixKeyType" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                   Tipo de Chave PIX
                 </label>
-                <select
+                <select id="settings-pixKeyType"
                   value={settings.pixKeyType ?? ''}
                   onChange={(e) => setSettings((p) => (p ? { ...p, pixKeyType: e.target.value } : p))}
                   className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B] text-xs font-mono text-white focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold/30 transition-all cursor-pointer"
@@ -331,10 +328,10 @@ export default function AdminSettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                <label htmlFor="settings-whatsappNumber" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                   WhatsApp com DDD
                 </label>
-                <input
+                <input id="settings-whatsappNumber"
                   type="text"
                   value={settings.whatsappNumber ?? ''}
                   onChange={(e) => setSettings((p) => (p ? { ...p, whatsappNumber: e.target.value } : p))}
@@ -370,11 +367,11 @@ export default function AdminSettingsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
+                  <label htmlFor="settings-originCep" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">
                     <span>CEP de Saída</span>
                     {cepLoading && <Loader2 className="w-3 h-3 animate-spin text-catalog-gold" />}
                   </label>
-                  <input
+                  <input id="settings-originCep"
                     type="text"
                     value={settings.originCep ?? ''}
                     onChange={(e) => handleCepOriginChange(e.target.value)}
@@ -385,10 +382,10 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                  <label htmlFor="settings-originCity" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                     Cidade
                   </label>
-                  <input
+                  <input id="settings-originCity"
                     type="text"
                     value={settings.originCity ?? ''}
                     onChange={(e) => setSettings((p) => (p ? { ...p, originCity: e.target.value } : p))}
@@ -398,10 +395,10 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                  <label htmlFor="settings-originState" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                     Estado (UF)
                   </label>
-                  <input
+                  <input id="settings-originState"
                     type="text"
                     value={settings.originState ?? ''}
                     onChange={(e) => setSettings((p) => (p ? { ...p, originState: e.target.value.toUpperCase() } : p))}
@@ -414,10 +411,10 @@ export default function AdminSettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2 space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                  <label htmlFor="settings-originStreet" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                     Rua / Logradouro
                   </label>
-                  <input
+                  <input id="settings-originStreet"
                     type="text"
                     value={settings.originStreet ?? ''}
                     onChange={(e) => setSettings((p) => (p ? { ...p, originStreet: e.target.value } : p))}
@@ -427,10 +424,10 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                  <label htmlFor="settings-originNumber" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                     Número
                   </label>
-                  <input
+                  <input id="settings-originNumber"
                     type="text"
                     value={settings.originNumber ?? ''}
                     onChange={(e) => setSettings((p) => (p ? { ...p, originNumber: e.target.value } : p))}
@@ -462,10 +459,8 @@ export default function AdminSettingsPage() {
               {/* Correios */}
               <div className="p-4 bg-[#050B14] rounded-xl border border-catalog-gold/20 space-y-2 hover:border-catalog-gold/40 transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs font-mono text-white uppercase tracking-wider">
-                    Correios (SEDEX & PAC)
-                  </span>
-                  <input
+                  <label htmlFor="settings-enableCorreios" className="font-bold text-xs font-mono text-white uppercase tracking-wider">Correios (SEDEX & PAC)</label>
+                  <input id="settings-enableCorreios"
                     type="checkbox"
                     checked={settings.enableCorreios}
                     onChange={(e) => setSettings((p) => (p ? { ...p, enableCorreios: e.target.checked } : p))}
@@ -480,10 +475,8 @@ export default function AdminSettingsPage() {
               {/* Retirada na Loja */}
               <div className="p-4 bg-[#050B14] rounded-xl border border-catalog-gold/20 space-y-2 hover:border-catalog-gold/40 transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs font-mono text-white uppercase tracking-wider">
-                    Retirada na Loja Física
-                  </span>
-                  <input
+                  <label htmlFor="settings-enablePickup" className="font-bold text-xs font-mono text-white uppercase tracking-wider">Retirada na Loja Física</label>
+                  <input id="settings-enablePickup"
                     type="checkbox"
                     checked={settings.enablePickup}
                     onChange={(e) => setSettings((p) => (p ? { ...p, enablePickup: e.target.checked } : p))}
@@ -498,10 +491,8 @@ export default function AdminSettingsPage() {
               {/* Frete a Combinar */}
               <div className="p-4 bg-[#050B14] rounded-xl border border-catalog-gold/20 space-y-2 hover:border-catalog-gold/40 transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs font-mono text-white uppercase tracking-wider">
-                    Frete a Combinar (WhatsApp)
-                  </span>
-                  <input
+                  <label htmlFor="settings-enableNoFreight" className="font-bold text-xs font-mono text-white uppercase tracking-wider">Frete a Combinar (WhatsApp)</label>
+                  <input id="settings-enableNoFreight"
                     type="checkbox"
                     checked={settings.enableNoFreight}
                     onChange={(e) => setSettings((p) => (p ? { ...p, enableNoFreight: e.target.checked } : p))}
@@ -516,12 +507,10 @@ export default function AdminSettingsPage() {
               {/* Prazo Adicional */}
               <div className="p-4 bg-[#050B14] rounded-xl border border-catalog-gold/20 space-y-2 hover:border-catalog-gold/40 transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs font-mono text-white uppercase tracking-wider">
-                    Dias Extras de Expedição
-                  </span>
+                  <label htmlFor="settings-additionalDays" className="font-bold text-xs font-mono text-white uppercase tracking-wider">Dias Extras de Expedição</label>
                   <Clock className="w-4 h-4 text-catalog-gold" />
                 </div>
-                <input
+                <input id="settings-additionalDays"
                   type="number"
                   min={0}
                   value={settings.additionalDays}
@@ -555,10 +544,10 @@ export default function AdminSettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                <label htmlFor="settings-name" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                   Nome da Loja
                 </label>
-                <input
+                <input id="settings-name"
                   type="text"
                   value={settings.name ?? ''}
                   onChange={(e) => setSettings((p) => (p ? { ...p, name: e.target.value } : p))}
@@ -568,10 +557,10 @@ export default function AdminSettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
+                <label htmlFor="settings-slug" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold">
                   Slug / Subdomínio
                 </label>
-                <input
+                <input id="settings-slug"
                   type="text"
                   value={settings.slug ?? ''}
                   onChange={(e) =>

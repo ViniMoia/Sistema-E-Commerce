@@ -1,6 +1,6 @@
-import { requireAdmin } from '@/lib/auth-admin';
+import { requireAdmin } from '@/lib/auth/guards';
 import { listCustomersSchema } from '@/lib/validators/customer.validators';
-import { listCustomers } from '@/lib/services/customer.service';
+import { listCustomers } from '@/services/customer.service';
 import { ok, err } from '@/lib/api-response';
 import { NextRequest } from 'next/server';
 
