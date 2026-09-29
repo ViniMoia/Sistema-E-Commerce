@@ -108,19 +108,23 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
   });
 
   describe('2. Provedor Resend (ResendEmailService)', () => {
-    const originalFetch = global.fetch;
+    beforeEach(() => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Unexpected email request in test')));
+    });
 
     afterEach(() => {
-      global.fetch = originalFetch;
+      vi.unstubAllGlobals();
       vi.unstubAllEnvs();
     });
 
     it('deve avisar de forma segura e não quebrar se RESEND_API_KEY não estiver configurada', async () => {
+      vi.stubEnv('RESEND_API_KEY', '');
       const resendService = new ResendEmailService('', 'from@test.com');
       const result = await resendService.sendOrderPaymentConfirmedEmail(baseParams);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('RESEND_API_KEY não configurada');
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('deve enviar e-mail com sucesso através da API do Resend quando configurado', async () => {

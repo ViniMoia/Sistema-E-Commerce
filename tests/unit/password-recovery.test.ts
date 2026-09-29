@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { requestPasswordReset, resetPassword, AuthError } from "@/services/auth.service";
@@ -383,7 +383,17 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
   });
 
   describe("5. Testes de Infraestrutura: ResendEmailService", () => {
+    beforeEach(() => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Unexpected email request in test")));
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+
     it("deve retornar aviso seguro e não travar se RESEND_API_KEY não estiver configurada", async () => {
+      vi.stubEnv("RESEND_API_KEY", "");
       const resendService = new ResendEmailService("", "teste@loja.com");
       const result = await resendService.sendEmail({
         to: "destinatario@teste.com",
@@ -393,6 +403,7 @@ describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("RESEND_API_KEY não configurada");
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it("deve efetuar POST com Bearer token para https://api.resend.com/emails", async () => {
