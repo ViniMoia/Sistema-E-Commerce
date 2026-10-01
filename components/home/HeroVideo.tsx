@@ -3,6 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
+const DESKTOP_VIDEO_URL =
+  "https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790881130/Porsche_911_product_film_lighting_20261001155806_s4mbls.mp4";
+const MOBILE_VIDEO_URL =
+  "https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790795810/Automotive_film_production_guide_1080p_20260930161505_e6suze.mp4";
+
 export default function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -12,6 +17,24 @@ export default function HeroVideo() {
 
   const hasTriggeredAnimation = useRef(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detecta e monitora o breakpoint mobile (768px / md do Tailwind)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mql = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mql.matches);
+
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
+
+    mql.addEventListener("change", handleMediaChange);
+    return () => mql.removeEventListener("change", handleMediaChange);
+  }, []);
+
+  const videoSrc = isMobile ? MOBILE_VIDEO_URL : DESKTOP_VIDEO_URL;
 
   // Trigger natural GSAP emergence animation
   const triggerReveal = () => {
@@ -101,7 +124,7 @@ export default function HeroVideo() {
     video.addEventListener("ended", handleEnded);
     video.addEventListener("canplay", handleCanPlay);
 
-    // Safety fallback: if video is blocked or takes too long, reveal naturally after 3.5s
+    // Safety fallback: if video is blocked or takes too long, reveal naturally after 3.8s
     const fallbackTimer = setTimeout(() => {
       if (!hasTriggeredAnimation.current) {
         triggerReveal();
@@ -114,7 +137,7 @@ export default function HeroVideo() {
       video.removeEventListener("canplay", handleCanPlay);
       clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [videoSrc]);
 
   const scrollToCatalog = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -126,10 +149,11 @@ export default function HeroVideo() {
 
   return (
     <section className="relative w-full h-[100dvh] md:h-screen overflow-hidden flex items-center justify-start bg-black">
-      {/* Background Video */}
+      {/* Background Video (Desktop ou Mobile de acordo com o breakpoint) */}
       <video
         ref={videoRef}
-        src="https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790881130/Porsche_911_product_film_lighting_20261001155806_s4mbls.mp4"
+        key={videoSrc}
+        src={videoSrc}
         poster="/videos/hero-poster.jpg"
         autoPlay
         muted
