@@ -2,7 +2,7 @@
 
 > **Documento:** `diversos/PLANO_DE_ACAO/PLANO_DE_ACAO_REVISAO_E_SEGURANCA.md`  
 > **Data de Criação:** 01 de Outubro de 2026  
-> **Status:** 🟡 **AGUARDANDO APROVAÇÃO DO USUÁRIO (NÃO IMPLEMENTAR AINDA)**  
+> **Status:** 🟢 **FASES 0 A 5 IMPLEMENTADAS E HOMOLOGADAS COM SUCESSO (TESTES 100% VERIFICADOS)**  
 > **Branch Estável / Produção:** `main` (ponto base funcional: commit `0c7ef7d`)  
 > **Branch de Quarentena / Isolamento:** `isolamento` (código do outro desenvolvedor: commit `d066628`)  
 > **Repositório:** `https://github.com/ViniMoia/Sistema-E-Commerce.git`  
@@ -193,7 +193,37 @@ Para garantir a máxima precisão, segurança e rastreabilidade, cada etapa do p
 * 🔒 **O arquivo `.env` de produção está protegido:** As credenciais válidas do Asaas e do Supabase não serão substituídas por mocks.
 * 🔒 **Risco zero de regressão em massa:** Não haverá merge cego de 390 arquivos. Cada correção será analisada, portada e testada individualmente.
 
+## 6. REGISTRO DE EXECUÇÃO & HOMOLOGAÇÃO (01/10/2026)
+
+### 6.1 Ações Concluídas com Sucesso
+1. **Branch de Trabalho Criada:** `feature/security-hardening` a partir de `main` (`0c7ef7d`).
+2. **Triagem de Vulnerabilidades Concluída:**
+   * Separadas as correções legítimas dos 390 arquivos em quarentena na pasta `../isolamento`.
+   * Rejeitadas as 9 migrations arriscadas, mocks de banco local e scripts com credenciais estáticas.
+3. **Porting Cirúrgico de Segurança (Fase 2):**
+   * `services/product.service.ts`: Projeção segura de dados da loja em `getProductById` bloqueando senhas de Correios/APIs; atualização in-place de variantes em `updateProduct`; trava de integridade relacional em `deleteProduct` (lança 409 `PRODUCT_IN_USE` em vez de quebrar se houver pedidos/carrinhos vinculados); registro de `AuditLog`.
+   * `app/api/products/[id]/route.ts`: Tratamento de status 409 para integridade de catálogo e passagem de `guard.user.id` para auditoria.
+   * `lib/tenant.ts`: Resolução segura de host via proxy confiavel (`selectRequestHost`), geração canônica de links (`getTenantCanonicalOrigin`) e projeção segura `TENANT_SELECT_FIELDS` na busca de loja.
+   * `app/api/auth/forgot-password/route.ts`: Blindagem contra Host Header Injection usando origem canônica da loja, rate limit por hash de e-mail e eliminação de fallback cego.
+   * `app/api/orders/[id]/route.ts`: Blindagem BOLA/IDOR para clientes (`order.lojaID !== guard.user.lojaID`).
+   * `lib/logger.ts`: Sanitização de PII, URLs com senhas, tokens Bearer e dados sensíveis em stacks de erro.
+   * `lib/freight-quote.ts`: Assinador e verificador de tokens de cotação de frete HMAC-SHA256 (Anti-Tampering).
+   * `services/checkout.service.ts`: Validação de assinatura de frete, trava de integridade monetária e bloqueio de resgate indevido de pontos por usuários convidados/anônimos.
+   * `services/loyalty.service.ts`: Trava de teto máximo para ajuste manual de pontos (`DEFAULT_MAX_MANUAL_ADJUSTMENT_POINTS = 100_000`).
+   * `app/api/webhooks/asaas/route.ts`: Sanitização de mensagens de erro e ocultação de detalhes internos em produção.
+4. **Contrato de Variáveis de Ambiente Resiliente (Fase 3):**
+   * `.env.example` atualizado com `FREIGHT_QUOTE_SECRET` e `OBSERVABILITY_TOKEN`.
+   * `.env` real de produção mantido 100% intacto, funcional e protegido.
+5. **Validação de Banco de Dados e Migrações (Fase 4):**
+   * `npx prisma validate`: Schema válido.
+   * `npx prisma generate`: Cliente Prisma atualizado.
+   * Nenhuma migration destrutiva aplicada ao Neon DB de produção.
+6. **Bateria de Testes Automatizados e Homologação UI (Fase 5):**
+   * `npx tsc --noEmit`: 0 erros de compilação TypeScript.
+   * `npm test`: **49 suites aprovadas (364/364 testes unitários passando)**.
+   * Dev server Turbopack testado em `http://localhost:3000`: rotas `/`, `/login`, `/register`, `/forgot-password`, `/checkout` e APIs `/api/products` e `/api/products/[id]` respondendo com HTTP 200 OK sem exceções.
+
 ---
 
-**Fim do Documento.**  
-*Aguardando análise e aprovação formal do usuário para dar início à Fase 0 e Fase 1.*
+**Próximo Passo (Fase 6 / Alinhamento do GitHub):**
+Aguardando aprovação do usuário para sincronizar a branch estável com o GitHub e realizar o merge seguro na `main`.
