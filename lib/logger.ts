@@ -28,6 +28,14 @@ export function maskCpfCnpj(doc: string): string {
   return '***.***.***-**';
 }
 
+export function sanitizeLogText(value: string): string {
+  return value
+    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s@]+@/gi, '$1[REDACTED]@')
+    .replace(/(bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
+    .replace(/((?:[?&]|\b)(?:token|api[_-]?key|secret|password|cookie|session)=)[^&\s;]+/gi, '$1[REDACTED]')
+    .replace(/((?:reset|access|refresh|webhook)?[_-]?token\s*[:=]\s*)[^\s,;]+/gi, '$1[REDACTED]');
+}
+
 export function sanitizeLogValue(key: string, value: unknown): unknown {
   if (typeof value === 'string') {
     const lowerKey = key.toLowerCase();
@@ -43,6 +51,7 @@ export function sanitizeLogValue(key: string, value: unknown): unknown {
     ) {
       return '[REDACTED]';
     }
+    return sanitizeLogText(value);
   }
 
   if (value && typeof value === 'object' && !(value instanceof Date)) {
@@ -101,19 +110,19 @@ export class Logger {
     const logEntry: StructuredLog = {
       timestamp: new Date().toISOString(),
       level,
-      message,
+      message: sanitizeLogText(message),
       ...(Object.keys(sanitized).length > 0 ? { context: sanitized } : {}),
     };
 
     if (err instanceof Error) {
       logEntry.error = {
         name: err.name,
-        message: err.message,
-        stack: err.stack,
+        message: sanitizeLogText(err.message),
+        stack: err.stack ? sanitizeLogText(err.stack) : undefined,
       };
     } else if (typeof err === "string") {
       logEntry.error = {
-        message: err,
+        message: sanitizeLogText(err),
       };
     }
 

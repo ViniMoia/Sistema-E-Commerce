@@ -33,9 +33,13 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/tenant", () => ({
-  getLojaFromHeaders: vi.fn(),
-}));
+vi.mock("@/lib/tenant", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/tenant")>();
+  return {
+    ...actual,
+    getLojaFromHeaders: vi.fn(),
+  };
+});
 
 describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005)", () => {
   let devEmailService: DevEmailService;

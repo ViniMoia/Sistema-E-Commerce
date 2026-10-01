@@ -4,7 +4,7 @@ import { updateOrderStatus } from '@/services/order.service';
 import type { AsaasWebhookPayload } from '@/types/asaas.types';
 import type { Prisma } from '@prisma/client';
 import crypto from 'crypto';
-import { logger } from '@/lib/logger';
+import { logger, sanitizeLogText } from '@/lib/logger';
 import { emailService } from '@/lib/email';
 
 /**
@@ -339,12 +339,15 @@ export async function POST(req: Request) {
       event: body.event,
     });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorMsg = sanitizeLogText(error instanceof Error ? error.message : 'Unknown error');
     logger.error('Erro interno ao processar webhook Asaas', error, {
       action: 'ASAAS_WEBHOOK_INTERNAL_ERROR',
     });
     return NextResponse.json(
-      { error: 'Erro interno ao processar webhook Asaas', details: errorMsg },
+      {
+        error: 'Erro interno ao processar webhook Asaas',
+        ...(process.env.NODE_ENV !== 'production' ? { details: errorMsg } : {}),
+      },
       { status: 500 }
     );
   }

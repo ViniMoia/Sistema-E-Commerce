@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import prisma from "@/lib/prisma";
-import { getLojaFromHeaders } from "@/lib/tenant";
+import { getLojaFromHeaders, getTenantCanonicalOrigin } from "@/lib/tenant";
 import { requestPasswordReset } from "@/services/auth.service";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -50,33 +49,47 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 3. Resolução de contexto multi-tenant
+    // 3. Resolução de contexto multi-tenant fail-closed
     const activeLoja = await getLojaFromHeaders();
-    let lojaID = activeLoja?.id || process.env.NEXT_PUBLIC_LOJA_ID;
-
-    if (!lojaID) {
-      // Fallback seguro para primeira loja cadastrada
-      const defaultStore = await prisma.loja.findFirst({
-        select: { id: true },
-      });
-      lojaID = defaultStore?.id;
-    }
-
-    if (!lojaID) {
+    if (!activeLoja) {
       return NextResponse.json(
         { error: "Contexto de loja não identificado." },
-        { status: 400 }
+        { status: 404 }
       );
     }
 
-    // 4. Resolução da URL base para o link do e-mail
-    const origin = req.headers.get("origin") || req.headers.get("referer");
-    const originUrl = origin ? new URL(origin).origin : process.env.NEXT_PUBLIC_APP_URL;
+    // Rate limiting adicional por hash da conta (mitigação direcionada a uma mesma vítima)
+    const normalizedEmail = parsed.data.email.toLowerCase().trim();
+    const accountHash = require("crypto")
+      .createHash("sha256")
+      .update(`${activeLoja.id}:${normalizedEmail}`)
+      .digest("hex");
+    const accountLimit = rateLimit(`forgot-password-account:${accountHash}`, 3, 15 * 60 * 1000);
+    if (!accountLimit.success) {
+      // Resposta uniforme anti-enumeração
+      return NextResponse.json(
+        {
+          success: true,
+          message:
+            "Se o e-mail informado estiver cadastrado em nossa loja, você receberá as instruções para redefinição de senha em alguns instantes.",
+        },
+        { status: 200 }
+      );
+    }
+
+    // 4. Origem canônica derivada exclusivamente de configuração confiável do tenant (Anti-Poisoning)
+    const originUrl = getTenantCanonicalOrigin(activeLoja);
+    if (!originUrl) {
+      return NextResponse.json(
+        { error: "Origem canônica da loja não configurada." },
+        { status: 503 }
+      );
+    }
 
     // 5. Execução do serviço com proteção anti-enumeração
     await requestPasswordReset({
-      email: parsed.data.email,
-      lojaID,
+      email: normalizedEmail,
+      lojaID: activeLoja.id,
       originUrl,
     });
 

@@ -12,6 +12,7 @@ import { updateOrderStatus } from '@/services/order.service'
 import { InventoryService } from '@/services/inventory.service'
 import { cleanDigits } from '@/lib/validators/cpf-cnpj'
 import { logger } from '@/lib/logger'
+import { verifyFreightQuote } from '@/lib/freight-quote'
 
 export interface CheckoutCartItem {
   productId?: string
@@ -47,6 +48,7 @@ export interface CreateOrderParams {
   items: CheckoutCartItem[]
   address?: CheckoutAddressData
   deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE'
+  freightQuoteToken?: string
   freightValue?: number
   shippingCost?: number
   shippingProvider?: string
@@ -285,10 +287,11 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         })
       }
     } else {
+      const normalizedEmail = params.customer.email.toLowerCase().trim()
       const upserted = await tx.user.upsert({
         where: {
           email_lojaID: {
-            email: params.customer.email.toLowerCase().trim(),
+            email: normalizedEmail,
             lojaID: params.lojaID,
           },
         },
@@ -298,7 +301,7 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         },
         create: {
           name: params.customer.name.trim(),
-          email: params.customer.email.toLowerCase().trim(),
+          email: normalizedEmail,
           phone: params.customer.phone.trim(),
           cpfCnpj: cleanCustomerCpfCnpj,
           password: '',
@@ -318,6 +321,10 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
     if (params.pointsToRedeem && params.pointsToRedeem > 0) {
       if (!loja.loyaltyEnabled) {
         throw new Error('Programa de pontos desativado nesta loja.')
+      }
+
+      if (!params.customer.userId) {
+        throw new Error('Autenticação obrigatória para usar pontos no checkout.')
       }
 
       const sim = await simulatePointsRedemption({
@@ -373,7 +380,21 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
         },
       })
 
-      if (freightRule) {
+      if (params.freightQuoteToken) {
+        const verified = verifyFreightQuote(params.freightQuoteToken, {
+          lojaID: params.lojaID,
+          destinationCep: params.address.cep,
+          items: params.items.map((it) => ({
+            productId: it.productId || '',
+            variantId: it.variantId || null,
+            quantity: it.quantity,
+          })),
+        })
+        calculatedFreight = new Prisma.Decimal(verified.price)
+        shippingProvider = verified.providerId
+        shippingServiceName = verified.serviceName
+        shippingEstimatedDays = verified.deliveryTimeInDays
+      } else if (freightRule) {
         calculatedFreight = freightRule.value
         shippingProvider = 'LOCAL_TABLE'
         shippingServiceName = `Entrega Local (${freightRule.cityName})`

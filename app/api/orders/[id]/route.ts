@@ -30,6 +30,9 @@ export async function GET(req: Request, context: RouteContext) {
       if (order.userID !== guard.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
+      if (order.lojaID !== guard.user.lojaID) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
     }
 
     return NextResponse.json(order, { status: 200 });
@@ -70,7 +73,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     if (result.success === false) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.code === "NOT_FOUND" ? 404 : 422 }
+        { status: result.code === "NOT_FOUND" ? 404 : 409 }
       );
     }
 

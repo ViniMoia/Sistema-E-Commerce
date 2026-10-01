@@ -1,0 +1,41 @@
+{
+  "name": "basic-development-pipeline",
+  "description": "Pipeline de desenvolvimento estruturado: Planner -> Coder -> Tester -> Reviewer -> Memory",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "step-1-planning",
+      "name": "Planning & Memory Search",
+      "agent": "architect",
+      "action": "Consultar memória persistente e decompor tarefa em critérios de aceite"
+    },
+    {
+      "id": "step-2-coding",
+      "name": "Implementation",
+      "agent": "coder",
+      "dependsOn": ["step-1-planning"],
+      "action": "Implementação cirúrgica dos arquivos mapeados no plano"
+    },
+    {
+      "id": "step-3-testing",
+      "name": "Automated Testing",
+      "agent": "tester",
+      "dependsOn": ["step-2-coding"],
+      "action": "Criação e execução de testes automatizados e diagnóstico"
+    },
+    {
+      "id": "step-4-review",
+      "name": "Code & Security Review",
+      "agent": "reviewer",
+      "dependsOn": ["step-3-testing"],
+      "action": "Auditoria de qualidade, segurança e arquitetura (APPROVED ou CHANGES_REQUIRED)"
+    },
+    {
+      "id": "step-5-memory",
+      "name": "Memory Registration",
+      "agent": "memory-specialist",
+      "dependsOn": ["step-4-review"],
+      "action": "Persistência das decisões técnicas na memória persistente"
+    }
+  ]
+}

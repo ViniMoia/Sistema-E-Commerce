@@ -103,7 +103,20 @@ export async function getProductById(id: string, lojaId?: string) {
     where: { id },
     include: {
       productVariants: true,
-      loja: true,
+      loja: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          coverImageUrl: true,
+          whatsappNumber: true,
+          primaryColor: true,
+          secondaryColor: true,
+          pixKey: true,
+          pixKeyType: true,
+        },
+      },
     },
   });
 
@@ -125,7 +138,7 @@ export async function createProduct(data: CreateProductInput) {
     const loja = await tx.loja.findUnique({ where: { id: productData.lojaID } });
     if (!loja) throw new Error("STORE_NOT_FOUND");
 
-    return await tx.product.create({
+    const createdProduct = await tx.product.create({
       data: {
         ...productData,
         price: decimalPrice,
@@ -147,14 +160,41 @@ export async function createProduct(data: CreateProductInput) {
         productVariants: true,
       },
     });
+
+    await tx.auditLog.create({
+      data: {
+        action: "PRODUCT_CREATED",
+        actorId: productData.userID,
+        targetId: productData.userID,
+        entity: "Product",
+        entityId: createdProduct.id,
+        newValue: {
+          name: createdProduct.name,
+          price: createdProduct.price.toString(),
+          stock: createdProduct.stock,
+          variantCount: createdProduct.productVariants.length,
+        },
+        metadata: { lojaID: productData.lojaID },
+      },
+    });
+
+    return createdProduct;
   });
 }
 
 /**
- * Atualiza produto com validação rigorosa de posse de tenant (TEN-002).
+ * Atualiza produto com validação rigorosa de posse de tenant (TEN-002) e preservação de integridade de variantes.
  */
-export async function updateProduct(id: string, data: UpdateProductInput, lojaId?: string) {
-  const existing = await prisma.product.findUnique({ where: { id } });
+export async function updateProduct(
+  id: string,
+  data: UpdateProductInput,
+  lojaId?: string,
+  actorId?: string
+) {
+  const existing = await prisma.product.findUnique({
+    where: { id },
+    include: { productVariants: true },
+  });
   if (!existing || (lojaId && existing.lojaID !== lojaId)) {
     throw new Error("PRODUCT_NOT_FOUND");
   }
@@ -178,17 +218,51 @@ export async function updateProduct(id: string, data: UpdateProductInput, lojaId
     });
 
     if (variants) {
-      await tx.productVariants.deleteMany({
-        where: { ProductID: id },
-      });
+      // Atualiza variantes existentes por ID quando fornecido, criando apenas as novas
+      for (const v of variants) {
+        const variantWithId = v as { id?: string; size: string; color: string; stock: number };
+        if (variantWithId.id && existing.productVariants.some((ev) => ev.id === variantWithId.id)) {
+          await tx.productVariants.update({
+            where: { id: variantWithId.id },
+            data: {
+              size: variantWithId.size,
+              color: variantWithId.color,
+              stock: Math.max(0, variantWithId.stock),
+            },
+          });
+        } else {
+          await tx.productVariants.create({
+            data: {
+              ProductID: id,
+              size: variantWithId.size,
+              color: variantWithId.color,
+              stock: Math.max(0, variantWithId.stock),
+            },
+          });
+        }
+      }
+    }
 
-      await tx.productVariants.createMany({
-        data: variants.map((v) => ({
-          ProductID: id,
-          size: v.size,
-          color: v.color,
-          stock: Math.max(0, v.stock),
-        })),
+    if (actorId) {
+      await tx.auditLog.create({
+        data: {
+          action: "PRODUCT_UPDATED",
+          actorId,
+          targetId: actorId,
+          entity: "Product",
+          entityId: id,
+          previousValue: {
+            name: existing.name,
+            price: existing.price.toString(),
+            stock: existing.stock,
+          },
+          newValue: {
+            name: product.name,
+            price: product.price.toString(),
+            stock: product.stock,
+          },
+          metadata: { lojaID: existing.lojaID },
+        },
       });
     }
 
@@ -200,15 +274,47 @@ export async function updateProduct(id: string, data: UpdateProductInput, lojaId
 }
 
 /**
- * Remove produto com validação rigorosa de posse de tenant (TEN-002).
+ * Remove produto com validação rigorosa de posse de tenant (TEN-002) e bloqueio se houver histórico de pedidos.
  */
-export async function deleteProduct(id: string, lojaId?: string) {
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (!existing || (lojaId && existing.lojaID !== lojaId)) {
-    throw new Error("PRODUCT_NOT_FOUND");
-  }
+export async function deleteProduct(id: string, lojaId?: string, actorId?: string) {
+  return await prisma.$transaction(async (tx) => {
+    const existing = await tx.product.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { orderItems: true, cartItem: true },
+        },
+      },
+    });
 
-  return await prisma.product.delete({
-    where: { id },
+    if (!existing || (lojaId && existing.lojaID !== lojaId)) {
+      throw new Error("PRODUCT_NOT_FOUND");
+    }
+
+    if (existing._count.orderItems > 0 || existing._count.cartItem > 0) {
+      throw new Error("PRODUCT_IN_USE");
+    }
+
+    if (actorId) {
+      await tx.auditLog.create({
+        data: {
+          action: "PRODUCT_DELETED",
+          actorId,
+          targetId: actorId,
+          entity: "Product",
+          entityId: id,
+          previousValue: {
+            name: existing.name,
+            price: existing.price.toString(),
+            stock: existing.stock,
+          },
+          metadata: { lojaID: existing.lojaID },
+        },
+      });
+    }
+
+    return await tx.product.delete({
+      where: { id },
+    });
   });
 }

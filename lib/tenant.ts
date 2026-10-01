@@ -35,6 +35,85 @@ export function normalizeHost(rawHost: string): string {
   return clean;
 }
 
+function isValidConfiguredHost(rawHost: string): boolean {
+  const trimmed = rawHost.trim().toLowerCase().replace(/\.$/, "");
+  if (!trimmed || normalizeHost(rawHost) !== trimmed || trimmed.length > 253) return false;
+  return trimmed.split(".").every((label) =>
+    label.length > 0 &&
+    label.length <= 63 &&
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
+  );
+}
+
+const TRUSTED_FORWARDING_PROVIDERS = new Set(["vercel", "cloudflare", "generic"]);
+
+/**
+ * X-Forwarded-Host só cruza a trust boundary quando o proxy foi declarado.
+ * Valores múltiplos/ambíguos falham fechados em vez de serem sanitizados.
+ */
+export function selectRequestHost(
+  host: string | null,
+  forwardedHost: string | null,
+  trustedProxyProvider = process.env.TRUSTED_PROXY_PROVIDER || ""
+): string {
+  const direct = host?.trim() || "";
+  const forwarded = forwardedHost?.trim() || "";
+  const provider = trustedProxyProvider.trim().toLowerCase();
+
+  if (/[,\r\n]/.test(direct) || /[,\r\n]/.test(forwarded)) return "";
+  if (forwarded && TRUSTED_FORWARDING_PROVIDERS.has(provider)) return forwarded;
+  return direct;
+}
+
+/**
+ * Produz a origem canônica de links sensíveis somente a partir de configuração
+ * confiável do tenant. Cabeçalhos Origin/Referer nunca participam desta decisão.
+ */
+export function getTenantCanonicalOrigin(tenant: TenantContext): string | null {
+  const customDomain = tenant.customDomain?.trim() || "";
+  if (customDomain && isValidConfiguredHost(customDomain)) {
+    return `https://${normalizeHost(customDomain)}`;
+  }
+
+  const platformDomain = process.env.PLATFORM_DOMAIN?.trim() || "";
+  if (isValidConfiguredHost(platformDomain) && isValidConfiguredHost(tenant.slug)) {
+    return `https://${normalizeHost(tenant.slug)}.${normalizeHost(platformDomain)}`;
+  }
+
+  const configuredAppUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : "");
+  if (configuredAppUrl) {
+    try {
+      const configuredUrl = new URL(configuredAppUrl);
+      if (
+        configuredUrl.protocol === "https:" ||
+        (configuredUrl.protocol === "http:" && ["localhost", "127.0.0.1"].includes(configuredUrl.hostname))
+      ) {
+        return configuredUrl.origin;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export const TENANT_SELECT_FIELDS = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  coverImageUrl: true,
+  primaryColor: true,
+  secondaryColor: true,
+  customDomain: true,
+  pixKey: true,
+  pixKeyType: true,
+  whatsappNumber: true,
+} as const;
+
 /**
  * Consulta de loja em cache pelo slug ou domínio customizado
  */
@@ -47,6 +126,7 @@ const getCachedLojaBySlugOrDomain = unstable_cache(
           { customDomain: cleanHost },
         ],
       },
+      select: TENANT_SELECT_FIELDS,
     });
   },
   ["tenant-by-host-or-domain"],
@@ -63,6 +143,7 @@ const getCachedLojaBySlug = unstable_cache(
   async (slug: string) => {
     return await prisma.loja.findUnique({
       where: { slug },
+      select: TENANT_SELECT_FIELDS,
     });
   },
   ["tenant-by-slug"],
@@ -83,7 +164,10 @@ const getCachedLojaBySlug = unstable_cache(
 export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null> => {
   try {
     const headersList = await headers();
-    const rawHost = headersList.get("x-forwarded-host") || headersList.get("host") || "";
+    const rawHost = selectRequestHost(
+      headersList.get("host"),
+      headersList.get("x-forwarded-host")
+    );
     const cleanHost = normalizeHost(rawHost);
 
     if (!cleanHost) {
@@ -108,7 +192,9 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
         "continental-prototipo";
       let devLoja = await getCachedLojaBySlug(defaultSlug);
       if (!devLoja) {
-        devLoja = await prisma.loja.findFirst();
+        devLoja = await prisma.loja.findFirst({
+          select: TENANT_SELECT_FIELDS,
+        });
       }
       return devLoja as TenantContext | null;
     }

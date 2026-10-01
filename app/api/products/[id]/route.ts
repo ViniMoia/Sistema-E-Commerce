@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import * as productService from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validators/product";
+import { getLojaFromHeaders } from "@/lib/tenant";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -9,6 +10,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 const SERVICE_ERRORS: Record<string, number> = {
   PRODUCT_NOT_FOUND: 404,
   STORE_NOT_FOUND: 404,
+  PRODUCT_IN_USE: 409,
 };
 
 function handleServiceError(error: unknown): NextResponse {
@@ -25,7 +27,8 @@ function handleServiceError(error: unknown): NextResponse {
 export async function GET(_req: Request, context: RouteContext) {
   try {
     const params = await context.params;
-    const product = await productService.getProductById(params.id);
+    const activeLoja = await getLojaFromHeaders();
+    const product = await productService.getProductById(params.id, activeLoja?.id);
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
     return handleServiceError(error);
@@ -54,7 +57,12 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     // Passa o lojaID do admin autenticado para impedir alteração cross-tenant (TEN-002)
-    const product = await productService.updateProduct(params.id, parsed.data, guard.user.lojaID);
+    const product = await productService.updateProduct(
+      params.id,
+      parsed.data,
+      guard.user.lojaID,
+      guard.user.id
+    );
     return NextResponse.json(product, { status: 200 });
   } catch (error) {
     return handleServiceError(error);
@@ -68,7 +76,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
     const params = await context.params;
     // Passa o lojaID do admin autenticado para impedir deleção cross-tenant (TEN-002)
-    await productService.deleteProduct(params.id, guard.user.lojaID);
+    await productService.deleteProduct(params.id, guard.user.lojaID, guard.user.id);
 
     // 204 No Content — body must be empty
     return new NextResponse(null, { status: 204 });

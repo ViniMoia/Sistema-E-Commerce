@@ -38,11 +38,22 @@ export const SimulateLoyaltyRedeemSchema = z.object({
   requestedPoints: z.number().int().min(0, 'Pontos solicitados não podem ser negativos'),
 })
 
+export const DEFAULT_MAX_MANUAL_ADJUSTMENT_POINTS = 100_000
+
+function getMaxManualAdjustmentPoints(): number {
+  const configured = Number(process.env.ADMIN_LOYALTY_MAX_ADJUSTMENT_POINTS)
+  return Number.isSafeInteger(configured) && configured > 0
+    ? configured
+    : DEFAULT_MAX_MANUAL_ADJUSTMENT_POINTS
+}
+
 export const AdjustLoyaltyBalanceSchema = z.object({
   lojaID: z.string().min(1, 'lojaID é obrigatório'),
   userID: z.string().min(1, 'userID é obrigatório'),
   points: z.number().int().refine((val) => val !== 0, {
     message: 'A quantidade de pontos para ajuste não pode ser zero',
+  }).refine((val) => Math.abs(val) <= getMaxManualAdjustmentPoints(), {
+    message: 'A quantidade de pontos excede o limite permitido para um único ajuste',
   }),
   description: z.string().min(3, 'Descrição deve ter no mínimo 3 caracteres').max(255),
   adminUserId: z.string().min(1, 'adminUserId é obrigatório'),
