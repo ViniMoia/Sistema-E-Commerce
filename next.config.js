@@ -40,6 +40,7 @@ const nextConfig = {
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data: https://*.supabase.co https://via.placeholder.com https://images.unsplash.com https://api.qrserver.com https://*.mitiendanube.com https://dcdn-us.mitiendanube.com https://res.cloudinary.com",
+      "media-src 'self' https://res.cloudinary.com blob: data:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co https://viacep.com.br https://api.asaas.com https://sandbox.asaas.com https://api.resend.com",
       "frame-ancestors 'none'",
