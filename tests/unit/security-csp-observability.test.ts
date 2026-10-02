@@ -33,6 +33,7 @@ describe("Segurança HTTP, CSP e Observabilidade (Fase 5 - ACT-P3-01 e ACT-P3-02
       expect(csp).toContain("https://api.asaas.com");
       expect(csp).toContain("https://*.mitiendanube.com");
       expect(csp).toContain("https://res.cloudinary.com");
+      expect(csp).toContain("frame-src 'self' https://www.google.com https://*.google.com");
       expect(csp).toContain("frame-ancestors 'none'");
     });
 

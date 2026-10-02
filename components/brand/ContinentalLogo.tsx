@@ -6,6 +6,7 @@ interface ContinentalLogoProps {
   variant?: "horizontal" | "symbol" | "full";
   priority?: boolean;
   href?: string;
+  onClick?: (e?: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 export function ContinentalLogo({
@@ -13,6 +14,7 @@ export function ContinentalLogo({
   variant = "symbol",
   priority = true,
   href = "/",
+  onClick,
 }: ContinentalLogoProps) {
   const src =
     variant === "symbol"
@@ -31,6 +33,7 @@ export function ContinentalLogo({
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/60 rounded-sm"
       aria-label="Continental Produtos Estéticos Automotivos - Página Inicial"
     >

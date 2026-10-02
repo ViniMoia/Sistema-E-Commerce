@@ -211,22 +211,9 @@ export default function HeroVideo() {
           <a
             href="#catalogo"
             onClick={scrollToCatalog}
-            className="btn-shimmer px-7 py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] hover:from-[#F5BD1E] hover:to-[#F0B40E] text-[#010E31] font-bold text-xs sm:text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] hover:shadow-[0_0_35px_rgba(240,180,14,0.6)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] flex items-center gap-3 group cursor-pointer border border-[#F5BD1E]/40"
+            className="btn-shimmer px-7 py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] hover:from-[#F5BD1E] hover:to-[#F0B40E] text-[#010E31] font-bold text-xs sm:text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] hover:shadow-[0_0_35px_rgba(240,180,14,0.6)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center cursor-pointer border border-[#F5BD1E]/40"
           >
             <span className="relative z-10">Explorar Catálogo</span>
-            <svg
-              className="w-4 h-4 text-[#010E31] group-hover:translate-y-0.5 transition-transform relative z-10"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
           </a>
 
           <a

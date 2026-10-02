@@ -43,6 +43,7 @@ const nextConfig = {
       "media-src 'self' https://res.cloudinary.com blob: data:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co https://viacep.com.br https://api.asaas.com https://sandbox.asaas.com https://api.resend.com",
+      "frame-src 'self' https://www.google.com https://*.google.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

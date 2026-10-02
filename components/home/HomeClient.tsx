@@ -11,6 +11,9 @@ import { BrandSummary } from "@/components/catalog/BrandHoverFlyout";
 import { useProductFilters, FilterableProduct } from "@/hooks/useProductFilters";
 import { ProductFreightCalculator } from "@/components/catalog/ProductFreightCalculator";
 import { CatalogPagination } from "@/components/catalog/CatalogPagination";
+import { StorePresentationSection } from "./StorePresentationSection";
+import { StoreLocationSection } from "./StoreLocationSection";
+import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
 export type Product = FilterableProduct;
@@ -491,19 +494,14 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* Visual Footer */}
-      <footer className="border-t border-catalog-gold/20 py-12 bg-catalog-bg relative overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-catalog-gold/40 to-transparent" />
-        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between">
-          <div className="flex items-center gap-3 mb-6 md:mb-0">
-             <span className="w-2.5 h-2.5 bg-catalog-gold rounded-full"></span>
-              <span className="text-catalog-text font-bold tracking-widest uppercase text-sm">{lojaInfo?.name || "E-Commerce"}</span>
-          </div>
-          <p className="text-catalog-muted font-mono text-xs uppercase tracking-wider">
-            © 2026. Vancer.
-          </p>
-        </div>
-      </footer>
+      {/* Dobra de Apresentação da Loja com Vídeo Cinematográfico */}
+      <StorePresentationSection lojaName={lojaInfo?.name || "Continental"} />
+
+      {/* Dobra de Localização da Loja Física com Google Maps */}
+      <StoreLocationSection lojaName={lojaInfo?.name || "Continental"} />
+
+      {/* Rodapé Corporativo de Alto Padrão (Design System Continental) */}
+      <Footer />
     </div>
   );
 }

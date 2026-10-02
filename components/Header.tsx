@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
+import { getLojaFromHeaders } from "@/lib/tenant";
 import { LogOut, LayoutDashboard } from "lucide-react";
 import { CartButton } from "./cart/CartButton";
 import { MobileMenu } from "./MobileMenu";
 import { ContinentalLogo } from "./brand/ContinentalLogo";
 
 export async function Header() {
-  const user = await getCurrentUser();
+  const [user, loja] = await Promise.all([
+    getCurrentUser(),
+    getLojaFromHeaders(),
+  ]);
 
   return (
     <header className="w-full bg-[#000000] border-b border-white/[0.04]">
@@ -21,7 +25,11 @@ export async function Header() {
         {/* Lado Direito (Mobile): Cart e Menu Gaveta */}
         <div className="md:hidden flex items-center gap-4">
           <CartButton />
-          <MobileMenu user={user} lojaName="Continental" />
+          <MobileMenu 
+            user={user} 
+            lojaName={loja?.name || "Continental"} 
+            whatsappNumber={loja?.whatsappNumber}
+          />
         </div>
 
         {/* Lado Direito (Desktop): Cart, Login e Registro (Soltos, da esquerda para a direita) */}
