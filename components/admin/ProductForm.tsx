@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { productVariantsSchema } from "@/lib/validators/product";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Loader2, Sparkles, Check, ArrowLeft, Layers, Image as ImageIcon, DollarSign } from "lucide-react";
 import Link from "next/link";
@@ -24,15 +25,7 @@ const productSchema = z.object({
   price: z.number().min(0.01, "Preço deve ser maior que R$ 0,00"),
   imageUrl: z.string().url("Insira uma URL de imagem válida"),
   stock: z.number().int().min(0, "Estoque inválido"),
-  variants: z
-    .array(
-      z.object({
-        size: z.string().min(1, "Obrigatório"),
-        color: z.string().min(1, "Obrigatória"),
-        stock: z.number().int().min(0, "Inválido"),
-      })
-    )
-    .min(1, "Adicione pelo menos uma variante"),
+  variants: productVariantsSchema,
   galleryUrls: z.array(z.object({ url: z.string().url("Insira uma URL válida") })),
 });
 
@@ -85,17 +78,19 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       variants:
         initialData?.productVariants && initialData.productVariants.length > 0
           ? initialData.productVariants.map((v) => ({
+              id: v.id,
               size: v.size,
               color: v.color,
               stock: v.stock,
             }))
-          : [{ size: "Padrão", color: "Padrão", stock: 10 }],
+          : [{ size: "Único", color: "Padrão", stock: 10 }],
       galleryUrls: initialData?.galleryUrls?.map((url) => ({ url })) ?? [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     name: "variants",
+    keyName: "_formKey",
     control: form.control,
   });
 
@@ -120,6 +115,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         stock: data.stock,
         lojaID: lojaID,
         variants: data.variants.map((v) => ({
+          id: v.id,
           size: v.size,
           color: v.color,
           stock: v.stock,
@@ -360,9 +356,14 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
           </div>
 
           <div className="space-y-3">
+            {(form.formState.errors.variants?.root?.message || form.formState.errors.variants?.message) && (
+              <p role="alert" className="text-xs font-mono text-red-400">
+                {form.formState.errors.variants?.root?.message || form.formState.errors.variants?.message}
+              </p>
+            )}
             {fields.map((field, index) => (
               <div
-                key={field.id}
+                key={field._formKey}
                 className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center p-4 rounded-xl bg-[#0B132B]/60 border border-catalog-gold/20"
               >
                 <div className="sm:col-span-5">
