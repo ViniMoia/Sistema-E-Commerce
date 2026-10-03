@@ -26,7 +26,8 @@ import { toast } from 'sonner'
 
 export interface CartItem {
   productId?: string
-  name: string
+  productID?: string
+  name?: string
   productName?: string
   quantity: number
   price: number
@@ -37,8 +38,9 @@ export interface CartItem {
 }
 
 export interface CheckoutResult {
+  id?: string
   orderNumber: number
-  orderId: string
+  orderId?: string
   total: number
   subtotal: number
   freightValue: number | null
@@ -396,33 +398,35 @@ export function CheckoutForm({
 
       const payload = {
         lojaID,
-        customerName: formData.name,
-        customerEmail: formData.email,
-        customerPhone: cleanDigits(formData.phone),
-        customerCpfCnpj: cleanDigits(formData.cpfCnpj),
+        customer: {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: cleanDigits(formData.phone),
+          cpfCnpj: cleanDigits(formData.cpfCnpj),
+        },
         deliveryType: formData.deliveryType,
         address: formData.deliveryType === 'DELIVERY' ? formData.address : undefined,
         shippingCost: calculatedFreightCost,
-        shippingProvider: selectedFreight?.providerId || null,
-        shippingServiceName: selectedFreight?.serviceName || null,
-        shippingEstimatedDays: selectedFreight?.deliveryTimeInDays || null,
+        shippingProvider: selectedFreight?.providerId || undefined,
+        shippingServiceName: selectedFreight?.serviceName || undefined,
+        shippingEstimatedDays: selectedFreight?.deliveryTimeInDays || undefined,
         paymentMethod,
         pointsToRedeem: pointsDiscountValue > 0 ? pointsToRedeem : 0,
-        pointsDiscountValue,
-        cardData:
+        installments: paymentMethod === 'CREDIT_CARD' ? selectedInstallment : 1,
+        installmentValue: selectedInstallmentDetail?.installmentValue,
+        creditCard:
           paymentMethod === 'CREDIT_CARD'
             ? {
-                holderName: cardData.holderName,
+                holderName: cardData.holderName.trim().toUpperCase(),
                 number: cleanDigits(cardData.number),
-                expiryMonth,
+                expiryMonth: expiryMonth?.padStart(2, '0') || '',
                 expiryYear: fullExpiryYear,
-                ccv: cardData.ccv,
-                installments: selectedInstallment,
+                ccv: cardData.ccv.trim(),
               }
             : undefined,
-        items: items.map((i) => ({
-          productID: i.productId,
-          productName: i.productName || i.name,
+        items: items.map((i: any) => ({
+          productId: i.productId || i.productID,
+          name: i.name || i.productName || 'Produto',
           quantity: i.quantity,
           price: i.price,
           color: i.color,
@@ -430,20 +434,29 @@ export function CheckoutForm({
         })),
       }
 
-      const res = await fetch('/api/checkout/create-order', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
-      const result = await res.json()
+      // Tratamento resiliente de resposta (evita SyntaxError de JSON quando o servidor retorna HTML)
+      const contentType = res.headers.get('content-type') || ''
+      let result: any
+      if (contentType.includes('application/json')) {
+        result = await res.json()
+      } else {
+        throw new Error('Serviço de pagamento temporariamente indisponível. Tente novamente em instantes.')
+      }
 
       if (!res.ok) {
         throw new Error(result.error || result.message || 'Falha ao processar o pedido.')
       }
 
+      const orderData = result.data?.order || result.order || result
+
       toast.success('Pedido registrado com sucesso!')
-      onOrderCreated(result)
+      onOrderCreated(orderData)
     } catch (err: any) {
       console.error('[CHECKOUT_SUBMIT_ERROR]', err)
       setError(err.message || 'Erro inesperado ao registrar o pedido. Tente novamente.')

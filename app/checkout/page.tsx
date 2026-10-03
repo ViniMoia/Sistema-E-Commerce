@@ -88,17 +88,20 @@ export default function CheckoutPage() {
   }
 
   // Handle form submission
-  const handleOrderCreated = (result: any) => {
+  const handleOrderCreated = (rawResult: any) => {
+    const result = rawResult?.data?.order || rawResult?.order || rawResult
+    if (!result) return
+
     sessionStorage.setItem(
       'last_order',
       JSON.stringify({
         orderId: result.id || result.orderId,
         orderNumber: result.orderNumber,
         customer: {
-          name: result.customer.name,
-          phone: result.customer.phone,
+          name: result.customer?.name || '',
+          phone: result.customer?.phone || '',
         },
-        items: result.items,
+        items: result.items || [],
         deliveryType: result.deliveryType,
         address: result.address || undefined,
         freightValue: result.freightValue,
@@ -116,7 +119,7 @@ export default function CheckoutPage() {
         asaasDigitableLine: result.asaasDigitableLine,
         asaasBarCode: result.asaasBarCode,
         asaasDueDate: result.asaasDueDate,
-        whatsappNumber: loja.whatsappNumber || '',
+        whatsappNumber: loja?.whatsappNumber || '',
       })
     )
 

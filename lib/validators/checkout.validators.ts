@@ -93,9 +93,9 @@ export const createOrderSchema = z
     deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']),
     freightValue: z.number().nonnegative().optional(),
     shippingCost: z.number().nonnegative().optional(),
-    shippingProvider: z.string().optional(),
-    shippingServiceName: z.string().optional(),
-    shippingEstimatedDays: z.number().int().nonnegative().optional(),
+    shippingProvider: z.string().nullish(),
+    shippingServiceName: z.string().nullish(),
+    shippingEstimatedDays: z.number().int().nonnegative().nullish(),
     paymentMethod: z
       .enum(['PIX', 'CREDIT_CARD', 'BOLETO', 'WHATSAPP_PIX'])
       .default('PIX')
