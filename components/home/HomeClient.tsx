@@ -15,6 +15,8 @@ import { StorePresentationSection } from "./StorePresentationSection";
 import { StoreLocationSection } from "./StoreLocationSection";
 import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { getVariantOptions, matchesVariantTerm, resolveCatalogVariant } from "@/lib/product-variants";
 
 export type Product = FilterableProduct;
 
@@ -51,12 +53,14 @@ export default function HomeClient({
   lojaInfo: LojaInfo | null;
 }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const { addToCart, isLoading: isAddingToCart } = useCartStore();
   const { setIsOpen } = useCart();
+  const { toast } = useToast();
+  const selectedVariants = selectedProduct?.productVariants ?? [];
+  const variantOptions = getVariantOptions(selectedVariants);
 
   // Hook desacoplado de filtragem, contagem de marcas e paginação (SOLID / SRP)
   const {
@@ -107,37 +111,6 @@ export default function HomeClient({
     }
   }, [selectedProduct]);
 
-  // Sync selected variant based on size and color (ou seleciona a variante padrão automaticamente)
-  useEffect(() => {
-    if (!selectedProduct) {
-      setSelectedVariantId(null);
-      return;
-    }
-
-    const variants = selectedProduct.productVariants || [];
-    const hasRealVariants =
-      variants.length > 1 &&
-      variants.some((v) => v.size !== "Único" || v.color !== "Padrão");
-
-    if (!hasRealVariants) {
-      setSelectedVariantId(variants[0]?.id || null);
-      return;
-    }
-
-    if (selectedSize && selectedColor) {
-      const variant = variants.find(
-        (v) => v.size === selectedSize && v.color === selectedColor
-      );
-      if (variant && variant.stock > 0) {
-        setSelectedVariantId(variant.id);
-      } else {
-        setSelectedVariantId(null);
-      }
-    } else {
-      setSelectedVariantId(null);
-    }
-  }, [selectedSize, selectedColor, selectedProduct]);
-
   // Flashlight Effect Tracking
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -148,32 +121,56 @@ export default function HomeClient({
     e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
   };
 
+  const openProduct = (product: Product) => {
+    setSelectedSize(null);
+    setSelectedColor(null);
+    setSelectedProduct(product);
+  };
+
   const handleBuy = async (e: React.MouseEvent, product?: Product) => {
     e.stopPropagation();
+    if (isAddingToCart) return;
     const prod = product || selectedProduct;
     if (!prod) return;
-
     const variants = prod.productVariants || [];
-    const hasRealVariants =
-      variants.length > 1 &&
-      variants.some((v) => v.size !== "Único" || v.color !== "Padrão");
-
-    if (hasRealVariants && !selectedVariantId) {
-      if (!selectedProduct) {
-        setSelectedProduct(prod);
-        return;
-      }
-      alert("Por favor, selecione um tamanho e uma cor válidos antes de prosseguir.");
+    const options = getVariantOptions(variants);
+    // Os cards resolvem a variante do próprio produto, sem reutilizar seleções da tela anterior.
+    if (product && options.hasRealVariants) {
+      openProduct(prod);
       return;
     }
-
-    const variantIdToUse = selectedVariantId || variants[0]?.id || null;
-
+    const variant = resolveCatalogVariant(
+      variants,
+      product ? null : selectedSize,
+      product ? null : selectedColor,
+    );
+    if (options.hasRealVariants && !variant) {
+      const missing = [
+        options.hasRealSizes && !selectedSize ? "um tamanho" : null,
+        options.hasRealColors && !selectedColor ? "uma cor" : null,
+      ].filter(Boolean);
+      toast({
+        title: "Selecione uma opção",
+        description: missing.length > 0
+          ? "Selecione " + missing.join(" e ") + " para continuar."
+          : "Esta combinação está indisponível. Escolha outra opção.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (variants.length > 0 && !variant) {
+      toast({ title: "Produto indisponível", description: "Este produto está sem estoque.", variant: "destructive" });
+      return;
+    }
     try {
-      await addToCart(variantIdToUse, prod.id, 1);
+      await addToCart(variant?.id ?? null, prod.id, 1);
       setIsOpen(true);
     } catch (error) {
-      console.error(error);
+      toast({
+        title: "Não foi possível adicionar ao carrinho",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -187,7 +184,6 @@ export default function HomeClient({
           <button 
             onClick={() => {
               setSelectedProduct(null);
-              setSelectedVariantId(null);
               setSelectedSize(null);
               setSelectedColor(null);
             }}
@@ -266,76 +262,76 @@ export default function HomeClient({
                 {selectedProduct.description}
               </p>
               
-              {/* Product Variants Selector (apenas se houver variantes com tamanhos/cores reais) */}
-              {selectedProduct.productVariants && selectedProduct.productVariants.length > 0 && (() => {
-                const sizes = Array.from(new Set(selectedProduct.productVariants!.map(v => v.size))).filter(s => s !== "Único");
-                const colors = Array.from(new Set(selectedProduct.productVariants!.map(v => v.color))).filter(c => c !== "Padrão");
-
-                if (sizes.length === 0 && colors.length === 0) {
-                  return null;
-                }
-
-                return (
-                  <div className="pt-2 pb-2 space-y-6">
-                    {sizes.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-bold text-catalog-muted uppercase tracking-widest mb-3">Selecione o Tamanho</h3>
-                        <div className="flex flex-wrap gap-3">
-                          {sizes.map(size => {
-                            const isAvailable = selectedProduct.productVariants!.some(v => v.size === size && v.stock > 0);
-                            return (
-                              <button
-                                key={size}
-                                onClick={() => setSelectedSize(size)}
-                                disabled={!isAvailable}
-                                className={`px-5 py-2 rounded-full border text-sm font-medium transition-all ${
-                                  selectedSize === size 
-                                    ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text' 
-                                    : !isAvailable
-                                      ? 'border-neutral-900 bg-neutral-950 text-neutral-600 cursor-not-allowed opacity-50'
-                                      : 'border-catalog-gold/30 bg-transparent text-catalog-muted hover:border-catalog-gold/60 hover:text-catalog-text'
-                                }`}
-                              >
-                                {size}
-                              </button>
-                            );
-                          })}
-                        </div>
+              {/* Exige somente as dimensões que possuem opções distintas. */}
+              {variantOptions.hasRealVariants && (
+                <div className="pt-2 pb-2 space-y-6">
+                  {variantOptions.hasRealSizes && (
+                    <fieldset>
+                      <legend className="text-sm font-bold text-catalog-muted uppercase tracking-widest mb-3">Selecione o Tamanho</legend>
+                      <div className="flex flex-wrap gap-3">
+                        {variantOptions.sizes.map((size) => {
+                          const isAvailable = selectedVariants.some((v) => matchesVariantTerm(v.size, size) && v.stock > 0);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              aria-pressed={selectedSize === size}
+                              onClick={() => {
+                                setSelectedSize(size);
+                                if (selectedColor && !selectedVariants.some((v) =>
+                                  matchesVariantTerm(v.size, size) &&
+                                  matchesVariantTerm(v.color, selectedColor) && v.stock > 0
+                                )) setSelectedColor(null);
+                              }}
+                              disabled={!isAvailable}
+                              className={"px-5 py-2 rounded-full border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold " + (
+                                selectedSize === size
+                                  ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text'
+                                  : !isAvailable
+                                    ? 'border-neutral-900 bg-neutral-950 text-neutral-600 cursor-not-allowed opacity-50'
+                                    : 'border-catalog-gold/30 bg-transparent text-catalog-muted hover:border-catalog-gold/70 hover:text-catalog-text'
+                              )}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-
-                    {colors.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-bold text-catalog-muted uppercase tracking-widest mb-3">Selecione a Cor</h3>
-                        <div className="flex flex-wrap gap-3">
-                          {colors.map(color => {
-                            const isAvailable = selectedSize 
-                              ? selectedProduct.productVariants!.some(v => v.size === selectedSize && v.color === color && v.stock > 0)
-                              : selectedProduct.productVariants!.some(v => v.color === color && v.stock > 0);
-                              
-                            return (
-                              <button
-                                key={color}
-                                onClick={() => setSelectedColor(color)}
-                                disabled={!isAvailable}
-                                className={`px-5 py-2 rounded-full border text-sm font-medium transition-all ${
-                                  selectedColor === color 
-                                    ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text' 
-                                    : !isAvailable
-                                      ? 'border-neutral-900 bg-neutral-950 text-neutral-600 cursor-not-allowed opacity-50'
-                                      : 'border-catalog-gold/30 bg-transparent text-catalog-muted hover:border-catalog-gold/60 hover:text-catalog-text'
-                                }`}
-                              >
-                                {color}
-                              </button>
-                            );
-                          })}
-                        </div>
+                    </fieldset>
+                  )}
+                  {variantOptions.hasRealColors && (
+                    <fieldset>
+                      <legend className="text-sm font-bold text-catalog-muted uppercase tracking-widest mb-3">Selecione a Cor</legend>
+                      <div className="flex flex-wrap gap-3">
+                        {variantOptions.colors.map((color) => {
+                          const isAvailable = selectedVariants.some((v) =>
+                            matchesVariantTerm(v.color, color) && v.stock > 0 &&
+                            (!variantOptions.hasRealSizes || !selectedSize || matchesVariantTerm(v.size, selectedSize))
+                          );
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              aria-pressed={selectedColor === color}
+                              onClick={() => setSelectedColor(color)}
+                              disabled={!isAvailable}
+                              className={"px-5 py-2 rounded-full border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold " + (
+                                selectedColor === color
+                                  ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text'
+                                  : !isAvailable
+                                    ? 'border-neutral-900 bg-neutral-950 text-neutral-600 cursor-not-allowed opacity-50'
+                                    : 'border-catalog-gold/30 bg-transparent text-catalog-muted hover:border-catalog-gold/70 hover:text-catalog-text'
+                              )}
+                            >
+                              {color}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
-                );
-              })()}
+                    </fieldset>
+                  )}
+                </div>
+              )}
 
               <div className="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-catalog-gold/30 pb-8">
                 <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-catalog-text drop-shadow-md whitespace-nowrap">
@@ -349,7 +345,8 @@ export default function HomeClient({
 
               <div className="pt-4">
                 <button 
-                  onClick={handleBuy} 
+                  onClick={handleBuy}
+                  disabled={isAddingToCart}
                   className="btn-shimmer px-8 py-4 rounded-full bg-catalog-gold text-[#0F172A] font-bold text-sm tracking-widest uppercase hover:opacity-90 transition-all flex items-center justify-center gap-3 w-full sm:w-auto shadow-md cursor-pointer"
                   aria-label="Comprar Agora"
                 >
@@ -418,7 +415,7 @@ export default function HomeClient({
                     {paginatedProducts.map((prod, index) => (
                       <div 
                         key={prod.id}  
-                        onClick={() => setSelectedProduct(prod)}
+                        onClick={() => openProduct(prod)}
                         className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
                         style={{ animationDelay: `${(index % 8) * 0.05}s` }}
                       >
