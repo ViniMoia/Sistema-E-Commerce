@@ -67,6 +67,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (error: unknown) {
+    if (error instanceof productService.ProductVariantError) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
+    }
     console.error("[PRODUCTS_POST]", error);
 
     if (error instanceof Error && error.message === "STORE_NOT_FOUND") {

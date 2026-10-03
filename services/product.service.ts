@@ -1,5 +1,23 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { canonicalizeVariant, getVariantCombinationKey, type VariantInput } from "@/lib/product-variants";
+
+export class ProductVariantError extends Error {}
+
+function prepareVariants(variants: VariantInput[]): VariantInput[] {
+  const seen = new Set<string>();
+  return variants.map((variant) => {
+    if (!variant.size.trim() || !variant.color.trim() || !Number.isInteger(variant.stock)) {
+      throw new ProductVariantError("Dados de variante inválidos.");
+    }
+    const normalized = canonicalizeVariant(variant);
+    const key = getVariantCombinationKey(normalized);
+    if (seen.has(key)) throw new ProductVariantError("Não repita a mesma combinação de tamanho e cor.");
+    seen.add(key);
+    return normalized;
+  });
+}
+
 
 export interface GetProductsFilters {
   name?: string;
@@ -38,6 +56,7 @@ export interface UpdateProductInput {
   galleryUrls?: string[];
   stock?: number;
   variants?: Array<{
+    id?: string;
     size: string;
     color: string;
     stock: number;
@@ -144,10 +163,10 @@ export async function createProduct(data: CreateProductInput) {
         price: decimalPrice,
         productVariants: {
           create: variants && variants.length > 0
-            ? variants.map((v) => ({
+            ? prepareVariants(variants).map((v) => ({
                 size: v.size,
                 color: v.color,
-                stock: Math.max(0, v.stock),
+                stock: v.stock,
               }))
             : [{
                 size: "Único",
@@ -207,6 +226,10 @@ export async function updateProduct(
   }
 
   return await prisma.$transaction(async (tx) => {
+    if (variants !== undefined) {
+      await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
+    }
+
     const updateData: Prisma.ProductUpdateInput = {
       ...productData,
       ...(decimalPrice ? { price: decimalPrice } : {}),
@@ -217,29 +240,57 @@ export async function updateProduct(
       data: updateData,
     });
 
-    if (variants) {
-      // Atualiza variantes existentes por ID quando fornecido, criando apenas as novas
-      for (const v of variants) {
-        const variantWithId = v as { id?: string; size: string; color: string; stock: number };
-        if (variantWithId.id && existing.productVariants.some((ev) => ev.id === variantWithId.id)) {
-          await tx.productVariants.update({
-            where: { id: variantWithId.id },
-            data: {
-              size: variantWithId.size,
-              color: variantWithId.color,
-              stock: Math.max(0, variantWithId.stock),
-            },
-          });
-        } else {
-          await tx.productVariants.create({
-            data: {
-              ProductID: id,
-              size: variantWithId.size,
-              color: variantWithId.color,
-              stock: Math.max(0, variantWithId.stock),
-            },
-          });
+    if (variants !== undefined) {
+      if (variants.length === 0) throw new ProductVariantError("Adicione pelo menos uma variante.");
+      const incoming = prepareVariants(variants);
+      // O lock explícito acima serializa edições concorrentes. Leia as variantes
+      // depois de adquirir esse lock, para não reconciliar um snapshot desatualizado.
+      const existingVariants = await tx.productVariants.findMany({
+        where: { ProductID: id },
+        orderBy: { createdAt: "asc" },
+      });
+      const processedVariantIds = new Set<string>();
+      for (const variant of incoming) {
+        const target = variant.id
+          ? existingVariants.find((ev) => ev.id === variant.id)
+          : existingVariants.find((ev) =>
+              !processedVariantIds.has(ev.id) &&
+              getVariantCombinationKey(ev) === getVariantCombinationKey(variant)
+            );
+        if (variant.id && !target) {
+          throw new ProductVariantError("A variante informada não pertence a este produto.");
         }
+        if (target && processedVariantIds.has(target.id)) {
+          throw new ProductVariantError("Não repita o ID da variante.");
+        }
+        const variantData = { size: variant.size, color: variant.color, stock: variant.stock };
+        if (target) {
+          await tx.productVariants.update({ where: { id: target.id }, data: variantData });
+          processedVariantIds.add(target.id);
+        } else {
+          const created = await tx.productVariants.create({
+            data: { ProductID: id, ...variantData },
+          });
+          processedVariantIds.add(created.id);
+        }
+      }
+
+      const removedIds = existingVariants
+        .filter((variant) => !processedVariantIds.has(variant.id))
+        .map((variant) => variant.id);
+      if (removedIds.length > 0) {
+        // Desativa as opções removidas que ainda possuem vínculos.
+        await tx.productVariants.updateMany({
+          where: { id: { in: removedIds } },
+          data: { stock: 0 },
+        });
+        await tx.productVariants.deleteMany({
+          where: {
+            id: { in: removedIds },
+            cartItem: { none: {} },
+            orderItems: { none: {} },
+          },
+        });
       }
     }
 

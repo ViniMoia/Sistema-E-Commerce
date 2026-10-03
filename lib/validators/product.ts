@@ -1,11 +1,29 @@
 import { z } from "zod";
+import { getVariantCombinationKey } from "@/lib/product-variants";
 
 export const productVariantSchema = z.object({
   id: z.string().optional(),
-  size: z.string().min(1, "Tamanho é obrigatório"),
-  color: z.string().min(1, "Cor é obrigatória"),
+  size: z.string().trim().min(1, "Tamanho é obrigatório"),
+  color: z.string().trim().min(1, "Cor é obrigatória"),
   stock: z.number().int().min(0, "Estoque não pode ser negativo"),
 });
+
+export const productVariantsSchema = z.array(productVariantSchema).min(1, "Adicione pelo menos uma variante")
+  .superRefine((variants, ctx) => {
+    const combinations = new Set<string>();
+    const ids = new Set<string>();
+    for (const variant of variants) {
+      const key = getVariantCombinationKey(variant);
+      if (combinations.has(key)) {
+        ctx.addIssue({ code: "custom", message: "Não repita a mesma combinação de tamanho e cor." });
+      }
+      if (variant.id && ids.has(variant.id)) {
+        ctx.addIssue({ code: "custom", message: "Não repita o ID da variante." });
+      }
+      combinations.add(key);
+      if (variant.id) ids.add(variant.id);
+    }
+  });
 
 export const productFiltersSchema = z.object({
   name: z.string().optional(),
@@ -34,9 +52,9 @@ export const createProductSchema = z.object({
   galleryUrls: z.array(z.string().url("URL inválida na galeria")).optional().default([]),
   stock: z.number().int().min(0),
   lojaID: z.string().uuid("ID da loja inválido").optional(),
-  variants: z.array(productVariantSchema).min(1, "O produto deve ter pelo menos uma variação"),
+  variants: productVariantsSchema,
 });
 
 export const updateProductSchema = createProductSchema.partial().extend({
-  variants: z.array(productVariantSchema).optional(),
+  variants: productVariantsSchema.optional(),
 });

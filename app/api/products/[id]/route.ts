@@ -14,6 +14,9 @@ const SERVICE_ERRORS: Record<string, number> = {
 };
 
 function handleServiceError(error: unknown): NextResponse {
+  if (error instanceof productService.ProductVariantError) {
+    return NextResponse.json({ error: error.message }, { status: 422 });
+  }
   if (error instanceof Error && error.message in SERVICE_ERRORS) {
     return NextResponse.json(
       { error: error.message },
