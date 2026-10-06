@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma'
 vi.mock('@/lib/prisma', () => {
   return {
     default: {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       product: {
         findUnique: vi.fn(),

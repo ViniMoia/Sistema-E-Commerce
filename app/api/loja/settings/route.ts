@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdmin, requirePurchaseAdmin } from "@/lib/auth/guards";
 import { getLojaSettings, updateLojaSettings } from "@/services/loja.service";
 import { z } from "zod";
+import { toAdminLojaDTO } from '@/lib/loja-dto';
 
 const updateLojaSettingsSchema = z.object({
+  enableManualPix: z.boolean().optional(), enablePix: z.boolean().optional(),
+  enableCreditCard: z.boolean().optional(), enableBoleto: z.boolean().optional(),
   pixKey: z.string().nullable().optional(),
   pixKeyType: z.enum(['CPF', 'CNPJ', 'EMAIL', 'TELEFONE', 'ALEATORIA']).nullable().optional(),
   whatsappNumber: z.string().nullable().optional(),
@@ -23,8 +26,8 @@ const updateLojaSettingsSchema = z.object({
   originNumber: z.string().nullable().optional(),
   originComplement: z.string().nullable().optional(),
   enableCorreios: z.boolean().optional(),
-  correiosContractCode: z.string().nullable().optional(),
-  correiosPassword: z.string().nullable().optional(),
+  correiosContractCode: z.string().trim().min(1).refine(value => !/^\*+$/.test(value), 'Informe uma credencial nova').nullable().optional(),
+  correiosPassword: z.string().min(1).refine(value => !/^\*+$/.test(value), 'Informe uma credencial nova').nullable().optional(),
   enablePickup: z.boolean().optional(),
   enableNoFreight: z.boolean().optional(),
   additionalDays: z.number().int().nonnegative().optional(),
@@ -54,7 +57,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(settings, { status: 200 });
+    return NextResponse.json(toAdminLojaDTO(settings), { status: 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error("[LOJA_SETTINGS_GET]", error);
     return NextResponse.json(
@@ -98,7 +101,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    const updated = await updateLojaSettings(lojaID, parsed.data);
+    if (['enableManualPix', 'enablePix', 'enableCreditCard', 'enableBoleto'].some(key => key in parsed.data)) {
+      const paymentGuard = await requirePurchaseAdmin(request);
+      if (paymentGuard instanceof NextResponse) return paymentGuard;
+    }
+    const updated = await updateLojaSettings(lojaID, parsed.data, guard.user.id);
     if (!updated) {
       return NextResponse.json(
         { error: "Failed to update loja settings" },
@@ -106,7 +113,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    return NextResponse.json(updated, { status: 200 });
+    return NextResponse.json(toAdminLojaDTO(updated), { status: 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error("[LOJA_SETTINGS_PUT]", error);
     return NextResponse.json(

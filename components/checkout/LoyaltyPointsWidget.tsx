@@ -1,18 +1,22 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Award, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useCartStore } from '@/store/cart.store'
 
 interface LoyaltyPointsWidgetProps {
   lojaID: string
   subtotal: number
   onPointsApplied: (applied: { pointsToRedeem: number; discountValue: number }) => void
+  onPendingChange?: (pending: boolean) => void
 }
 
 interface WalletData {
   balance: number
   monetaryBalance: number
   pending: number
+  debt?: number
+  accountingReady?: boolean
 }
 
 interface SimulationData {
@@ -28,6 +32,7 @@ export function LoyaltyPointsWidget({
   lojaID,
   subtotal,
   onPointsApplied,
+  onPendingChange,
 }: LoyaltyPointsWidgetProps) {
   const [wallet, setWallet] = useState<WalletData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -36,42 +41,64 @@ export function LoyaltyPointsWidget({
   const [simulation, setSimulation] = useState<SimulationData | null>(null)
   const [isSimulating, setIsSimulating] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(true)
+  const onPointsAppliedRef = useRef(onPointsApplied)
+  const onPendingRef = useRef(onPendingChange)
+  const userID = useCartStore(state => state.context?.userID)
+  useEffect(() => { onPointsAppliedRef.current = onPointsApplied }, [onPointsApplied])
+  useEffect(() => { onPendingRef.current = onPendingChange }, [onPendingChange])
 
   // 1. Carregar carteira do cliente autenticado
   useEffect(() => {
+    let active = true
+    const controller = new AbortController()
     async function loadWallet() {
       if (!lojaID) return
       setLoading(true)
+      setWallet(null)
+      setUsePoints(false)
+      setRequestedPoints(0)
+      setSimulation(null)
+      onPointsAppliedRef.current({ pointsToRedeem: 0, discountValue: 0 })
       try {
-        const res = await fetch('/api/loyalty/wallet')
-        if (res.status === 401) {
+        const res = await fetch('/api/loyalty/wallet', { signal: controller.signal, cache: 'no-store' })
+        if (!active) return
+        if (res.status === 401 || res.status === 403) {
           setIsAuthenticated(false)
           setLoading(false)
           return
         }
         const data = await res.json()
+        if (!active) return
         if (data.success && data.data?.wallet) {
+          setIsAuthenticated(true)
           setWallet(data.data.wallet)
           setRequestedPoints(data.data.wallet.balance)
         }
       } catch (err) {
-        console.error('Erro ao carregar carteira de pontos:', err)
+        if (active) console.error('Erro ao carregar carteira de pontos:', err)
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
     loadWallet()
-  }, [lojaID])
+    return () => { active = false; controller.abort() }
+  }, [lojaID, userID])
 
   // 2. Simular desconto de pontos sempre que subtotal, usePoints ou requestedPoints mudar
   useEffect(() => {
+    let active = true
+    const controller = new AbortController()
     async function runSimulation() {
-      if (!lojaID || subtotal <= 0) return
+      setSimulation(null)
+      onPointsAppliedRef.current({ pointsToRedeem: 0, discountValue: 0 })
+      if (!lojaID || subtotal <= 0) { setIsSimulating(false); onPendingRef.current?.(false); return }
 
       setIsSimulating(true)
+      onPendingRef.current?.(true)
       try {
         const res = await fetch('/api/loyalty/simulate', {
           method: 'POST',
+          signal: controller.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             lojaID,
@@ -81,29 +108,38 @@ export function LoyaltyPointsWidget({
         })
 
         const json = await res.json()
+        if (!active) return
         if (json.success && json.data) {
           setSimulation(json.data)
           if (usePoints && json.data.eligible) {
-            onPointsApplied({
+            onPointsAppliedRef.current({
               pointsToRedeem: json.data.pointsToRedeem,
               discountValue: json.data.discountValue,
             })
           } else {
-            onPointsApplied({
+            onPointsAppliedRef.current({
               pointsToRedeem: 0,
               discountValue: 0,
             })
           }
+        } else {
+          setSimulation(null)
+          onPointsAppliedRef.current({ pointsToRedeem: 0, discountValue: 0 })
         }
       } catch (err) {
-        console.error('Erro ao simular pontos:', err)
+        if (active) {
+          setSimulation(null)
+          onPointsAppliedRef.current({ pointsToRedeem: 0, discountValue: 0 })
+          console.error('Erro ao simular pontos:', err)
+        }
       } finally {
-        setIsSimulating(false)
+        if (active) { setIsSimulating(false); onPendingRef.current?.(false) }
       }
     }
 
     runSimulation()
-  }, [lojaID, subtotal, usePoints, requestedPoints])
+    return () => { active = false; controller.abort() }
+  }, [lojaID, userID, subtotal, usePoints, requestedPoints])
 
   if (loading) {
     return (
@@ -128,7 +164,7 @@ export function LoyaltyPointsWidget({
               <Sparkles className="w-3.5 h-3.5 text-catalog-gold" />
             </p>
             <p className="text-catalog-muted mt-1 leading-relaxed">
-              Você acumulará pontos nesta compra! Faça login para resgatar saldos e descontos exclusivos na finalização.
+              Faça login para acumular pontos e resgatar saldos e descontos exclusivos na finalização.
             </p>
             {simulation && simulation.projectedEarnedPoints > 0 && (
               <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-catalog-gold/15 border border-catalog-gold/40 text-catalog-gold font-mono font-bold text-[11px]">
@@ -141,7 +177,7 @@ export function LoyaltyPointsWidget({
     )
   }
 
-  const hasPoints = wallet && wallet.balance > 0
+  const hasPoints = wallet && wallet.balance > 0 && wallet.accountingReady !== false
 
   return (
     <div className="rounded-2xl border border-catalog-gold/30 bg-[#0B132B]/70 backdrop-blur-md p-5 shadow-sm space-y-4">
@@ -181,7 +217,15 @@ export function LoyaltyPointsWidget({
         )}
       </div>
 
+      {wallet?.accountingReady === false && (
+        <p className="text-xs text-catalog-muted">Seu saldo está preservado e aguarda conferência antes de ser usado.</p>
+      )}
+      {!!wallet?.debt && (
+        <p className="text-xs text-catalog-muted">Pontos pendentes de compensação: {wallet.debt}. Novos créditos abatem essa quantidade primeiro.</p>
+      )}
+
       {/* Seção quando o toggle está ativo */}
+      {isSimulating && <p role="status" className="text-xs text-catalog-muted">Conferindo os pontos para estes valores...</p>}
       {usePoints && hasPoints && (
         <div className="pt-3 border-t border-catalog-gold/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-center justify-between text-xs font-mono">

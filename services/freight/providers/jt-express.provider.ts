@@ -14,13 +14,7 @@ export class JtExpressProvider implements IFreightProvider {
    * Verifica se a loja possui a tabela da J&T Express disponível.
    */
   public async isAvailableForStore(lojaID: string, storeSettings?: any): Promise<boolean> {
-    try {
-      const count = await prisma.jtExpressRate.count();
-      return count > 0;
-    } catch (err) {
-      console.error('[JT_EXPRESS_AVAILABILITY_ERROR]', err);
-      return false;
-    }
+    return (await prisma.jtExpressRate.count()) > 0;
   }
 
   /**
@@ -28,6 +22,9 @@ export class JtExpressProvider implements IFreightProvider {
    */
   public async calculateQuotes(request: FreightQuoteRequest): Promise<FreightOption[]> {
     const destCep = request.destinationCep.replace(/\D/g, '');
+    // This installed matrix was imported for a single origin. Do not apply its
+    // tariff to another origin merely because global rows exist.
+    if (request.originCep !== '67140615') return [];
     if (!destCep || destCep.length !== 8) {
       return [];
     }
@@ -113,8 +110,7 @@ export class JtExpressProvider implements IFreightProvider {
         },
       ];
     } catch (error) {
-      console.error('[JT_EXPRESS_CALCULATION_ERROR]', error);
-      return [];
+      throw error;
     }
   }
 }

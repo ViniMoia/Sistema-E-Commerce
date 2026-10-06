@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { setupTestDb, seedTestData, cleanupTestDb } from '@/tests/setup/db'
 import { createAuthHeaders } from '@/tests/setup/auth'
-import { get, patch, post, del } from '@/tests/helpers/request'
+import { get, patch, post, del, verifyTestServer } from '@/tests/helpers/request'
 
 const LOJA_A = 'LOJA_A'
 const LOJA_B = 'LOJA_B'
@@ -50,11 +50,13 @@ describe('Proteção de rotas admin', () => {
     body?: unknown,
     opts?: { headers?: Record<string, string> }
   ) {
+    await verifyTestServer()
     const baseUrl = (() => { const u = process.env.TEST_BASE_URL; if (!u) throw new Error('TEST_BASE_URL env var is required'); return u })()
     const url = new URL(path, baseUrl)
 
     const res = await fetch(url.toString(), {
       method: method.toUpperCase(),
+      redirect: 'error',
       headers: { 'Content-Type': 'application/json', ...opts?.headers },
       body: body ? JSON.stringify(body) : undefined,
       credentials: 'include'

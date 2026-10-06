@@ -1,7 +1,5 @@
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { repairVariants, PRODUCT_ID } from "./lib/repair-product-variants.mjs";
+import { PRODUCT_ID } from "./lib/repair-product-variants.mjs";
 
 const require = createRequire(import.meta.url);
 require("@next/env").loadEnvConfig(process.cwd());
@@ -31,16 +29,9 @@ async function audit() {
 try {
   console.log(JSON.stringify({ before: await audit() }, null, 2));
   if (apply) {
-    const result = await repairVariants(prisma, async (snapshot) => {
-      const directory = resolve(".git/variant-workflow-backup");
-      mkdirSync(directory, { recursive: true });
-      writeFileSync(resolve(directory, "database-before.json"),
-        JSON.stringify(snapshot, null, 2), { flag: "wx" });
-      console.log("Backup salvo em .git/variant-workflow-backup/database-before.json");
-    });
-    console.log(JSON.stringify({ result, after: await audit() }, null, 2));
+    throw new Error("Aplicação do saneamento legado desativada: o procedimento não trata revisões, retiradas e reservas. WF-18 deve validar backup e manutenção antes de reabilitá-lo.");
   } else {
-    console.log("Auditoria somente leitura. Use --apply para aplicar o saneamento.");
+    console.log("Auditoria somente leitura. Saneamento legado permanece bloqueado até WF-18.");
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Falha no saneamento.");

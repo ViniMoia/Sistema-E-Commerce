@@ -1,4 +1,9 @@
 import type { Prisma } from '@prisma/client';
+import { CommerceLocks } from '@/lib/commerce/locks';
+
+export interface InventoryRelease {
+  productId: string; variantId: string | null; quantity: number; destination: 'AVAILABLE' | 'UNAVAILABLE';
+}
 
 export interface InventoryItemInput {
   productId: string;
@@ -29,8 +34,30 @@ export class InventoryService {
   static async reserveStock(
     items: InventoryItemInput[],
     tx: Prisma.TransactionClient,
-    _lojaID?: string
+    lojaID: string
   ): Promise<void> {
+    if (!lojaID) throw new InventoryError('INVALID_INPUT', 'Contexto de loja é obrigatório.');
+    if (items.some(item => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 2147483647)) throw new InventoryError('INVALID_INPUT', 'Produto e quantidade inteira positiva são obrigatórios.');
+    const locks = new CommerceLocks(tx);
+    await locks.acquire('product', items.map(item => item.productId));
+    await locks.acquire('variant', items.flatMap(item => item.variantId ? [item.variantId] : []));
+    // Validate the entire batch before its first write, including direct callers.
+    for (const item of items) {
+      if (!item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 2147483647) {
+        throw new InventoryError('INVALID_INPUT', 'Produto e quantidade inteira positiva são obrigatórios.');
+      }
+      const product = await tx.product.findUnique({ where: { id: item.productId }, select: { id: true, lojaID: true, retiredAt: true, productVariants: { select: { id: true } } } });
+      if (!product || product.lojaID !== lojaID || product.retiredAt) {
+        throw new InventoryError('INVALID_SCOPE', 'Produto inválido ou não pertence a esta loja.');
+      }
+      if (!item.variantId && product.productVariants?.length) throw new InventoryError('INVALID_SCOPE', 'Seleção de variante é obrigatória para reservar este produto.');
+      if (item.variantId) {
+        const variant = await tx.productVariants.findUnique({ where: { id: item.variantId }, select: { ProductID: true, retiredAt: true } });
+        if (!variant || variant.ProductID !== product.id || variant.retiredAt) {
+          throw new InventoryError('INVALID_SCOPE', 'Variação inválida ou não pertence ao produto.');
+        }
+      }
+    }
     // Ordenação Determinística de Locks (Prevenção de Deadlocks 40P01 - AUD2-004):
     // Garante que múltiplas transações concorrentes sempre adquiram locks de linha
     // na mesma sequência estrita (por productId e variantId), eliminando ciclos de espera mútua.
@@ -45,13 +72,14 @@ export class InventoryService {
         throw new InventoryError('INVALID_INPUT', 'Identificador do produto (productId) é obrigatório.');
       }
 
-      const quantity = Math.max(1, Math.floor(item.quantity));
+      const quantity = item.quantity;
 
       // Decremento atômico no produto pai com salvaguarda contra estoque negativo / condição de corrida (AUD-003)
       const updatedProduct = await tx.product.update({
-        where: { id: item.productId },
+        where: { id: item.productId, lojaID, retiredAt: null },
         data: {
           stock: { decrement: quantity },
+          inventoryVersion: { increment: 1 },
         },
       });
 
@@ -65,9 +93,10 @@ export class InventoryService {
       // Decremento atômico na variante (se especificada) com salvaguarda de concorrência (AUD-003)
       if (item.variantId) {
         const updatedVariant = await tx.productVariants.update({
-          where: { id: item.variantId },
+          where: { id: item.variantId, ProductID: item.productId, retiredAt: null },
           data: {
             stock: { decrement: quantity },
+            inventoryVersion: { increment: 1 },
           },
         });
 
@@ -87,8 +116,16 @@ export class InventoryService {
    */
   static async restoreStock(
     items: InventoryItemInput[],
-    tx: Prisma.TransactionClient
-  ): Promise<void> {
+    tx: Prisma.TransactionClient,
+    lojaID: string
+  ): Promise<InventoryRelease[]> {
+    if (!lojaID || items.some(item => !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 2147483647 || (item.variantId && !item.productId))) {
+      throw new InventoryError('INVALID_INPUT', 'Contexto e vínculos de restituição inválidos.');
+    }
+    const locks = new CommerceLocks(tx);
+    await locks.acquire('product', items.flatMap(item => item.productId ? [item.productId] : []));
+    await locks.acquire('variant', items.flatMap(item => item.variantId ? [item.variantId] : []));
+    const releases: InventoryRelease[] = [];
     const sortedItems = [...items].sort((a, b) => {
       const cmpProduct = (a.productId || '').localeCompare(b.productId || '');
       if (cmpProduct !== 0) return cmpProduct;
@@ -96,35 +133,29 @@ export class InventoryService {
     });
 
     for (const item of sortedItems) {
-      const quantity = Math.max(1, Math.floor(item.quantity));
-
-      // 1. Incrementa estoque do produto pai (se productId existir)
+      const quantity = item.quantity;
+      if (!item.productId) continue; // Detached historical item: no fabricated inventory destination.
+      const product = await tx.product.findUnique({ where: { id: item.productId }, select: { lojaID: true, retiredAt: true } });
+      const variant = item.variantId ? await tx.productVariants.findUnique({ where: { id: item.variantId }, select: { ProductID: true, retiredAt: true } }) : null;
+      if (!product || product.lojaID !== lojaID || (item.variantId && (!variant || variant.ProductID !== item.productId))) throw new InventoryError('INVALID_SCOPE', 'Vínculos de restituição inválidos.');
+      const unavailable = Boolean(product.retiredAt || variant?.retiredAt);
+      const data = { [unavailable ? 'unavailableStock' : 'stock']: { increment: quantity }, inventoryVersion: { increment: 1 } };
       if (item.productId) {
-        try {
           await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { increment: quantity },
-            },
+            where: { id: item.productId, lojaID },
+            data,
           });
-        } catch (err) {
-          console.warn(`[INVENTORY_RESTORE_WARNING] Falha ao incrementar produto pai ${item.productId}:`, err);
-        }
       }
 
       // 2. Incrementa estoque da variante (se variantId existir)
       if (item.variantId) {
-        try {
           await tx.productVariants.update({
-            where: { id: item.variantId },
-            data: {
-              stock: { increment: quantity },
-            },
+            where: { id: item.variantId, ProductID: item.productId, product: { lojaID } },
+            data,
           });
-        } catch (err) {
-          console.warn(`[INVENTORY_RESTORE_WARNING] Falha ao incrementar variante ${item.variantId}:`, err);
-        }
       }
+      releases.push({ productId: item.productId, variantId: item.variantId ?? null, quantity, destination: unavailable ? 'UNAVAILABLE' : 'AVAILABLE' });
     }
+    return releases;
   }
 }

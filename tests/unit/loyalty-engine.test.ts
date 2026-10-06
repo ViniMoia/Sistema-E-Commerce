@@ -103,7 +103,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         userID: 'user-123',
         points: 0,
         description: 'Ajuste nulo',
-        adminUserId: 'admin-123',
+        adminUserId: 'admin-123', commandId: 'adjust-command-1',
       })
       expect(invalid.success).toBe(false)
     })
@@ -114,7 +114,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         userID: 'user-123',
         points: 500,
         description: 'Bônus de fidelidade',
-        adminUserId: 'admin-123',
+        adminUserId: 'admin-123', commandId: 'adjust-command-1',
       })
       expect(credit.success).toBe(true)
 
@@ -123,7 +123,7 @@ describe('Motor de Fidelidade & Cálculos Contábeis (Loyalty Engine)', () => {
         userID: 'user-123',
         points: -100,
         description: 'Correção de lançamento duplicado',
-        adminUserId: 'admin-123',
+        adminUserId: 'admin-123', commandId: 'adjust-command-1',
       })
       expect(debit.success).toBe(true)
     })

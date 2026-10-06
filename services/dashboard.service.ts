@@ -1,3 +1,4 @@
+import { buyerSelect, orderCustomer } from '@/lib/commerce/order-buyer';
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
 import { getBusinessTimeRanges } from '@/lib/utils/date-ranges';
@@ -208,6 +209,7 @@ export async function getAggregatedDashboardMetrics(
           orderBy: { createdAt: 'desc' },
           take: 6,
           include: {
+            buyer: { select: buyerSelect },
             user: {
               select: {
                 name: true,
@@ -224,6 +226,7 @@ export async function getAggregatedDashboardMetrics(
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
+            buyer: { select: buyerSelect },
             user: {
               select: {
                 id: true,
@@ -503,9 +506,9 @@ export async function getAggregatedDashboardMetrics(
         return {
           orderId: ord.id,
           orderNumber: ord.orderNumber,
-          customerName: ord.user?.name || 'Cliente',
-          customerEmail: ord.user?.email || '',
-          customerPhone: ord.user?.phone || null,
+          customerName: orderCustomer(ord).name,
+          customerEmail: orderCustomer(ord).email,
+          customerPhone: orderCustomer(ord).phone,
           total: (ord.total as Prisma.Decimal).toNumber(),
           createdAt: ord.createdAt.toISOString(),
           reason,
@@ -542,10 +545,10 @@ export async function getAggregatedDashboardMetrics(
           trackingCode: ord.trackingCode,
           isAwaitingDispatch,
           customer: {
-            id: ord.user?.id ?? null,
-            name: ord.user?.name || 'Cliente',
-            email: ord.user?.email || '',
-            phone: ord.user?.phone || null,
+            id: orderCustomer(ord).id,
+            name: orderCustomer(ord).name,
+            email: orderCustomer(ord).email,
+            phone: orderCustomer(ord).phone,
           },
           pointsEarned: ord.pointsEarned ?? 0,
           pointsRedeemed: ord.pointsRedeemed ?? 0,

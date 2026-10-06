@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requirePurchaseAdmin as requireAdmin } from "@/lib/auth/guards";
 import * as productService from "@/services/product.service";
 import { updateProductSchema } from "@/lib/validators/product";
 import { getLojaFromHeaders } from "@/lib/tenant";
@@ -14,6 +14,7 @@ const SERVICE_ERRORS: Record<string, number> = {
 };
 
 function handleServiceError(error: unknown): NextResponse {
+  if (error instanceof productService.ProductConflictError) return NextResponse.json({ error: error.message, code: error.message }, { status: 409 });
   if (error instanceof productService.ProductVariantError) {
     return NextResponse.json({ error: error.message }, { status: 422 });
   }
@@ -31,8 +32,9 @@ export async function GET(_req: Request, context: RouteContext) {
   try {
     const params = await context.params;
     const activeLoja = await getLojaFromHeaders();
-    const product = await productService.getProductById(params.id, activeLoja?.id);
-    return NextResponse.json(product, { status: 200 });
+    if (!activeLoja) return NextResponse.json({ error: 'Loja não encontrada.' }, { status: 404 });
+    const product = await productService.getProductById(params.id, activeLoja.id);
+    return NextResponse.json(product, { status: 200, headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return handleServiceError(error);
   }
@@ -40,7 +42,7 @@ export async function GET(_req: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
-    const guard = await requireAdmin();
+    const guard = await requireAdmin(request);
     if (guard instanceof NextResponse) return guard;
 
     const params = await context.params;
@@ -74,7 +76,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_req: Request, context: RouteContext) {
   try {
-    const guard = await requireAdmin();
+    const guard = await requireAdmin(_req);
     if (guard instanceof NextResponse) return guard;
 
     const params = await context.params;

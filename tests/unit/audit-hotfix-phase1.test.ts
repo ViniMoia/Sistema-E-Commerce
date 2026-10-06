@@ -2,13 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InventoryService, InventoryError } from '@/services/inventory.service';
 import { updateOrderStatus } from '@/services/order.service';
 import { POST as checkoutPOST } from '@/app/api/checkout/route';
+import { POST as proposalPOST } from '@/app/api/checkout/intents/route';
 import prisma from '@/lib/prisma';
 import * as tenantLib from '@/lib/tenant';
-import * as checkoutService from '@/lib/services/checkout.service';
+import * as checkoutService from '@/services/checkout.service';
 import * as loyaltyService from '@/services/loyalty.service';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
+    $queryRaw: vi.fn().mockResolvedValue([]),
+    user: { findUnique: vi.fn().mockResolvedValue({ id: 'admin-1', lojaID: 'loja-continental', status: 'ACTIVE', role: 'ADMIN' }) },
+    orderStatusHistory: { create: vi.fn(), findUnique: vi.fn() },
+    commerceOutbox: { create: vi.fn() },
     $transaction: vi.fn(async (cb) => {
       if (typeof cb === 'function') {
         return await cb(prisma);
@@ -45,7 +50,7 @@ vi.mock('@/lib/tenant', () => ({
   getLojaFromHeaders: vi.fn(),
 }));
 
-vi.mock('@/lib/services/checkout.service', () => ({
+vi.mock('@/services/checkout.service', () => ({
   createOrder: vi.fn(),
 }));
 
@@ -57,6 +62,8 @@ vi.mock('@/services/loyalty.service', () => ({
 describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-003, AUD-004)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.product.findUnique as any).mockImplementation(async ({ where }: any) => ({ id: where.id, lojaID: "loja-1", retiredAt: null }));
+    vi.mocked(prisma.productVariants.findUnique).mockResolvedValue({ ProductID: "prod-pai", retiredAt: null } as any);
   });
 
   describe('AUD-003: Blindagem contra Concorrência e Sobrevenda (Race Condition)', () => {
@@ -70,7 +77,7 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
       await expect(
         InventoryService.reserveStock(
           [{ productId: 'prod-esgotado', quantity: 1 }],
-          prisma as any
+          prisma as any, "loja-1"
         )
       ).rejects.toThrow('Estoque insuficiente para o produto "Produto Concorrente"');
     });
@@ -90,14 +97,14 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
       await expect(
         InventoryService.reserveStock(
           [{ productId: 'prod-pai', variantId: 'var-esgotada', quantity: 1 }],
-          prisma as any
+          prisma as any, "loja-1"
         )
       ).rejects.toThrow('Estoque insuficiente para a variação selecionada');
     });
   });
 
   describe('AUD-002: Estorno de Pontos de Fidelidade em Pedidos PENDING Cancelados', () => {
-    it('deve invocar refundOrderPoints ao cancelar um pedido PENDING que utilizou pontos resgatados', async () => {
+    it('deve bloquear cancelamento de legado com resgate antes de inferir restituição', async () => {
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'order-pending-with-points',
         status: 'PENDING',
@@ -121,17 +128,12 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
         lojaID: 'loja-continental',
       });
 
-      expect(result.success).toBe(true);
-      expect(loyaltyService.refundOrderPoints).toHaveBeenCalledWith(
-        expect.objectContaining({
-          lojaID: 'loja-continental',
-          orderId: 'order-pending-with-points',
-        }),
-        expect.anything()
-      );
+      expect(result).toMatchObject({ success: false, error: 'LEGACY_ORDER_RECONCILIATION_REQUIRED' });
+      expect(loyaltyService.refundOrderPoints).not.toHaveBeenCalled();
+      expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
-    it('não deve invocar refundOrderPoints ao cancelar pedido PENDING que NÃO utilizou pontos', async () => {
+    it('deve bloquear cancelamento de legado sem resgate e preservar dados', async () => {
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'order-pending-no-points',
         status: 'PENDING',
@@ -155,7 +157,7 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
         lojaID: 'loja-continental',
       });
 
-      expect(result.success).toBe(true);
+      expect(result).toMatchObject({ success: false, error: 'LEGACY_ORDER_RECONCILIATION_REQUIRED' });
       expect(loyaltyService.refundOrderPoints).not.toHaveBeenCalled();
     });
   });
@@ -172,7 +174,7 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          lojaID: 'loja-vitima-2', // Tentativa de forjar Loja Beta
+          paymentMethod: 'PIX', lojaID: 'loja-vitima-2', // Tentativa de forjar Loja Beta
           deliveryType: 'PICKUP',
           customer: {
             name: 'Cliente Teste',
@@ -184,10 +186,10 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
         }),
       });
 
-      const res = await checkoutPOST(req);
+      const res = await proposalPOST(req);
       expect(res.status).toBe(403);
       const data = await res.json();
-      expect(data.error).toContain('Violação de isolamento multi-tenant');
+      expect(data.error).toContain('ACCOUNT_ACCESS_DENIED');
       expect(checkoutService.createOrder).not.toHaveBeenCalled();
     });
 
@@ -205,17 +207,7 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
       const req = new Request('http://alpha.com/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          lojaID: 'loja-legitima-1',
-          deliveryType: 'PICKUP',
-          customer: {
-            name: 'Cliente Teste',
-            email: 'cliente@teste.com',
-            phone: '11999999999',
-            cpfCnpj: '12345678909',
-          },
-          items: [{ productId: 'prod-1', name: 'Item Teste', quantity: 1, price: 50 }],
-        }),
+        body: JSON.stringify({ checkoutIntentID: '11111111-1111-4111-8111-111111111111', acceptedRevision: 1, acceptedContentHash: 'a'.repeat(64) }),
       });
 
       const res = await checkoutPOST(req);
@@ -228,3 +220,7 @@ describe('Auditoria Fase 1 - Validação dos Hotfixes Bloqueantes (AUD-002, AUD-
     });
   });
 });
+
+
+vi.mock('@/lib/session', () => ({ getCurrentUser: vi.fn(async () => null) }));
+vi.mock('@/lib/freight/owner', () => ({ freightOwnerForRequest: vi.fn(async () => 'g:' + 'a'.repeat(64)) }));

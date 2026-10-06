@@ -1,18 +1,17 @@
-import prisma from '@/lib/prisma'
-import { Prisma, DeliveryType } from '@prisma/client'
-import {
-  simulatePointsRedemption,
-  calculatePointsEarned,
-  debitRedeemedPoints,
-} from '@/services/loyalty.service'
-import { asaasClient } from '@/services/asaas/asaas.client'
-import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter'
-import type { PaymentGateway, PaymentMethod, CreditCardData } from '@/types/payment-gateway.types'
-import { updateOrderStatus } from '@/services/order.service'
-import { InventoryService } from '@/services/inventory.service'
-import { cleanDigits } from '@/lib/validators/cpf-cnpj'
-import { logger } from '@/lib/logger'
-import { verifyFreightQuote } from '@/lib/freight-quote'
+import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { buyerSelect } from '@/lib/commerce/order-buyer';
+import { guestCheckoutAccess, checkoutHash } from '@/lib/commerce/checkout-content';
+import { debitRedeemedPoints } from '@/services/loyalty.service';
+import { InventoryService } from '@/services/inventory.service';
+import { executePaymentAttempt } from '@/services/payment/checkout-payment.service';
+import { prepareCheckout } from './checkout-plan.service';
+import { withCheckoutOwner, lockOwnedIntent, lockIntentSource, intentSnapshot, requestFingerprint, proposalDTO, checkoutNow, type CheckoutScope } from './checkout-intent.service';
+import { purchaseResultFromOrder, purchaseInclude } from '@/lib/commerce/purchase-result';
+import { creditCardSchema } from '@/lib/validators/checkout.validators';
+import type { PaymentGateway, PaymentMethod, CreditCardData } from '@/types/payment-gateway.types';
+import { paymentAccountScope } from '@/lib/commerce/payment-account';
+import { checkoutAddresses } from '@/lib/commerce/checkout-address';
 
 export interface CheckoutCartItem {
   productId?: string
@@ -44,11 +43,22 @@ export interface CheckoutAddressData {
 
 export interface CreateOrderParams {
   lojaID: string
+  checkoutIntentID?: string
+  acceptedRevision?: number
+  acceptedContentHash?: string
+  cartID?: string
+  cartVersion?: number
+  basketID?: string
+  orderAccessToken?: string
   customer: CheckoutCustomerData
   items: CheckoutCartItem[]
   address?: CheckoutAddressData
+  shippingAddress?: CheckoutAddressData
+  billingAddress?: CheckoutAddressData
+  billingSameAsShipping?: boolean
   deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE'
   freightQuoteToken?: string
+  freightOwnerKey?: string // Trusted HTTP context, never accepted from request body.
   freightValue?: number
   shippingCost?: number
   shippingProvider?: string
@@ -61,14 +71,33 @@ export interface CreateOrderParams {
   creditCard?: CreditCardData
   installments?: number
   installmentValue?: number
+  acceptedFinancialTotal?: number
   paymentGateway?: PaymentGateway
 }
 
 export interface CreateOrderResult {
   success: true
+  kind?: 'approved' | 'action_required' | 'manual' | 'processing' | 'declined' | 'cancelled' | 'review'
+  paymentState?: 'MANUAL' | 'ISSUED' | 'PROCESSING' | 'APPROVED' | 'DECLINED' | 'CANCELLED' | 'REVIEW'
+  financialState?: import('@prisma/client').PaymentAttemptStatus
   order: {
     id: string
+    status?: string
+    version?: number
+    checkoutIntentID?: string
+    sourceCartID?: string | null
+    sourceCartVersion?: number | null
+    serverTime?: string
+    allowedActions?: Array<'PAY_PIX' | 'PAY_BOLETO' | 'CONTACT_MANUAL'>
+    whatsappNumber?: string | null
+    orderAccessToken?: string
+    address?: CheckoutAddressData
     orderNumber: number
+    paymentState?: string
+    financialState?: import('@prisma/client').PaymentAttemptStatus
+    paymentExpiresAt?: string | null
+    financialTotal?: number
+    financingCharge?: number
     total: number
     subtotal: number
     freightValue: number | null
@@ -95,6 +124,7 @@ export interface CreateOrderResult {
     customer: { name: string; phone: string; cpfCnpj?: string | null }
     items: Array<{
       productId?: string
+      variantId?: string
       name: string
       quantity: number
       price: number
@@ -105,630 +135,111 @@ export interface CreateOrderResult {
   }
 }
 
-/**
- * Pipeline Canônico de Checkout Autoritativo com Idempotência Transacional,
- * Controle de Estoque e Motor de Fidelidade (Loyalty Engine) (DB-002, SEC-002).
- */
+
+/** Sole public purchase command. The source, proposal and accepted revision are
+ * mandatory; no transport key or client total substitutes for consent. */
 export async function createOrder(params: CreateOrderParams): Promise<CreateOrderResult> {
-  if (!params.items || params.items.length === 0) {
-    throw new Error('O pedido deve conter pelo menos um item.')
-  }
-
-  const txResult = await prisma.$transaction(async (tx) => {
-    // 0. Verificar idempotência se chave fornecida (DB-002)
-    if (params.idempotencyKey) {
-      const existingOrder = await tx.order.findUnique({
-        where: { idempotencyKey: params.idempotencyKey },
-        include: {
-          user: { select: { name: true, phone: true } },
-          items: {
-            select: {
-              productId: true,
-              name: true,
-              quantity: true,
-              price: true,
-              color: true,
-              size: true,
-            },
-          },
-        },
-      })
-
-      if (existingOrder) {
-        return {
-          isExisting: true as const,
-          result: {
-            success: true as const,
-            order: {
-              id: existingOrder.id,
-              orderNumber: existingOrder.orderNumber,
-              total: Number(existingOrder.total),
-              subtotal: Number(existingOrder.subtotal),
-              freightValue: existingOrder.freightValue ? Number(existingOrder.freightValue) : null,
-              shippingCost: Number(existingOrder.shippingCost),
-              shippingProvider: existingOrder.shippingProvider,
-              shippingServiceName: existingOrder.shippingServiceName,
-              shippingEstimatedDays: existingOrder.shippingEstimatedDays,
-              pixKey: existingOrder.pixKeyUsed,
-              pointsEarned: existingOrder.pointsEarned,
-              pointsRedeemed: existingOrder.pointsRedeemed,
-              pointsDiscountValue: Number(existingOrder.pointsDiscountValue),
-              customer: { name: existingOrder.user.name, phone: existingOrder.user.phone },
-              items: existingOrder.items.map((i) => ({
-                productId: i.productId ?? undefined,
-                name: i.name,
-                quantity: i.quantity,
-                price: Number(i.price),
-                color: i.color ?? undefined,
-                size: i.size ?? undefined,
-              })),
-              deliveryType: existingOrder.deliveryType,
-            },
-          },
-        }
-      }
+  if (!params.checkoutIntentID || !Number.isInteger(params.acceptedRevision) || !params.acceptedContentHash) throw new Error('CHECKOUT_INTENT_REQUIRED');
+  const outcome = await withCheckoutOwner(params, async (tx, ownerKey, locks) => {
+    const intent = await lockOwnedIntent(tx, locks, params, ownerKey, params.checkoutIntentID!);
+    const snapshot = intentSnapshot(intent);
+    if (intent.revision !== params.acceptedRevision || intent.contentHash !== params.acceptedContentHash) throw new Error('CHECKOUT_RECONFIRM_REQUIRED');
+    if (params.items?.length && requestFingerprint(params) !== snapshot.requestHash) throw new Error('CHECKOUT_CONTENT_CONFLICT');
+    const placed = await tx.order.findUnique({ where: { checkoutIntentID_lojaID: { checkoutIntentID: intent.id, lojaID: params.lojaID } } });
+    if (placed) return { kind: 'replay' as const };
+    if (intent.status !== 'OPEN' || intent.expiresAt.getTime() <= (await checkoutNow(tx)).getTime()) throw new Error('CHECKOUT_RECONFIRM_REQUIRED');
+    const cart = await lockIntentSource(tx, locks, intent, ownerKey);
+    const content = (items: Array<{ productId: string; variantId: string; quantity: number }>) => items
+      .map(i => [i.productId, i.variantId, i.quantity]).sort((a, b) => JSON.stringify(a) < JSON.stringify(b) ? -1 : 1);
+    if (cart && checkoutHash(content(cart.items.map(i => ({ productId: i.productID, variantId: i.variantID, quantity: i.quantity })))) !==
+      checkoutHash(content(snapshot.input.items.map(i => ({ productId: i.productId!, variantId: i.variantId!, quantity: i.quantity }))))) throw new Error('CHECKOUT_CART_CHANGED');
+    const input = { ...snapshot.input, paymentGateway: params.paymentGateway, creditCard: params.creditCard };
+    // No writes precede recalculation. A changed catalog/policy/balance requires
+    // a newly displayed revision, never silent charging of new terms.
+    if (input.paymentMethod === 'CREDIT_CARD' && !creditCardSchema.safeParse(params.creditCard).success) throw new Error('PAYMENT_CARD_BILLING_REQUIRED');
+    const prepared = await prepareCheckout(tx, { ...input, acceptedFinancialTotal: undefined, installmentValue: undefined }, true);
+    const now = await checkoutNow(tx);
+    if (intent.expiresAt.getTime() <= now.getTime()) throw new Error('CHECKOUT_RECONFIRM_REQUIRED');
+    if (prepared.hash !== intent.contentHash) {
+      await tx.checkoutIntent.update({ where: { id: intent.id }, data: { status: 'REQUIRES_REVIEW' } });
+      return { kind: 'review' as const };
     }
+    const { buyer: buyerInput, items, subtotal, discount, pointsRedeemed, financial, freight, loja, gateway } = prepared;
+    const guest = intent.userID ? null : guestCheckoutAccess(ownerKey, intent.id);
+    const addresses = checkoutAddresses(input);
+    const buyer = await tx.orderBuyer.create({ data: { lojaID: params.lojaID, authenticatedUserID: intent.userID,
+      name: buyerInput.name, email: buyerInput.email, phone: buyerInput.phone, cpfCnpj: prepared.normalized.customer.cpfCnpj,
+      deliveryAddress: addresses.shippingAddress ? { ...addresses.shippingAddress } : undefined,
+      billingAddress: addresses.billingAddress ? { ...addresses.billingAddress } : undefined,
+      recoveryTokenHash: guest?.hash, recoveryExpiresAt: guest ? new Date(now.getTime() + 7 * 86400000) : undefined }, select: buyerSelect });
+    await InventoryService.reserveStock(items, tx, params.lojaID);
+    const created = await tx.order.create({ data: { lojaID: params.lojaID, userID: intent.userID, buyerID: buyer.id,
+      checkoutIntentID: intent.id, sourceCartID: intent.cartID, status: 'PENDING',
+      customerCpfCnpj: prepared.normalized.customer.cpfCnpj, paymentMethod: financial.plan.method,
+      pixKeyUsed: financial.plan.method === 'WHATSAPP_PIX' ? loja.pixKey : null,
+      installments: financial.plan.installments.length, installmentValue: new Prisma.Decimal(financial.plan.installments[0]),
+      financialTotal: new Prisma.Decimal(financial.plan.financialTotal), financingCharge: new Prisma.Decimal(financial.plan.financingCharge),
+      financialPlan: { ...financial.plan, calculationRule: financial.rule }, loyaltyEarnSnapshot: financial.earn,
+      financialSnapshot: { schemaVersion: 1, intentID: intent.id, revision: intent.revision, contentHash: intent.contentHash,
+        financialPlan: financial.plan, manualInstructions: prepared.normalized.manualInstructions },
+      subtotal, pointsDiscountValue: discount, pointsRedeemed, pointsEarned: financial.earn.points,
+      total: new Prisma.Decimal(financial.plan.commercialTotal), shippingCost: freight.amount,
+      freightValue: freight.amount.isZero() ? null : freight.amount, freightQuoteId: freight.id,
+      freightSnapshot: freight.snapshot, shippingProvider: freight.provider, shippingServiceName: freight.serviceName,
+      shippingEstimatedDays: freight.estimatedDays, deliveryType: input.deliveryType,
+      // Historical global keys remain readable by authorized order APIs only.
+      idempotencyKey: null,
+      items: { create: items.map(i => ({ productId: i.productId, productVariantsId: i.variantId, quantity: i.quantity,
+        name: i.name, price: i.price, color: i.color, size: i.size })) } }, include: { items: true } });
+    for (const item of created.items) await tx.inventoryReservation.create({ data: { orderId: created.id, orderItemId: item.id,
+      productId: item.productId!, variantId: item.productVariantsId, quantity: item.quantity, status: 'RESERVED' } });
+    if (pointsRedeemed && intent.userID) await debitRedeemedPoints({ lojaID: params.lojaID, userID: intent.userID,
+      orderId: created.id, points: pointsRedeemed, monetaryValue: Number(discount), description: 'Desconto da intenção aceita' }, tx);
+    const attempt = await tx.paymentAttempt.create({ data: { orderId: created.id, number: 1,
+      provider: financial.plan.method === 'WHATSAPP_PIX' ? 'MANUAL' : 'ASAAS', method: financial.plan.method,
+      providerAccount: financial.plan.method === 'WHATSAPP_PIX' ? null : paymentAccountScope(),
+      status: financial.plan.method === 'WHATSAPP_PIX' ? 'NOT_STARTED' : 'SUBMITTING', externalReference: created.id,
+      financialTotal: new Prisma.Decimal(financial.plan.financialTotal), installments: financial.plan.installments.length,
+      planSnapshot: { ...financial.plan, calculationRule: financial.rule, expiryPolicy: prepared.normalized.expiryPolicy },
+      reservationExpiresAt: financial.plan.method === 'WHATSAPP_PIX' ? new Date(now.getTime() + 24 * 3600000) : null,
+      reviewAfter: new Date(now.getTime() + 24 * 3600000),
+      reconcileAfter: new Date(now.getTime() + 120000), submittedAt: financial.plan.method === 'WHATSAPP_PIX' ? null : now } });
+    if (intent.cartID) await tx.cart.update({ where: { id: intent.cartID }, data: { status: 'COMPLETED', version: { increment: 1 } } });
+    else await tx.checkoutBasket.update({ where: { id: intent.basketID! }, data: { status: 'COMPLETED' } });
+    await tx.checkoutIntent.update({ where: { id: intent.id }, data: { status: 'PROCESSING', acceptedAt: now, buyerID: buyer.id } });
+    const effectKey = 'checkout:' + intent.id;
+    await tx.auditLog.create({ data: { actorType: intent.userID ? 'USER' : 'SYSTEM', actorId: intent.userID,
+      systemActor: intent.userID ? null : 'GUEST_CHECKOUT', entity: 'Order', entityId: created.id,
+      action: 'CHECKOUT_COMMITTED', effectKey, metadata: { intentID: intent.id, revision: intent.revision,
+        contentHash: intent.contentHash, cartID: intent.cartID, cartVersion: intent.cartVersion, basketID: intent.basketID } } });
+    await tx.commerceOutbox.create({ data: { effectKey, commandType: 'CHECKOUT_COMMITTED', aggregateId: created.id,
+      payload: { schemaVersion: 1, lojaID: params.lojaID, orderId: created.id, intentID: intent.id } } });
+    return { kind: 'created' as const, created, attempt, financial, gateway, input };
+  });
+  if (outcome.kind === 'review') throw new Error('CHECKOUT_RECONFIRM_REQUIRED');
+  if (outcome.kind === 'created' && outcome.financial.plan.method !== 'WHATSAPP_PIX') await executePaymentAttempt({
+    orderId: outcome.created.id, orderNumber: outcome.created.orderNumber, lojaID: params.lojaID, attemptId: outcome.attempt.id,
+    plan: outcome.financial.plan, gateway: outcome.gateway, creditCard: params.creditCard,
+    customer: { ...outcome.input.customer, cpfCnpj: outcome.input.customer.cpfCnpj!,
+      postalCode: checkoutAddresses(outcome.input).billingAddress?.cep,
+      addressNumber: checkoutAddresses(outcome.input).billingAddress?.number,
+      addressComplement: checkoutAddresses(outcome.input).billingAddress?.complement } });
+  // Both first response and replay use the same current persisted result.
+  const recovered = await recoverCheckout(params, params.checkoutIntentID);
+  if (!recovered.result) throw new Error('CHECKOUT_RESULT_UNAVAILABLE');
+  return recovered.result;
+}
 
-    // 1. Validar loja
-    const loja = await tx.loja.findUnique({
-      where: { id: params.lojaID },
-    })
-    if (!loja) {
-      throw new Error('Loja não encontrada.')
-    }
-
-    // 2. Resolver preços e itens autoritativamente do banco de dados
-    const validatedItems: Array<{
-      productId: string
-      name: string
-      quantity: number
-      price: Prisma.Decimal
-      color?: string
-      size?: string
-      variantId?: string
-    }> = []
-
-    let subtotal = new Prisma.Decimal(0)
-
-    for (const item of params.items) {
-      if (!item.productId) {
-        throw new Error('Identificador do produto (productId) é obrigatório.')
-      }
-
-      const product = await tx.product.findUnique({
-        where: { id: item.productId },
-        include: { productVariants: true },
-      })
-
-      if (!product || product.lojaID !== params.lojaID) {
-        throw new Error(`Produto ${item.productId} inválido ou não pertence a esta loja.`)
-      }
-
-      const quantity = Math.max(1, Math.floor(item.quantity))
-
-      if (product.stock < quantity) {
-        throw new Error(`Estoque insuficiente para o produto ${product.name}.`)
-      }
-
-      // Se informou variante, valida estoque da variante
-      let matchedVariantId: string | undefined = undefined
-      if (item.variantId) {
-        const variant = product.productVariants.find((v) => v.id === item.variantId)
-        if (!variant) {
-          throw new Error(`Variação de produto não encontrada.`)
-        }
-        if (variant.stock < quantity) {
-          throw new Error(`Estoque insuficiente para a variação selecionada (${product.name}).`)
-        }
-        matchedVariantId = variant.id
-      }
-
-      const authoritativePrice = product.price
-      const itemTotal = authoritativePrice.mul(quantity)
-      subtotal = subtotal.add(itemTotal)
-
-      validatedItems.push({
-        productId: product.id,
-        name: product.name,
-        quantity,
-        price: authoritativePrice,
-        color: item.color,
-        size: item.size,
-        variantId: matchedVariantId,
-      })
-    }
-
-    // 3. Reserva atômica de estoque unificada via InventoryService (REV-001)
-    await InventoryService.reserveStock(
-      validatedItems.map((item) => ({
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
-        name: item.name,
-      })),
-      tx,
-      params.lojaID
-    )
-
-    // 4. Resolver ou criar usuário cliente
-    const cleanCustomerCpfCnpj = params.customer.cpfCnpj
-      ? cleanDigits(params.customer.cpfCnpj)
-      : null
-
-    let resolvedUserId: string
-    if (params.customer.userId) {
-      // Validação de Segurança Anti-IDOR / Anti-Impersonation (AUD2-001):
-      // Garante que o userId informado existe, pertence estritamente a esta loja e corresponde ao e-mail
-      if (typeof tx.user?.findUnique === 'function') {
-        const existingUser = await tx.user.findUnique({
-          where: { id: params.customer.userId },
-          select: { id: true, lojaID: true, email: true },
-        })
-
-        if (!existingUser || existingUser.lojaID !== params.lojaID) {
-          throw new Error('Usuário inválido ou não pertence a esta loja.')
-        }
-
-        if (
-          params.customer.email &&
-          existingUser.email.toLowerCase().trim() !== params.customer.email.toLowerCase().trim()
-        ) {
-          throw new Error('Identificador de usuário não corresponde ao e-mail informado.')
-        }
-
-        resolvedUserId = existingUser.id
-      } else {
-        resolvedUserId = params.customer.userId
-      }
-      if (cleanCustomerCpfCnpj) {
-        await tx.user.update({
-          where: { id: resolvedUserId },
-          data: { cpfCnpj: cleanCustomerCpfCnpj },
-        })
-      }
-    } else {
-      const normalizedEmail = params.customer.email.toLowerCase().trim()
-      const upserted = await tx.user.upsert({
-        where: {
-          email_lojaID: {
-            email: normalizedEmail,
-            lojaID: params.lojaID,
-          },
-        },
-        update: {
-          ...(cleanCustomerCpfCnpj ? { cpfCnpj: cleanCustomerCpfCnpj } : {}),
-          ...(params.customer.phone ? { phone: params.customer.phone.trim() } : {}),
-        },
-        create: {
-          name: params.customer.name.trim(),
-          email: normalizedEmail,
-          phone: params.customer.phone.trim(),
-          cpfCnpj: cleanCustomerCpfCnpj,
-          password: '',
-          role: 'CUSTOMER',
-          status: 'ACTIVE',
-          lojaID: params.lojaID,
-        },
-      })
-      resolvedUserId = upserted.id
-    }
-
-    // 5. Motor de Fidelidade: Cálculo autoritativo de pontos e desconto
-    let pointsEarned = 0
-    let pointsRedeemed = 0
-    let pointsDiscountValue = new Prisma.Decimal(0)
-
-    if (params.pointsToRedeem && params.pointsToRedeem > 0) {
-      if (!loja.loyaltyEnabled) {
-        throw new Error('Programa de pontos desativado nesta loja.')
-      }
-
-      if (!params.customer.userId) {
-        throw new Error('Autenticação obrigatória para usar pontos no checkout.')
-      }
-
-      const sim = await simulatePointsRedemption({
-        lojaID: params.lojaID,
-        userID: resolvedUserId,
-        subtotal: Number(subtotal),
-        requestedPoints: params.pointsToRedeem,
-      })
-
-      if (!sim.eligible || sim.pointsToRedeem <= 0) {
-        throw new Error(sim.reason || 'Saldo de pontos insuficiente ou resgate não elegível.')
-      }
-
-      pointsRedeemed = sim.pointsToRedeem
-      pointsDiscountValue = new Prisma.Decimal(sim.discountValue)
-      pointsEarned = sim.projectedEarnedPoints
-    } else {
-      pointsEarned = loja.loyaltyEnabled
-        ? calculatePointsEarned(subtotal, loja.loyaltyEarnRate)
-        : 0
-    }
-
-    const subtotalAfterDiscount = Prisma.Decimal.max(0, subtotal.sub(pointsDiscountValue))
-
-    // 6. Resolver frete autoritativamente do servidor (SEC-002)
-    let calculatedFreight = new Prisma.Decimal(0)
-    let shippingProvider = params.shippingProvider || null
-    let shippingServiceName = params.shippingServiceName || null
-    let shippingEstimatedDays = params.shippingEstimatedDays || null
-
-    if (params.deliveryType === 'PICKUP') {
-      calculatedFreight = new Prisma.Decimal(0)
-      shippingProvider = 'STORE_PICKUP'
-      shippingServiceName = 'Retirada na Loja'
-      shippingEstimatedDays = 0
-    } else if (params.deliveryType === 'NONE') {
-      calculatedFreight = new Prisma.Decimal(0)
-      shippingProvider = 'NONE'
-      shippingServiceName = 'A Combinar via WhatsApp'
-      shippingEstimatedDays = 0
-    } else if (params.deliveryType === 'DELIVERY') {
-      if (!params.address || !params.address.city) {
-        throw new Error('Endereço e cidade são obrigatórios para modalidade de entrega.')
-      }
-
-      const freightRule = await tx.freightRule.findFirst({
-        where: {
-          lojaID: params.lojaID,
-          cityName: {
-            equals: params.address.city.trim(),
-            mode: 'insensitive',
-          },
-        },
-      })
-
-      if (params.freightQuoteToken) {
-        const verified = verifyFreightQuote(params.freightQuoteToken, {
-          lojaID: params.lojaID,
-          destinationCep: params.address.cep,
-          items: params.items.map((it) => ({
-            productId: it.productId || '',
-            variantId: it.variantId || null,
-            quantity: it.quantity,
-          })),
-        })
-        calculatedFreight = new Prisma.Decimal(verified.price)
-        shippingProvider = verified.providerId
-        shippingServiceName = verified.serviceName
-        shippingEstimatedDays = verified.deliveryTimeInDays
-      } else if (freightRule) {
-        calculatedFreight = freightRule.value
-        shippingProvider = 'LOCAL_TABLE'
-        shippingServiceName = `Entrega Local (${freightRule.cityName})`
-      } else if (params.shippingCost !== undefined && params.shippingCost >= 0) {
-        calculatedFreight = new Prisma.Decimal(params.shippingCost)
-      } else if (params.freightValue !== undefined && params.freightValue > 0) {
-        calculatedFreight = new Prisma.Decimal(params.freightValue)
-      } else {
-        calculatedFreight = new Prisma.Decimal(0)
-      }
-    }
-
-    // 7. Calcular total final autoritativo
-    const total = subtotalAfterDiscount.add(calculatedFreight)
-
-    // 8. Criar endereço se for entrega
-    let addressConnect: { connect: { id: string } } | undefined = undefined
-    if (params.deliveryType === 'DELIVERY' && params.address) {
-      const createdAddress = await tx.address.create({
-        data: {
-          user: { connect: { id: resolvedUserId } },
-          cep: params.address.cep.trim(),
-          state: params.address.state.trim(),
-          city: params.address.city.trim(),
-          district: params.address.neighborhood.trim(),
-          street: params.address.street.trim(),
-          number: params.address.number.trim(),
-          complement: params.address.complement?.trim(),
-        },
-      })
-      addressConnect = { connect: { id: createdAddress.id } }
-    }
-
-    // 9. Criar pedido com dados autoritativos e auditoria de fidelidade
-    const created = await tx.order.create({
-      data: {
-        loja: { connect: { id: params.lojaID } },
-        user: { connect: { id: resolvedUserId } },
-        address: addressConnect,
-        status: 'PENDING',
-        customerCpfCnpj: cleanCustomerCpfCnpj,
-        paymentMethod: params.paymentMethod || 'PIX',
-        pixKeyUsed: params.pixKey ?? loja.pixKey ?? null,
-        installments: params.installments || 1,
-        installmentValue: params.installmentValue ? new Prisma.Decimal(params.installmentValue) : null,
-        freightValue: calculatedFreight.equals(0) ? null : calculatedFreight,
-        subtotal: subtotal,
-        shippingCost: calculatedFreight,
-        shippingProvider: shippingProvider,
-        shippingServiceName: shippingServiceName,
-        shippingEstimatedDays: shippingEstimatedDays,
-        pointsEarned,
-        pointsRedeemed,
-        pointsDiscountValue,
-        total: total,
-        deliveryType: params.deliveryType as DeliveryType,
-        idempotencyKey: params.idempotencyKey ?? null,
-        items: {
-          create: validatedItems.map((item) => ({
-            product: { connect: { id: item.productId } },
-            productVariantsId: item.variantId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            color: item.color,
-            size: item.size,
-          })),
-        },
-      },
-      include: {
-        user: { select: { name: true, phone: true, cpfCnpj: true } },
-        items: { select: { productId: true, name: true, quantity: true, price: true, color: true, size: true } },
-      },
-    })
-
-    // 10. Se houve resgate de pontos, efetivar o débito atômico no Ledger
-    if (pointsRedeemed > 0) {
-      await debitRedeemedPoints(
-        {
-          lojaID: params.lojaID,
-          userID: resolvedUserId,
-          orderId: created.id,
-          points: pointsRedeemed,
-          monetaryValue: Number(pointsDiscountValue),
-          description: `Desconto de fidelidade aplicado no pedido #${created.orderNumber}`,
-        },
-        tx
-      )
-    }
-
-    return {
-      isExisting: false as const,
-      created,
-      loja,
-    }
-  })
-
-  if (txResult.isExisting) {
-    return txResult.result
-  }
-
-  const { created, loja } = txResult
-
-  // 11. Geração de cobrança no Asaas via PaymentGateway (Two-Phase Execution - DIP/SOLID)
-  let pixQrCode: string | null = null
-  let pixPayload: string | null = created.pixKeyUsed ?? null
-  let asaasPaymentId: string | null = null
-  let creditCardBrand: string | null = null
-  let creditCardLast4: string | null = null
-  let asaasBankSlipUrl: string | null = null
-  let asaasDigitableLine: string | null = null
-  let asaasBarCode: string | null = null
-  let asaasDueDate: Date | null = null
-
-  const gateway = params.paymentGateway ?? asaasPaymentAdapter
-  const customerCpf = params.customer.cpfCnpj ?? created.customerCpfCnpj
-  const selectedMethod = params.paymentMethod || 'PIX'
-
-  // Em ambiente de teste unitário sem mock explícito de gateway, evita chamadas de rede externas
-  const isTestWithoutMock =
-    process.env.NODE_ENV === 'test' &&
-    !params.paymentGateway &&
-    !(asaasClient.createPayment as any)?.mock
-
-  if (process.env.ASAAS_API_KEY && customerCpf && !isTestWithoutMock) {
-    // Validação preventiva do piso mínimo exigido pelo Asaas (R$ 5,00)
-    if (Number(created.total) < 5.0) {
-      try {
-        await updateOrderStatus({
-          orderId: created.id,
-          newStatus: 'CANCELLED',
-          performedById: 'SYSTEM',
-          lojaID: params.lojaID,
-          reason: `Valor do pedido (R$ ${Number(created.total).toFixed(2)}) abaixo do mínimo de R$ 5,00 do Asaas.`,
-        })
-      } catch (compensateErr) {
-        logger.error('Erro na compensação preventiva por piso mínimo', compensateErr, {
-          orderId: created.id,
-        })
-      }
-      throw new Error(
-        `O valor total do pedido (R$ ${Number(created.total).toFixed(2)}) é inferior ao valor mínimo de R$ 5,00 exigido para processamento pelo gateway.`
-      )
-    }
-
-    try {
-      if (selectedMethod === 'CREDIT_CARD' && params.creditCard) {
-        const cardResult = await gateway.createCreditCardCharge({
-          orderId: created.id,
-          orderNumber: created.orderNumber,
-          value: Number(created.total),
-          customer: {
-            name: params.customer.name,
-            email: params.customer.email,
-            phone: params.customer.phone,
-            cpfCnpj: customerCpf,
-            postalCode: params.address?.cep,
-            addressNumber: params.address?.number,
-            addressComplement: params.address?.complement,
-          },
-          creditCard: params.creditCard,
-          installmentCount: params.installments || 1,
-          installmentValue: params.installmentValue,
-          description: `Pedido #${created.orderNumber} - Continental`,
-        })
-
-        asaasPaymentId = cardResult.paymentId
-        creditCardBrand = cardResult.creditCardBrand || null
-        creditCardLast4 = cardResult.creditCardLast4 || null
-
-        await prisma.order.update({
-          where: { id: created.id },
-          data: {
-            asaasPaymentId: cardResult.paymentId,
-            asaasPaymentStatus: cardResult.status,
-            asaasInvoiceUrl: cardResult.invoiceUrl,
-            creditCardBrand,
-            creditCardLast4,
-            installments: params.installments || 1,
-            installmentValue: params.installmentValue ? new Prisma.Decimal(params.installmentValue) : null,
-          },
-        })
-
-        // Se o cartão foi aprovado imediatamente, transiciona para PAID e credita pontos
-        if (cardResult.status === 'CONFIRMED') {
-          await updateOrderStatus({
-            orderId: created.id,
-            newStatus: 'PAID',
-            performedById: 'ASAAS_GATEWAY',
-            lojaID: params.lojaID,
-            paidAt: new Date(),
-          })
-        }
-      } else if (selectedMethod === 'BOLETO') {
-        const boletoResult = await gateway.createBoletoCharge({
-          orderId: created.id,
-          orderNumber: created.orderNumber,
-          value: Number(created.total),
-          customer: {
-            name: params.customer.name,
-            email: params.customer.email,
-            phone: params.customer.phone,
-            cpfCnpj: customerCpf,
-            postalCode: params.address?.cep,
-            addressNumber: params.address?.number,
-            addressComplement: params.address?.complement,
-          },
-          description: `Pedido #${created.orderNumber} - Continental`,
-        })
-
-        asaasPaymentId = boletoResult.paymentId
-        asaasBankSlipUrl = boletoResult.bankSlipUrl
-        asaasDigitableLine = boletoResult.digitableLine
-        asaasBarCode = boletoResult.barCode || null
-        asaasDueDate = boletoResult.dueDate ? new Date(boletoResult.dueDate + 'T23:59:59') : null
-
-        await prisma.order.update({
-          where: { id: created.id },
-          data: {
-            asaasPaymentId: boletoResult.paymentId,
-            asaasPaymentStatus: boletoResult.status,
-            asaasInvoiceUrl: boletoResult.invoiceUrl,
-            asaasBankSlipUrl,
-            asaasDigitableLine,
-            asaasBarCode,
-            asaasDueDate,
-          },
-        })
-      } else {
-        // PIX ou padrão
-        const chargeResult = await gateway.createPixCharge({
-          orderId: created.id,
-          orderNumber: created.orderNumber,
-          value: Number(created.total),
-          customer: {
-            name: params.customer.name,
-            email: params.customer.email,
-            phone: params.customer.phone,
-            cpfCnpj: customerCpf,
-          },
-          description: `Pedido #${created.orderNumber} - Continental`,
-        })
-
-        asaasPaymentId = chargeResult.paymentId
-        pixQrCode = chargeResult.pixQrCodeBase64
-        pixPayload = chargeResult.pixPayload
-
-        await prisma.order.update({
-          where: { id: created.id },
-          data: {
-            asaasPaymentId: chargeResult.paymentId,
-            asaasPaymentStatus: chargeResult.status,
-            asaasInvoiceUrl: chargeResult.invoiceUrl,
-          },
-        })
-      }
-    } catch (gatewayErr: any) {
-      logger.error('Falha na emissão da cobrança no gateway de pagamento', gatewayErr, {
-        action: 'CHECKOUT_GATEWAY_CHARGE_FAILED',
-        orderId: created.id,
-        orderNumber: created.orderNumber,
-        method: selectedMethod,
-        tenantId: params.lojaID,
-        customer: {
-          cpfCnpj: params.customer.cpfCnpj,
-          email: params.customer.email,
-        },
-      })
-      // Rollback Atômico com actor 'SYSTEM' (elimina bug de foreign key em AuditLog)
-      try {
-        await updateOrderStatus({
-          orderId: created.id,
-          newStatus: 'CANCELLED',
-          performedById: 'SYSTEM',
-          lojaID: params.lojaID,
-          reason: `Falha na emissão da cobrança (${selectedMethod}) no gateway: ${gatewayErr?.message || 'Erro de comunicação'}`,
-        })
-      } catch (compensateErr) {
-        logger.error('Erro crítico na compensação do pedido após falha no gateway', compensateErr, {
-          action: 'CHECKOUT_COMPENSATION_FAILED',
-          orderId: created.id,
-          tenantId: params.lojaID,
-        })
-      }
-
-      const clientMsg =
-        gatewayErr?.message ||
-        `Não foi possível gerar a cobrança via ${selectedMethod} no momento. Por favor, verifique seus dados e tente novamente.`
-      throw new Error(clientMsg)
-    }
-  }
-
-  return {
-    success: true,
-    order: {
-      id: created.id,
-      orderNumber: created.orderNumber,
-      total: Number(created.total),
-      subtotal: Number(created.subtotal),
-      freightValue: created.freightValue ? Number(created.freightValue) : null,
-      shippingCost: Number(created.shippingCost),
-      shippingProvider: created.shippingProvider,
-      shippingServiceName: created.shippingServiceName,
-      shippingEstimatedDays: created.shippingEstimatedDays,
-      pixKey: created.pixKeyUsed,
-      paymentMethod: created.paymentMethod,
-      asaasPaymentId,
-      pixQrCode,
-      pixPayload,
-      creditCardBrand,
-      creditCardLast4,
-      installments: params.installments || 1,
-      installmentValue: params.installmentValue ?? null,
-      asaasBankSlipUrl,
-      asaasDigitableLine,
-      asaasBarCode,
-      asaasDueDate: asaasDueDate ? asaasDueDate.toISOString() : null,
-      pointsEarned: created.pointsEarned,
-      pointsRedeemed: created.pointsRedeemed,
-      pointsDiscountValue: Number(created.pointsDiscountValue),
-      customer: {
-        name: created.user.name,
-        phone: created.user.phone,
-        cpfCnpj: created.customerCpfCnpj ?? (created.user as any).cpfCnpj ?? null,
-      },
-      items: created.items.map((i) => ({
-        productId: i.productId ?? undefined,
-        name: i.name,
-        quantity: i.quantity,
-        price: Number(i.price),
-        color: i.color ?? undefined,
-        size: i.size ?? undefined,
-      })),
-      deliveryType: created.deliveryType,
-    },
-  }
+export async function recoverCheckout(scope: CheckoutScope, intentID: string) {
+  return withCheckoutOwner(scope, async (tx, ownerKey, locks) => {
+    const intent = await lockOwnedIntent(tx, locks, scope, ownerKey, intentID);
+    const proposal = proposalDTO(intent, await checkoutNow(tx));
+    const order = await tx.order.findUnique({ where: { checkoutIntentID_lojaID: { checkoutIntentID: intentID, lojaID: scope.lojaID } }, include: purchaseInclude });
+    if (!order) return { ...proposal, result: null };
+    if (order.lojaID !== scope.lojaID || order.userID !== intent.userID || (intent.userID && intent.userID !== scope.customer.userId)) throw new Error('CHECKOUT_INTENT_NOT_FOUND');
+    const now = await checkoutNow(tx);
+    const access = !intent.userID && order.buyer?.recoveryExpiresAt && order.buyer.recoveryExpiresAt.getTime() > now.getTime()
+      ? guestCheckoutAccess(ownerKey, intentID) : null;
+    return { ...proposal, result: purchaseResultFromOrder(order, access?.hash === order.buyer?.recoveryTokenHash ? access?.token : undefined, now) };
+  });
 }

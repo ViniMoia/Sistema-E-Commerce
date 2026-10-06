@@ -51,6 +51,10 @@ model Loja {
   additionalDays       Int       @default(0)
   // Configurações de Fidelidade / Pontos
   loyaltyEnabled          Boolean              @default(false)
+  enableManualPix         Boolean              @default(false)
+  enablePix               Boolean              @default(false)
+  enableCreditCard        Boolean              @default(false)
+  enableBoleto            Boolean              @default(false)
   loyaltyEarnRate         Decimal              @default(0.5) @db.Decimal(5, 2)  // Multiplicador de ganho (0.5 = 1 pt a cada R$ 2)
   loyaltyPointValue       Decimal              @default(0.05) @db.Decimal(5, 4) // Conversão em R$ (0.05 = R$ 0,05 por ponto)
   loyaltyMinPointsRedeem  Int                  @default(100)                    // Saldo mínimo para permitir resgate
@@ -58,6 +62,12 @@ model Loja {
   loyaltyPointsExpiryDays Int?                 @default(365)                    // Validade dos pontos em dias (ex: 365 dias)
   loyaltyWallets          LoyaltyWallet[]
   loyaltyTransactions     LoyaltyTransaction[]
+  checkoutIntents         CheckoutIntent[]
+  checkoutBaskets         CheckoutBasket[]
+  buyers                  OrderBuyer[]
+  carts                   Cart[]
+  freightQuotes           FreightQuote[]
+  configurationVersion    Int                 @default(0)
 }
 
 model User {
@@ -89,13 +99,19 @@ model User {
   OrderStatusHistory OrderStatusHistory[]
   loyaltyWallets     LoyaltyWallet[]
   loyaltyTransactions LoyaltyTransaction[]
+  checkoutIntents     CheckoutIntent[]
+  buyers              OrderBuyer[]
 
   @@unique([email, lojaID])
+  @@unique([id, lojaID])
   @@index([email])
   @@index([lojaID])
   @@index([defaultAddressId])
   @@index([cpfCnpj])
   @@index([cpfCnpj, lojaID])
+  @@index([lojaID, status])
+  @@index([lojaID, role])
+  @@index([lojaID, resetToken])
 }
 
 model Address {
@@ -116,6 +132,7 @@ model Address {
   orderId        String?  @unique
 
   @@index([userID])
+  @@index([userID, createdAt])
 }
 
 model Product {
@@ -148,12 +165,20 @@ model Product {
   brand               Brand?            @relation(fields: [brandID], references: [id], onDelete: SetNull)
   categoryTags        ProductCategoryTag[]
   tagsSearchCache     String[]          @default([])
+  inventoryVersion   Int               @default(0)
+  catalogVersion     Int               @default(0)
+  unavailableStock   Int               @default(0)
+  retiredAt          DateTime?
+  reservations       InventoryReservation[]
 
   @@index([lojaID])
   @@index([lojaID, sku])
   @@index([lojaID, brandID])
   @@index([nuvemshopProductId])
   @@index([createdAt])
+  @@index([lojaID, createdAt])
+  @@index([lojaID, stock])
+  @@unique([id, lojaID])
 }
 
 model ProductVariants {
@@ -169,34 +194,49 @@ model ProductVariants {
   updatedAt          DateTime    @updatedAt
   cartItem           CartItem[]
   orderItems         OrderItem[]
+  inventoryVersion   Int                     @default(0)
+  unavailableStock   Int                     @default(0)
+  retiredAt          DateTime?
+  reservations       InventoryReservation[]
 
   @@index([ProductID])
+  @@unique([id, ProductID])
   @@index([sku])
   @@index([nuvemshopVariantId])
 }
 
 model Cart {
+  // ACTIVE owner uniqueness uses the partial SQL index Cart_active_owner_key.
   id           String     @id @default(uuid())
   userID       String
-  user         User       @relation(fields: [userID], references: [id], onDelete: Cascade)
+  lojaID       String
+  loja         Loja       @relation(fields: [lojaID], references: [id], onDelete: Restrict)
+  user         User       @relation(fields: [userID, lojaID], references: [id, lojaID], onDelete: Cascade)
   items        CartItem[]
   status       CartStatus @default(ACTIVE)
-  shippingCost Float?
+  shippingCost Decimal?   @db.Decimal(10, 2)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  version      Int       @default(0)
+  checkoutIntents CheckoutIntent[]
+  consumedOrder  Order?
 
   @@index([userID])
   @@index([status])
+  @@index([userID, status])
+  @@index([lojaID, userID, status])
+  @@unique([id, lojaID])
 }
 
 model CartItem {
   id          String          @id @default(uuid())
   cartID      String
-  cart        Cart            @relation(fields: [cartID], references: [id], onDelete: Cascade)
+  lojaID      String
+  cart        Cart            @relation(fields: [cartID, lojaID], references: [id, lojaID], onDelete: Cascade)
   productID   String
-  product     Product         @relation(fields: [productID], references: [id], onDelete: Cascade)
+  product     Product         @relation(fields: [productID, lojaID], references: [id, lojaID], onDelete: Cascade)
   variantID   String
-  variant     ProductVariants @relation(fields: [variantID], references: [id], onDelete: Cascade)
+  variant     ProductVariants @relation(fields: [variantID, productID], references: [id, ProductID], onDelete: Cascade)
   quantity    Int
   productName String
   price       Decimal         @db.Decimal(10, 2)
@@ -264,8 +304,8 @@ enum DeliveryType {
 model Order {
   id                 String               @id @default(uuid())
   orderNumber        Int                  @unique @default(autoincrement())
-  userID             String
-  user               User                 @relation(fields: [userID], references: [id])
+  userID             String?
+  user               User?                @relation(fields: [userID, lojaID], references: [id, lojaID], onDelete: Restrict)
   addressID          String?
   lojaID             String
   loja               Loja                 @relation(fields: [lojaID], references: [id])
@@ -276,6 +316,11 @@ model Order {
   adminNotes         String?
   customerCpfCnpj    String?              @db.VarChar(20) // Snapshot histórico do documento do cliente no momento da compra
   paymentMethod      String?
+  financialTotal     Decimal? @db.Decimal(10, 2)
+  financingCharge    Decimal? @db.Decimal(10, 2)
+  financialPlan      Json?
+  loyaltyEarnSnapshot Json?
+  pointsCredited     Int @default(0)
   pixKeyUsed         String?              // Chave PIX usada no pagamento (para histórico)
   // Gateway Asaas fields
   asaasPaymentId        String?              @unique
@@ -294,12 +339,14 @@ model Order {
   // Confirmação de Entrega pelo Cliente
   deliveredConfirmedAt  DateTime?            // Data/hora da confirmação do recebimento pelo cliente
   deliveredConfirmedBy  String?              // ID do usuário cliente que confirmou
-  freightValue       Decimal?
+  freightValue       Decimal?             @db.Decimal(10, 2)
   subtotal           Decimal              @db.Decimal(10, 2)
   shippingCost       Decimal              @default(0) @db.Decimal(10, 2)
   shippingProvider   String?              // ex: "CORREIOS", "LOCAL_TABLE", "STORE_PICKUP", "NONE"
   shippingServiceName String?             // ex: "SEDEX", "PAC", "Retirada", "A Combinar"
   shippingEstimatedDays Int?              // Prazo prometido em dias úteis
+  freightQuoteId        String?
+  freightSnapshot       Json?
   total              Decimal              @db.Decimal(10, 2)
   // Auditoria de Pontos no Pedido
   pointsEarned          Int                  @default(0) // Pontos previstos/gerados por este pedido
@@ -319,6 +366,17 @@ model Order {
   updatedAt          DateTime             @updatedAt
   items              OrderItem[]
   statusHistory      OrderStatusHistory[]
+  version            Int                    @default(0)
+  buyerID            String?
+  buyer              OrderBuyer?            @relation(fields: [buyerID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  checkoutIntentID   String?
+  sourceCartID       String?                @unique
+  sourceCart         Cart?                  @relation(fields: [sourceCartID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  checkoutIntent     CheckoutIntent?        @relation(fields: [checkoutIntentID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  financialSnapshot  Json?
+  paymentAttempts    PaymentAttempt[]
+  reservations       InventoryReservation[]
+  financialFacts     FinancialFact[]
 
   @@index([syncStatus])
   @@index([nuvemshopOrderId])
@@ -327,6 +385,11 @@ model Order {
   @@index([lojaID, status, paidAt])
   @@index([userID, createdAt])
   @@index([customerCpfCnpj])
+  @@index([lojaID, createdAt])
+  @@index([lojaID, status])
+  @@index([lojaID, userID])
+  @@unique([checkoutIntentID, lojaID])
+  @@unique([sourceCartID, lojaID])
 }
 
 model OrderItem {
@@ -343,6 +406,7 @@ model OrderItem {
   createdAt         DateTime         @default(now())
   variant           ProductVariants? @relation(fields: [productVariantsId], references: [id])
   productVariantsId String?
+  reservation       InventoryReservation?
 
   @@index([orderId])
   @@index([productId])
@@ -354,19 +418,28 @@ model OrderStatusHistory {
   orderId       String
   order         Order       @relation(fields: [orderId], references: [id])
   status        OrderStatus
-  performedById String
-  performedBy   User        @relation(fields: [performedById], references: [id])
+  performedById String?
+  performedBy   User?       @relation(fields: [performedById], references: [id], onDelete: Restrict)
+  actorType     CommerceActorType @default(USER)
+  systemActor   String?
+  commandKey    String?     @unique
+  commandContentHash String? @db.VarChar(64)
+  orderVersion  Int?
+  previousStatus OrderStatus?
   ipAddress     String?
   createdAt     DateTime    @default(now())
 
   @@index([orderId])
+  @@unique([orderId, orderVersion])
 }
 
 model FreightRule {
   id        String   @id @default(cuid())
   lojaID    String
   cityName  String
-  value     Decimal
+  state     String?  @db.VarChar(2)
+  municipalityCode String? @db.VarChar(7)
+  value     Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -378,10 +451,13 @@ model FreightRule {
 model AuditLog {
   id            String   @id @default(uuid())
   action        String
-  targetId      String
-  target        User     @relation("AuditTarget", fields: [targetId], references: [id])
-  actorId       String
-  actor         User     @relation("AuditActor", fields: [actorId], references: [id])
+  targetId      String?
+  target        User?    @relation("AuditTarget", fields: [targetId], references: [id], onDelete: Restrict)
+  actorId       String?
+  actor         User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actorType     CommerceActorType @default(USER)
+  systemActor   String?
+  effectKey     String?  @unique
   entity        String
   entityId      String
   previousValue Json?
@@ -392,6 +468,8 @@ model AuditLog {
 
   @@index([targetId])
   @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
 }
 
 model StockSyncLog {
@@ -437,6 +515,11 @@ model LoyaltyWallet {
   version      Int      @default(0) // Lock de concorrência / integridade
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  debt         Int      @default(0)
+  accountingReady Boolean @default(false) // Legados exigem conciliação explícita em WF-18
+  expirationLeaseOwner String?
+  expirationLeaseUntil DateTime?
+  lots         LoyaltyLot[]
 
   @@unique([lojaID, userID])
   @@index([lojaID])
@@ -460,6 +543,15 @@ model LoyaltyTransaction {
   expiresAt     DateTime?
   
   createdAt     DateTime      @default(now())
+  effectKey     String?       @unique
+  contentHash   String?
+  availableDelta Int?
+  debtDelta     Int?
+  debtAfter     Int?
+  policy        Json?
+  lots          LoyaltyLot[]
+  originatedLots LoyaltyLot[] @relation("LoyaltyOrigin")
+  allocations   LoyaltyAllocation[]
 
   @@index([lojaID, userID])
   @@index([orderId])
@@ -559,5 +651,348 @@ model PaymentWebhookEvent {
 
   @@index([provider, eventType])
   @@index([processedAt])
+}
+
+// WF-04 expansion: legacy writers remain readable. These structures do not
+// imply that legacy orders already have reservations, financial facts or lots.
+enum CommerceActorType {
+  USER
+  SYSTEM
+}
+
+enum CheckoutIntentStatus {
+  OPEN
+  ACCEPTED
+  PROCESSING
+  COMPLETED
+  REQUIRES_REVIEW
+  CANCELLED
+}
+
+enum PaymentAttemptStatus {
+  NOT_STARTED
+  SUBMITTING
+  UNKNOWN
+  PENDING
+  APPROVED
+  DECLINED
+  CANCEL_PENDING
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum ReservationStatus {
+  RESERVED
+  COMMITTED
+  RELEASED
+  RETURNED
+}
+
+enum DurableWorkStatus {
+  READY
+  LEASED
+  COMPLETED
+  DEAD_LETTER
+}
+
+enum FinancialFactType {
+  AUTHORIZED
+  SETTLED
+  REFUNDED
+  CANCELLED
+}
+
+model OrderBuyer {
+  id                String   @id @default(uuid())
+  lojaID            String
+  loja              Loja     @relation(fields: [lojaID], references: [id], onDelete: Restrict)
+  authenticatedUserID String?
+  authenticatedUser User?    @relation(fields: [authenticatedUserID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  name              String   @db.VarChar(150)
+  email             String   @db.VarChar(255)
+  phone             String?  @db.VarChar(20)
+  cpfCnpj           String?  @db.VarChar(20)
+  deliveryAddress   Json?
+  billingAddress    Json?
+  recoveryTokenHash String?  @unique
+  recoveryExpiresAt DateTime?
+  createdAt         DateTime @default(now())
+  orders            Order[]
+  checkoutIntents   CheckoutIntent[]
+
+  @@index([lojaID, authenticatedUserID])
+  @@unique([id, lojaID])
+}
+
+model CheckoutIntent {
+  id             String               @id @default(uuid())
+  lojaID         String
+  loja           Loja                 @relation(fields: [lojaID], references: [id], onDelete: Restrict)
+  ownerKey       String               @db.VarChar(128)
+  userID         String?
+  user           User?                @relation(fields: [userID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  buyerID        String?
+  buyer          OrderBuyer?          @relation(fields: [buyerID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  key            String               @db.VarChar(128)
+  cartID         String?
+  cart           Cart?                @relation(fields: [cartID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  cartVersion    Int?
+  basketID       String?
+  basket         CheckoutBasket? @relation(fields: [basketID, lojaID], references: [id, lojaID], onDelete: Restrict)
+  protocolVersion Int?
+  revision       Int                  @default(0)
+  contentHash    String               @db.VarChar(64)
+  snapshot       Json
+  status         CheckoutIntentStatus @default(OPEN)
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  order          Order?
+
+  @@unique([lojaID, ownerKey, key])
+  @@unique([id, lojaID])
+  @@unique([cartID, cartVersion])
+  @@unique([basketID])
+  @@index([status, expiresAt])
+}
+
+// Guest purchase source. Completion never reopens it; another purchase requires
+// an explicit request referencing the completed source and a known payment state.
+model CheckoutBasket {
+  id         String @id @default(uuid())
+  lojaID     String
+  loja       Loja @relation(fields: [lojaID], references: [id], onDelete: Restrict)
+  ownerKey   String @db.VarChar(128)
+  generation Int @default(0)
+  status     CartStatus @default(ACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  intents    CheckoutIntent[]
+
+  @@unique([id, lojaID])
+  @@unique([lojaID, ownerKey, generation])
+  @@index([lojaID, ownerKey, createdAt])
+}
+
+model PaymentAttempt {
+  id                String               @id @default(uuid())
+  orderId           String
+  order             Order                @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  number            Int
+  provider          String               @db.VarChar(32)
+  providerAccount   String?              @db.VarChar(24)
+  method            String               @db.VarChar(32)
+  status            PaymentAttemptStatus @default(NOT_STARTED)
+  externalReference String               @unique @db.VarChar(128)
+  providerContractId String?
+  financialTotal    Decimal              @db.Decimal(10, 2)
+  installments      Int                  @default(1)
+  planSnapshot      Json
+  version           Int                  @default(0)
+  submittedAt       DateTime?
+  externalExpiresAt DateTime?
+  reconcileAfter    DateTime?
+  failureCode       String?              @db.VarChar(96)
+  leaseOwner        String?
+  leaseExpiresAt    DateTime?
+  reconcileAttempts Int                  @default(0)
+  reservationExpiresAt DateTime?
+  reviewAfter       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  charges           PaymentCharge[]
+  financialFacts    FinancialFact[]
+
+  operations        PaymentOperation[]
+
+  @@unique([orderId, number])
+  @@index([status, reconcileAfter])
+}
+
+model PaymentCharge {
+  id                String         @id @default(uuid())
+  attemptId         String
+  attempt           PaymentAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  provider          String         @db.VarChar(32)
+  providerAccount   String?        @db.VarChar(24)
+  providerPaymentId String
+  ordinal           Int
+  amount            Decimal        @db.Decimal(10, 2)
+  providerStatus    String         @db.VarChar(64)
+  dueAt             DateTime?
+  settledAt         DateTime?
+  instructions      Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  financialFacts    FinancialFact[]
+  operations        PaymentOperation[]
+
+  @@unique([provider, providerPaymentId])
+  @@unique([attemptId, ordinal])
+}
+
+model FinancialFact {
+  id             String            @id @default(uuid())
+  orderId        String
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  attemptId      String?
+  attempt        PaymentAttempt?   @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  chargeId       String?
+  charge         PaymentCharge?    @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  provider       String            @db.VarChar(32)
+  providerAccount String?          @db.VarChar(24)
+  factKey        String            @db.VarChar(160)
+  type           FinancialFactType
+  amount         Decimal           @db.Decimal(10, 2)
+  occurredAt     DateTime
+  createdAt      DateTime          @default(now())
+
+  @@unique([provider, factKey])
+  @@index([orderId, type, occurredAt])
+}
+
+// Full-charge operations only. A possibly submitted operation is reconciled,
+// never submitted again solely because a lease or HTTP response was lost.
+model PaymentOperation {
+  id             String @id @default(uuid())
+  attemptId      String
+  attempt        PaymentAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  chargeId       String
+  charge         PaymentCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  kind           String @db.VarChar(16)
+  commandKey     String @db.VarChar(64)
+  status         String @default("READY") @db.VarChar(16)
+  requestedById  String? @db.VarChar(128)
+  createdAt      DateTime @default(now())
+  submittedAt    DateTime?
+  completedAt    DateTime?
+  lastErrorCode  String? @db.VarChar(96)
+
+  @@unique([chargeId, kind])
+  @@index([attemptId, status])
+}
+
+model InventoryReservation {
+  id             String            @id @default(uuid())
+  orderId        String
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItemId    String            @unique
+  orderItem      OrderItem         @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  productId      String
+  product        Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variantId      String
+  variant        ProductVariants   @relation(fields: [variantId, productId], references: [id, ProductID], onDelete: Restrict)
+  quantity       Int
+  status         ReservationStatus @default(RESERVED)
+  version        Int               @default(0)
+  expiresAt      DateTime?
+  releasedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([status, expiresAt])
+  @@index([productId, variantId])
+}
+
+model LoyaltyLot {
+  id                   String             @id @default(uuid())
+  walletId             String
+  wallet               LoyaltyWallet      @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  sourceTransactionId  String
+  sourceTransaction    LoyaltyTransaction @relation(fields: [sourceTransactionId], references: [id], onDelete: Restrict)
+  originTransactionId  String?
+  originTransaction    LoyaltyTransaction? @relation("LoyaltyOrigin", fields: [originTransactionId], references: [id], onDelete: Restrict)
+  sourceKey            String             @db.VarChar(128)
+  sourceAllocationId   String?
+  sourceAllocation     LoyaltyAllocation? @relation("RestoredAllocation", fields: [sourceAllocationId], references: [id], onDelete: Restrict)
+  credited             Int
+  remaining            Int
+  expiresAt            DateTime?
+  createdAt            DateTime           @default(now())
+  allocations          LoyaltyAllocation[] @relation("AllocatedLot")
+
+  @@unique([sourceTransactionId, sourceKey])
+  @@index([walletId, expiresAt, createdAt])
+  @@index([originTransactionId])
+}
+
+model LoyaltyAllocation {
+  id            String             @id @default(uuid())
+  lotId         String
+  lot           LoyaltyLot         @relation("AllocatedLot", fields: [lotId], references: [id], onDelete: Restrict)
+  transactionId String
+  transaction   LoyaltyTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  points        Int
+  createdAt     DateTime           @default(now())
+  restoredLots  LoyaltyLot[]       @relation("RestoredAllocation")
+
+  @@unique([transactionId, lotId])
+}
+
+model PaymentInbox {
+  id            String            @id @default(uuid())
+  provider      String            @db.VarChar(32)
+  eventId       String            @db.VarChar(160)
+  eventType     String            @db.VarChar(64)
+  payload       Json
+  status        DurableWorkStatus @default(READY)
+  attempts      Int               @default(0)
+  leaseOwner    String?
+  leaseExpiresAt DateTime?
+  nextAttemptAt DateTime          @default(now())
+  lastErrorCode String?           @db.VarChar(96)
+  receivedAt    DateTime          @default(now())
+  completedAt   DateTime?
+
+  @@unique([provider, eventId])
+  @@index([status, nextAttemptAt, leaseExpiresAt])
+}
+
+model CommerceOutbox {
+  id             String            @id @default(uuid())
+  effectKey      String            @unique @db.VarChar(160)
+  commandType    String            @db.VarChar(64)
+  aggregateId    String
+  payload        Json
+  status         DurableWorkStatus @default(READY)
+  attempts       Int               @default(0)
+  leaseOwner     String?
+  leaseExpiresAt DateTime?
+  nextAttemptAt  DateTime          @default(now())
+  lastErrorCode  String?           @db.VarChar(96)
+  createdAt      DateTime          @default(now())
+  completedAt    DateTime?
+
+  @@index([status, nextAttemptAt, leaseExpiresAt])
+  @@index([aggregateId, commandType])
+}
+
+model FreightQuote {
+  id                   String   @id @default(uuid())
+  lojaID               String
+  loja                 Loja     @relation(fields: [lojaID], references: [id], onDelete: Restrict)
+  ownerKey             String   @db.VarChar(128)
+  cartContentHash      String   @db.VarChar(64)
+  destinationHash      String   @db.VarChar(64)
+  configurationVersion Int
+  fingerprint          String?  @db.VarChar(64)
+  serviceCode          String?  @db.VarChar(120)
+  snapshot             Json?
+  deliveryType         DeliveryType
+  provider             String   @db.VarChar(32)
+  serviceName          String   @db.VarChar(120)
+  amount               Decimal  @db.Decimal(10, 2)
+  estimatedDays        Int
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+
+  @@index([lojaID, expiresAt])
+}
+
+model FreightTariffRevision {
+  id        String @id @db.VarChar(32)
+  version   Int    @default(0)
 }
 

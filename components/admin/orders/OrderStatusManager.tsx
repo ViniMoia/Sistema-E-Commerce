@@ -9,23 +9,21 @@ import {
 } from '@/components/ui/dialog'
 import { AlertBanner, Spinner } from '@/components/ui'
 import { Check, Truck, Clock, CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
+import type { allowedOrderActions } from '@/lib/commerce/order-fulfillment'
 
 type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 
 export interface OrderStatusManagerProps {
   orderId: string
   currentStatus: OrderStatus
+  version: number
+  deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE'
+  trackingCode: string | null
+  actions: ReturnType<typeof allowedOrderActions>
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
-}
-
-const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ['PAID', 'CANCELLED'],
-  PAID: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED'],
-  DELIVERED: [],
-  CANCELLED: []
+  onSuccess: () => Promise<void>
+  onConflict: () => Promise<void>
 }
 
 const statusMap: Record<OrderStatus, { label: string; icon: any; color: string }> = {
@@ -39,37 +37,46 @@ const statusMap: Record<OrderStatus, { label: string; icon: any; color: string }
 export function OrderStatusManager({
   orderId,
   currentStatus,
+  version,
+  deliveryType,
+  trackingCode: savedTrackingCode,
+  actions,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  onConflict
 }: OrderStatusManagerProps) {
   const [selectedStatus, setSelectedStatus] = React.useState<OrderStatus | null>(null)
   const [trackingCode, setTrackingCode] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
-  const availableTransitions = VALID_TRANSITIONS[currentStatus] || []
+  const availableTransitions = actions.statuses
+  const command = React.useRef<{ content: string; id: string } | null>(null)
 
   React.useEffect(() => {
     if (isOpen) {
       setSelectedStatus(null)
-      setTrackingCode('')
-      setError(null)
-      setIsLoading(false)
+      setTrackingCode(savedTrackingCode || '')
+      command.current = null
     }
-  }, [isOpen, currentStatus])
+  }, [isOpen, currentStatus, version, savedTrackingCode])
+  React.useEffect(() => {
+    if (isOpen) { setError(null); setIsLoading(false) }
+  }, [isOpen])
 
   const handleConfirm = async () => {
-    if (!selectedStatus) return
+    if (!selectedStatus || isLoading) return
 
     try {
       setIsLoading(true)
       setError(null)
 
-      const body: any = { newStatus: selectedStatus }
-      if (selectedStatus === 'SHIPPED' && trackingCode.trim() !== '') {
-        body.trackingCode = trackingCode.trim()
-      }
+      const payload = { newStatus: selectedStatus, expectedVersion: version,
+        ...(selectedStatus === 'SHIPPED' ? { trackingCode: trackingCode.trim() || null, shippingProvider: actions.tracking.provider } : {}) }
+      const content = JSON.stringify(payload)
+      if (!command.current || command.current.content !== content) command.current = { content, id: crypto.randomUUID() }
+      const body = { ...payload, commandId: command.current.id }
 
       const res = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: 'PATCH',
@@ -78,11 +85,12 @@ export function OrderStatusManager({
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao atualizar status do pedido.')
+        const data = await res.json().catch(() => null)
+        if (res.status === 409) await onConflict()
+        throw new Error(data?.error || 'Erro ao atualizar status do pedido.')
       }
 
-      onSuccess()
+      await onSuccess()
       onClose()
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -96,7 +104,7 @@ export function OrderStatusManager({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isLoading) onClose() }}>
       <DialogContent className="sm:max-w-md bg-catalog-card border border-catalog-gold/45 text-white rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
         <DialogHeader className="border-b border-catalog-gold/20 pb-4">
           <span className="text-[10px] text-catalog-gold font-mono tracking-[0.2em] uppercase font-bold">
@@ -126,7 +134,7 @@ export function OrderStatusManager({
 
             {availableTransitions.length === 0 ? (
               <p className="text-xs font-mono text-catalog-muted italic py-3 text-center bg-[#0B132B]/50 rounded-xl border border-white/5">
-                Este pedido atingiu um estado final ({statusMap[currentStatus]?.label}).
+                Nenhuma transição disponível para a modalidade e a situação financeira atuais.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2.5">
@@ -137,6 +145,7 @@ export function OrderStatusManager({
                     <button
                       key={st}
                       type="button"
+                      disabled={isLoading}
                       onClick={() => setSelectedStatus(st)}
                       className={`p-3.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer font-mono text-xs ${
                         isSelected
@@ -146,7 +155,7 @@ export function OrderStatusManager({
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon className="w-4 h-4 text-catalog-gold" />
-                        <span className="font-bold uppercase tracking-wider">{statusMap[st]?.label}</span>
+                        <span className="font-bold uppercase tracking-wider">{st === 'DELIVERED' && deliveryType !== 'DELIVERY' ? 'Concluir retirada / entrega ao cliente' : statusMap[st]?.label}</span>
                       </div>
                       {isSelected && (
                         <span className="w-2 h-2 rounded-full bg-catalog-gold shadow-[0_0_6px_#F0B40E]" />
@@ -162,13 +171,16 @@ export function OrderStatusManager({
           {selectedStatus === 'SHIPPED' && (
             <div className="space-y-1.5 pt-2 border-t border-catalog-gold/20 animate-in fade-in duration-300">
               <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase flex items-center justify-between">
-                <span>Código de Rastreamento (Opcional)</span>
-                <span className="text-[10px] text-catalog-muted font-light">Correios / J&T</span>
+                <span>Código de Rastreamento ({actions.tracking.required ? 'Obrigatório' : 'Opcional'})</span>
+                <span className="text-[10px] text-catalog-muted font-light">{actions.tracking.provider || 'Transportadora não informada'}</span>
               </label>
               <input
                 type="text"
+                name="shippingTrackingCode"
+                disabled={isLoading}
+                maxLength={128}
                 value={trackingCode}
-                onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
+                onChange={(e) => setTrackingCode(e.target.value)}
                 placeholder="Ex: AA123456789BR"
                 className="w-full bg-[#050B14] border border-catalog-gold/30 text-white placeholder-gray-500 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none focus:border-catalog-gold uppercase"
               />
@@ -189,7 +201,7 @@ export function OrderStatusManager({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!selectedStatus || isLoading}
+            disabled={!selectedStatus || isLoading || (selectedStatus === 'SHIPPED' && actions.tracking.required && !trackingCode.trim())}
             className="btn-shimmer px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs font-mono uppercase tracking-wider shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading && <Spinner className="w-3.5 h-3.5" />}

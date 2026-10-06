@@ -1,96 +1,26 @@
-import crypto from 'node:crypto'
-
-export interface FreightQuoteItemIdentity {
-  productId: string
-  variantId?: string | null
-  quantity: number
+import crypto from 'node:crypto';
+import { z } from 'zod';
+const payloadSchema = z.object({ version: z.literal(2), quoteId: z.string().uuid(),
+  bindingHash: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.number().int().positive() }).strict();
+export type FreightQuotePayload = z.infer<typeof payloadSchema>;
+function secret() {
+  const key = process.env.FREIGHT_QUOTE_SECRET || (process.env.NODE_ENV !== 'production' ? 'default-development-freight-quote-secret-32-chars-long' : '');
+  if (key.length < 32) throw new Error('FREIGHT_QUOTE_SECRET_MISSING');
+  return key;
 }
-
-export interface FreightQuotePayload {
-  version: 1
-  lojaID: string
-  destinationCep: string
-  itemsHash: string
-  providerId: string
-  serviceCode: string
-  serviceName: string
-  price: string
-  deliveryTimeInDays: number
-  expiresAt: number
+const signature = (payload: string) => crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
+export function assertFreightSigningReady(): void { secret(); }
+export function signFreightQuote(data: Omit<FreightQuotePayload, 'version'>): string {
+  const encoded = Buffer.from(JSON.stringify(payloadSchema.parse({ ...data, version: 2 }))).toString('base64url');
+  return encoded + '.' + signature(encoded);
 }
-
-function quoteSecret(): string {
-  const secret =
-    process.env.FREIGHT_QUOTE_SECRET ||
-    (process.env.NODE_ENV !== 'production'
-      ? 'default-development-freight-quote-secret-32-chars-long'
-      : '')
-  if (!secret || secret.length < 32) {
-    throw new Error('FREIGHT_QUOTE_SECRET deve ter ao menos 32 caracteres.')
-  }
-  return secret
-}
-
-export function hashFreightItems(items: FreightQuoteItemIdentity[]): string {
-  const canonical = items
-    .map((item) => ({
-      productId: item.productId,
-      variantId: item.variantId || '',
-      quantity: item.quantity,
-    }))
-    .sort((a, b) =>
-      `${a.productId}:${a.variantId}`.localeCompare(`${b.productId}:${b.variantId}`)
-    )
-  return crypto.createHash('sha256').update(JSON.stringify(canonical)).digest('hex')
-}
-
-function signature(encodedPayload: string): string {
-  return crypto.createHmac('sha256', quoteSecret()).update(encodedPayload).digest('base64url')
-}
-
-export function signFreightQuote(
-  payload: Omit<FreightQuotePayload, 'version' | 'expiresAt'>,
-  ttlMs = 30 * 60 * 1000
-): string {
-  const complete: FreightQuotePayload = { ...payload, version: 1, expiresAt: Date.now() + ttlMs }
-  const encoded = Buffer.from(JSON.stringify(complete)).toString('base64url')
-  return `${encoded}.${signature(encoded)}`
-}
-
-export function verifyFreightQuote(
-  token: string,
-  expected: { lojaID: string; destinationCep: string; items: FreightQuoteItemIdentity[] }
-): FreightQuotePayload {
-  const [encoded, receivedSignature, extra] = token.split('.')
-  if (!encoded || !receivedSignature || extra) throw new Error('Cotação de frete inválida.')
-
-  const expectedSignature = signature(encoded)
-  const receivedBuffer = Buffer.from(receivedSignature)
-  const expectedBuffer = Buffer.from(expectedSignature)
-  if (
-    receivedBuffer.length !== expectedBuffer.length ||
-    !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)
-  ) {
-    throw new Error('Cotação de frete inválida.')
-  }
-
-  let payload: FreightQuotePayload
-  try {
-    payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'))
-  } catch {
-    throw new Error('Cotação de frete inválida.')
-  }
-
-  const valid =
-    payload.version === 1 &&
-    payload.lojaID === expected.lojaID &&
-    payload.destinationCep === expected.destinationCep.replace(/\D/g, '') &&
-    payload.itemsHash === hashFreightItems(expected.items) &&
-    Number.isInteger(payload.deliveryTimeInDays) &&
-    payload.deliveryTimeInDays >= 0 &&
-    /^\d+(\.\d{2})$/.test(payload.price) &&
-    payload.expiresAt > Date.now()
-
-  if (!valid) throw new Error('Cotação de frete expirada ou incompatível com o pedido.')
-  return payload
+export function verifyFreightQuote(token: string): FreightQuotePayload {
+  if (typeof token !== 'string' || token.length > 2048) throw new Error('FREIGHT_QUOTE_INVALID');
+  const segments = token.split('.');
+  const [encoded, received] = segments;
+  if (segments.length !== 2 || !encoded || !received) throw new Error('FREIGHT_QUOTE_INVALID');
+  const expected = Buffer.from(signature(encoded)); const actual = Buffer.from(received);
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) throw new Error('FREIGHT_QUOTE_INVALID');
+  try { return payloadSchema.parse(JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'))); }
+  catch { throw new Error('FREIGHT_QUOTE_INVALID'); }
 }

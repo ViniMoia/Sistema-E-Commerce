@@ -1,12 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AsaasClient, AsaasClientError, asaasClient } from '@/services/asaas/asaas.client';
-import { createOrder } from '@/services/checkout.service';
+import { AsaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-vi.mock('@/lib/prisma', () => {
+// This historical suite isolates customer/transport. Durable financial
+// authority is exercised with real PostgreSQL in payment-durable-execution.
+vi.mock('@/services/payment/payment-evidence.service', () => ({
+  applyPaymentEvidence: async (tx: Prisma.TransactionClient, attemptId: string, inspection: import('@/types/payment-gateway.types').PaymentInspection) => {
+    await tx.paymentCharge.createMany({ data: inspection.charges.map(c => ({ attemptId, provider: 'ASAAS', providerPaymentId: c.paymentId,
+      ordinal: c.ordinal, amount: new Prisma.Decimal(c.value), providerStatus: c.status, instructions: c.instructions })) });
+    await tx.paymentAttempt.update({ where: { id: attemptId }, data: { status: 'PENDING' } });
+    return { review: false, state: 'PENDING' };
+  },
+}));
+
+vi.mock('@/lib/prisma', async () => {
+  const { paymentAttemptFixture } = await import('@/tests/helpers/payment-fixture-mock');
   return {
     default: {
+      paymentAttempt: paymentAttemptFixture(), paymentCharge: { createMany: vi.fn() },
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       loja: {
         findUnique: vi.fn(),
@@ -257,16 +273,16 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
         id: 'loja-1',
         name: 'Loja Teste',
-        pixKey: 'minha-chave-pix',
+        pixKey: 'minha-chave-pix', enablePix: true, configurationVersion: 0, loyaltyEnabled: false, loyaltyEarnRate: new Prisma.Decimal('.5'), loyaltyPointValue: new Prisma.Decimal('.05'), loyaltyPointsExpiryDays: 365,
       } as any);
 
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-100',
         name: 'Produto Teste',
         price: new Prisma.Decimal('100.00'),
         stock: 5,
         lojaID: 'loja-1',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any);
 
       vi.mocked(prisma.freightRule.findFirst).mockResolvedValueOnce({
@@ -322,7 +338,7 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
       const spyCreatePayment = vi
         .spyOn(asaasClient, 'createPayment')
         .mockResolvedValueOnce({
-          id: 'pay_asaas_888',
+          id: 'pay_asaas_888', externalReference: 'order-123',
           customer: 'cus_resolvido_555',
           dateCreated: '2026-09-16',
           dueDate: '2026-09-17',
@@ -341,16 +357,18 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
           expirationDate: '2026-09-17 23:59:59',
         });
 
-      const result = await createOrder({
+      const gateway = new AsaasPaymentAdapter();
+      vi.spyOn(gateway, 'capabilities').mockResolvedValue({ configured: true, methods: ['PIX'], maximumInstallments: 1 });
+      const result = await createOrder({ paymentGateway: gateway, paymentMethod: 'PIX',
         lojaID: 'loja-1',
         customer: {
           name: 'Carlos Cliente',
           email: 'carlos@cliente.com',
           phone: '(11) 98888-7777',
-          cpfCnpj: '123.456.789-10',
+          cpfCnpj: '52998224725',
         },
         items: [{ productId: 'prod-100', quantity: 1 }],
-        deliveryType: 'DELIVERY',
+        deliveryType: 'DELIVERY', freightQuoteToken: 'authorized-fixture-quote', freightOwnerKey: 'g:' + 'a'.repeat(64),
         address: {
           cep: '01310-100',
           state: 'SP',
@@ -367,7 +385,7 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
         name: 'Carlos Cliente',
         email: 'carlos@cliente.com',
         phone: '(11) 98888-7777',
-        cpfCnpj: '123.456.789-10',
+        cpfCnpj: '52998224725',
       });
 
       // GARANTIA: createPayment recebeu customer como ID oficial cus_resolvido_555, e NÃO e-mail!
@@ -390,4 +408,18 @@ describe('Asaas Customer Lifecycle & Integration (REV-002)', () => {
       expect(result.order.pixPayload).toBe('000201...pix_copia_e_cola');
     });
   });
+});
+
+vi.mock('@/lib/freight/acceptance', async () => {
+  const { freightAcceptanceMock } = await import('@/tests/helpers/freight-acceptance-mock');
+  return freightAcceptanceMock(20);
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
 });

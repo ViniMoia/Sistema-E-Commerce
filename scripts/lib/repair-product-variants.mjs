@@ -10,6 +10,9 @@ export async function repairVariants(prisma, saveBackup) {
     const variants = await tx.productVariants.findMany({
       where: { ProductID: PRODUCT_ID }, orderBy: { createdAt: "asc" },
     });
+    if (variants.some(v => 'inventoryVersion' in v || 'retiredAt' in v || 'unavailableStock' in v)) {
+      throw new Error('Saneamento legado incompatível com revisões/retiradas/reservas: validar manutenção WF-18 antes de aplicar.');
+    }
     const primary = variants.find((v) => v.id === PRIMARY_ID);
     const duplicate = variants.find((v) => v.id === DUPLICATE_ID);
     if (!primary) throw new Error("Variante primária não encontrada.");

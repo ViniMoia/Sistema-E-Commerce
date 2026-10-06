@@ -25,6 +25,7 @@ export interface CreatePixChargeInput {
 }
 
 export interface PixChargeResult {
+  value: number;
   paymentId: string;
   status: string;
   pixQrCodeBase64: string; // Base64 da imagem PNG do QR Code (sem prefixo data:)
@@ -53,6 +54,10 @@ export interface CreateCreditCardChargeInput {
 }
 
 export interface CreditCardChargeResult {
+  value: number; // Whole contract amount, never only the first charge.
+  contractId?: string;
+  charges: Array<{ paymentId: string; ordinal: number; value: number; status: string }>;
+  approvedForEntireContract: boolean;
   paymentId: string;
   status: string; // 'CONFIRMED' | 'AWAITING_RISK_ANALYSIS' | 'PENDING'
   creditCardBrand?: string;
@@ -71,6 +76,7 @@ export interface CreateBoletoChargeInput {
 }
 
 export interface BoletoChargeResult {
+  value: number;
   paymentId: string;
   status: string;
   bankSlipUrl: string;
@@ -104,6 +110,10 @@ export class PaymentGatewayError extends Error {
 }
 
 export interface PaymentGateway {
+  inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number }): Promise<PaymentInspection>;
+  cancelPayment?(paymentId: string): Promise<void>;
+  refundPayment?(paymentId: string, amount: number): Promise<void>;
+  capabilities(lojaID: string): Promise<{ configured: boolean; methods: PaymentMethod[]; maximumInstallments: number }>;
   /**
    * Registra cliente e cria cobrança PIX com geração de QR Code dinâmico.
    */
@@ -123,4 +133,14 @@ export interface PaymentGateway {
    * Consulta o status atualizado de uma cobrança no gateway.
    */
   getPaymentStatus(paymentId: string): Promise<PaymentStatusResult>;
+}
+
+export interface RemoteCharge {
+  paymentId: string; externalReference: string; method: PaymentMethod;
+  ordinal: number; value: number; status: string; deleted?: boolean;
+  contractId?: string; dueAt?: string; paidAt?: string;
+  instructions?: { pixPayload?: string; pixQrCodeBase64?: string; bankSlipUrl?: string; digitableLine?: string; expiresAt?: string };
+}
+export interface PaymentInspection {
+  complete: boolean; charges: RemoteCharge[]; contractApproved?: boolean;
 }

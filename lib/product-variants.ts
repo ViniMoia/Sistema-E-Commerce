@@ -3,6 +3,7 @@ export interface VariantInput {
   size: string;
   color: string;
   stock: number;
+  retiredAt?: Date | string | null;
 }
 
 export interface CatalogVariant extends VariantInput {
@@ -42,6 +43,7 @@ export function getVariantOptions(variants: readonly VariantInput[]) {
   const distinct = (dimension: "size" | "color") => {
     const values = new Map<string, string>();
     for (const variant of variants) {
+      if (variant.retiredAt) continue;
       const canonical = canonicalizeVariant(variant);
       const key = normalizeVariantDimension(canonical[dimension]);
       if (!values.has(key)) values.set(key, canonical[dimension]);
@@ -68,7 +70,7 @@ export function resolveCatalogVariant<T extends CatalogVariant>(
   const { hasRealSizes, hasRealColors } = getVariantOptions(variants);
   if ((hasRealSizes && !selectedSize) || (hasRealColors && !selectedColor)) return null;
   return variants.find((variant) =>
-    variant.stock > 0 &&
+    !variant.retiredAt && variant.stock > 0 &&
     (!hasRealSizes || matchesVariantTerm(variant.size, selectedSize!)) &&
     (!hasRealColors || matchesVariantTerm(variant.color, selectedColor!))
   ) ?? null;

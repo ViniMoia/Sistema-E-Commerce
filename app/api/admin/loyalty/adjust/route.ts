@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
-import { requireAdmin } from '@/lib/auth/guards'
-import { adjustPointsManually, AdjustLoyaltyBalanceSchema } from '@/services/loyalty.service'
+import { requirePurchaseAdmin } from '@/lib/auth/guards'
+import { adjustPointsManually, AdjustLoyaltyBalanceSchema, LoyaltyError } from '@/services/loyalty.service'
 
 export async function POST(req: Request) {
-  const auth = await requireAdmin(req)
+  const auth = await requirePurchaseAdmin(req)
   if (auth instanceof NextResponse) return auth
 
   let body: unknown
@@ -32,9 +32,13 @@ export async function POST(req: Request) {
       message: 'Ajuste de saldo realizado com sucesso.',
       newBalance: result.wallet.balance,
       transactionId: result.transaction.id,
+      debt: result.wallet.debt,
+      replay: result.replay,
     })
-  } catch (error: any) {
-    console.error('[ADMIN_LOYALTY_ADJUST_ERROR]', error)
-    return err(error?.message || 'Erro ao realizar ajuste manual de saldo.', 400)
+  } catch (error: unknown) {
+    if (error instanceof LoyaltyError) return err(error.message,
+      error.code === 'FORBIDDEN' ? 403 : ['CONFLICT', 'RECONCILIATION_REQUIRED'].includes(error.code) ? 409 : 422)
+    console.error('[ADMIN_LOYALTY_ADJUST_ERROR]')
+    return err('Erro ao realizar ajuste manual de saldo.', 500)
   }
 }

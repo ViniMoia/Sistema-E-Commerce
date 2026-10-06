@@ -1,12 +1,14 @@
 import prisma from "@/lib/prisma";
 import { UserOrder } from "@/app/profile/types";
+import { requirePurchaseAccount } from '@/lib/commerce/account-scope';
 
 export async function getUserOrders(userId: string, limit = 10, skip = 0, lojaId?: string): Promise<UserOrder[]> {
   try {
+    const user = await requirePurchaseAccount(prisma, userId, lojaId);
     const orders = await prisma.order.findMany({
       where: {
         userID: userId,
-        ...(lojaId ? { lojaID: lojaId } : {}),
+        lojaID: user.lojaID,
       },
       select: {
         id: true,

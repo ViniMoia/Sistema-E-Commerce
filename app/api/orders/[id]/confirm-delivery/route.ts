@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth/guards';
+import { getLojaFromHeaders } from '@/lib/tenant';
+import { updateOrderStatus } from '@/services/order.service';
+import { isValidTransition } from '@/lib/order-transitions';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -11,6 +14,9 @@ export async function POST(req: Request, context: RouteContext) {
   const { id: orderId } = await context.params;
 
   try {
+    const tenant = await getLojaFromHeaders();
+    if (!tenant) return NextResponse.json({ error: 'Loja não encontrada.' }, { status: 404 });
+    if (tenant.id !== guard.user.lojaID) return NextResponse.json({ error: 'Sessão não autorizada para esta loja.' }, { status: 403 });
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: {
@@ -20,10 +26,11 @@ export async function POST(req: Request, context: RouteContext) {
         lojaID: true,
         status: true,
         deliveryType: true,
+        version: true,
       },
     });
 
-    if (!order) {
+    if (!order || order.lojaID !== tenant.id) {
       return NextResponse.json(
         { error: 'Pedido não encontrado.' },
         { status: 404 }
@@ -56,9 +63,7 @@ export async function POST(req: Request, context: RouteContext) {
     // Pedidos de retirada podem ser confirmados se estiverem pagos ou enviados.
     // Pedidos de entrega padrão exigem que o pedido já tenha sido despachado (SHIPPED).
     const isPickup = order.deliveryType === 'PICKUP' || order.deliveryType === 'NONE';
-    const isEligible = isPickup
-      ? order.status === 'PAID' || order.status === 'SHIPPED'
-      : order.status === 'SHIPPED';
+    const isEligible = isValidTransition(order.status, 'DELIVERED', order.deliveryType);
 
     if (!isEligible) {
       return NextResponse.json(
@@ -72,39 +77,14 @@ export async function POST(req: Request, context: RouteContext) {
     }
 
     // 3. Atualização atômica do status para DELIVERED e registro de auditoria
-    const [updatedOrder] = await prisma.$transaction([
-      prisma.order.update({
-        where: { id: order.id },
-        data: {
-          status: 'DELIVERED',
-          deliveredConfirmedAt: new Date(),
-          deliveredConfirmedBy: guard.user.id,
-        },
-        select: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          deliveredConfirmedAt: true,
-        },
-      }),
-      prisma.auditLog.create({
-        data: {
-          actorId: guard.user.id,
-          targetId: guard.user.id,
-          action: 'ORDER_DELIVERY_CONFIRMED_BY_CUSTOMER',
-          entity: 'Order',
-          entityId: order.id,
-          previousValue: { status: order.status },
-          newValue: { status: 'DELIVERED' },
-          ipAddress:
-            req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null,
-          metadata: {
-            confirmedByRole: 'CUSTOMER',
-            orderNumber: order.orderNumber,
-          },
-        },
-      }),
-    ]);
+    const result = await updateOrderStatus({
+      orderId: order.id, lojaID: tenant.id, newStatus: 'DELIVERED', performedById: guard.user.id,
+      actor: { type: 'USER', userId: guard.user.id, lojaID: tenant.id }, confirmReceipt: true,
+      expectedVersion: order.version,
+      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0].trim(),
+    });
+    if (result.success === false) return NextResponse.json({ error: result.error }, { status: result.code === 'FORBIDDEN' ? 403 : 409 });
+    const updatedOrder = result.order;
 
     return NextResponse.json({
       success: true,

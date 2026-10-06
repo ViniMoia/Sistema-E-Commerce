@@ -7,6 +7,11 @@ export interface CreateOrderInput {
   cartID: string;
   addressID: string;
   lojaID: string;
+  freightQuoteToken?: string;
+  checkoutIntentID?: string;
+  acceptedRevision?: number;
+  acceptedContentHash?: string;
+  creditCard?: import('./payment-gateway.types').CreditCardData;
 }
 
 export interface UpdateOrderStatusInput {

@@ -1,11 +1,8 @@
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { randomBytes } from "crypto";
+import { issueAuthenticatedSession } from "@/lib/auth/session-issuance";
 import * as React from "react";
 import { sanitizeUser, SafeUserDTO } from "@/lib/utils/dto-sanitizer";
-
-// 7 dias de expiração de sessão
-const SESSION_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Cria uma nova sessão no banco e define o cookie HTTP seguro.
@@ -13,38 +10,17 @@ const SESSION_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
  * Se a requisição já possuir um cookie de sessão pré-existente (anônimo ou antigo),
  * essa sessão é explicitamente destruída no banco e limpa antes de gerar a nova.
  */
-export async function createSession(userId: string) {
+export async function createSession(userId: string, credentials: { lojaID: string; password: string }) {
   const cookieStore = await cookies();
   const existingSessionId = cookieStore.get("session_id")?.value;
 
-  // 1. Invalidar sessão anterior se existente
-  if (existingSessionId) {
-    try {
-      await prisma.session.deleteMany({
-        where: { id: existingSessionId },
-      });
-    } catch {
-      // no-op se a sessão já não existia
-    }
-  }
-
-  // 2. Gerar novo identificador criptograficamente seguro de 256 bits
-  const expiresAt = new Date(Date.now() + SESSION_EXPIRATION_MS);
-  const sessionId = randomBytes(32).toString("hex");
-
-  const session = await prisma.session.create({
-    data: {
-      id: sessionId,
-      userId,
-      expiresAt,
-    },
-  });
+  const session = await issueAuthenticatedSession({ userId, ...credentials, previousSessionId: existingSessionId });
 
   // 3. Gravar novo cookie de sessão com flags de segurança reforçadas
   cookieStore.set("session_id", session.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
+    expires: session.expiresAt,
     sameSite: "lax",
     path: "/",
   });

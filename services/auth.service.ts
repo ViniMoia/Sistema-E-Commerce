@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { LoginInput } from "@/lib/validators/auth";
 import { sanitizeUser, SafeUserDTO } from "@/lib/utils/dto-sanitizer";
 import { cleanDigits } from "@/lib/validators/cpf-cnpj";
+import { digestPasswordResetToken } from "@/lib/auth/password-reset-token";
 
 export async function registerUser(data: {
   name: string;
@@ -172,17 +173,19 @@ export async function requestPasswordReset(data: {
   // 3. Geração de Token Criptograficamente Seguro (CSPRNG com 256 bits de entropia)
   const crypto = await import("crypto");
   const resetToken = crypto.randomBytes(32).toString("hex");
-  // 4. Expiração rígida de 1 hora
-  const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
-
-  // 5. Atualização atômica no banco de dados
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      resetToken,
-      resetTokenExpires,
-    },
+  // Lock before evaluating the clock, including waits on SELECT FOR UPDATE
+  // holders that do not change the tuple and therefore need no EPQ recheck.
+  const issued = await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} AND "lojaID" = ${data.lojaID} FOR UPDATE`;
+    return tx.$queryRaw<{ id: string }[]>`
+      UPDATE "User" SET "resetToken" = ${digestPasswordResetToken(resetToken)},
+        "resetTokenExpires" = clock_timestamp() + interval '1 hour',
+        "updatedAt" = clock_timestamp()
+      WHERE id = ${user.id} AND "lojaID" = ${data.lojaID} AND status = 'ACTIVE'
+      RETURNING id
+    `;
   });
+  if (issued.length !== 1) return { success: true };
 
   // 6. Montagem da URL de redefinição
   const baseUrl = data.originUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -203,48 +206,50 @@ export async function requestPasswordReset(data: {
 export async function resetPassword(data: {
   token: string;
   newPassword: string;
+  lojaID: string;
 }): Promise<{ success: boolean; message: string }> {
-  const { token, newPassword } = data;
-
-  if (!token || typeof token !== "string" || token.trim().length < 10) {
-    throw new AuthError("Token de recuperação inválido ou inexistente.");
-  }
+  const { token, newPassword, lojaID } = data;
+  const invalidToken = () => new AuthError("Token de recuperação inválido ou expirado. Solicite um novo link.");
+  const storedToken = typeof token === 'string' ? digestPasswordResetToken(token) : null;
+  if (!storedToken || !lojaID) throw invalidToken();
 
   if (!newPassword || newPassword.length < 6) {
     throw new AuthError("A nova senha deve ter no mínimo 6 caracteres.");
   }
 
   // 1. Localiza usuário com token válido e não expirado
-  const user = await prisma.user.findFirst({
+  const users = await prisma.user.findMany({
     where: {
-      resetToken: token.trim(),
+      lojaID,
+      status: 'ACTIVE',
+      resetToken: storedToken,
       resetTokenExpires: {
         gt: new Date(),
       },
     },
+    select: { id: true },
+    take: 2,
   });
-
-  if (!user) {
-    throw new AuthError("Token de recuperação inválido ou expirado.");
-  }
-
-  if (user.status === "BLOCKED") {
-    throw new AuthError("Usuário bloqueado. Entre em contato com o suporte.");
-  }
+  // Ambiguous legacy/corrupted data never chooses an arbitrary account.
+  if (users.length !== 1) throw invalidToken();
+  const user = users[0];
 
   // 2. Gera novo hash com salt 10
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   // 3. Atualização atômica (transação): redefine senha, invalida token e revoga sessões antigas
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        resetToken: null,
-        resetTokenExpires: null,
-      },
-    });
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} AND "lojaID" = ${lojaID} FOR UPDATE`;
+    // Evaluate the definitive predicate after every row wait, even when the
+    // holder only read the row. The database clock advances during the wait.
+    const consumed = await tx.$queryRaw<{ id: string }[]>`
+      UPDATE "User" SET password = ${hashedPassword}, "resetToken" = NULL,
+        "resetTokenExpires" = NULL, "updatedAt" = clock_timestamp()
+      WHERE id = ${user.id} AND "lojaID" = ${lojaID} AND status = 'ACTIVE'
+        AND "resetToken" = ${storedToken} AND "resetTokenExpires" > clock_timestamp()
+      RETURNING id
+    `;
+    if (consumed.length !== 1) throw invalidToken();
 
     // Revoga todas as sessões anteriores para proteção contra hijacking
     await tx.session.deleteMany({

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { correiosCredentialChanges } from '@/lib/loja-dto';
 import {
   Settings,
   QrCode,
@@ -39,13 +40,17 @@ export default function AdminSettingsPage() {
     originStreet: string | null;
     originNumber: string | null;
     originComplement: string | null;
+    enableManualPix: boolean; enablePix: boolean; enableCreditCard: boolean; enableBoleto: boolean;
     enableCorreios: boolean;
-    correiosContractCode: string | null;
-    correiosPassword: string | null;
+    hasCorreiosContractCode: boolean;
+    hasCorreiosPassword: boolean;
     enablePickup: boolean;
     enableNoFreight: boolean;
     additionalDays: number;
   } | null>(null);
+  const [correiosContractCode, setCorreiosContractCode] = useState('');
+  const [correiosPassword, setCorreiosPassword] = useState('');
+  const [removeCorreiosCredentials, setRemoveCorreiosCredentials] = useState(false);
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -89,9 +94,10 @@ export default function AdminSettingsPage() {
           originStreet: null,
           originNumber: null,
           originComplement: null,
+          enableManualPix: false, enablePix: false, enableCreditCard: false, enableBoleto: false,
           enableCorreios: true,
-          correiosContractCode: null,
-          correiosPassword: null,
+          hasCorreiosContractCode: false,
+          hasCorreiosPassword: false,
           enablePickup: true,
           enableNoFreight: true,
           additionalDays: 0,
@@ -166,8 +172,7 @@ export default function AdminSettingsPage() {
           originStreet: settings.originStreet === '' ? null : settings.originStreet,
           originNumber: settings.originNumber === '' ? null : settings.originNumber,
           originComplement: settings.originComplement === '' ? null : settings.originComplement,
-          correiosContractCode: settings.correiosContractCode === '' ? null : settings.correiosContractCode,
-          correiosPassword: settings.correiosPassword === '' ? null : settings.correiosPassword,
+          ...correiosCredentialChanges(correiosContractCode, correiosPassword, removeCorreiosCredentials),
           additionalDays: Number(settings.additionalDays) || 0,
         }),
       });
@@ -176,6 +181,9 @@ export default function AdminSettingsPage() {
         const updated = await res.json();
         setSuccessMessage('Configurações atualizadas com sucesso!');
         setSettings(updated);
+        setCorreiosContractCode('');
+        setCorreiosPassword('');
+        setRemoveCorreiosCredentials(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const errData = await res.json().catch(() => null);
@@ -245,6 +253,13 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
+      {settings && <section className="rounded-xl border border-catalog-gold/30 p-4 space-y-3"><h2>Meios de pagamento</h2>
+        <p className="text-sm text-catalog-muted">Habilite somente métodos homologados. A capacidade do servidor também é verificada antes da compra.</p>
+        {(['enableManualPix', 'enablePix', 'enableCreditCard', 'enableBoleto'] as const).map((field, index) => <label key={field} className="block text-sm">
+          <input type="checkbox" checked={settings[field]} onChange={e => setSettings(p => p ? { ...p, [field]: e.target.checked } : p)} />
+          {[' PIX manual via WhatsApp', ' PIX automático', ' Cartão de crédito', ' Boleto'][index]}</label>)}
+        <p className="text-xs text-catalog-muted">Use Salvar Configurações para aplicar.</p>
+      </section>}
       {errorMessage && (
         <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-400 text-xs font-mono flex items-center gap-2.5 shadow-lg">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
@@ -475,6 +490,32 @@ export default function AdminSettingsPage() {
                 <p className="text-xs text-catalog-muted font-light leading-relaxed">
                   Cálculo automático de cotações em tempo real integrado às APIs oficiais dos Correios.
                 </p>
+              </div>
+
+              <div className="p-4 bg-[#050B14] rounded-xl border border-catalog-gold/20 space-y-3">
+                <p className="text-xs text-catalog-muted">
+                  Credenciais dos Correios: {settings.hasCorreiosContractCode && settings.hasCorreiosPassword ? 'configuradas' : 'incompletas'}.
+                  {' '}Deixe os campos vazios para preservar as credenciais atuais.
+                </p>
+                <label className="block text-xs text-white">
+                  Novo código do contrato
+                  <input type="text" autoComplete="off" value={correiosContractCode}
+                    disabled={removeCorreiosCredentials}
+                    onChange={e => setCorreiosContractCode(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80" />
+                </label>
+                <label className="block text-xs text-white">
+                  Nova senha
+                  <input type="password" autoComplete="new-password" value={correiosPassword}
+                    disabled={removeCorreiosCredentials}
+                    onChange={e => setCorreiosPassword(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/80" />
+                </label>
+                <label className="flex gap-2 text-xs text-white">
+                  <input type="checkbox" checked={removeCorreiosCredentials}
+                    onChange={e => setRemoveCorreiosCredentials(e.target.checked)} />
+                  Remover as credenciais armazenadas ao salvar
+                </label>
               </div>
 
               {/* Retirada na Loja */}

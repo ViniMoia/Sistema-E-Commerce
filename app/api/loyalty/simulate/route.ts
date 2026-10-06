@@ -1,6 +1,7 @@
 import { ok, err } from '@/lib/api-response'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getCurrentUser } from '@/lib/session'
+import { getLojaFromHeaders } from '@/lib/tenant'
 import { simulatePointsRedemption, SimulateLoyaltyRedeemSchema } from '@/services/loyalty.service'
 
 export async function POST(request: Request) {
@@ -25,17 +26,26 @@ export async function POST(request: Request) {
 
   // Identificar se há um usuário com sessão ativa
   const currentUser = await getCurrentUser()
-  const resolvedUserId = currentUser ? currentUser.id : data.userID
+  const activeLoja = await getLojaFromHeaders()
+  if (!activeLoja) return err('Loja não encontrada.', 404)
+  if (data.lojaID !== activeLoja.id || (currentUser && currentUser.lojaID !== activeLoja.id)) {
+    return err('Acesso não autorizado à loja.', 403)
+  }
+  // A declared identifier never supplies authority, including for guests.
+  // Accept the session's own ID temporarily for older frontend clients.
+  if (data.userID && data.userID !== currentUser?.id) return err('Identidade de simulação inválida.', 403)
 
   try {
     const result = await simulatePointsRedemption({
-      ...data,
-      userID: resolvedUserId,
+      subtotal: data.subtotal,
+      requestedPoints: data.requestedPoints,
+      lojaID: activeLoja.id,
+      userID: currentUser?.id,
     })
 
     return ok(result)
   } catch (error: any) {
-    console.error('[LOYALTY_SIMULATE_ERROR]', error)
+    console.error('[LOYALTY_SIMULATE_ERROR] Falha na simulação de pontos.')
     return err(error?.message || 'Erro ao simular resgate de pontos.', 400)
   }
 }

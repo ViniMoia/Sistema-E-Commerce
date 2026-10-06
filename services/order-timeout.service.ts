@@ -1,162 +1,79 @@
+import { createHash } from 'node:crypto';
 import prisma from '@/lib/prisma';
-import { updateOrderStatus } from '@/services/order.service';
-import { logger } from '@/lib/logger';
+import { CommerceLocks } from '@/lib/commerce/locks';
+import { transitionOrder } from '@/lib/commerce/order-command';
+import { applyPaymentEvidence, paymentNow } from '@/services/payment/payment-evidence.service';
+import { inspectPaymentAttempt } from '@/services/payment/payment-worker.service';
+import type { PaymentGateway } from '@/types/payment-gateway.types';
 
-export const DEFAULT_ASAAS_TIMEOUT_MINUTES = 60;
+export const DEFAULT_ASAAS_TIMEOUT_MINUTES = 60; // Deprecated: never used as remote expiry.
 export const DEFAULT_MANUAL_TIMEOUT_HOURS = 24;
 export const DEFAULT_BATCH_SIZE = 50;
-
 export interface ProcessExpiredOrdersOptions {
-  lojaID?: string;
-  batchSize?: number;
-  asaasTimeoutMinutes?: number;
-  manualTimeoutHours?: number;
-  now?: Date;
+  lojaID?: string; batchSize?: number; dryRun?: boolean; gateway?: PaymentGateway;
+  /** Compatibility only: runtime decisions exclusively use persisted deadlines and database time. */
+  asaasTimeoutMinutes?: number; manualTimeoutHours?: number; now?: Date;
 }
-
 export interface OrderTimeoutSummary {
-  success: boolean;
-  processedCount: number;
-  cancelledCount: number;
-  errorCount: number;
-  cancelledOrderIds: string[];
-  errors: Array<{ orderId: string; orderNumber?: number; error: string }>;
-  executionTimeMs: number;
+  success: boolean; processedCount: number; cancelledCount: number; errorCount: number;
+  cancelledOrderIds: string[]; errors: Array<{ orderId: string; orderNumber?: number; error: string }>; executionTimeMs: number;
 }
-
-/**
- * Localiza e cancela automaticamente pedidos com status PENDING que ultrapassaram o tempo limite de pagamento.
- * - Pedidos com cobrança Asaas PIX: expiram após 60 minutos (ou asaasTimeoutMinutes).
- * - Pedidos com pagamento WhatsApp PIX manual: expiram após 24 horas (ou manualTimeoutHours).
- *
- * Cada cancelamento aciona atômica e autoritativamente a FSM (updateOrderStatus),
- * que estorna o estoque reservado (InventoryService) e devolve pontos de fidelidade (refundOrderPoints).
- */
-export async function processExpiredOrders(
-  options?: ProcessExpiredOrdersOptions
-): Promise<OrderTimeoutSummary> {
-  const startTime = Date.now();
-  const referenceDate = options?.now ?? new Date();
-
-  const asaasTimeoutMinutes = options?.asaasTimeoutMinutes ?? DEFAULT_ASAAS_TIMEOUT_MINUTES;
-  const manualTimeoutHours = options?.manualTimeoutHours ?? DEFAULT_MANUAL_TIMEOUT_HOURS;
-  const batchSize = Math.min(options?.batchSize ?? DEFAULT_BATCH_SIZE, 100);
-
-  const asaasCutoff = new Date(referenceDate.getTime() - asaasTimeoutMinutes * 60 * 1000);
-  const manualCutoff = new Date(referenceDate.getTime() - manualTimeoutHours * 60 * 60 * 1000);
-
-  const cancelledOrderIds: string[] = [];
-  const errors: Array<{ orderId: string; orderNumber?: number; error: string }> = [];
-
+export async function processExpiredOrders(options: ProcessExpiredOrdersOptions = {}): Promise<OrderTimeoutSummary> {
+  const started = Date.now();
+  const summary: OrderTimeoutSummary = { success: true, processedCount: 0, cancelledCount: 0, errorCount: 0, cancelledOrderIds: [], errors: [], executionTimeMs: 0 };
   try {
-    // Busca otimizada utilizando índices [lojaID, status, createdAt]
-    const candidateOrders = await prisma.order.findMany({
-      where: {
-        status: 'PENDING',
-        ...(options?.lojaID ? { lojaID: options.lojaID } : {}),
-        OR: [
-          {
-            asaasPaymentId: { not: null },
-            createdAt: { lte: asaasCutoff },
-          },
-          {
-            asaasPaymentId: null,
-            createdAt: { lte: manualCutoff },
-          },
-        ],
-      },
-      take: batchSize,
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        orderNumber: true,
-        lojaID: true,
-        status: true,
-        asaasPaymentId: true,
-        createdAt: true,
-      },
-    });
-
-    for (const order of candidateOrders) {
-      const isAsaas = order.asaasPaymentId !== null;
-      const timeoutLabel = isAsaas
-        ? `${asaasTimeoutMinutes}m (Asaas PIX)`
-        : `${manualTimeoutHours}h (WhatsApp PIX Manual)`;
-      const reason = `Cancelamento automático por timeout de pagamento PIX (${timeoutLabel})`;
-
+    const now = await prisma.$transaction(paymentNow);
+    const candidates = await prisma.paymentAttempt.findMany({ where: {
+      order: { status: 'PENDING', ...(options.lojaID ? { lojaID: options.lojaID } : {}) },
+      reservationExpiresAt: { lte: now }, status: { in: ['NOT_STARTED', 'PENDING'] },
+      method: { in: ['WHATSAPP_PIX', 'PIX', 'BOLETO'] },
+    }, take: Math.max(1, Math.min(100, Math.trunc(options.batchSize ?? DEFAULT_BATCH_SIZE))),
+    orderBy: { reservationExpiresAt: 'asc' }, include: { order: true } });
+    summary.processedCount = candidates.length;
+    for (const candidate of candidates) {
+      if (options.dryRun) continue;
       try {
-        const result = await updateOrderStatus({
-          orderId: order.id,
-          newStatus: 'CANCELLED',
-          performedById: 'SYSTEM_CRON_TIMEOUT',
-          lojaID: order.lojaID,
-          reason,
+        // Lookups are outside locks and never turn an OVERDUE/pending payment
+        // into proof of remote cancellation. Legacy null deadlines are skipped.
+        const evidence = candidate.provider === 'ASAAS' ? await inspectPaymentAttempt(candidate.id, options.gateway) : null;
+        const cancelled = await prisma.$transaction(async tx => {
+          await new CommerceLocks(tx).acquire('order', [candidate.orderId]);
+          const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: candidate.id } });
+          const order = await tx.order.findUniqueOrThrow({ where: { id: candidate.orderId } });
+          const clock = await paymentNow(tx);
+          if (order.status !== 'PENDING' || !attempt.reservationExpiresAt || attempt.reservationExpiresAt > clock ||
+            !['NOT_STARTED','PENDING'].includes(attempt.status)) return false;
+          if (evidence) {
+            const applied = await applyPaymentEvidence(tx, attempt.id, evidence);
+            const currentOrder = await tx.order.findUniqueOrThrow({ where: { id: order.id } });
+            const current = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attempt.id }, include: { charges: true } });
+            if (currentOrder.status === 'CANCELLED') return true;
+            if (applied.review || currentOrder.status !== 'PENDING' || current.status !== 'PENDING' ||
+              !current.externalExpiresAt || !current.reservationExpiresAt || current.reservationExpiresAt > await paymentNow(tx)) return false;
+            const commandKey = createHash('sha256').update('expiry:' + attempt.id).digest('hex');
+            for (const charge of current.charges) await tx.paymentOperation.upsert({ where: { chargeId_kind: { chargeId: charge.id, kind: 'CANCEL' } },
+              create: { attemptId: attempt.id, chargeId: charge.id, kind: 'CANCEL', commandKey }, update: {} });
+            await tx.paymentAttempt.update({ where: { id: attempt.id }, data: { status: 'CANCEL_PENDING', reconcileAfter: clock,
+              reviewAfter: new Date(clock.getTime() + 24 * 3600000), version: { increment: 1 } } });
+            const effectKey = 'payment-expiry:' + attempt.id;
+            await tx.auditLog.upsert({ where: { effectKey }, update: {}, create: { effectKey, actorType: 'SYSTEM', actorId: null,
+              systemActor: 'ORDER_TIMEOUT', entity: 'Order', entityId: order.id, action: 'PAYMENT_EXPIRATION_REQUESTED',
+              metadata: { attemptId: attempt.id, commandKey, method: attempt.method } } });
+            return false; // Stock remains held until definitive cancellation.
+          }
+          if (attempt.provider !== 'MANUAL' || attempt.method !== 'WHATSAPP_PIX') return false;
+          await tx.paymentAttempt.update({ where: { id: attempt.id }, data: { status: 'CANCELLED', version: { increment: 1 } } });
+          const result = await transitionOrder({ orderId: order.id, lojaID: order.lojaID, newStatus: 'CANCELLED',
+            expectedVersion: order.version, performedById: 'SYSTEM_CRON_TIMEOUT', actor: { type: 'SYSTEM', code: 'ORDER_TIMEOUT' },
+            reason: 'Prazo manual persistido expirado.' }, tx);
+          if (!result.success) throw new Error('EXPIRY_APPLICATION_RETRY');
+          return true;
         });
-
-        if (result.success) {
-          cancelledOrderIds.push(order.id);
-          logger.info('Pedido cancelado por timeout de pagamento com sucesso', {
-            action: 'ORDER_TIMEOUT_CANCELLED',
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            tenantId: order.lojaID,
-            isAsaas,
-            timeoutLabel,
-          });
-        } else {
-          const errorMessage = 'error' in result ? result.error : 'Falha na transição de status';
-          errors.push({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            error: errorMessage,
-          });
-          logger.warn('Falha na transição ao cancelar pedido por timeout', {
-            action: 'ORDER_TIMEOUT_TRANSITION_FAILED',
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            error: errorMessage,
-          });
-        }
-      } catch (err: any) {
-        errors.push({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          error: err?.message || 'Erro inesperado ao processar cancelamento por timeout',
-        });
-        logger.error('Exceção crítica ao cancelar pedido por timeout', err, {
-          action: 'ORDER_TIMEOUT_EXCEPTION',
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          tenantId: order.lojaID,
-        });
-      }
+        if (cancelled) summary.cancelledOrderIds.push(candidate.orderId);
+      } catch { summary.errors.push({ orderId: candidate.orderId, error: 'PAYMENT_EXPIRY_RECONCILIATION_REQUIRED' }); }
     }
-
-    const executionTimeMs = Date.now() - startTime;
-
-    return {
-      success: errors.length === 0,
-      processedCount: candidateOrders.length,
-      cancelledCount: cancelledOrderIds.length,
-      errorCount: errors.length,
-      cancelledOrderIds,
-      errors,
-      executionTimeMs,
-    };
-  } catch (findErr: any) {
-    logger.error('Erro ao buscar pedidos elegíveis para timeout', findErr, {
-      action: 'ORDER_TIMEOUT_QUERY_FAILED',
-      tenantId: options?.lojaID,
-    });
-
-    return {
-      success: false,
-      processedCount: 0,
-      cancelledCount: 0,
-      errorCount: 1,
-      cancelledOrderIds: [],
-      errors: [{ orderId: 'QUERY_FAILED', error: findErr?.message || 'Falha na consulta ao banco' }],
-      executionTimeMs: Date.now() - startTime,
-    };
-  }
+  } catch { summary.errors.push({ orderId: 'QUERY_FAILED', error: 'PAYMENT_EXPIRY_QUERY_UNAVAILABLE' }); }
+  summary.cancelledCount = summary.cancelledOrderIds.length; summary.errorCount = summary.errors.length;
+  summary.success = !summary.errorCount; summary.executionTimeMs = Date.now() - started;
+  return summary;
 }

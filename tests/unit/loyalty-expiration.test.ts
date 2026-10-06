@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { Prisma, LoyaltyTxType } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import {
   calculateExpiredPointsForUser,
-  expireUserPoints,
-  processLoyaltyExpirations,
 } from '@/services/loyalty.service'
 import { GET, POST } from '@/app/api/cron/loyalty-expiration/route'
 import * as loyaltyService from '@/services/loyalty.service'
@@ -16,229 +14,24 @@ vi.mock('@/lib/logger', () => ({
   },
 }))
 
-describe('Fase 4 (ACT-P2-05) - Motor Contábil de Expiração de Pontos de Fidelidade', () => {
-  const lojaID = 'loja-continental-001'
-  const userID = 'user-test-exp-001'
-  const fixedNow = new Date('2026-09-22T16:00:00.000Z')
-
-  describe('calculateExpiredPointsForUser (Lógica FIFO de Acúmulo Reverso)', () => {
-    it('deve retornar 0 se o saldo atual for zero ou negativo', async () => {
-      const mockClient = {
-        loyaltyTransaction: { findMany: vi.fn() },
-      } as unknown as Prisma.TransactionClient
-
-      const resZero = await calculateExpiredPointsForUser(lojaID, userID, 0, fixedNow, mockClient)
-      const resNeg = await calculateExpiredPointsForUser(lojaID, userID, -50, fixedNow, mockClient)
-
-      expect(resZero).toBe(0)
-      expect(resNeg).toBe(0)
-      expect(mockClient.loyaltyTransaction.findMany).not.toHaveBeenCalled()
-    })
-
-    it('deve retornar 0 se todos os pontos que compõem o saldo ainda não expiraram', async () => {
-      const mockClient = {
-        loyaltyTransaction: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              points: 200,
-              expiresAt: new Date('2026-12-31T23:59:59.000Z'), // Futuro
-            },
-            {
-              points: 300,
-              expiresAt: new Date('2027-01-15T23:59:59.000Z'), // Futuro
-            },
-          ]),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      // Saldo de 500 composto pelos 200 + 300
-      const expired = await calculateExpiredPointsForUser(lojaID, userID, 500, fixedNow, mockClient)
-      expect(expired).toBe(0)
-    })
-
-    it('deve calcular corretamente pontos expirados quando as transações mais antigas venceram', async () => {
-      // Suponha saldo de 300.
-      // O histórico de EARN ordenado por createdAt DESC (mais recentes primeiro):
-      // 1. Recente: 100 pontos, vence em 2026-12-31 (ativo)
-      // 2. Antigo: 300 pontos, venceu em 2026-08-01 (expirado)
-      // O saldo de 300 é formado por:
-      // - 100 pontos do lote recente (não expirado)
-      // - 200 pontos do lote antigo (expirado!)
-      // Total expirado esperado: 200 pontos.
-      const mockClient = {
-        loyaltyTransaction: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              points: 100,
-              expiresAt: new Date('2026-12-31T23:59:59.000Z'), // Ativo
-            },
-            {
-              points: 300,
-              expiresAt: new Date('2026-08-01T00:00:00.000Z'), // Vencido
-            },
-          ]),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      const expired = await calculateExpiredPointsForUser(lojaID, userID, 300, fixedNow, mockClient)
-      expect(expired).toBe(200)
-    })
-
-    it('deve expirar a totalidade do saldo se todos os EARNs que o sustentam estiverem vencidos', async () => {
-      const mockClient = {
-        loyaltyTransaction: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              points: 150,
-              expiresAt: new Date('2026-01-01T00:00:00.000Z'), // Vencido
-            },
-            {
-              points: 200,
-              expiresAt: new Date('2025-12-01T00:00:00.000Z'), // Vencido
-            },
-          ]),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      const expired = await calculateExpiredPointsForUser(lojaID, userID, 350, fixedNow, mockClient)
-      expect(expired).toBe(350)
-    })
-
-    it('respeita pontos sem data de expiração (expiresAt === null) como não expirados', async () => {
-      const mockClient = {
-        loyaltyTransaction: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              points: 250,
-              expiresAt: null, // Vitalício / sem expiração
-            },
-          ]),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      const expired = await calculateExpiredPointsForUser(lojaID, userID, 250, fixedNow, mockClient)
-      expect(expired).toBe(0)
-    })
+describe('WF-09: estimation does not infer expiry from unknown origin', () => {
+  const now = new Date('2026-10-05T00:00:00Z')
+  it('preserves legacy balance even when EARN entries are expired or absent', async () => {
+    const client = { loyaltyWallet: { findUnique: vi.fn().mockResolvedValue({ id: 'wallet', accountingReady: false, balance: 100 }) },
+      loyaltyLot: { aggregate: vi.fn() }, loyaltyTransaction: { findMany: vi.fn() } } as unknown as Prisma.TransactionClient
+    expect(await calculateExpiredPointsForUser('shop', 'user', 100, now, client)).toBe(0)
+    expect(client.loyaltyLot.aggregate).not.toHaveBeenCalled()
+    expect(client.loyaltyTransaction.findMany).not.toHaveBeenCalled()
   })
-
-  describe('expireUserPoints (Baixa Contábil Atômica)', () => {
-    it('deve decrementar o saldo e gravar transação de EXPIRATION no ledger', async () => {
-      const mockTx = {
-        loja: {
-          findUnique: vi.fn().mockResolvedValue({
-            loyaltyEnabled: true,
-            loyaltyEarnRate: new Prisma.Decimal('0.5'),
-            loyaltyPointValue: new Prisma.Decimal('0.05'),
-            loyaltyMinPointsRedeem: 100,
-            loyaltyMaxDiscountPct: new Prisma.Decimal('50'),
-            loyaltyPointsExpiryDays: 365,
-          }),
-        },
-        loyaltyWallet: {
-          findUnique: vi.fn().mockResolvedValue({
-            id: 'wallet-001',
-            lojaID,
-            userID,
-            balance: 500,
-          }),
-          update: vi.fn().mockResolvedValue({
-            id: 'wallet-001',
-            lojaID,
-            userID,
-            balance: 300,
-          }),
-        },
-        loyaltyTransaction: {
-          create: vi.fn().mockImplementation(({ data }) => Promise.resolve({ id: 'tx-exp-01', ...data })),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      const result = await expireUserPoints(
-        {
-          lojaID,
-          userID,
-          points: 200,
-          description: 'Expiração semestral de pontos',
-        },
-        mockTx
-      )
-
-      expect(result).not.toBeNull()
-      expect(result?.pointsExpired).toBe(200)
-      expect(result?.wallet.balance).toBe(300)
-      expect(mockTx.loyaltyWallet.update).toHaveBeenCalledWith({
-        where: { id: 'wallet-001' },
-        data: {
-          balance: { decrement: 200 },
-          version: { increment: 1 },
-        },
-      })
-      expect(mockTx.loyaltyTransaction.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          lojaID,
-          userID,
-          type: LoyaltyTxType.EXPIRATION,
-          points: -200,
-          balanceAfter: 300,
-          description: 'Expiração semestral de pontos',
-        }),
-      })
-    })
-
-    it('não deve permitir débito maior do que o saldo atual da carteira', async () => {
-      const mockTx = {
-        loja: {
-          findUnique: vi.fn().mockResolvedValue({
-            loyaltyEnabled: true,
-            loyaltyEarnRate: new Prisma.Decimal('0.5'),
-            loyaltyPointValue: new Prisma.Decimal('0.05'),
-            loyaltyMinPointsRedeem: 100,
-            loyaltyMaxDiscountPct: new Prisma.Decimal('50'),
-            loyaltyPointsExpiryDays: 365,
-          }),
-        },
-        loyaltyWallet: {
-          findUnique: vi.fn().mockResolvedValue({
-            id: 'wallet-001',
-            lojaID,
-            userID,
-            balance: 80, // Saldo menor que os 100 solicitados
-          }),
-          update: vi.fn().mockResolvedValue({
-            id: 'wallet-001',
-            lojaID,
-            userID,
-            balance: 0,
-          }),
-        },
-        loyaltyTransaction: {
-          create: vi.fn().mockImplementation(({ data }) => Promise.resolve({ id: 'tx-exp-02', ...data })),
-        },
-      } as unknown as Prisma.TransactionClient
-
-      const result = await expireUserPoints(
-        {
-          lojaID,
-          userID,
-          points: 100,
-        },
-        mockTx
-      )
-
-      expect(result?.pointsExpired).toBe(80)
-      expect(mockTx.loyaltyWallet.update).toHaveBeenCalledWith({
-        where: { id: 'wallet-001' },
-        data: {
-          balance: { decrement: 80 },
-          version: { increment: 1 },
-        },
-      })
-    })
-
-    it('retorna null se points <= 0', async () => {
-      const res = await expireUserPoints({ lojaID, userID, points: 0 })
-      expect(res).toBeNull()
-    })
+  it('does not classify a missing wallet as expired credit', async () => {
+    const client = { loyaltyWallet: { findUnique: vi.fn().mockResolvedValue(null) } } as unknown as Prisma.TransactionClient
+    expect(await calculateExpiredPointsForUser('shop', 'user', 100, now, client)).toBe(0)
+  })
+  it('sums only proven lot remainders; ignores stale caller balance', async () => {
+    const client = { loyaltyWallet: { findUnique: vi.fn().mockResolvedValue({ id: 'wallet', accountingReady: true }) },
+      loyaltyLot: { aggregate: vi.fn().mockResolvedValue({ _sum: { remaining: 40 } }) } } as unknown as Prisma.TransactionClient
+    expect(await calculateExpiredPointsForUser('shop', 'user', 999, now, client)).toBe(40)
+    expect(client.loyaltyLot.aggregate).toHaveBeenCalledWith({ where: { walletId: 'wallet', expiresAt: { lte: now } }, _sum: { remaining: true } })
   })
 })
 
@@ -346,5 +139,12 @@ describe('Endpoint de Cron: /api/cron/loyalty-expiration (Segurança & Execuçã
         lojaID: 'loja-continental-001',
       })
     )
+  })
+  it('reports partial failure as retryable503 instead of success, and exposes preserved legacy count', async () => {
+    vi.spyOn(loyaltyService, 'processLoyaltyExpirations').mockResolvedValueOnce({ processedWallets: 2, expiredCount: 1,
+      totalPointsExpired: 100, errors: [{ userId: 'user', lojaId: 'shop', error: 'EXPIRATION_FAILED' }], skippedLegacyWallets: 3 })
+    const response = await POST(new Request('http://localhost/api/cron/loyalty-expiration', { method: 'POST', headers: { 'x-cron-secret': TEST_SECRET } }))
+    expect(response.status).toBe(503); expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(await response.json()).toMatchObject({ success: false, expiredCount: 1, skippedLegacyWallets: 3 })
   })
 })

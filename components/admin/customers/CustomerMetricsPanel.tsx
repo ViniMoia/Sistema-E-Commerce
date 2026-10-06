@@ -13,16 +13,8 @@ import {
   Clock
 } from 'lucide-react'
 
-interface CustomerMetrics {
-  totalOrders: number
-  totalSpent: number
-  averageOrderValue: number
-  firstOrderAt: string | null
-  lastOrderAt: string | null
-  mostBoughtProduct: string | null
-  preferredDeliveryType: 'DELIVERY' | 'PICKUP' | null
-  cancelledOrders: number
-}
+import type { CustomerMetrics } from '@/services/customer.service'
+import { CUSTOMER_METRICS_TIMEZONE } from '@/lib/commerce/customer-metrics-contract'
 
 interface CustomerMetricsPanelProps {
   metrics: CustomerMetrics
@@ -39,7 +31,7 @@ function formatCurrency(value: number): string {
 function formatDate(isoString: string | null): string {
   if (!isoString) return 'Não registrado'
   return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium'
+    dateStyle: 'medium', timeZone: CUSTOMER_METRICS_TIMEZONE
   }).format(new Date(isoString))
 }
 
@@ -50,6 +42,7 @@ function formatPreferredDelivery(type: CustomerMetrics['preferredDeliveryType'])
       icon: <Truck className="w-3.5 h-3.5 text-catalog-gold" />
     }
   }
+  if (type === 'NONE') return { label: 'Sem frete / a combinar', icon: <Store className="w-3.5 h-3.5 text-catalog-gold" /> }
   if (type === 'PICKUP') {
     return {
       label: 'Retirada na Loja',
@@ -82,6 +75,10 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-catalog-muted">Todo o histórico · valores em reais · datas de São Paulo. LTV considera aprovações ou liquidações, descontando estornos confirmados, e inclui frete e encargos.</p>
+      {metrics.coverage === 'PARTIAL' && <p role="status" className="text-xs text-amber-300">
+        Base financeira parcial: {metrics.unverifiedOrders} pedido(s) sem evidência histórica e {metrics.financialReviewOrders} em revisão. Valores abaixo incluem somente a base verificável.
+      </p>}
       {/* 4 Cards de Métricas Principais */}
       <div className="grid grid-cols-2 gap-3">
         {/* Total de Pedidos */}
@@ -106,17 +103,17 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
         <div className="p-4 rounded-xl bg-[#050B14] border border-catalog-gold/30 shadow-lg relative overflow-hidden group hover:border-catalog-gold transition-all">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-mono uppercase tracking-wider text-catalog-gold font-semibold">
-              Total Gasto (LTV)
+              LTV líquido reconhecido
             </span>
             <div className="w-7 h-7 rounded-lg bg-catalog-gold/20 border border-catalog-gold/40 flex items-center justify-center text-catalog-gold">
               <DollarSign className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl font-bold font-mono text-catalog-gold tracking-tight">
+          <div data-testid="customer-net-ltv" className="text-xl font-bold font-mono text-catalog-gold tracking-tight">
             {formatCurrency(metrics.totalSpent)}
           </div>
           <p className="text-[10px] text-catalog-muted font-mono mt-1">
-            Receita acumulada
+            Aprovações/liquidações menos estornos confirmados
           </p>
         </div>
 
@@ -124,17 +121,17 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
         <div className="p-4 rounded-xl bg-[#050B14] border border-catalog-gold/25 shadow-lg relative overflow-hidden group hover:border-catalog-gold/50 transition-all">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-mono uppercase tracking-wider text-catalog-muted">
-              Ticket Médio
+              Ticket líquido
             </span>
             <div className="w-7 h-7 rounded-lg bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold">
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl font-bold font-mono text-white tracking-tight">
+          <div data-testid="customer-net-ticket" className="text-xl font-bold font-mono text-white tracking-tight">
             {formatCurrency(metrics.averageOrderValue)}
           </div>
           <p className="text-[10px] text-catalog-muted font-mono mt-1">
-            Média por pedido
+            {metrics.recognizedOrderCount} pedido(s) com valor reconhecido; inclui os reembolsados
           </p>
         </div>
 
@@ -173,6 +170,18 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
         </div>
       </div>
 
+      <dl className="grid grid-cols-2 gap-3 text-xs">
+        {[
+          ['Valor financeiro reconhecido', metrics.recognizedGross],
+          ['Estornos confirmados', metrics.confirmedRefunds],
+          ['Liquidação registrada', metrics.settledGross],
+          ['Valor dos pedidos criados', metrics.totalOrderValue],
+          ['Mercadorias solicitadas (bruto)', metrics.totalMerchandiseOrdered],
+        ].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-catalog-gold/20 p-3">
+          <dt className="text-catalog-muted">{label}</dt><dd className="text-white">{formatCurrency(Number(value))}</dd>
+        </div>)}
+      </dl>
+      <p className="text-[10px] text-catalog-muted">Pedidos e mercadorias solicitadas incluem tentativas e cancelamentos; não representam gasto pago. Não há rateio de estorno parcial por produto/frete. Liquidação registrada é separada de aprovação.</p>
       {/* Grid com detalhes de consumo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {/* Produto Mais Comprado */}
@@ -212,7 +221,7 @@ export function CustomerMetricsPanel({ metrics, isLoading }: CustomerMetricsPane
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-mono uppercase tracking-wider text-catalog-gold">
-              Primeira Aquisição
+              Primeiro Pedido
             </p>
             <p className="text-xs font-mono text-neutral-300 truncate mt-0.5">
               {formatDate(metrics.firstOrderAt)}

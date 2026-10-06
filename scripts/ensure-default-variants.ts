@@ -23,28 +23,8 @@ async function main() {
     return;
   }
 
-  let createdCount = 0;
-  // Criar em lotes para performance
-  const batchSize = 50;
-  for (let i = 0; i < productsWithoutVariants.length; i += batchSize) {
-    const batch = productsWithoutVariants.slice(i, i + batchSize);
-    await prisma.$transaction(
-      batch.map((prod) =>
-        prisma.productVariants.create({
-          data: {
-            ProductID: prod.id,
-            size: "Único",
-            color: "Padrão",
-            stock: prod.stock >= 0 ? prod.stock : 0,
-          },
-        })
-      )
-    );
-    createdCount += batch.length;
-    console.log(`Progresso: ${createdCount} / ${productsWithoutVariants.length} variantes criadas.`);
-  }
-
-  console.log("Migração concluída com sucesso!");
+  console.log(productsWithoutVariants.map(({ id }) => id));
+  console.log("Auditoria somente leitura. Criação automática desativada: saneamento exige backup, auditoria dos vínculos e plano de manutenção WF-18.");
 }
 
 main()

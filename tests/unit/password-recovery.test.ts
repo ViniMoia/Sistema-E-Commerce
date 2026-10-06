@@ -1,326 +1,115 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { requestPasswordReset, resetPassword, AuthError } from "@/services/auth.service";
-import { POST as forgotPasswordRoute } from "@/app/api/auth/forgot-password/route";
-import { POST as resetPasswordRoute } from "@/app/api/auth/reset-password/route";
-import { DevEmailService, ResendEmailService, setEmailService } from "@/lib/email";
-import * as tenant from "@/lib/tenant";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+import { requestPasswordReset, resetPassword, AuthError } from '@/services/auth.service';
+import { digestPasswordResetToken } from '@/lib/auth/password-reset-token';
+import { POST as forgotPasswordRoute } from '@/app/api/auth/forgot-password/route';
+import { POST as resetPasswordRoute } from '@/app/api/auth/reset-password/route';
+import { DevEmailService, ResendEmailService, setEmailService } from '@/lib/email';
+import * as tenant from '@/lib/tenant';
+import type { Prisma } from '@prisma/client';
 
-vi.mock("@/lib/prisma", () => ({
-  default: {
-    user: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      update: vi.fn(),
-    },
-    loja: {
-      findFirst: vi.fn(),
-    },
-    session: {
-      deleteMany: vi.fn(),
-    },
-    $transaction: vi.fn(async (callback) => {
-      return callback({
-        user: {
-          update: vi.fn(),
-        },
-        session: {
-          deleteMany: vi.fn(),
-        },
-      });
-    }),
-  },
+const queryText = (query: TemplateStringsArray | Prisma.Sql) =>
+  'strings' in query ? query.strings.join('') : query.join('');
+
+vi.mock('@/lib/prisma', () => ({ default: {
+  user: { findUnique: vi.fn(), findMany: vi.fn() },
+  session: { deleteMany: vi.fn() }, $queryRaw: vi.fn(),
+  $transaction: vi.fn(async callback => callback(prisma)),
+} }));
+vi.mock('@/lib/tenant', async importOriginal => ({
+  ...await importOriginal<typeof import('@/lib/tenant')>(), getLojaFromHeaders: vi.fn(),
 }));
+const token = 'a'.repeat(64);
+const data = { token, newPassword: 'NovaSenhaSegura#2026', lojaID: 'loja-1' };
 
-vi.mock("@/lib/tenant", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/tenant")>();
-  return {
-    ...actual,
-    getLojaFromHeaders: vi.fn(),
-  };
-});
-
-describe("Arquitetura de Recuperação de Senha & E-mails Transacionais (REV-005)", () => {
+describe('WF-10: recuperação de senha e e-mail', () => {
   let devEmailService: DevEmailService;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    devEmailService = new DevEmailService();
-    setEmailService(devEmailService);
+    devEmailService = new DevEmailService(); setEmailService(devEmailService);
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'usr-123' }]);
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: 'usr-123' }] as never);
+    vi.mocked(tenant.getLojaFromHeaders).mockResolvedValue({ id: 'loja-1', name: 'Continental' } as never);
   });
-
-  describe("1. Testes de Serviço: requestPasswordReset", () => {
-    it("deve gerar token criptográfico de 64 caracteres hex (256 bits) e enviar e-mail para usuário existente", async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-        id: "usr-123",
-        name: "Carlos Silva",
-        email: "carlos@exemplo.com",
-        status: "ACTIVE",
-        lojaID: "loja-continental-1",
-        loja: {
-          id: "loja-continental-1",
-          name: "Continental Estética",
-        },
-      } as any);
-
-      vi.mocked(prisma.user.update).mockResolvedValueOnce({} as any);
-
-      const result = await requestPasswordReset({
-        email: "  CARLOS@EXEMPLO.COM ",
-        lojaID: "loja-continental-1",
-        originUrl: "https://continentalestetica.com.br",
-      });
-
-      expect(result.success).toBe(true);
-
-      // Valida normalização de e-mail e chave multi-tenant
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: {
-          email_lojaID: {
-            email: "carlos@exemplo.com",
-            lojaID: "loja-continental-1",
-          },
-        },
-        include: { loja: true },
-      });
-
-      // Valida persistência atômica do token e expiração
-      expect(prisma.user.update).toHaveBeenCalledTimes(1);
-      const updateCall = vi.mocked(prisma.user.update).mock.calls[0][0];
-      expect(updateCall.where).toEqual({ id: "usr-123" });
-      expect(updateCall.data.resetToken).toBeDefined();
-      expect(typeof updateCall.data.resetToken).toBe("string");
-      expect((updateCall.data.resetToken as string).length).toBe(64); // 32 bytes hex = 64 chars
-
-      // Valida expiração de aproximadamente 1 hora (+/- 10s)
-      const expiresAt = updateCall.data.resetTokenExpires as Date;
-      const diffMinutes = (expiresAt.getTime() - Date.now()) / (1000 * 60);
-      expect(diffMinutes).toBeGreaterThan(58);
-      expect(diffMinutes).toBeLessThan(62);
-
-      // Valida despacho de e-mail no devEmailService
-      const sentEmail = devEmailService.getLastEmail();
-      expect(sentEmail).toBeDefined();
-      expect(sentEmail?.options.to).toBe("carlos@exemplo.com");
-      expect(sentEmail?.options.subject).toContain("Redefinição de Senha");
-      expect(sentEmail?.options.html).toContain(updateCall.data.resetToken);
-      expect(sentEmail?.options.html).toContain("https://continentalestetica.com.br/reset-password?token=");
-    });
-
-    it("Defesa Anti-Enumeração: deve retornar sucesso uniforme quando o e-mail não existir na loja", async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
-
-      const result = await requestPasswordReset({
-        email: "inexistente@alvo.com",
-        lojaID: "loja-continental-1",
-      });
-
-      // Retorno indistinguível de sucesso para o cliente
-      expect(result.success).toBe(true);
-      expect(prisma.user.update).not.toHaveBeenCalled();
-      expect(devEmailService.sentEmails.length).toBe(0);
-    });
-
-    it("Defesa de Conta: não deve gerar token para usuário BLOQUEADO, mas retorna sucesso uniforme", async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-        id: "usr-blocked",
-        name: "Infrator",
-        email: "infrator@teste.com",
-        status: "BLOCKED",
-        lojaID: "loja-1",
-      } as any);
-
-      const result = await requestPasswordReset({
-        email: "infrator@teste.com",
-        lojaID: "loja-1",
-      });
-
-      expect(result.success).toBe(true);
-      expect(prisma.user.update).not.toHaveBeenCalled();
-      expect(devEmailService.sentEmails.length).toBe(0);
-    });
+  it('envia bearer de 256 bits e persiste somente seu digest, com prazo no relógio do banco', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'usr-123', name: 'Carlos',
+      email: 'carlos@example.invalid', status: 'ACTIVE', lojaID: 'loja-1', loja: { name: 'Continental' } } as never);
+    expect(await requestPasswordReset({ email: ' CARLOS@EXAMPLE.INVALID ', lojaID: 'loja-1', originUrl: 'https://loja.example' })).toEqual({ success: true });
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email_lojaID: { email: 'carlos@example.invalid', lojaID: 'loja-1' } }, include: { loja: true } });
+    const html = devEmailService.getLastEmail()!.options.html;
+    const bearer = html.match(/token=([a-f0-9]{64})/)![1];
+    const sql = vi.mocked(prisma.$queryRaw).mock.calls[1];
+    expect(sql.slice(1)).toContain(digestPasswordResetToken(bearer));
+    expect(sql.slice(1)).not.toContain(bearer);
+    expect(queryText(sql[0])).toContain("clock_timestamp() + interval '1 hour'");
+    expect(html).not.toContain(digestPasswordResetToken(bearer));
   });
-
-  describe("2. Testes de Serviço: resetPassword", () => {
-    it("deve redefinir a senha com hash bcrypt, zerar o token e revogar sessões ativas", async () => {
-      const mockUser = {
-        id: "usr-456",
-        email: "maria@exemplo.com",
-        status: "ACTIVE",
-        resetToken: "valid-64-character-token-hex-1234567890abcdef1234567890abcdef123456",
-        resetTokenExpires: new Date(Date.now() + 1800000), // Válido por mais 30 min
-      };
-
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(mockUser as any);
-
-      let txUpdatePayload: any = null;
-      let txDeleteSessionPayload: any = null;
-
-      vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback: any) => {
-        return callback({
-          user: {
-            update: vi.fn().mockImplementation((args) => {
-              txUpdatePayload = args;
-              return args;
-            }),
-          },
-          session: {
-            deleteMany: vi.fn().mockImplementation((args) => {
-              txDeleteSessionPayload = args;
-              return { count: 1 };
-            }),
-          },
-        });
-      });
-
-      const result = await resetPassword({
-        token: "valid-64-character-token-hex-1234567890abcdef1234567890abcdef123456",
-        newPassword: "NovaSenhaSegura#2026",
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("sucesso");
-
-      // Validação do hash
-      expect(txUpdatePayload).toBeDefined();
-      expect(txUpdatePayload.where).toEqual({ id: "usr-456" });
-      expect(txUpdatePayload.data.resetToken).toBeNull();
-      expect(txUpdatePayload.data.resetTokenExpires).toBeNull();
-
-      const isPasswordHashed = await bcrypt.compare(
-        "NovaSenhaSegura#2026",
-        txUpdatePayload.data.password
-      );
-      expect(isPasswordHashed).toBe(true);
-
-      // Validação de revogação de sessões
-      expect(txDeleteSessionPayload).toEqual({
-        where: { userId: "usr-456" },
-      });
-    });
-
-    it("deve rejeitar se o token não for encontrado ou estiver expirado", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null);
-
-      await expect(
-        resetPassword({
-          token: "token-expirado-ou-inexistente",
-          newPassword: "MinhaNovaSenha123",
-        })
-      ).rejects.toThrow(AuthError);
-
-      expect(prisma.$transaction).not.toHaveBeenCalled();
-    });
-
-    it("deve rejeitar senha menor que 6 caracteres", async () => {
-      await expect(
-        resetPassword({
-          token: "valid-token-long-enough-xyz",
-          newPassword: "12345",
-        })
-      ).rejects.toThrow(AuthError);
-
-      expect(prisma.user.findFirst).not.toHaveBeenCalled();
-    });
+  it.each([null, { id: 'blocked', status: 'BLOCKED' }])('conta ausente/bloqueada retorna sucesso uniforme sem escrita ou envio', async user => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(user as never);
+    expect(await requestPasswordReset({ email: 'missing@example.invalid', lojaID: 'loja-1' })).toEqual({ success: true });
+    expect(prisma.$queryRaw).not.toHaveBeenCalled(); expect(devEmailService.sentEmails).toHaveLength(0);
   });
-
-  describe("3. Testes de Rota: POST /api/auth/forgot-password", () => {
-    it("deve responder status 200 com mensagem padronizada", async () => {
-      vi.mocked(tenant.getLojaFromHeaders).mockResolvedValueOnce({
-        id: "loja-1",
-        name: "Continental",
-      } as any);
-
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
-
-      const req = new Request("http://localhost/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-forwarded-for": "203.0.113.195",
-        },
-        body: JSON.stringify({ email: "cliente@teste.com" }),
-      });
-
-      const res = await forgotPasswordRoute(req);
-      expect(res.status).toBe(200);
-
-      const json = await res.json();
-      expect(json.success).toBe(true);
-      expect(json.message).toContain("instruções para redefinição");
-    });
-
-    it("deve rejeitar e-mail em formato inválido com 422", async () => {
-      const req = new Request("http://localhost/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-forwarded-for": "203.0.113.196",
-        },
-        body: JSON.stringify({ email: "email-invalido-sem-arroba" }),
-      });
-
-      const res = await forgotPasswordRoute(req);
-      expect(res.status).toBe(422);
-    });
+  it('bloqueio após a leitura impede emissão e envio', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'usr-123', status: 'ACTIVE' } as never);
+    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ id: 'usr-123' }]).mockResolvedValueOnce([]);
+    expect(await requestPasswordReset({ email: 'c@example.invalid', lojaID: 'loja-1' })).toEqual({ success: true });
+    expect(devEmailService.sentEmails).toHaveLength(0);
   });
-
-  describe("4. Testes de Rota: POST /api/auth/reset-password", () => {
-    it("deve responder 400 Bad Request se o serviço rejeitar o token", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null);
-
-      const req = new Request("http://localhost/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-forwarded-for": "203.0.113.197",
-        },
-        body: JSON.stringify({
-          token: "token-invalido-de-teste-12345",
-          password: "NovaSenhaValida123",
-        }),
-      });
-
-      const res = await resetPasswordRoute(req);
-      expect(res.status).toBe(400);
-
-      const json = await res.json();
-      expect(json.error).toContain("Token de recuperação inválido ou expirado");
-    });
-
-    it("deve responder 200 OK quando o token for válido e a senha redefinida", async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce({
-        id: "usr-ok",
-        email: "user@ok.com",
-        status: "ACTIVE",
-        resetToken: "valid-token-long-enough-1234567890",
-        resetTokenExpires: new Date(Date.now() + 600000),
-      } as any);
-
-      vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}] as any);
-
-      const req = new Request("http://localhost/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-forwarded-for": "203.0.113.198",
-        },
-        body: JSON.stringify({
-          token: "valid-token-long-enough-1234567890",
-          password: "SenhaSuperSegura!123",
-        }),
-      });
-
-      const res = await resetPasswordRoute(req);
-      expect(res.status).toBe(200);
-
-      const json = await res.json();
-      expect(json.success).toBe(true);
-      expect(json.message).toContain("sucesso");
-    });
+  it('consome por predicado definitivo e só depois revoga sessões', async () => {
+    expect(await resetPassword(data)).toMatchObject({ success: true });
+    const sql = vi.mocked(prisma.$queryRaw).mock.calls[1];
+    expect(queryText(sql[0])).toContain('"resetTokenExpires" > clock_timestamp()');
+    expect(sql.slice(1)).toContain(digestPasswordResetToken(token));
+    expect(sql.slice(1)).toContain('loja-1');
+    expect(await bcrypt.compare(data.newPassword, String(sql[1]))).toBe(true);
+    expect(prisma.session.deleteMany).toHaveBeenCalledWith({ where: { userId: 'usr-123' } });
+    expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ lojaID: 'loja-1', status: 'ACTIVE' }), take: 2 }));
   });
-
+  it.each([[[]], [[{ id: 'a' }, { id: 'b' }]]])('resultado ausente/ambíguo falha antes de calcular/gravar a senha', async users => {
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce(users as never);
+    await expect(resetPassword(data)).rejects.toThrow(AuthError);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+  it('token substituído/consumido/expirado na escrita não revoga sessões', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ id: 'usr-123' }]).mockResolvedValueOnce([]);
+    await expect(resetPassword(data)).rejects.toThrow('Solicite um novo link');
+    expect(prisma.session.deleteMany).not.toHaveBeenCalled();
+  });
+  it.each(['token-legado', 'h1:' + token, token + ' '])('não aceita formato antigo, digest ou token alterado', async invalid => {
+    await expect(resetPassword({ ...data, token: invalid })).rejects.toThrow(AuthError);
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
+  });
+  it('rejeita senha curta', async () => {
+    await expect(resetPassword({ ...data, newPassword: '12345' })).rejects.toThrow(AuthError);
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
+  });
+  const request = (path: string, body: unknown, ip: string) => new Request('http://localhost/api/auth/' + path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip }, body: JSON.stringify(body),
+  });
+  it('rota forgot mantém resposta genérica', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+    const response = await forgotPasswordRoute(request('forgot-password', { email: 'c@example.invalid' }, '203.0.113.195'));
+    expect(response.status).toBe(200); expect(await response.json()).toMatchObject({ success: true });
+  });
+  it('rota forgot rejeita e-mail inválido', async () => {
+    expect((await forgotPasswordRoute(request('forgot-password', { email: 'inválido' }, '203.0.113.196'))).status).toBe(422);
+  });
+  it('rota reset retorna erro genérico para token ausente', async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([]);
+    const response = await resetPasswordRoute(request('reset-password', { token, password: data.newPassword }, '203.0.113.197'));
+    expect(response.status).toBe(400); expect((await response.json()).error).toContain('Solicite um novo link');
+  });
+  it('rota reset usa tenant resolvido pelo servidor', async () => {
+    const response = await resetPasswordRoute(request('reset-password', { token, password: data.newPassword, lojaID: 'attacker-store' }, '203.0.113.198'));
+    expect(response.status).toBe(200);
+    expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ lojaID: 'loja-1' }) }));
+  });
+  it('rota reset sem tenant recusa a operação', async () => {
+    vi.mocked(tenant.getLojaFromHeaders).mockResolvedValueOnce(null);
+    expect((await resetPasswordRoute(request('reset-password', { token, password: data.newPassword }, '203.0.113.199'))).status).toBe(404);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
   describe("5. Testes de Infraestrutura: ResendEmailService", () => {
     it("deve retornar aviso seguro e não travar se RESEND_API_KEY não estiver configurada", async () => {
       const resendService = new ResendEmailService("", "teste@loja.com");

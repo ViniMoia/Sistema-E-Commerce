@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
-import { requireAdmin } from '@/lib/auth/guards'
-import { updateFreightRule, deleteFreightRule } from '@/services/freight.service'
-import { z } from 'zod'
+import { requirePurchaseAdmin as requireAdmin } from '@/lib/auth/guards'
+import { updateFreightRule, deleteFreightRule, freightRuleSchema } from '@/services/freight.service'
 
-const updateFreightRuleSchema = z.object({
-  cityName: z.string().min(1, 'Nome da cidade é obrigatório').optional(),
-  value: z.number().min(0, 'Valor de frete não pode ser negativo').optional(),
-})
+const updateFreightRuleSchema = freightRuleSchema.partial().refine(data => Object.keys(data).length > 0);
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -39,6 +35,9 @@ export async function PATCH(req: Request, context: RouteContext) {
       lojaID: adminResult.user.lojaID,
       cityName: parsed.data.cityName,
       value: parsed.data.value,
+      state: parsed.data.state,
+      municipalityCode: parsed.data.municipalityCode,
+      actorId: adminResult.user.id,
     })
 
     if (!updated) {
@@ -46,8 +45,8 @@ export async function PATCH(req: Request, context: RouteContext) {
     }
 
     return ok(updated)
-  } catch (e) {
-    return err((e as Error).message, 500)
+  } catch {
+    return err('Não foi possível alterar a regra. Confira geografia e autorização.', 409)
   }
 }
 
@@ -66,13 +65,13 @@ export async function DELETE(req: Request, context: RouteContext) {
   }
 
   try {
-    const deleted = await deleteFreightRule(id, adminResult.user.lojaID)
+    const deleted = await deleteFreightRule(id, adminResult.user.lojaID, adminResult.user.id)
     if (!deleted) {
       return err('Regra de frete não encontrada.', 404, 'NOT_FOUND')
     }
 
     return ok(deleted)
-  } catch (e) {
-    return err((e as Error).message, 500)
+  } catch {
+    return err('Não foi possível alterar a regra. Confira geografia e autorização.', 409)
   }
 }

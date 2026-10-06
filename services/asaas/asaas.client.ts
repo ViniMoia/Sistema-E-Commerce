@@ -7,6 +7,7 @@ import type {
   AsaasCreateCustomerPayload,
   AsaasBoletoIdentificationFieldResponse,
 } from '@/types/asaas.types';
+import { asaasConfigurationReady } from '@/lib/config/asaas-environment.mjs';
 
 export class AsaasClientError extends Error {
   public statusCode?: number;
@@ -28,14 +29,18 @@ export class AsaasClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
+  configurationReady(): boolean {
+    return asaasConfigurationReady(process.env, this.baseUrl, this.apiKey);
+  }
+
   constructor(apiUrl?: string, apiKey?: string) {
     this.baseUrl = (
-      apiUrl || process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3'
+      apiUrl || process.env.ASAAS_API_URL || 'https://api-sandbox.asaas.com/v3'
     ).replace(/\/$/, '');
     this.apiKey = apiKey !== undefined ? apiKey : (process.env.ASAAS_API_KEY || '');
 
     // Bloqueio preventivo de segurança: Chave de produção nunca deve apontar para Sandbox
-    if (this.apiKey.startsWith('$aact_prod_') && this.baseUrl.includes('sandbox.asaas.com')) {
+    if (this.apiKey.startsWith('$aact_prod_') && /(?:api-|\/\/)sandbox\.asaas\.com/.test(this.baseUrl)) {
       throw new AsaasClientError(
         'Configuração inválida de ambiente: Chave de produção do Asaas não pode ser utilizada com URL de Sandbox.',
         500
@@ -47,25 +52,61 @@ export class AsaasClient {
     return {
       'Content-Type': 'application/json',
       access_token: this.apiKey,
+      'User-Agent': 'Commerce/1.0',
     };
   }
 
   private async request(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const aborted = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener('abort', () => reject(new AsaasClientError('ASAAS_RESPONSE_TIMEOUT')), { once: true });
+    });
 
     try {
-      return await fetch(url, {
+      const response = await Promise.race([fetch(url, {
         ...options,
         signal: controller.signal,
         headers: {
           ...this.headers,
           ...(options.headers || {}),
         },
-      });
+      }), aborted]);
+      // Keep the deadline active while the body is consumed too. Reading a
+      // response header does not mean the provider completed its response.
+      const data: unknown = response.status === 204 ? null : await Promise.race([response.json(), aborted]);
+      const body = JSON.stringify(data);
+      if (body.length > 2_000_000) throw new AsaasClientError('ASAAS_RESPONSE_TOO_LARGE');
+      return new Response(response.status === 204 ? null : body, { status: response.status ?? (response.ok ? 200 : 500), headers: { 'Content-Type': 'application/json' } });
     } finally {
       clearTimeout(timeoutId);
     }
+  }
+
+  async listPaymentsByReference(reference: string): Promise<AsaasPaymentResponse[]> {
+    const response = await this.request(this.baseUrl + '/payments?externalReference=' + encodeURIComponent(reference) + '&limit=100&offset=0');
+    if (!response.ok) throw new AsaasClientError('PAYMENT_LOOKUP_UNAVAILABLE', response.status);
+    const data = await response.json();
+    if (!Array.isArray(data.data) || data.hasMore !== false) throw new AsaasClientError('PAYMENT_LOOKUP_INCOMPLETE');
+    return data.data;
+  }
+
+  async cancelPayment(id: string): Promise<void> {
+    const response = await this.request(this.baseUrl + '/payments/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (!response.ok) throw new AsaasClientError('PAYMENT_CANCEL_UNRESOLVED', response.status);
+  }
+
+  async refundPayment(id: string, value: number): Promise<void> {
+    const response = await this.request(this.baseUrl + '/payments/' + encodeURIComponent(id) + '/refund', { method: 'POST', body: JSON.stringify({ value }) });
+    if (!response.ok) throw new AsaasClientError('PAYMENT_REFUND_UNRESOLVED', response.status);
+  }
+
+  async listInstallmentPayments(id: string): Promise<AsaasPaymentResponse[]> {
+    const response = await this.request(this.baseUrl + '/installments/' + encodeURIComponent(id) + '/payments?limit=100&offset=0');
+    if (!response.ok) throw new AsaasClientError('INSTALLMENT_LOOKUP_UNAVAILABLE', response.status);
+    const data = await response.json();
+    if (!Array.isArray(data.data) || data.hasMore !== false) throw new AsaasClientError('INSTALLMENT_CONTRACT_INCOMPLETE');
+    return data.data;
   }
 
   /**

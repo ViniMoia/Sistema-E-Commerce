@@ -1,6 +1,7 @@
 import { FreightOption, FreightQuoteRequest, IFreightProvider } from '@/types/freight';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { normalizeMunicipality } from '@/lib/freight/destination';
 
 export class CustomTableProvider implements IFreightProvider {
   public readonly id = 'LOCAL_TABLE';
@@ -14,10 +15,10 @@ export class CustomTableProvider implements IFreightProvider {
   }
 
   public async calculateQuotes(request: FreightQuoteRequest): Promise<FreightOption[]> {
-    try {
-      // Busca regras da loja
+    // Busca regras da loja
+      if (!request.destination) return [];
       const rules = await prisma.freightRule.findMany({
-        where: { lojaID: request.lojaID },
+        where: { lojaID: request.lojaID, state: request.destination.state, municipalityCode: request.destination.municipalityCode },
       });
 
       if (!rules || rules.length === 0) {
@@ -27,6 +28,7 @@ export class CustomTableProvider implements IFreightProvider {
       // Se tiver regras de frete fixo cadastradas
       const options: FreightOption[] = [];
       for (const rule of rules) {
+        if (normalizeMunicipality(rule.cityName) !== normalizeMunicipality(request.destination.city)) continue;
         const val = (rule.value as Prisma.Decimal).toNumber();
         options.push({
           providerId: 'LOCAL_TABLE',
@@ -40,9 +42,6 @@ export class CustomTableProvider implements IFreightProvider {
       }
 
       return options;
-    } catch (error) {
-      console.error('[CUSTOM_TABLE_PROVIDER_ERROR]', error);
-      return [];
-    }
+
   }
 }

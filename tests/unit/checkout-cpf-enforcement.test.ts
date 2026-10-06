@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createOrderSchema } from '@/lib/validators/checkout.validators';
-import { POST } from '@/app/api/checkout/route';
+import { POST } from '@/app/api/checkout/intents/route';
 import * as tenantLib from '@/lib/tenant';
 import * as sessionLib from '@/lib/session';
-import * as checkoutService from '@/lib/services/checkout.service';
+import * as checkoutService from '@/services/checkout-intent.service';
 
 vi.mock('@/lib/tenant', () => ({
   getLojaFromHeaders: vi.fn(),
@@ -13,12 +13,13 @@ vi.mock('@/lib/session', () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock('@/lib/services/checkout.service', () => ({
-  createOrder: vi.fn(),
+vi.mock('@/services/checkout-intent.service', () => ({
+  proposeCheckout: vi.fn(),
 }));
 
 describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
   const validBasePayload = {
+    paymentMethod: 'PIX' as const,
     lojaID: 'loja-continental-1',
     customer: {
       name: 'João Silva',
@@ -202,12 +203,12 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
 
       const json = await res.json();
       expect(json.success).toBe(false);
-      expect(json.error).toMatch(/CPF ou CNPJ é obrigatório/i);
-      expect(checkoutService.createOrder).not.toHaveBeenCalled();
+      expect(json.error).toBe('CHECKOUT_INPUT_INVALID');
+      expect(checkoutService.proposeCheckout).not.toHaveBeenCalled();
     });
 
     it('deve responder HTTP 400 com mensagem clara quando CPF for matematicamente inválido', async () => {
@@ -226,16 +227,16 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(409);
 
       const json = await res.json();
       expect(json.success).toBe(false);
-      expect(json.error).toMatch(/CPF ou CNPJ inválido/i);
-      expect(checkoutService.createOrder).not.toHaveBeenCalled();
+      expect(json.error).toBe('CHECKOUT_INPUT_INVALID');
+      expect(checkoutService.proposeCheckout).not.toHaveBeenCalled();
     });
 
     it('deve permitir processamento quando CPF for matematicamente válido', async () => {
-      vi.mocked(checkoutService.createOrder).mockResolvedValueOnce({
+      vi.mocked(checkoutService.proposeCheckout).mockResolvedValueOnce({
         success: true,
         order: {
           id: 'ord-123',
@@ -243,8 +244,8 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
           total: 159.8,
           pixQrCode: 'base64-img',
           pixPayload: 'pix-payload',
-        } as any,
-      });
+        },
+      } as any);
 
       const req = new Request('http://localhost:3000/api/checkout', {
         method: 'POST',
@@ -263,7 +264,9 @@ describe('Enforcement Estrito de CPF/CNPJ no Checkout (Fase 7 QA)', () => {
 
       const json = await res.json();
       expect(json.success).toBe(true);
-      expect(checkoutService.createOrder).toHaveBeenCalled();
+      expect(checkoutService.proposeCheckout).toHaveBeenCalled();
     });
   });
 });
+
+vi.mock('@/lib/freight/owner', () => ({ freightOwnerForRequest: vi.fn(async () => 'g:' + 'a'.repeat(64)) }));

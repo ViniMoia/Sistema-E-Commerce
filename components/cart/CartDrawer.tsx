@@ -18,13 +18,13 @@ export function CartDrawer() {
     fetchCart, 
     updateQuantity, 
     removeItem, 
-    isLoading 
+    isLoading, loadState, error
   } = useCartStore();
 
   // Fetch cart data when drawer is opened
   useEffect(() => {
     if (isOpen) {
-      fetchCart();
+      void fetchCart().catch(() => {});
     }
   }, [isOpen, fetchCart]);
 
@@ -51,7 +51,9 @@ export function CartDrawer() {
         </SheetHeader>
 
         <ScrollArea className="flex-1 p-6">
-          {isLoading && !cart ? (
+          {loadState === 'error' ? <div role="alert"><p>{error}</p><button onClick={() => void fetchCart().catch(() => {})}>Tentar novamente</button></div>
+          : loadState === 'guest' ? <p>Entre na sua conta para acessar o carrinho.</p>
+          : (loadState === 'idle' || loadState === 'loading') && !cart ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-70 mt-32">
               <Loader2 className="w-10 h-10 animate-spin text-neutral-500" />
               <p className="text-neutral-400 font-light">Loading cart...</p>
@@ -67,8 +69,8 @@ export function CartDrawer() {
                 <CartItem 
                   key={item.id} 
                   item={item} 
-                  onRemove={removeItem}
-                  onUpdateQuantity={updateQuantity}
+                  onRemove={id => { void removeItem(id).catch(() => {}); }}
+                  onUpdateQuantity={(id, quantity) => { void updateQuantity(id, quantity).catch(() => {}); }}
                   isLoading={isLoading}
                 />
               ))}
@@ -76,7 +78,8 @@ export function CartDrawer() {
           )}
         </ScrollArea>
 
-        {items.length > 0 && (
+        {error && loadState !== 'error' && <p role="alert" className="px-6 text-red-400">{error}</p>}
+        {items.length > 0 && loadState === 'ready' && !isLoading && (
           <div className="border-t border-white/10 p-6 bg-black/40 backdrop-blur-md">
             <CartSummary 
               subtotal={subtotal} 

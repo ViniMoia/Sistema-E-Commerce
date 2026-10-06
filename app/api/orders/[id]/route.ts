@@ -4,11 +4,14 @@ import { requireAuth, requireAdmin } from "@/lib/auth/guards";
 import { getOrderById, updateOrderStatus } from "@/services/order.service";
 import { handleOrderError } from "@/lib/order-errors";
 import { OrderStatus } from "@prisma/client";
+import { getLojaFromHeaders } from '@/lib/tenant';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const updateOrderSchema = z.object({
   status: z.nativeEnum(OrderStatus),
+  commandId: z.string().regex(/^[a-zA-Z0-9_-]{1,96}$/).optional(),
+  expectedVersion: z.number().int().min(0).optional(),
 });
 
 export async function GET(req: Request, context: RouteContext) {
@@ -17,7 +20,10 @@ export async function GET(req: Request, context: RouteContext) {
 
   const params = await context.params;
   try {
-    const order = await getOrderById(params.id);
+    const tenant = await getLojaFromHeaders();
+    if (!tenant) return NextResponse.json({ error: 'Loja não encontrada.' }, { status: 404 });
+    if (tenant.id !== guard.user.lojaID) return NextResponse.json({ error: 'Sessão não autorizada para esta loja.' }, { status: 403 });
+    const order = await getOrderById(params.id, { userID: guard.user.id, lojaID: tenant.id });
 
     // Controle de Acesso em Nível de Objeto (BOLA/IDOR - TEN-002):
     // - ADMINs só podem visualizar pedidos de sua própria loja
@@ -63,21 +69,27 @@ export async function PATCH(req: Request, context: RouteContext) {
   }
 
   try {
+    const tenant = await getLojaFromHeaders();
+    if (!tenant) return NextResponse.json({ error: 'Loja não encontrada.' }, { status: 404 });
+    if (tenant.id !== guard.user.lojaID) return NextResponse.json({ error: 'Sessão não autorizada para esta loja.' }, { status: 403 });
     const result = await updateOrderStatus({
       orderId: params.id,
       newStatus: parsed.data.status,
       performedById: guard.user.id,
       lojaID: guard.user.lojaID,
+      actor: { type: 'USER', userId: guard.user.id, lojaID: tenant.id },
+      commandId: parsed.data.commandId,
+      expectedVersion: parsed.data.expectedVersion,
     });
 
     if (result.success === false) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.code === "NOT_FOUND" ? 404 : 409 }
+        { status: result.code === "NOT_FOUND" ? 404 : result.code === 'FORBIDDEN' ? 403 : 409 }
       );
     }
 
-    const order = await getOrderById(params.id);
+    const order = await getOrderById(params.id, { userID: guard.user.id, lojaID: tenant.id });
     return NextResponse.json(order, { status: 200 });
   } catch (error) {
     return handleOrderError(error);

@@ -4,11 +4,13 @@ import { asaasClient, AsaasClientError } from '@/services/asaas/asaas.client';
 import { validateLuhn, creditCardSchema } from '@/lib/validators/checkout.validators';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { createOrder } from '@/services/checkout.service';
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture';
 
 vi.mock('@/lib/prisma', () => {
   return {
     default: {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       loja: {
         findUnique: vi.fn(),
@@ -110,11 +112,11 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
     it('deve enviar payload completo para o Asaas e retornar resultado com bandeira e final', async () => {
       vi.spyOn(asaasClient, 'getOrCreateCustomer').mockResolvedValueOnce('cus_cc_123');
       vi.spyOn(asaasClient, 'createPayment').mockResolvedValueOnce({
-        id: 'pay_cc_777',
+        id: 'pay_cc_777', externalReference: 'ord-cc-1', installment: 'contract-1', installmentNumber: 1,
         customer: 'cus_cc_123',
         billingType: 'CREDIT_CARD',
         status: 'CONFIRMED',
-        value: 120.0,
+        value: 40.0,
         netValue: 115.0,
         dateCreated: '2026-09-23',
         dueDate: '2026-09-23',
@@ -125,6 +127,7 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
         invoiceUrl: 'https://asaas.com/i/cc777',
       });
 
+      vi.spyOn(asaasClient, 'listInstallmentPayments').mockResolvedValueOnce([1,2,3].map(ordinal => ({ id: ordinal === 1 ? 'pay_cc_777' : 'pay_cc_' + ordinal, installment: 'contract-1', installmentNumber: ordinal, externalReference: 'ord-cc-1', billingType: 'CREDIT_CARD', value: 40, status: 'CONFIRMED' })) as any);
       const result = await adapter.createCreditCardCharge({
         orderId: 'ord-cc-1',
         orderNumber: 2001,
@@ -153,6 +156,9 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
       expect(result.creditCardBrand).toBe('MASTERCARD');
       expect(result.creditCardLast4).toBe('8431');
       expect(result.invoiceUrl).toBe('https://asaas.com/i/cc777');
+      expect(asaasClient.createPayment).toHaveBeenCalledWith(expect.objectContaining({ totalValue: 120, installmentCount: 3 }));
+      const payload = vi.mocked(asaasClient.createPayment).mock.calls[0][0];
+      expect(payload).not.toHaveProperty('value'); expect(payload).not.toHaveProperty('installmentValue');
     });
 
     it('deve converter recusa do Asaas em PaymentGatewayError descritivo', async () => {
@@ -172,7 +178,7 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
             name: 'Teste Falha',
             email: 'falha@teste.com',
             phone: '11999999999',
-            cpfCnpj: '529.982.247-25',
+            cpfCnpj: '529.982.247-25', postalCode: '01310100', addressNumber: '10',
           },
           creditCard: {
             holderName: 'TESTE FALHA',
@@ -190,17 +196,17 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
     it('deve bloquear previamente transações com valor inferior ao piso de R$ 5,00', async () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
         id: 'loja-cc-test',
-        name: 'Continental Teste',
+        name: 'Continental Teste', enableCreditCard: true, configurationVersion: 0,
         pixKey: 'pix@continental.com',
       } as any);
 
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-barato',
         name: 'Amostra Grátis',
         price: new Prisma.Decimal('2.00'),
         stock: 10,
         lojaID: 'loja-cc-test',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any);
 
       const mockUser = { id: 'usr-1', name: 'Comprador', email: 'c@t.com', phone: '11999999999' };
@@ -231,10 +237,12 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
 
       vi.mocked(prisma.order.update).mockResolvedValue({} as any);
 
+      vi.spyOn(adapter, 'capabilities').mockResolvedValue({ configured: true, methods: ['CREDIT_CARD'], maximumInstallments: 1 });
       // Total R$ 2,00 < piso de R$ 5,00 do Asaas
       await expect(
         createOrder({
-          lojaID: 'loja-cc-test',
+          lojaID: 'loja-cc-test', paymentGateway: adapter, acceptedFinancialTotal: 2,
+          address: { cep: '01310100', number: '10', street: 'Avenida', city: 'São Paulo', state: 'SP', neighborhood: 'Centro' },
           customer: {
             name: 'Comprador',
             email: 'c@t.com',
@@ -252,7 +260,21 @@ describe('Meio de Pagamento: Cartão de Crédito (Asaas & Checkout)', () => {
             ccv: '123',
           },
         })
-      ).rejects.toThrow('R$ 5,00');
+      ).rejects.toThrow('PAYMENT_BELOW_MINIMUM');
     });
   });
+});
+
+vi.mock('@/lib/freight/acceptance', async () => {
+  const { freightAcceptanceMock } = await import('@/tests/helpers/freight-acceptance-mock');
+  return freightAcceptanceMock(0);
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
 });

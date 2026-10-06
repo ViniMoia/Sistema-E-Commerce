@@ -20,13 +20,13 @@ export function calculateAverageOrderValue(orders: OrderForMetrics[]): number {
 
 export function calculatePreferredDelivery(
   orders: OrderForMetrics[]
-): 'DELIVERY' | 'PICKUP' | null {
+): 'DELIVERY' | 'PICKUP' | 'NONE' | null {
   if (!orders || orders.length === 0) {
     return null
   }
   const counts: Record<string, number> = {}
   orders.forEach(order => {
-    if (order.deliveryType) {
+    if (order.deliveryType && ['DELIVERY', 'PICKUP', 'NONE'].includes(order.deliveryType)) {
       counts[order.deliveryType] = (counts[order.deliveryType] || 0) + 1
     }
   })
@@ -35,7 +35,7 @@ export function calculatePreferredDelivery(
     return null
   }
   const sorted = entries.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-  return sorted[0][0] as 'DELIVERY' | 'PICKUP'
+  return sorted[0][0] as 'DELIVERY' | 'PICKUP' | 'NONE'
 }
 
 export function findMostBoughtProduct(orders: OrderForMetrics[]): string | null {

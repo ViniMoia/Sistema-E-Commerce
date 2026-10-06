@@ -6,16 +6,8 @@ import { AlertBanner } from '@/components/ui'
 import { CustomerProfilePage } from '@/components/admin/customers/CustomerProfilePage'
 import { Users, Search, Loader2 } from 'lucide-react'
 
-interface CustomerRow {
-  id: string
-  name: string
-  email: string
-  phone: string | null
-  totalOrders: number
-  totalSpent: number
-  lastOrderAt: string | null
-  createdAt: string
-}
+import type { CustomerRow } from '@/services/customer.service'
+import { customerListSchema } from '@/lib/commerce/customer-metrics-contract'
 
 export default function CustomersPage() {
   const [customers, setCustomers] = React.useState<CustomerRow[]>([])
@@ -43,7 +35,13 @@ export default function CustomersPage() {
     }
   }, [search])
 
-  async function fetchCustomers(searchTerm: string, cursorValue: string | null, append: boolean) {
+  const readRevision = React.useRef(0)
+  const readController = React.useRef<AbortController | null>(null)
+  const fetchCustomers = React.useCallback(async (searchTerm: string, cursorValue: string | null, append: boolean) => {
+    const revision = ++readRevision.current
+    readController.current?.abort()
+    const controller = new AbortController()
+    readController.current = controller
     try {
       setIsLoading(true)
       setError(null)
@@ -52,41 +50,51 @@ export default function CustomersPage() {
       if (searchTerm) params.set('search', searchTerm)
       if (cursorValue) params.set('cursor', cursorValue)
 
-      const res = await fetch(`/api/admin/customers?${params.toString()}`)
+      const res = await fetch(`/api/admin/customers?${params.toString()}`, { cache: 'no-store', signal: controller.signal })
       if (!res.ok) {
         const errData = await res.json()
         throw new Error(errData.error || 'Erro ao carregar clientes')
       }
 
       const json = await res.json()
-      if (json.success && json.data) {
+      const parsed = customerListSchema.safeParse(json.data)
+      if (revision !== readRevision.current || controller.signal.aborted) return
+      if (json.success && parsed.success) {
         if (append) {
-          setCustomers(prev => [...prev, ...json.data.data])
+          setCustomers(prev => [...prev, ...(parsed.data.data as CustomerRow[]).filter(row => !prev.some(existing => existing.id === row.id))])
         } else {
-          setCustomers(json.data.data)
+          setCustomers(parsed.data.data as CustomerRow[])
         }
-        setNextCursor(json.data.nextCursor)
-        setHasMore(!!json.data.nextCursor)
+        setNextCursor(parsed.data.nextCursor)
+        setHasMore(!!parsed.data.nextCursor)
       } else {
         throw new Error('Formato de resposta inválido')
       }
     } catch (err: unknown) {
+      if (revision !== readRevision.current || controller.signal.aborted) return
+      setCustomers([])
       if (err instanceof Error) {
         setError(err.message)
       } else {
         setError('Ocorreu um erro desconhecido')
       }
     } finally {
-      setIsLoading(false)
+      if (revision === readRevision.current) setIsLoading(false)
     }
-  }
+  }, [])
 
   React.useEffect(() => {
+    if (selectedCustomerId) return
+    const refresh = () => { if (!document.hidden) void fetchCustomers(debouncedSearch, null, false) }
     setCustomers([])
     setNextCursor(null)
     setHasMore(false)
-    fetchCustomers(debouncedSearch, null, false)
-  }, [debouncedSearch])
+    refresh()
+    const timer = setInterval(refresh, 30000)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => { readController.current?.abort(); clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh) }
+  }, [debouncedSearch, fetchCustomers, selectedCustomerId])
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     setSearch(e.target.value)
@@ -111,7 +119,7 @@ export default function CustomersPage() {
             Clientes Continental
           </h1>
           <p className="text-catalog-muted mt-1 text-xs sm:text-sm font-light">
-            Base completa de clientes, métricas de consumo e histórico transacional individual.
+            Clientes e histórico de pedidos. LTV líquido considera valores reconhecidos menos estornos confirmados, incluindo frete e encargos.
           </p>
         </div>
 

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     });
 
     // Criação de sessão segura com renovação de identificador (anti-fixation)
-    await createSession(user.id);
+    await createSession(user.id, { lojaID: activeLoja.id, password: parsed.data.password });
 
     return NextResponse.json(
       {

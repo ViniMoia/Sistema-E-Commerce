@@ -10,15 +10,20 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // This unit suite must not perform the event lookup against a real DB.
+    vi.spyOn(prisma.paymentWebhookEvent, 'findUnique').mockResolvedValue(null);
     adapter = new AsaasPaymentAdapter();
     process.env.ASAAS_WEBHOOK_TOKEN = 'test_webhook_token_secure_123';
+    process.env.PAYMENT_WORKER_ENABLED = 'true';
+    vi.spyOn(prisma, '$transaction').mockImplementation((work: any) => work(prisma));
+    vi.spyOn(prisma.paymentInbox, 'upsert').mockImplementation(((args: any) => Promise.resolve({ ...args.create, status: 'READY' })) as any);
   });
 
   describe('1. AsaasPaymentAdapter: createBoletoCharge', () => {
     it('deve emitir boleto bancário com vencimento D+1, linha digitável e código de barras', async () => {
       vi.spyOn(asaasClient, 'getOrCreateCustomer').mockResolvedValueOnce('cus_bol_123');
       vi.spyOn(asaasClient, 'createPayment').mockResolvedValueOnce({
-        id: 'pay_bol_999',
+        id: 'pay_bol_999', externalReference: 'ord-bol-1',
         customer: 'cus_bol_123',
         billingType: 'BOLETO',
         status: 'PENDING',
@@ -60,7 +65,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
     it('deve usar fallback se a consulta de linha digitável auxiliar falhar', async () => {
       vi.spyOn(asaasClient, 'getOrCreateCustomer').mockResolvedValueOnce('cus_bol_123');
       vi.spyOn(asaasClient, 'createPayment').mockResolvedValueOnce({
-        id: 'pay_bol_888',
+        id: 'pay_bol_888', externalReference: 'ord-bol-fallback',
         customer: 'cus_bol_123',
         billingType: 'BOLETO',
         status: 'PENDING',
@@ -94,7 +99,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
   });
 
   describe('2. Ciclo de Vida e Webhook do Boleto Bancário', () => {
-    it('deve cancelar o pedido quando o boleto vencer (PAYMENT_OVERDUE) liberando estoque', async () => {
+    it('deve enfileirar PAYMENT_OVERDUE sem presumir cancelamento ou liberar estoque', async () => {
       vi.spyOn(prisma.paymentWebhookEvent, 'create').mockResolvedValueOnce({
         id: 'evt_overdue_1',
       } as any);
@@ -124,6 +129,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
           event: 'PAYMENT_OVERDUE',
           payment: {
             id: 'pay_bol_vencido',
+            billingType: 'BOLETO',
             status: 'OVERDUE',
             externalReference: 'ord-bol-vencido',
             value: 150.0,
@@ -134,15 +140,11 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
       const res = await webhookHandler(req);
       expect(res.status).toBe(200);
 
-      expect(updateSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderId: 'ord-bol-vencido',
-          newStatus: 'CANCELLED',
-        })
-      );
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(await res.json()).toMatchObject({ received: true, status: 'RECEIVED' });
     });
 
-    it('deve registrar nota administrativa em PAYMENT_AWAITING_RISK_ANALYSIS sem transicionar para PAID', async () => {
+    it('deve persistir PAYMENT_AWAITING_RISK_ANALYSIS para conciliação sem transicionar para PAID', async () => {
       vi.spyOn(prisma.paymentWebhookEvent, 'create').mockResolvedValueOnce({
         id: 'evt_risk_1',
       } as any);
@@ -168,6 +170,7 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
           event: 'PAYMENT_AWAITING_RISK_ANALYSIS',
           payment: {
             id: 'pay_risk_999',
+            billingType: 'CREDIT_CARD',
             status: 'AWAITING_RISK_ANALYSIS',
             externalReference: 'ord-risk-1',
             value: 500.0,
@@ -181,15 +184,8 @@ describe('Meio de Pagamento: Boleto Bancário (Asaas & Webhook)', () => {
       // Não deve ter chamado transição para PAID
       expect(updateStatusSpy).not.toHaveBeenCalled();
 
-      // Deve ter atualizado adminNotes com alerta de análise de segurança
-      expect(updateOrderSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'ord-risk-1' },
-          data: expect.objectContaining({
-            adminNotes: expect.stringContaining('ANÁLISE DE SEGURANÇA'),
-          }),
-        })
-      );
+      expect(updateOrderSpy).not.toHaveBeenCalled();
+      expect(prisma.paymentInbox.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ eventType: 'PAYMENT_AWAITING_RISK_ANALYSIS' }) }));
     });
   });
 });

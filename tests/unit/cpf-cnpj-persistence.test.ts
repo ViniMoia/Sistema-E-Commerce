@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerSchema } from '@/lib/validators/auth';
 import { registerUser } from '@/services/auth.service';
-import { createOrder } from '@/services/checkout.service';
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture';
 import { listCustomers, getCustomerProfile } from '@/services/customer.service';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-vi.mock('@/lib/prisma', () => {
+vi.mock('@/lib/prisma', async () => {
+  const { paymentAttemptFixture } = await import('@/tests/helpers/payment-fixture-mock');
   return {
     default: {
+      paymentAttempt: paymentAttemptFixture(),
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       loja: {
         findUnique: vi.fn(),
@@ -163,20 +167,20 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
   });
 
   describe('3. Persistência no Checkout e Snapshot Histórico no Pedido (createOrder)', () => {
-    it('deve persistir cpfCnpj no User upsert e salvar snapshot customerCpfCnpj no Order.create', async () => {
+    it('deve persistir CPF no comprador/pedido convidado sem criar ou atualizar User', async () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
         id: 'loja-1',
         name: 'Loja Teste',
         pixKey: 'minha-chave-pix',
       } as any);
 
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-1',
         name: 'Cera Automotiva',
         price: new Prisma.Decimal('80.00'),
         stock: 10,
         lojaID: 'loja-1',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any);
 
       vi.mocked(prisma.freightRule.findFirst).mockResolvedValueOnce({
@@ -186,14 +190,6 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
         value: new Prisma.Decimal('15.00'),
         minDays: 1,
         maxDays: 3,
-      } as any);
-
-      vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
-        id: 'usr-buyer-1',
-        name: 'Comprador Exemplo',
-        email: 'comprador@exemplo.com',
-        phone: '41988887777',
-        cpfCnpj: '52998224725',
       } as any);
 
       vi.mocked(prisma.address.create).mockResolvedValueOnce({ id: 'addr-1' } as any);
@@ -220,6 +216,7 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
       }));
 
       const result = await createOrder({
+      paymentMethod: 'WHATSAPP_PIX',
         lojaID: 'loja-1',
         customer: {
           name: 'Comprador Exemplo',
@@ -228,7 +225,7 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
           cpfCnpj: '529.982.247-25', // Com máscara
         },
         items: [{ productId: 'prod-1', quantity: 1 }],
-        deliveryType: 'DELIVERY',
+        deliveryType: 'DELIVERY', freightQuoteToken: 'authorized-fixture-quote', freightOwnerKey: 'g:' + 'a'.repeat(64),
         address: {
           cep: '80000-000',
           state: 'PR',
@@ -241,13 +238,12 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
 
       expect(result.success).toBe(true);
 
-      // Verifica que o User.upsert recebeu os dígitos limpos tanto no create quanto no update
-      expect(prisma.user.upsert).toHaveBeenCalledWith(
+      // Dados declarados ficam no snapshot; nunca concedem autoridade sobre User.
+      expect(prisma.user.upsert).not.toHaveBeenCalled();
+      expect(prisma.orderBuyer.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: expect.objectContaining({
-            cpfCnpj: '52998224725',
-          }),
-          update: expect.objectContaining({
+          data: expect.objectContaining({
+            authenticatedUserID: null,
             cpfCnpj: '52998224725',
           }),
         })
@@ -281,6 +277,13 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
         },
       ] as any);
 
+      vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{
+        userID: 'usr-10', totalOrders: BigInt(1), recognizedOrderCount: BigInt(0), unverifiedOrders: BigInt(1),
+        financialReviewOrders: BigInt(0), cancelledOrders: BigInt(0), totalOrderValue: new Prisma.Decimal(150),
+        totalMerchandiseOrdered: new Prisma.Decimal(150), recognizedGross: new Prisma.Decimal(0), settledGross: new Prisma.Decimal(0),
+        confirmedRefunds: new Prisma.Decimal(0), totalSpent: new Prisma.Decimal(0), averageOrderValue: new Prisma.Decimal(0),
+        firstOrderAt: null, lastOrderAt: null, asOf: new Date(), recognizedActiveOrderIds: [],
+      }]);
       const { data } = await listCustomers({ lojaID: 'loja-1' });
 
       expect(data).toHaveLength(1);
@@ -304,4 +307,24 @@ describe('Persistência e Ciclo de Vida de CPF/CNPJ (REV-003)', () => {
       expect(profile?.cpfCnpj).toBe('11222333000181');
     });
   });
+});
+
+vi.mock('@/lib/freight/acceptance', async () => {
+  const { freightAcceptanceMock } = await import('@/tests/helpers/freight-acceptance-mock');
+  return freightAcceptanceMock(0);
+});
+
+vi.mock('@/services/payment/capabilities.service', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/services/payment/capabilities.service')>();
+  const { completePaymentStore } = await import('@/tests/helpers/payment-fixture-mock');
+  return { paymentCapabilities: (store: Parameters<typeof actual.paymentCapabilities>[0], gateway: Parameters<typeof actual.paymentCapabilities>[1]) => actual.paymentCapabilities(completePaymentStore(store), gateway) };
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
 });

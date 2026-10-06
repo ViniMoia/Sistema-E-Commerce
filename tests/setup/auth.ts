@@ -1,13 +1,16 @@
 import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { createFixtureStore } from './fixture-scope'
+import { randomUUID } from 'node:crypto'
 
 async function createAdminSession(lojaID: string): Promise<string> {
+  await createFixtureStore(lojaID)
   const hashedPassword = await bcrypt.hash('test123456', 10)
 
   const adminUser = await prisma.user.create({
     data: {
       name: 'Admin Test',
-      email: `admin-${lojaID.substring(0, 8)}@test.com`,
+      email: `admin-${randomUUID()}@test.com`,
       password: hashedPassword,
       role: 'ADMIN',
       status: 'ACTIVE',
@@ -41,19 +44,11 @@ export async function createDifferentStoreAdmin(): Promise<{
   lojaID: string
   headers: Record<string, string>
 }> {
-  const otherLoja = await prisma.loja.create({
-    data: {
-      name: 'Loja Teste secondary',
-      slug: `secondary-store-${Date.now()}`,
-      description: 'Loja secundária para testes',
-      coverImageUrl: 'https://example.com/cover2.jpg'
-    }
-  })
-
-  const sessionId = await createAdminSession(otherLoja.id)
+  const lojaID = await createFixtureStore()
+  const sessionId = await createAdminSession(lojaID)
 
   return {
-    lojaID: otherLoja.id,
+    lojaID,
     headers: {
       Cookie: `session_id=${sessionId}`
     }

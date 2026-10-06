@@ -1,12 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createOrder } from '@/services/checkout.service'
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture'
 import { updateOrderStatus } from '@/services/order.service'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { creditEarnedPoints, debitRedeemedPoints, refundOrderPoints } from '@/services/loyalty.service'
+vi.mock('@/services/loyalty.service', async importOriginal => ({ ...await importOriginal<typeof import('@/services/loyalty.service')>(),
+ creditEarnedPoints: vi.fn().mockResolvedValue(null), debitRedeemedPoints: vi.fn().mockResolvedValue(null), refundOrderPoints: vi.fn().mockResolvedValue([]) }))
 
-vi.mock('@/lib/prisma', () => {
+vi.mock('@/lib/prisma', async () => {
+  const { paymentAttemptFixture } = await import('@/tests/helpers/payment-fixture-mock');
   return {
     default: {
+      paymentAttempt: paymentAttemptFixture(),
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      orderStatusHistory: { create: vi.fn(), findUnique: vi.fn() },
+      commerceOutbox: { create: vi.fn() },
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       loja: {
         findUnique: vi.fn(),
@@ -24,6 +33,7 @@ vi.mock('@/lib/prisma', () => {
       },
       user: {
         upsert: vi.fn(),
+        findUnique: vi.fn(),
       },
       address: {
         create: vi.fn(),
@@ -33,6 +43,7 @@ vi.mock('@/lib/prisma', () => {
         findUnique: vi.fn(),
         update: vi.fn(),
       },
+      loyaltyLot: { aggregate: vi.fn().mockResolvedValue({ _sum: { remaining: 0 } }) },
       loyaltyWallet: {
         findUnique: vi.fn(),
         upsert: vi.fn(),
@@ -56,6 +67,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
 
   describe('Checkout com Resgate de Pontos', () => {
     it('deve aplicar desconto de pontos no subtotal e gravar auditoria no pedido', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'user-1', lojaID: 'loja-1', email: 'vip@teste.com', status: 'ACTIVE' } as any)
       // Loja com fidelidade ativa: 1 pt = R$ 0,05, earnRate = 0.5, min 100 pts
       vi.mocked(prisma.loja.findUnique).mockResolvedValue({
         id: 'loja-1',
@@ -70,13 +82,13 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       } as any)
 
       // Produto: R$ 1000,00
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-1',
         name: 'Smartphone Pro',
         price: new Prisma.Decimal('1000.00'),
         stock: 5,
         lojaID: 'loja-1',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any)
 
       // Usuário
@@ -92,6 +104,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
         lojaID: 'loja-1',
         userID: 'user-1',
         balance: 500,
+        accountingReady: true, debt: 0,
         pending: 0,
         lifetimeEarn: 500,
         version: 1,
@@ -102,6 +115,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
         lojaID: 'loja-1',
         userID: 'user-1',
         balance: 500,
+        accountingReady: true, debt: 0,
         pending: 0,
         lifetimeEarn: 500,
         version: 1,
@@ -110,6 +124,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       vi.mocked(prisma.loyaltyWallet.update).mockResolvedValue({
         id: 'wallet-1',
         balance: 0,
+        accountingReady: true, debt: 0,
         version: 2,
       } as any)
 
@@ -141,6 +156,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       })
 
       const result = await createOrder({
+      paymentMethod: 'WHATSAPP_PIX',
         lojaID: 'loja-1',
         customer: {
           name: 'Cliente VIP',
@@ -164,15 +180,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       expect(result.order.pointsEarned).toBe(487)
 
       // Garante que debitou da carteira no Ledger
-      expect(prisma.loyaltyTransaction.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            type: 'REDEEM',
-            points: -500,
-            monetaryValue: expect.any(Object),
-          }),
-        })
-      )
+      expect(debitRedeemedPoints).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'ord-100', points: 500, monetaryValue: 25 }), expect.any(Object))
     })
 
     it('deve rejeitar resgate se a loja estiver com o programa de fidelidade desativado', async () => {
@@ -182,13 +190,13 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
         loyaltyEnabled: false,
       } as any)
 
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-2',
         name: 'Item X',
         price: new Prisma.Decimal('100.00'),
         stock: 5,
         lojaID: 'loja-2',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any)
 
       vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
@@ -198,7 +206,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       } as any)
 
       await expect(
-        createOrder({
+        createOrder({ paymentMethod: 'WHATSAPP_PIX',
           lojaID: 'loja-2',
           customer: { name: 'Cliente', email: 'c@teste.com', phone: '11999999999' },
           items: [{ productId: 'prod-2', quantity: 1 }],
@@ -210,7 +218,8 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
   })
 
   describe('FSM de Pedidos: Crédito e Estorno de Pontos', () => {
-    it('deve creditar pontos na carteira quando o pedido transitar para PAID', async () => {
+    it('deve bloquear crédito de pontos baseado somente no status de um legado', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'admin-1', lojaID: 'loja-1', status: 'ACTIVE', role: 'ADMIN' } as any)
       // Pedido PENDING na loja-1, subtotal R$ 1.000,00
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'ord-101',
@@ -236,6 +245,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValue({
         id: 'wallet-1',
         balance: 500,
+        accountingReady: true, debt: 0,
         pending: 0,
         lifetimeEarn: 500,
         version: 1,
@@ -253,18 +263,13 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
         lojaID: 'loja-1',
       })
 
-      expect(result.success).toBe(true)
-      expect(prisma.loyaltyTransaction.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            type: 'EARN',
-            points: 500,
-          }),
-        })
-      )
+      expect(result).toMatchObject({ success: false, error: 'LEGACY_ORDER_RECONCILIATION_REQUIRED' })
+      expect(creditEarnedPoints).not.toHaveBeenCalled()
+      expect(prisma.order.update).not.toHaveBeenCalled()
     })
 
-    it('deve estornar pontos no cancelamento de pedido PAID', async () => {
+    it('deve bloquear estorno automático de pontos em legado não conciliado', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'admin-1', lojaID: 'loja-1', status: 'ACTIVE', role: 'ADMIN' } as any)
       // Pedido pago que acumulou 500 pontos
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'ord-102',
@@ -293,6 +298,7 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
       vi.mocked(prisma.loyaltyWallet.update).mockResolvedValue({
         id: 'wallet-1',
         balance: 0,
+        accountingReady: true, debt: 0,
         version: 2,
       } as any)
 
@@ -308,15 +314,29 @@ describe('Integração Transacional de Fidelidade (Checkout & Order FSM)', () =>
         lojaID: 'loja-1',
       })
 
-      expect(result.success).toBe(true)
-      expect(prisma.loyaltyTransaction.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            type: 'REFUND_EARN',
-            points: -500,
-          }),
-        })
-      )
+      expect(result).toMatchObject({ success: false, error: 'LEGACY_ORDER_RECONCILIATION_REQUIRED' })
+      expect(refundOrderPoints).not.toHaveBeenCalled()
+      expect(prisma.order.update).not.toHaveBeenCalled()
     })
   })
 })
+
+vi.mock('@/lib/freight/acceptance', async () => {
+  const { freightAcceptanceMock } = await import('@/tests/helpers/freight-acceptance-mock');
+  return freightAcceptanceMock(0);
+});
+
+vi.mock('@/services/payment/capabilities.service', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/services/payment/capabilities.service')>();
+  const { completePaymentStore } = await import('@/tests/helpers/payment-fixture-mock');
+  return { paymentCapabilities: (store: Parameters<typeof actual.paymentCapabilities>[0], gateway: Parameters<typeof actual.paymentCapabilities>[1]) => actual.paymentCapabilities(completePaymentStore(store), gateway) };
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
+});

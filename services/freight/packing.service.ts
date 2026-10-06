@@ -67,9 +67,9 @@ export class PackagePackingService {
     }
 
     // Limites máximos dos Correios para evitar recusa de cotação
-    finalLength = Math.min(finalLength, 100);
-    finalWidth = Math.min(finalWidth, 100);
-    finalHeight = Math.min(finalHeight, 100);
+    if ([finalLength, finalWidth, finalHeight].some(dimension => dimension > 100)) {
+      throw new Error('FREIGHT_PACKAGE_UNSUPPORTED');
+    }
 
     return {
       weightInGrams: Math.max(totalWeight, 50), // Mínimo 50g

@@ -5,6 +5,7 @@ import { GET as getAdminConfigRoute, PUT as putAdminConfigRoute } from '@/app/ap
 import { POST as adjustAdminRoute } from '@/app/api/admin/loyalty/adjust/route'
 import prisma from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/session'
+import { getLojaFromHeaders } from '@/lib/tenant'
 import { Prisma } from '@prisma/client'
 
 vi.mock('@/lib/prisma', () => {
@@ -15,6 +16,8 @@ vi.mock('@/lib/prisma', () => {
         findUnique: vi.fn(),
         update: vi.fn(),
       },
+      user: { findUnique: vi.fn() },
+      loyaltyLot: { aggregate: vi.fn().mockResolvedValue({ _sum: { remaining: 0 } }) },
       loyaltyWallet: {
         findUnique: vi.fn(),
         upsert: vi.fn(),
@@ -32,6 +35,7 @@ vi.mock('@/lib/prisma', () => {
 vi.mock('@/lib/session', () => ({
   getCurrentUser: vi.fn(),
 }))
+vi.mock('@/lib/tenant', () => ({ getLojaFromHeaders: vi.fn() }))
 
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockReturnValue(null),
@@ -40,6 +44,7 @@ vi.mock('@/lib/rate-limit', () => ({
 describe('Route Handlers de Fidelidade (APIs & Guards)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(getLojaFromHeaders).mockResolvedValue({ id: 'loja-1' } as any)
   })
 
   describe('GET /api/loyalty/wallet', () => {
@@ -52,6 +57,7 @@ describe('Route Handlers de Fidelidade (APIs & Guards)', () => {
     })
 
     it('deve retornar extrato e saldo consolidado para usuário autenticado', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'usr-1', status: 'ACTIVE' } as any)
       vi.mocked(getCurrentUser).mockResolvedValueOnce({
         id: 'usr-1',
         name: 'Cliente VIP',
@@ -71,11 +77,12 @@ describe('Route Handlers de Fidelidade (APIs & Guards)', () => {
         loyaltyPointsExpiryDays: 365,
       } as any)
 
-      vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValueOnce({
+      vi.mocked(prisma.loyaltyWallet.findUnique).mockResolvedValueOnce({
         id: 'wal-1',
         lojaID: 'loja-1',
         userID: 'usr-1',
         balance: 300,
+        accountingReady: true, debt: 0,
         pending: 50,
         lifetimeEarn: 400,
         version: 1,
@@ -110,7 +117,9 @@ describe('Route Handlers de Fidelidade (APIs & Guards)', () => {
 
   describe('POST /api/loyalty/simulate', () => {
     it('deve simular resgate e retornar projeção de desconto', async () => {
-      vi.mocked(getCurrentUser).mockResolvedValueOnce(null)
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({ id: 'usr-1', lojaID: 'loja-1' } as any)
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'usr-1', status: 'ACTIVE' } as any)
+      vi.mocked(prisma.loyaltyWallet.findUnique).mockResolvedValueOnce({ id: 'wallet', balance: 200, debt: 0, accountingReady: true } as any)
 
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
         id: 'loja-1',
@@ -197,54 +206,12 @@ describe('Route Handlers de Fidelidade (APIs & Guards)', () => {
   })
 
   describe('POST /api/admin/loyalty/adjust', () => {
-    it('deve processar ajuste manual auditado', async () => {
-      vi.mocked(getCurrentUser).mockResolvedValueOnce({
-        id: 'adm-1',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        lojaID: 'loja-1',
-      } as any)
-
-      vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
-        id: 'loja-1',
-        loyaltyPointValue: new Prisma.Decimal('0.05'),
-        loyaltyEarnRate: new Prisma.Decimal('0.5'),
-        loyaltyMinPointsRedeem: 100,
-        loyaltyMaxDiscountPct: new Prisma.Decimal('50.0'),
-        loyaltyEnabled: true,
-      } as any)
-
-      vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValueOnce({
-        id: 'wal-1',
-        balance: 100,
-        version: 1,
-      } as any)
-
-      vi.mocked(prisma.loyaltyWallet.update).mockResolvedValueOnce({
-        id: 'wal-1',
-        balance: 200,
-        version: 2,
-      } as any)
-
-      vi.mocked(prisma.loyaltyTransaction.create).mockResolvedValueOnce({
-        id: 'tx-adj-1',
-      } as any)
-
-      const req = new Request('http://localhost/api/admin/loyalty/adjust', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userID: 'usr-1',
-          points: 100,
-          description: 'Crédito cortesia de aniversário',
-        }),
-      })
-
-      const res = await adjustAdminRoute(req)
-      expect(res.status).toBe(200)
-      const json = await res.json()
-      expect(json.success).toBe(true)
-      expect(json.data.newBalance).toBe(200)
+    it('rejects adjustment without command identity before writing any ledger', async () => {
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({ id: 'adm-1', role: 'ADMIN', status: 'ACTIVE', lojaID: 'loja-1' } as any)
+      const req = new Request('http://localhost/api/admin/loyalty/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userID: 'usr-1', points: 100, description: 'Credit without identity' }) })
+      expect((await adjustAdminRoute(req)).status).toBe(400)
+      expect(prisma.loyaltyTransaction.create).not.toHaveBeenCalled()
     })
   })
 })

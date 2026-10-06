@@ -1,6 +1,13 @@
+import { exactEarnPoints, earnSnapshotSchema } from '@/lib/commerce/loyalty-earn'
 import prisma from '@/lib/prisma'
 import { Prisma, LoyaltyTxType } from '@prisma/client'
 import { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+import { CommerceLocks } from '@/lib/commerce/locks'
+import { LoyaltyError, assertPoints, creditExpiry } from '@/lib/commerce/loyalty-policy'
+import { lockLoyaltyWallet, creditLockedLoyalty, debitLockedLoyalty, expireLockedLoyalty, loyaltyEffect,
+  reverseEarnLockedLoyalty, restoreRedeemLockedLoyalty, deferLegacyLoyalty, inspectLoyaltyAccounting } from '@/lib/commerce/loyalty-ledger'
+export { LoyaltyError } from '@/lib/commerce/loyalty-policy'
 import type {
   LoyaltySettings,
   LoyaltyWalletSummary,
@@ -19,15 +26,6 @@ import type {
 
 // ─── Custom Errors ────────────────────────────────────────────────
 
-export class LoyaltyError extends Error {
-  public readonly code: string
-
-  constructor(code: string, message: string) {
-    super(message)
-    this.code = code
-    this.name = 'LoyaltyError'
-  }
-}
 
 // ─── Zod Schemas ──────────────────────────────────────────────────
 
@@ -57,7 +55,9 @@ export const AdjustLoyaltyBalanceSchema = z.object({
   }),
   description: z.string().min(3, 'Descrição deve ter no mínimo 3 caracteres').max(255),
   adminUserId: z.string().min(1, 'adminUserId é obrigatório'),
-})
+  commandId: z.string().regex(/^[a-zA-Z0-9_-]{1,96}$/, 'Identidade do ajuste é obrigatória'),
+  expiresAt: z.iso.datetime({ offset: true }).nullable().optional(),
+}).strict()
 
 export const UpdateLoyaltyConfigSchema = z.object({
   loyaltyEnabled: z.boolean(),
@@ -75,14 +75,8 @@ export const UpdateLoyaltyConfigSchema = z.object({
  * Fórmula: Math.floor(subtotal * earnRate)
  */
 export function calculatePointsEarned(subtotal: number | Prisma.Decimal, earnRate: number | Prisma.Decimal): number {
-  const subtotalNum = typeof subtotal === 'number' ? subtotal : Number(subtotal.toString())
-  const earnRateNum = typeof earnRate === 'number' ? earnRate : Number(earnRate.toString())
-
-  if (isNaN(subtotalNum) || subtotalNum <= 0 || isNaN(earnRateNum) || earnRateNum <= 0) {
-    return 0
-  }
-
-  return Math.floor(subtotalNum * earnRateNum)
+  if (Number(subtotal) <= 0 || Number(earnRate) <= 0 || !Number.isFinite(Number(subtotal)) || !Number.isFinite(Number(earnRate))) return 0
+  return exactEarnPoints(subtotal, earnRate)
 }
 
 /**
@@ -149,30 +143,9 @@ export async function getLoyaltySettings(
 /**
  * Obtém ou inicializa a carteira de fidelidade do usuário na loja.
  */
-export async function getOrCreateWallet(
-  lojaID: string,
-  userID: string,
-  tx?: Prisma.TransactionClient
-) {
-  const client = tx || prisma
-
-  return await client.loyaltyWallet.upsert({
-    where: {
-      lojaID_userID: {
-        lojaID,
-        userID,
-      },
-    },
-    create: {
-      lojaID,
-      userID,
-      balance: 0,
-      pending: 0,
-      lifetimeEarn: 0,
-      version: 0,
-    },
-    update: {},
-  })
+export async function getOrCreateWallet(lojaID: string, userID: string, tx?: Prisma.TransactionClient) {
+  const run = async (client: Prisma.TransactionClient) => (await lockLoyaltyWallet(client, { lojaID, userID }, true))!.wallet
+  return tx ? run(tx) : prisma.$transaction(run)
 }
 
 /**
@@ -183,20 +156,31 @@ export async function getWalletSummary(
   userID: string
 ): Promise<LoyaltyWalletSummary> {
   const settings = await getLoyaltySettings(lojaID)
-  const wallet = await getOrCreateWallet(lojaID, userID)
+  await assertLoyaltyAccount(lojaID, userID)
+  const wallet = await prisma.loyaltyWallet.findUnique({ where: { lojaID_userID: { lojaID, userID } } })
+  const balance = Math.max(0, wallet?.balance ?? 0)
 
-  const monetaryBalance = calculateDiscountFromPoints(wallet.balance, settings.loyaltyPointValue)
+  const monetaryBalance = calculateDiscountFromPoints(balance, settings.loyaltyPointValue)
 
   return {
-    walletId: wallet.id,
+    walletId: wallet?.id ?? null,
     lojaID,
     userID,
-    balance: wallet.balance,
-    pending: wallet.pending,
-    lifetimeEarn: wallet.lifetimeEarn,
+    balance,
+    debt: wallet?.debt ?? 0,
+    accountingReady: wallet ? wallet.accountingReady : true,
+    pending: wallet?.pending ?? 0,
+    lifetimeEarn: wallet?.lifetimeEarn ?? 0,
     monetaryBalance,
     settings,
   }
+}
+
+async function assertLoyaltyAccount(lojaID: string, userID: string, client: Prisma.TransactionClient = prisma) {
+  const user = await client.user.findUnique({
+    where: { id_lojaID: { id: userID, lojaID } }, select: { id: true, status: true },
+  })
+  if (!user || user.status !== 'ACTIVE') throw new LoyaltyError('USER_NOT_FOUND', 'Conta não encontrada ou indisponível nesta loja.')
 }
 
 // ─── Simulação de Resgate para Checkout ───────────────────────────
@@ -205,10 +189,19 @@ export async function getWalletSummary(
  * Simula de forma autoritativa a aplicação de pontos como desconto no checkout.
  */
 export async function simulatePointsRedemption(
-  input: SimulateRedeemInput
+  input: SimulateRedeemInput, tx?: Prisma.TransactionClient
 ): Promise<SimulateRedeemResult> {
   const validated = SimulateLoyaltyRedeemSchema.parse(input)
-  const settings = await getLoyaltySettings(validated.lojaID)
+  const settings = await getLoyaltySettings(validated.lojaID, tx)
+
+  if (!validated.userID) {
+    return { eligible: false, pointsToRedeem: 0, discountValue: 0,
+      subtotalAfterDiscount: validated.subtotal, projectedEarnedPoints: settings.loyaltyEnabled
+        ? calculatePointsEarned(validated.subtotal, settings.loyaltyEarnRate) : 0,
+      reason: 'Entre na sua conta para utilizar o programa de pontos.' }
+  }
+  // The service also validates tenant ownership for internal/alternate callers.
+  await assertLoyaltyAccount(validated.lojaID, validated.userID, tx ?? prisma)
 
   // 1. Projeção de pontos ganhos nesta compra
   const projectedEarnedPoints = settings.loyaltyEnabled
@@ -239,11 +232,14 @@ export async function simulatePointsRedemption(
   }
 
   // 4. Se houver userID, carregar saldo real da carteira
-  let availableBalance = validated.requestedPoints
-  if (validated.userID) {
-    const wallet = await getOrCreateWallet(validated.lojaID, validated.userID)
-    availableBalance = wallet.balance
-  }
+  const wallet = await (tx ?? prisma).loyaltyWallet.findUnique({
+    where: { lojaID_userID: { lojaID: validated.lojaID, userID: validated.userID } },
+  })
+  if (wallet && !wallet.accountingReady) return { eligible: false, pointsToRedeem: 0, discountValue: 0,
+    subtotalAfterDiscount: validated.subtotal, projectedEarnedPoints, walletBalance: Math.max(0, wallet.balance),
+    reason: 'Carteira aguardando conciliação de origem dos créditos.' }
+  const due = wallet ? await (tx ?? prisma).loyaltyLot.aggregate({ where: { walletId: wallet.id, expiresAt: { lte: new Date() } }, _sum: { remaining: true } }) : null
+  const availableBalance = Math.max(0, (wallet?.balance ?? 0) - (due?._sum.remaining ?? 0))
 
   // 5. Validação de saldo mínimo para resgate
   if (availableBalance < settings.loyaltyMinPointsRedeem) {
@@ -308,306 +304,114 @@ export async function simulatePointsRedemption(
 
 // ─── Operações Transacionais Contábeis (Ledger Engine) ────────────
 
-/**
- * Credita pontos ganhos por um pedido concluído/pago (EARN).
- * Executa dentro de uma transação ACID e registra no Ledger.
- */
-export async function creditEarnedPoints(
-  params: CreditEarnedPointsParams,
-  tx?: Prisma.TransactionClient
-) {
-  const { lojaID, userID, orderId, subtotal, description } = params
-
-  const runOperation = async (client: Prisma.TransactionClient) => {
-    const settings = await getLoyaltySettings(lojaID, client)
-    if (!settings.loyaltyEnabled) return null
-
-    const pointsToCredit = calculatePointsEarned(subtotal, settings.loyaltyEarnRate)
-    if (pointsToCredit <= 0) return null
-
-    // 1. Garantir existência da carteira
-    const wallet = await client.loyaltyWallet.upsert({
-      where: { lojaID_userID: { lojaID, userID } },
-      create: {
-        lojaID,
-        userID,
-        balance: pointsToCredit,
-        pending: 0,
-        lifetimeEarn: pointsToCredit,
-        version: 1,
-      },
-      update: {
-        balance: { increment: pointsToCredit },
-        lifetimeEarn: { increment: pointsToCredit },
-        version: { increment: 1 },
-      },
-    })
-
-    // 2. Data de expiração
-    let expiresAt: Date | null = null
-    if (settings.loyaltyPointsExpiryDays && settings.loyaltyPointsExpiryDays > 0) {
-      expiresAt = new Date(Date.now() + settings.loyaltyPointsExpiryDays * 24 * 60 * 60 * 1000)
-    }
-
-    const monetaryValue = calculateDiscountFromPoints(pointsToCredit, settings.loyaltyPointValue)
-
-    // 3. Registrar no Ledger Imutável
-    const transaction = await client.loyaltyTransaction.create({
-      data: {
-        lojaID,
-        userID,
-        orderId,
-        type: LoyaltyTxType.EARN,
-        points: pointsToCredit,
-        balanceAfter: wallet.balance,
-        monetaryValue: new Prisma.Decimal(monetaryValue),
-        description: description || `Pontos acumulados no pedido #${orderId.slice(0, 8)}`,
-        expiresAt,
-      },
-    })
-
-    return {
-      pointsCredited: pointsToCredit,
-      newBalance: wallet.balance,
-      transaction,
-    }
-  }
-
-  if (tx) {
-    return await runOperation(tx)
-  } else {
-    return await prisma.$transaction(runOperation)
-  }
+async function inOrderTransaction<T>(orderId: string, tx: Prisma.TransactionClient | undefined, run: (client: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  if (tx) return run(tx) // Trusted caller owns the order or just inserted it.
+  return prisma.$transaction(async client => {
+    await new CommerceLocks(client).acquire('order', [orderId])
+    return run(client)
+  })
 }
-
-/**
- * Debita pontos resgatados durante a criação de um pedido (REDEEM).
- * Previne double-spending com verificação atômica de saldo e controle otimista de versão.
- */
-export async function debitRedeemedPoints(
-  params: DebitRedeemedPointsParams,
-  tx?: Prisma.TransactionClient
-) {
-  const { lojaID, userID, orderId, points, monetaryValue, description } = params
-  if (points <= 0) return null
-
-  const runOperation = async (client: Prisma.TransactionClient) => {
-    // 1. Carregar carteira com bloqueio/leitura consistente
-    const wallet = await client.loyaltyWallet.findUnique({
-      where: { lojaID_userID: { lojaID, userID } },
-    })
-
-    if (!wallet || wallet.balance < points) {
-      throw new LoyaltyError(
-        'INSUFFICIENT_POINTS',
-        `Saldo insuficiente para resgate. Saldo disponível: ${wallet?.balance ?? 0}, solicitado: ${points}`
-      )
-    }
-
-    // 2. Débito atômico na carteira
-    const updatedWallet = await client.loyaltyWallet.update({
-      where: {
-        id: wallet.id,
-      },
-      data: {
-        balance: { decrement: points },
-        version: { increment: 1 },
-      },
-    })
-
-    // Se após o decremento o saldo for negativo (condição de corrida capturada), reverte
-    if (updatedWallet.balance < 0) {
-      throw new LoyaltyError('INSUFFICIENT_POINTS', 'Violação de saldo concorrente.')
-    }
-
-    // 3. Registrar no Ledger Imutável
-    const transaction = await client.loyaltyTransaction.create({
-      data: {
-        lojaID,
-        userID,
-        orderId,
-        type: LoyaltyTxType.REDEEM,
-        points: -points, // Negativo para débito
-        balanceAfter: updatedWallet.balance,
-        monetaryValue: new Prisma.Decimal(monetaryValue),
-        description: description || `Desconto fidelidade aplicado no pedido #${orderId.slice(0, 8)}`,
-      },
-    })
-
-    return {
-      pointsDebited: points,
-      newBalance: updatedWallet.balance,
-      transaction,
-    }
-  }
-
-  if (tx) {
-    return await runOperation(tx)
-  } else {
-    return await prisma.$transaction(runOperation)
-  }
+async function scopedOrder(client: Prisma.TransactionClient, lojaID: string, orderId: string, userID?: string) {
+  const order = await client.order.findUnique({ where: { id: orderId }, include: { loyaltyTransactions: true } })
+  if (!order || order.lojaID !== lojaID || (userID && order.userID !== userID)) throw new LoyaltyError('ORDER_NOT_FOUND', 'Pedido não encontrado para esta conta/loja.')
+  return order
 }
-
-/**
- * Estorna/reverte os pontos de um pedido cancelado ou devolvido.
- * - Estorna pontos ganhos (REFUND_EARN)
- * - Devolve pontos resgatados (REFUND_REDEEM)
- */
-export async function refundOrderPoints(
-  params: RefundOrderPointsParams,
-  tx?: Prisma.TransactionClient
-) {
-  const { lojaID, orderId, reason } = params
-
-  const runOperation = async (client: Prisma.TransactionClient) => {
-    const order = await client.order.findUnique({
-      where: { id: orderId },
-      include: {
-        loyaltyTransactions: true,
-      },
-    })
-
-    if (!order || order.lojaID !== lojaID) {
-      throw new LoyaltyError('ORDER_NOT_FOUND', `Pedido ${orderId} não encontrado na loja.`)
+export async function creditEarnedPoints(params: CreditEarnedPointsParams, tx?: Prisma.TransactionClient) {
+  if (!Number.isFinite(params.subtotal) || params.subtotal < 0) throw new LoyaltyError('INVALID_INPUT', 'Subtotal inválido.')
+  return inOrderTransaction(params.orderId, tx, async client => {
+    const order = await scopedOrder(client, params.lojaID, params.orderId, params.userID)
+    if (order.status !== 'PAID') throw new LoyaltyError('INVALID_STATE', 'Ganho exige pedido pago.')
+    const identity = loyaltyEffect('earn', params, params.orderId, [params.subtotal, params.description ?? null])
+    const previous = order.loyaltyTransactions.find(t => t.effectKey === identity.key)
+    if (!order.loyaltyEarnSnapshot) {
+      await deferLegacyLoyalty(client, 'EARN', params, { reason: 'LEGACY_EARN_POLICY_UNKNOWN', subtotal: params.subtotal });
+      return null;
     }
-
+    const snapshot = earnSnapshotSchema.parse(order.loyaltyEarnSnapshot);
+    if (snapshot.points !== exactEarnPoints(snapshot.base, snapshot.rate) && snapshot.enabled && snapshot.eligible) throw new LoyaltyError('INVALID_POLICY', 'Snapshot de ganho inconsistente.');
+    const settings = { loyaltyEnabled: snapshot.enabled && snapshot.eligible, loyaltyEarnRate: Number(snapshot.rate),
+      loyaltyPointValue: Number(snapshot.pointValue), loyaltyPointsExpiryDays: snapshot.expiryDays };
+    const points = previous?.points ?? snapshot.points; assertPoints(points);
+    const state = await lockLoyaltyWallet(client, params, true)
+    if (!state) throw new LoyaltyError('WALLET_NOT_FOUND', 'Carteira não encontrada.')
+    if (!state.wallet.accountingReady || order.loyaltyTransactions.some(t => t.type === 'EARN' && t.availableDelta === null)) {
+      await deferLegacyLoyalty(client, 'EARN', params, { subtotal: params.subtotal, settings: { ...settings }, reason: 'LEGACY_ORIGIN_UNKNOWN' })
+      return null
+    }
+    if (!previous && (!settings.loyaltyEnabled || !points)) return null
+    const expiresAt = previous ? previous.expiresAt : creditExpiry(settings.loyaltyPointsExpiryDays, state.now)
+    const result = await creditLockedLoyalty(state, { ...identity,
+      type: 'EARN', points, orderId: params.orderId, description: params.description ?? 'Pontos ganhos no pedido',
+      monetaryValue: new Prisma.Decimal(calculateDiscountFromPoints(points, settings.loyaltyPointValue)), expiry: expiresAt,
+      policy: { ...snapshot } }, [{ points, expiry: expiresAt }], points)
+    await client.order.update({ where: { id: order.id }, data: { pointsCredited: result.transaction.points } })
+    return { pointsCredited: result.transaction.points, newBalance: result.wallet.balance, transaction: result.transaction, replay: result.replay }
+  })
+}
+export async function debitRedeemedPoints(params: DebitRedeemedPointsParams, tx?: Prisma.TransactionClient) {
+  assertPoints(params.points)
+  if (!Number.isFinite(params.monetaryValue) || params.monetaryValue < 0) throw new LoyaltyError('INVALID_INPUT', 'Valor do resgate inválido.')
+  if (!params.points) return null
+  return inOrderTransaction(params.orderId, tx, async client => {
+    const order = await scopedOrder(client, params.lojaID, params.orderId, params.userID)
+    if (!order.loyaltyTransactions.some(t => t.type === 'REDEEM' && t.effectKey) && order.status !== 'PENDING') throw new LoyaltyError('INVALID_STATE', 'Novo resgate exige pedido pendente.')
+    const user = await client.user.findUnique({ where: { id_lojaID: { id: params.userID, lojaID: params.lojaID } }, select: { status: true } })
+    if (user?.status !== 'ACTIVE') throw new LoyaltyError('USER_NOT_FOUND', 'Conta indisponível para resgate.')
+    const state = await lockLoyaltyWallet(client, params)
+    if (!state) throw new LoyaltyError('INSUFFICIENT_POINTS', 'Saldo insuficiente para resgate.')
+    if (order.loyaltyTransactions.some(t => t.type === 'REDEEM' && !t.effectKey)) throw new LoyaltyError('RECONCILIATION_REQUIRED', 'Pedido com resgate legado.')
+    const result = await debitLockedLoyalty(state, { ...loyaltyEffect('redeem', params, params.orderId, [params.points, params.monetaryValue, params.description ?? null]),
+      type: 'REDEEM', points: -params.points, orderId: params.orderId, description: params.description ?? 'Resgate no pedido', monetaryValue: new Prisma.Decimal(params.monetaryValue) })
+    return { pointsDebited: -result.transaction.points, newBalance: result.wallet.balance, transaction: result.transaction, replay: result.replay }
+  })
+}
+export async function refundOrderPoints(params: RefundOrderPointsParams, tx?: Prisma.TransactionClient) {
+  return inOrderTransaction(params.orderId, tx, async client => {
+    const order = await scopedOrder(client, params.lojaID, params.orderId)
+    if (!order.userID) {
+      if (order.loyaltyTransactions.length) throw new LoyaltyError('INVALID_ORDER_OWNER', 'Pedido convidado com ledger de conta inconsistente.')
+      return []
+    }
+    const originals = order.loyaltyTransactions.filter(t => t.type === 'EARN' || t.type === 'REDEEM')
+    if (!originals.length) return []
+    const scope = { lojaID: params.lojaID, userID: order.userID, orderId: order.id }
+    const state = await lockLoyaltyWallet(client, scope)
+    if (!state || !state.wallet.accountingReady || originals.some(t => t.availableDelta === null)) {
+      await deferLegacyLoyalty(client, 'REFUND', scope, { reason: params.reason ?? null, originalTransactionIds: originals.map(t => t.id) })
+      return []
+    }
+    if (originals.some(t => t.lojaID !== params.lojaID || t.userID !== order.userID)) {
+      await deferLegacyLoyalty(client, 'REFUND', scope, { reason: 'LEDGER_OWNER_DIVERGENCE', originalTransactionIds: originals.map(t => t.id) })
+      return []
+    }
+    const settings = await getLoyaltySettings(params.lojaID, client)
     const results = []
-
-    // 1. Reverter EARN se já tiver sido creditado
-    const earnTx = order.loyaltyTransactions.find((t) => t.type === LoyaltyTxType.EARN)
-    if (earnTx && earnTx.points > 0) {
-      const pointsToRefund = earnTx.points
-
-      const wallet = await client.loyaltyWallet.update({
-        where: { lojaID_userID: { lojaID, userID: order.userID } },
-        data: {
-          balance: { decrement: pointsToRefund },
-          lifetimeEarn: { decrement: pointsToRefund },
-          version: { increment: 1 },
-        },
-      })
-
-      const refundEarnTx = await client.loyaltyTransaction.create({
-        data: {
-          lojaID,
-          userID: order.userID,
-          orderId,
-          type: LoyaltyTxType.REFUND_EARN,
-          points: -pointsToRefund,
-          balanceAfter: wallet.balance,
-          monetaryValue: earnTx.monetaryValue,
-          description: reason || `Estorno de pontos por cancelamento do pedido #${order.orderNumber}`,
-        },
-      })
-      results.push(refundEarnTx)
-    }
-
-    // 2. Reverter REDEEM se tiver consumido pontos
-    const redeemTx = order.loyaltyTransactions.find((t) => t.type === LoyaltyTxType.REDEEM)
-    if (redeemTx && Math.abs(redeemTx.points) > 0) {
-      const pointsToRestore = Math.abs(redeemTx.points)
-
-      const wallet = await client.loyaltyWallet.update({
-        where: { lojaID_userID: { lojaID, userID: order.userID } },
-        data: {
-          balance: { increment: pointsToRestore },
-          version: { increment: 1 },
-        },
-      })
-
-      const refundRedeemTx = await client.loyaltyTransaction.create({
-        data: {
-          lojaID,
-          userID: order.userID,
-          orderId,
-          type: LoyaltyTxType.REFUND_REDEEM,
-          points: pointsToRestore,
-          balanceAfter: wallet.balance,
-          monetaryValue: redeemTx.monetaryValue,
-          description: reason || `Devolução de pontos resgatados no pedido #${order.orderNumber}`,
-        },
-      })
-      results.push(refundRedeemTx)
-    }
-
+    for (const original of originals.filter(t => t.type === 'EARN')) results.push(await reverseEarnLockedLoyalty(state, original, params.reason ?? 'Estorno de pontos ganhos'))
+    for (const original of originals.filter(t => t.type === 'REDEEM')) results.push(await restoreRedeemLockedLoyalty(state, original, params.reason ?? 'Devolução de pontos resgatados', settings.loyaltyPointsExpiryDays))
     return results
-  }
-
-  if (tx) {
-    return await runOperation(tx)
-  } else {
-    return await prisma.$transaction(runOperation)
-  }
+  })
 }
-
-/**
- * Realiza um ajuste manual no saldo do cliente com auditoria administrativa.
- */
-export async function adjustPointsManually(
-  params: ManualAdjustmentParams,
-  tx?: Prisma.TransactionClient
-) {
-  const validated = AdjustLoyaltyBalanceSchema.parse(params)
-  const { lojaID, userID, points, description, adminUserId } = validated
-
-  const runOperation = async (client: Prisma.TransactionClient) => {
-    // 0. Validar filiação do usuário à loja (AUD-007): impede poluição de carteira entre lojas
-    if (client.user?.findFirst) {
-      const targetUser = await client.user.findFirst({
-        where: { id: userID, lojaID },
-      })
-      if (!targetUser) {
-        throw new LoyaltyError(
-          'USER_NOT_FOUND',
-          `O usuário informado não pertence a esta loja ou não existe.`
-        )
-      }
-    }
-
-    const settings = await getLoyaltySettings(lojaID, client)
-    const wallet = await getOrCreateWallet(lojaID, userID, client)
-
-    if (points < 0 && wallet.balance < Math.abs(points)) {
-      throw new LoyaltyError(
-        'INSUFFICIENT_POINTS',
-        `Saldo insuficiente para ajuste negativo. Saldo atual: ${wallet.balance}`
-      )
-    }
-
-    const updatedWallet = await client.loyaltyWallet.update({
-      where: { id: wallet.id },
-      data: {
-        balance: { increment: points },
-        lifetimeEarn: points > 0 ? { increment: points } : undefined,
-        version: { increment: 1 },
-      },
-    })
-
-    const monetaryValue = calculateDiscountFromPoints(Math.abs(points), settings.loyaltyPointValue)
-
-    const transaction = await client.loyaltyTransaction.create({
-      data: {
-        lojaID,
-        userID,
-        type: LoyaltyTxType.ADMIN_ADJUSTMENT,
-        points,
-        balanceAfter: updatedWallet.balance,
-        monetaryValue: new Prisma.Decimal(monetaryValue),
-        description: `[Ajuste Admin ${adminUserId.slice(0, 8)}] ${description}`,
-      },
-    })
-
-    return {
-      wallet: updatedWallet,
-      transaction,
-    }
+export async function adjustPointsManually(params: ManualAdjustmentParams, tx?: Prisma.TransactionClient) {
+  const data = AdjustLoyaltyBalanceSchema.parse(params)
+  const run = async (client: Prisma.TransactionClient) => {
+    const admin = await client.user.findUnique({ where: { id_lojaID: { id: data.adminUserId, lojaID: data.lojaID } }, select: { role: true, status: true } })
+    if (admin?.status !== 'ACTIVE' || admin.role !== 'ADMIN') throw new LoyaltyError('FORBIDDEN', 'Administrador ativo da loja obrigatório.')
+    const user = await client.user.findUnique({ where: { id_lojaID: { id: data.userID, lojaID: data.lojaID } }, select: { status: true } })
+    if (user?.status !== 'ACTIVE') throw new LoyaltyError('USER_NOT_FOUND', 'O usuário não pertence a esta loja ou não está ativo.')
+    const state = await lockLoyaltyWallet(client, data, true)
+    if (!state) throw new LoyaltyError('WALLET_NOT_FOUND', 'Carteira não encontrada.')
+    const expiry = data.expiresAt ? new Date(data.expiresAt) : null
+    const effect = { ...loyaltyEffect('adjust', data, data.commandId, [data.adminUserId, data.points, data.description, data.expiresAt ?? null]),
+      type: LoyaltyTxType.ADMIN_ADJUSTMENT, points: data.points, description: data.description,
+      expiry, policy: { actorId: data.adminUserId, commandId: data.commandId, explicitExpiry: data.expiresAt ?? null } }
+    const existing = await client.loyaltyTransaction.findUnique({ where: { effectKey: effect.key } })
+    if (!existing && ((expiry && expiry <= state.now) || (data.points < 0 && data.expiresAt))) throw new LoyaltyError('INVALID_POLICY', 'Validade exige crédito positivo e data futura.')
+    return data.points > 0 ? creditLockedLoyalty(state, effect, [{ points: data.points, expiry }], data.points) : debitLockedLoyalty(state, effect)
   }
-
-  if (tx) {
-    return await runOperation(tx)
-  } else {
-    return await prisma.$transaction(runOperation)
-  }
+  return tx ? run(tx) : prisma.$transaction(run)
+}
+export async function reconcileLoyaltyWallet(lojaID: string, userID: string) {
+  return prisma.$transaction(client => inspectLoyaltyAccounting(client, { lojaID, userID }))
 }
 
 /**
@@ -659,6 +463,8 @@ export async function getStatement(
     totalPages: Math.ceil(total / take),
     wallet: {
       balance: summary.balance,
+      debt: summary.debt,
+      accountingReady: summary.accountingReady,
       pending: summary.pending,
       lifetimeEarn: summary.lifetimeEarn,
       monetaryBalance: summary.monetaryBalance,
@@ -668,174 +474,58 @@ export async function getStatement(
 
 // ─── Rotina de Expiração de Pontos (ACT-P2-05) ───────────────────
 
-/**
- * Calcula com precisão contábil (FIFO) quantos pontos do saldo atual do usuário expiraram.
- */
-export async function calculateExpiredPointsForUser(
-  lojaID: string,
-  userID: string,
-  currentBalance: number,
-  now: Date = new Date(),
-  client: Prisma.TransactionClient | typeof prisma = prisma
-): Promise<number> {
-  if (currentBalance <= 0) return 0
-
-  const earnTransactions = await client.loyaltyTransaction.findMany({
-    where: {
-      lojaID,
-      userID,
-      type: LoyaltyTxType.EARN,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      points: true,
-      expiresAt: true,
-    },
-  })
-
-  let needed = currentBalance
-  let unexpiredPoints = 0
-
-  for (const tx of earnTransactions) {
-    const contrib = Math.min(tx.points, needed)
-    if (!tx.expiresAt || tx.expiresAt > now) {
-      unexpiredPoints += contrib
-    }
-    needed -= contrib
-    if (needed <= 0) break
-  }
-
-  const expiredPoints = currentBalance - unexpiredPoints
-  return Math.max(0, expiredPoints)
+/** Read-only estimate: currentBalance is never a debit authority. */
+export async function calculateExpiredPointsForUser(lojaID: string, userID: string, _currentBalance: number, now = new Date(), client: Prisma.TransactionClient | typeof prisma = prisma): Promise<number> {
+  const wallet = await client.loyaltyWallet.findUnique({ where: { lojaID_userID: { lojaID, userID } } })
+  if (!wallet?.accountingReady) return 0
+  const result = await client.loyaltyLot.aggregate({ where: { walletId: wallet.id, expiresAt: { lte: now } }, _sum: { remaining: true } })
+  return result._sum.remaining ?? 0
 }
-
-/**
- * Realiza a baixa contábil atômica de pontos expirados no saldo da carteira e registra no Ledger.
- */
-export async function expireUserPoints(
-  params: ExpireLoyaltyPointsParams,
-  tx?: Prisma.TransactionClient
-) {
-  const { lojaID, userID, points, description } = params
-  if (points <= 0) return null
-
-  const runOperation = async (client: Prisma.TransactionClient) => {
-    const settings = await getLoyaltySettings(lojaID, client)
-    const wallet = await client.loyaltyWallet.findUnique({
-      where: { lojaID_userID: { lojaID, userID } },
-    })
-
-    if (!wallet || wallet.balance <= 0) {
-      return null
-    }
-
-    const pointsToDeduct = Math.min(points, wallet.balance)
-    if (pointsToDeduct <= 0) return null
-
-    const updatedWallet = await client.loyaltyWallet.update({
-      where: { id: wallet.id },
-      data: {
-        balance: { decrement: pointsToDeduct },
-        version: { increment: 1 },
-      },
-    })
-
-    const monetaryValue = calculateDiscountFromPoints(
-      pointsToDeduct,
-      settings.loyaltyPointValue
-    )
-
-    const transaction = await client.loyaltyTransaction.create({
-      data: {
-        lojaID,
-        userID,
-        type: LoyaltyTxType.EXPIRATION,
-        points: -pointsToDeduct,
-        balanceAfter: updatedWallet.balance,
-        monetaryValue: new Prisma.Decimal(monetaryValue),
-        description: description || 'Expiração de pontos por decurso do prazo de validade',
-      },
-    })
-
-    return {
-      wallet: updatedWallet,
-      transaction,
-      pointsExpired: pointsToDeduct,
-    }
+export async function expireUserPoints(params: ExpireLoyaltyPointsParams, tx?: Prisma.TransactionClient) {
+  const run = async (client: Prisma.TransactionClient) => {
+    const state = await lockLoyaltyWallet(client, params, false, params.now ?? new Date())
+    if (!state || !state.wallet.accountingReady) return null
+    const result = await expireLockedLoyalty(state)
+    return result.pointsExpired ? result : null
   }
-
-  if (tx) {
-    return await runOperation(tx)
-  } else {
-    return await prisma.$transaction(runOperation)
-  }
+  return tx ? run(tx) : prisma.$transaction(run)
 }
-
-/**
- * Motor central de varredura periódica para expirar pontos em todas as carteiras ativas.
- */
-export async function processLoyaltyExpirations(
-  options: ProcessLoyaltyExpirationsOptions = {}
-): Promise<ProcessLoyaltyExpirationsResult> {
-  const now = options.now || new Date()
-  const whereClause: Prisma.LoyaltyWalletWhereInput = {
-    balance: { gt: 0 },
-    ...(options.lojaID ? { lojaID: options.lojaID } : {}),
-  }
-
-  const walletsWithBalance = await prisma.loyaltyWallet.findMany({
-    where: whereClause,
-    select: {
-      id: true,
-      lojaID: true,
-      userID: true,
-      balance: true,
-    },
-  })
-
-  let processedWallets = 0
-  let expiredCount = 0
-  let totalPointsExpired = 0
-  const errors: Array<{ userId: string; lojaId: string; error: string }> = []
-
-  for (const wallet of walletsWithBalance) {
-    try {
+export async function processLoyaltyExpirations(options: ProcessLoyaltyExpirationsOptions = {}): Promise<ProcessLoyaltyExpirationsResult> {
+  const now = options.now ?? new Date()
+  if (!Number.isFinite(now.getTime())) throw new LoyaltyError('INVALID_DATE', 'Data de expiração inválida.')
+  const errors: ProcessLoyaltyExpirationsResult['errors'] = []
+  let processedWallets = 0, expiredCount = 0, totalPointsExpired = 0
+  const skippedLegacyWallets = await prisma.loyaltyWallet.count({ where: { accountingReady: false, ...(options.lojaID ? { lojaID: options.lojaID } : {}) } })
+  let cursor: string | undefined
+  while (true) {
+    const wallets = await prisma.loyaltyWallet.findMany({ where: { accountingReady: true,
+      ...(options.lojaID ? { lojaID: options.lojaID } : {}), lots: { some: { remaining: { gt: 0 }, expiresAt: { lte: now } } } },
+      select: { id: true, lojaID: true, userID: true }, orderBy: { id: 'asc' }, take: 100,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}) })
+    if (!wallets.length) break
+    for (const wallet of wallets) {
       processedWallets++
-      const pointsToExpire = await calculateExpiredPointsForUser(
-        wallet.lojaID,
-        wallet.userID,
-        wallet.balance,
-        now
-      )
-
-      if (pointsToExpire > 0) {
-        const result = await expireUserPoints({
-          lojaID: wallet.lojaID,
-          userID: wallet.userID,
-          points: pointsToExpire,
-        })
-
-        if (result) {
-          expiredCount++
-          totalPointsExpired += result.pointsExpired
+      const leaseOwner = randomUUID()
+      try {
+        const leaseNow = new Date()
+        const claimed = await prisma.loyaltyWallet.updateMany({ where: { id: wallet.id, accountingReady: true,
+          OR: [{ expirationLeaseUntil: null }, { expirationLeaseUntil: { lte: leaseNow } }] },
+          data: { expirationLeaseOwner: leaseOwner, expirationLeaseUntil: new Date(leaseNow.getTime() + 60000) } })
+        if (!claimed.count) continue
+        const result = await expireUserPoints({ lojaID: wallet.lojaID, userID: wallet.userID, now })
+        if (result) { expiredCount++; totalPointsExpired += result.pointsExpired }
+      } catch (error: unknown) {
+        errors.push({ userId: wallet.userID, lojaId: wallet.lojaID, error: error instanceof LoyaltyError ? error.code : 'EXPIRATION_FAILED' })
+      } finally {
+        try {
+          await prisma.loyaltyWallet.updateMany({ where: { id: wallet.id, expirationLeaseOwner: leaseOwner },
+            data: { expirationLeaseOwner: null, expirationLeaseUntil: null } })
+        } catch {
+          errors.push({ userId: wallet.userID, lojaId: wallet.lojaID, error: 'LEASE_RELEASE_FAILED' })
         }
       }
-    } catch (err: any) {
-      errors.push({
-        userId: wallet.userID,
-        lojaId: wallet.lojaID,
-        error: err?.message || 'Erro ao processar expiração da carteira',
-      })
     }
+    cursor = wallets.at(-1)!.id
   }
-
-  return {
-    processedWallets,
-    expiredCount,
-    totalPointsExpired,
-    errors,
-  }
+  return { processedWallets, expiredCount, totalPointsExpired, errors, skippedLegacyWallets }
 }
-

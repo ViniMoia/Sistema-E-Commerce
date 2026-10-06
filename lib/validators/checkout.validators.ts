@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { validateCpfCnpj } from '@/lib/validators/cpf-cnpj';
+import { checkoutAddressSchema } from '@/lib/commerce/checkout-address';
 
 /**
  * Validação de número de cartão pelo algoritmo de Luhn (Mod 10).
@@ -23,9 +24,9 @@ export function validateLuhn(cardNumber: string): boolean {
 
 const cartItemSchema = z.object({
   productId: z.string().optional(),
-  name: z.string().min(1),
+  name: z.string().min(1).optional(),
   quantity: z.number().int().positive(),
-  price: z.number().positive(),
+  price: z.number().finite().nonnegative().optional(),
   color: z.string().optional(),
   size: z.string().optional(),
   variantId: z.string().optional(),
@@ -84,13 +85,20 @@ export const creditCardSchema = z
     { message: 'Cartão de crédito com data de validade expirada.' }
   );
 
-export const createOrderSchema = z
+export const checkoutDraftSchema = z
   .object({
     lojaID: z.string().min(1),
+    cartID: z.string().uuid().optional(),
+    cartVersion: z.number().int().nonnegative().optional(),
+    basketID: z.string().uuid().optional(),
     customer: customerSchema,
-    items: z.array(cartItemSchema).min(1),
-    address: addressSchema.optional(),
+    items: z.array(cartItemSchema).min(1).max(100),
+    address: addressSchema.optional(), // Temporary translation for unambiguous older drafts.
+    shippingAddress: checkoutAddressSchema.optional(),
+    billingAddress: checkoutAddressSchema.optional(),
+    billingSameAsShipping: z.boolean().optional(),
     deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']),
+    freightQuoteToken: z.string().min(1).max(2048).optional(),
     freightValue: z.number().nonnegative().optional(),
     shippingCost: z.number().nonnegative().optional(),
     shippingProvider: z.string().nullish(),
@@ -98,14 +106,15 @@ export const createOrderSchema = z
     shippingEstimatedDays: z.number().int().nonnegative().nullish(),
     paymentMethod: z
       .enum(['PIX', 'CREDIT_CARD', 'BOLETO', 'WHATSAPP_PIX'])
-      .default('PIX')
-      .optional(),
+      ,
     creditCard: creditCardSchema.optional(),
     installments: z.number().int().min(1).max(12).default(1).optional(),
     installmentValue: z.number().positive().optional(),
+    acceptedFinancialTotal: z.number().finite().nonnegative().optional(),
     pixKey: z.string().optional(),
     pointsToRedeem: z.number().int().nonnegative().optional(),
-  })
+  });
+export const createOrderSchema = checkoutDraftSchema
   .superRefine((data, ctx) => {
     if (data.paymentMethod === 'CREDIT_CARD' && !data.creditCard) {
       ctx.addIssue({
@@ -115,13 +124,19 @@ export const createOrderSchema = z
       });
     }
 
-    if (data.paymentMethod === 'BOLETO' && !data.address) {
+    if (['BOLETO','CREDIT_CARD'].includes(data.paymentMethod) && !data.billingAddress &&
+        !(data.billingSameAsShipping && data.deliveryType === 'DELIVERY' && data.shippingAddress) && !data.address) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['address'],
-        message: 'Endereço completo é obrigatório para emissão de boleto bancário.',
+        path: ['billingAddress'],
+        message: 'Endereço de cobrança completo é obrigatório para este pagamento.',
       });
     }
   });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+
+export const completeCheckoutSchema = z.object({
+  checkoutIntentID: z.string().uuid(), acceptedRevision: z.number().int().positive(),
+  acceptedContentHash: z.string().regex(/^[a-f0-9]{64}$/), creditCard: creditCardSchema.optional(),
+}).strict();

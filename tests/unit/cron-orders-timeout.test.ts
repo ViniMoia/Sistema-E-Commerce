@@ -124,6 +124,7 @@ describe('Endpoint de Cron: /api/cron/orders-timeout (Segurança & SecOps)', () 
     expect(timeoutService.processExpiredOrders).toHaveBeenCalledWith({
       batchSize: undefined,
       lojaID: undefined,
+      dryRun: true,
     });
   });
 
@@ -203,6 +204,7 @@ describe('Endpoint de Cron: /api/cron/orders-timeout (Segurança & SecOps)', () 
     expect(timeoutService.processExpiredOrders).toHaveBeenCalledWith({
       batchSize: 20,
       lojaID: 'loja-teste',
+      dryRun: true,
     });
   });
 

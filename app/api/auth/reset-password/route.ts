@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resetPassword, AuthError } from "@/services/auth.service";
 import { rateLimit } from "@/lib/rate-limit";
+import { getLojaFromHeaders } from "@/lib/tenant";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(10, "Token de recuperação inválido."),
@@ -49,13 +50,16 @@ export async function POST(req: Request) {
   }
 
   try {
+    const tenant = await getLojaFromHeaders();
+    if (!tenant) return NextResponse.json({ error: "Loja não encontrada." }, { status: 404 });
     const result = await resetPassword({
       token: parsed.data.token,
       newPassword: parsed.data.password,
+      lojaID: tenant.id,
     });
 
     return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.message },
@@ -63,7 +67,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("[POST /api/auth/reset-password] Erro inesperado:", error);
+    console.error("[POST /api/auth/reset-password] Falha interna na redefinição.");
     return NextResponse.json(
       { error: "Ocorreu um erro ao redefinir a senha. Tente novamente mais tarde." },
       { status: 500 }

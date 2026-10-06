@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { purchaseClientSchema, purchaseView, type PurchaseClient } from '@/lib/commerce/purchase-client'
 import { useCartStore } from '@/store/cart.store'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
@@ -24,102 +25,78 @@ import {
   MessageCircle,
 } from 'lucide-react'
 
-interface ConfirmationOrder {
-  orderId?: string
-  orderNumber: number
-  customer: { name: string; phone: string }
-  items: Array<{ name: string; quantity: number; price: number; color?: string; size?: string }>
-  deliveryType: string
-  address?: { street: string; number: string; city: string; state: string }
-  freightValue: number | null
-  total: number
-  pixKey: string | null
-  paymentMethod?: string | null
-  pixQrCode?: string | null
-  pixPayload?: string | null
-  creditCardBrand?: string | null
-  creditCardLast4?: string | null
-  installments?: number | null
-  installmentValue?: number | null
-  asaasBankSlipUrl?: string | null
-  asaasDigitableLine?: string | null
-  asaasBarCode?: string | null
-  asaasDueDate?: string | null
-  asaasPaymentId?: string | null
-  whatsappNumber: string
-}
-
 export default function CheckoutConfirmationPage() {
   const router = useRouter()
-  const { clearCart } = useCartStore()
-  const [order, setOrder] = useState<ConfirmationOrder | null>(null)
+  const context = useCartStore(state => state.context)
+  const [recoveryError, setRecoveryError] = useState<string | null>(null)
+  const [connectionError, setConnectionError] = useState(false)
+  const [order, setOrder] = useState<(PurchaseClient & { orderId: string }) | null>(null)
+  const [fresh, setFresh] = useState(false)
+  const [requestStartedAt, setRequestStartedAt] = useState(0)
+  const [now, setNow] = useState(0)
   const [copiedPix, setCopiedPix] = useState(false)
   const [copiedBoleto, setCopiedBoleto] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID'>('PENDING')
-  const [isSimulating, setIsSimulating] = useState(false)
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const consumed = useRef<string | null>(null)
 
   useEffect(() => {
-    const rawData = sessionStorage.getItem('last_order')
-    if (!rawData) {
-      router.push('/')
-      return
-    }
-
-    try {
-      const data = JSON.parse(rawData) as ConfirmationOrder
-      setOrder(data)
-      clearCart()
-    } catch {
-      router.push('/')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Polling de status em tempo real
-  useEffect(() => {
-    if (!order?.orderId || paymentStatus === 'PAID') return
-
-    const checkStatus = async () => {
+    const intentID = new URL(window.location.href).searchParams.get('intent')
+    if (!intentID) { router.replace('/orders'); return }
+    let disposed = false, sequence = 0, failures = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let controller: AbortController | undefined
+    setOrder(null); setFresh(false); setRecoveryError(null)
+    const load = async () => {
+      if (document.hidden || disposed) return
+      const revision = ++sequence
+      controller?.abort(); controller = new AbortController()
+      const startedAt = performance.now()
       try {
-        const res = await fetch(`/api/orders/${order.orderId}/status`)
-        if (res.ok) {
-          const data = await res.json()
-          if (
-            data?.order?.status === 'PAID' ||
-            data?.order?.status === 'SHIPPED' ||
-            data?.order?.status === 'DELIVERED'
-          ) {
-            setPaymentStatus('PAID')
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current)
-            }
-          }
+        const res = await fetch('/api/checkout/intents/' + encodeURIComponent(intentID), { cache: 'no-store', signal: controller.signal })
+        if (!res.ok) throw new Error('Não foi possível recuperar esta compra para a identidade atual.')
+        const raw = (await res.json()).data?.result?.order
+        if (!raw) throw new Error('A compra ainda não foi concluída. Volte à revisão do checkout.')
+        const current = purchaseClientSchema.parse(raw)
+        if (disposed || sequence !== revision) return
+        const timestamp = performance.now()
+        // Include transport time conservatively; a slow response must not extend validity.
+        setOrder({ ...current, orderId: current.id }); setRequestStartedAt(startedAt); setNow(timestamp)
+        setFresh(true); setConnectionError(false); setRecoveryError(null); failures = 0
+        const identity = current.checkoutIntentID + ':' + current.sourceCartID
+        if (current.sourceCartID && current.sourceCartVersion != null && consumed.current !== identity) {
+          consumed.current = identity
+          void useCartStore.getState().consumeCart(current.sourceCartID, current.sourceCartVersion).catch(() => {})
         }
-      } catch (err) {
-        console.warn('Erro no polling de status do pedido:', err)
+        const view = purchaseView(current)
+        timer = setTimeout(() => { void load() }, view.kind === 'approved' ? 15000 : ['cancelled','declined','refunded'].includes(view.kind) ? 30000 : 3500)
+      } catch {
+        if (disposed || sequence !== revision) return
+        setFresh(false); setConnectionError(true); failures++
+        timer = setTimeout(() => { void load() }, Math.min(30000, 3500 * 2 ** Math.min(failures, 4)))
       }
     }
+    const refresh = () => { sequence++; controller?.abort(); if (timer) clearTimeout(timer); setFresh(false); void load() }
+    const clock = setInterval(() => setNow(performance.now()), 1000)
+    window.addEventListener('focus', refresh); window.addEventListener('pageshow', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    void load()
+    return () => { disposed = true; sequence++; controller?.abort(); if (timer) clearTimeout(timer); clearInterval(clock)
+      window.removeEventListener('focus', refresh); window.removeEventListener('pageshow', refresh); document.removeEventListener('visibilitychange', refresh) }
+  }, [context?.lojaID, context?.userID, router])
 
-    checkStatus()
-    pollingIntervalRef.current = setInterval(checkStatus, 3500)
+  if (recoveryError) return <main className="p-10"><p>{recoveryError}</p><Link href="/checkout">Voltar ao checkout</Link></main>
+  if (!order) return <main className="p-10"><p>{connectionError ? 'Não foi possível verificar a compra. Tentando recuperar o estado atual...' : 'Recuperando compra...'}</p><Link href="/checkout">Voltar ao checkout</Link></main>
+  const view = purchaseView(order, now - requestStartedAt)
+  const paymentStatus = view.kind === 'approved' ? 'PAID' : 'PENDING'
 
-    return () => {
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
-    }
-  }, [order?.orderId, paymentStatus])
-
-  if (!order) return null
-
-  const method = order.paymentMethod || 'PIX'
+  const method = order.paymentMethod
   const isCreditCard = method === 'CREDIT_CARD'
   const isBoleto = method === 'BOLETO'
-  const isPix = method === 'PIX' || method === 'WHATSAPP_PIX'
+  const isPix = view.canPayPix || view.canContact
 
   const pixCopyText = order.pixPayload || order.pixKey || ''
 
   const handleCopyPix = () => {
-    if (pixCopyText) {
+    if (fresh && (view.canPayPix || view.canContact) && pixCopyText) {
       navigator.clipboard.writeText(pixCopyText)
       setCopiedPix(true)
       setTimeout(() => setCopiedPix(false), 2500)
@@ -127,33 +104,15 @@ export default function CheckoutConfirmationPage() {
   }
 
   const handleCopyBoleto = () => {
-    if (order.asaasDigitableLine) {
+    if (fresh && view.canPayBoleto && order.asaasDigitableLine) {
       navigator.clipboard.writeText(order.asaasDigitableLine)
       setCopiedBoleto(true)
       setTimeout(() => setCopiedBoleto(false), 2500)
     }
   }
 
-  const handleSimulatePayment = async () => {
-    if (!order.orderId || isSimulating) return
-    setIsSimulating(true)
-    try {
-      const res = await fetch('/api/webhooks/asaas/simulate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.orderId }),
-      })
-      if (res.ok) {
-        setPaymentStatus('PAID')
-      }
-    } catch (err) {
-      console.error('Erro ao simular pagamento:', err)
-    } finally {
-      setIsSimulating(false)
-    }
-  }
-
   const handleWhatsApp = () => {
+    if (!fresh || !view.canContact) return
     const msg = buildWhatsAppMessage({
       orderNumber: order.orderNumber,
       customerName: order.customer.name,
@@ -162,7 +121,7 @@ export default function CheckoutConfirmationPage() {
       address: order.address,
       freightValue: order.freightValue,
       total: order.total,
-      pixKey: order.pixKey,
+      pixKey: order.pixKey ?? null,
     })
     const url = buildWhatsAppUrl(order.whatsappNumber || '', msg)
     window.open(url, '_blank')
@@ -172,15 +131,17 @@ export default function CheckoutConfirmationPage() {
     ? order.pixQrCode.startsWith('data:')
       ? order.pixQrCode
       : `data:image/png;base64,${order.pixQrCode}`
-    : order.pixPayload
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(
-        order.pixPayload
-      )}`
     : null
 
   const formattedDueDate = order.asaasDueDate
     ? new Date(order.asaasDueDate).toLocaleDateString('pt-BR')
     : 'Próximo dia útil'
+
+  if (!fresh || !['approved','action_required'].includes(view.kind)) return <main className="min-h-screen bg-catalog-bg p-10 text-white">
+    <h1>{view.title}</h1><p>Pedido #{order.orderNumber} · {order.status}</p><p>{view.description}</p>
+    {!fresh && <p role="alert">{connectionError ? 'Não foi possível verificar o estado atual. As ações de pagamento estão suspensas enquanto tentamos novamente.' : 'Atualizando o estado da compra...'}</p>}
+    <Link href="/">Voltar à loja</Link>
+  </main>
 
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30 relative flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
@@ -218,53 +179,22 @@ export default function CheckoutConfirmationPage() {
           </div>
         )}
 
-        {/* Título e Subtítulo */}
-        {paymentStatus === 'PAID' ? (
-          <>
-            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono flex items-center justify-center gap-2">
-              <Sparkles className="w-6 h-6 text-emerald-400" />
-              Pagamento Confirmado!
-            </h1>
-            <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md font-light">
-              Excelente! Seu pagamento foi processado com sucesso. Já estamos separando seu pedido{' '}
-              <strong className="text-white font-mono">#{order.orderNumber}</strong> no estoque.
-            </p>
-          </>
-        ) : isCreditCard ? (
-          <>
-            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono">
-              Pedido #{order.orderNumber} em Análise
-            </h1>
-            <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md font-light">
-              Sua transação no cartão está sendo validada pela operadora. Você receberá o comprovante por e-mail e WhatsApp.
-            </p>
-          </>
-        ) : isBoleto ? (
-          <>
-            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono">
-              Boleto do Pedido #{order.orderNumber} Gerado!
-            </h1>
-            <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md font-light">
-              Efetue o pagamento até o vencimento (<strong className="text-catalog-gold font-mono">{formattedDueDate}</strong>) para liberação automática do envio.
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono">
-              Pedido #{order.orderNumber} Realizado!
-            </h1>
-            <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm font-light">
-              Efetue o pagamento via <strong className="text-catalog-gold">PIX Dinâmico</strong> para aprovação imediata do seu pedido.
-            </p>
-          </>
-        )}
+        {/* O mesmo estado canônico determina título e instruções. */}
+        <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono">
+          {paymentStatus === 'PAID' && <Sparkles className="w-6 h-6 text-emerald-400 inline mr-2" />}
+          {view.title}
+        </h1>
+        <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md">
+          Pedido #{order.orderNumber} · {view.canContact ? 'Efetue o PIX com a chave informada e envie o comprovante à loja para conferência manual.' : view.description}
+          {view.canPayBoleto && <> Vencimento: {formattedDueDate}.</>}
+        </p>
 
         {/* Resumo do Pedido */}
         <div className="w-full bg-[#0B132B]/70 rounded-2xl p-5 border border-catalog-gold/30 mb-6 space-y-3 font-mono">
           <div className="flex justify-between items-center text-sm pb-3 border-b border-catalog-gold/20">
             <span className="text-catalog-muted uppercase text-xs">Total do Pedido</span>
             <span className="font-bold text-xl sm:text-2xl text-catalog-gold">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.financialTotal ?? order.total)}
             </span>
           </div>
 
@@ -274,8 +204,8 @@ export default function CheckoutConfirmationPage() {
               {isCreditCard
                 ? `Cartão de Crédito (${order.installments || 1}x)`
                 : isBoleto
-                ? 'Boleto Bancário (D+1)'
-                : 'PIX Instantâneo'}
+                ? 'Boleto Bancário'
+                : method === 'WHATSAPP_PIX' ? 'PIX com conferência manual' : 'PIX'}
             </span>
           </div>
 
@@ -291,7 +221,7 @@ export default function CheckoutConfirmationPage() {
           <div className="flex justify-between items-center text-xs">
             <span className="text-catalog-muted uppercase">Modalidade de Envio</span>
             <span className="text-white font-medium">
-              {order.deliveryType === 'PICKUP' ? 'Retirada no Balcão' : 'Entrega Correios / J&T'}
+              {order.deliveryType === 'PICKUP' ? 'Retirada no Balcão' : order.deliveryType === 'NONE' ? 'A combinar com a loja' : order.shippingServiceName || 'Entrega'}
             </span>
           </div>
 
@@ -314,7 +244,7 @@ export default function CheckoutConfirmationPage() {
             ) : (
               <span className="px-2.5 py-0.5 rounded-full bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 font-bold uppercase text-[10px] flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-catalog-gold animate-pulse" />
-                Aguardando PIX
+                {view.title}
               </span>
             )}
           </div>
@@ -325,9 +255,9 @@ export default function CheckoutConfirmationPage() {
           <div className="w-full bg-[#0B132B]/80 rounded-2xl p-6 border border-catalog-gold/30 mb-6 flex flex-col items-center space-y-5">
             <div className="text-center space-y-1">
               <p className="text-[10px] uppercase font-mono tracking-[0.2em] text-catalog-gold font-bold">
-                Pague com QR Code Oficial Banco Central
+                {view.canContact ? 'PIX com conferência da loja' : 'Pague com o QR Code desta cobrança'}
               </p>
-              <p className="text-xs text-catalog-muted font-light">Abra o app do seu banco e aponte a câmera</p>
+              <p className="text-xs text-catalog-muted font-light">{view.canContact ? 'Utilize a chave abaixo no aplicativo do seu banco.' : 'Abra o app do seu banco e aponte a câmera.'}</p>
             </div>
 
             {/* Container Palco Branco Puro do QR Code (Diretriz 5.3 item 3) */}
@@ -341,7 +271,7 @@ export default function CheckoutConfirmationPage() {
             {pixCopyText && (
               <div className="w-full space-y-2">
                 <p className="text-xs font-mono font-bold uppercase tracking-wider text-catalog-gold">
-                  Código PIX Copia e Cola:
+                  {view.canContact ? 'Chave PIX da loja:' : 'Código PIX Copia e Cola:'}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-[#050B14] border border-catalog-gold/30 rounded-xl px-3.5 py-2.5 font-mono text-xs text-slate-300 truncate select-all">
@@ -370,13 +300,13 @@ export default function CheckoutConfirmationPage() {
             {/* Indicador de Escuta em Tempo Real */}
             <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted pt-1">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-catalog-gold" />
-              <span>Aguardando liquidação em tempo real...</span>
+              <span>{view.canContact ? 'Aguardando a conferência do pagamento pela loja.' : 'Aguardando confirmação do pagamento.'}</span>
             </div>
           </div>
         )}
 
         {/* BLOCO ESPECÍFICO DE BOLETO BANCÁRIO */}
-        {isBoleto && paymentStatus === 'PENDING' && (
+        {view.canPayBoleto && paymentStatus === 'PENDING' && (
           <div className="w-full bg-[#0B132B]/80 rounded-2xl p-6 border border-catalog-gold/30 mb-6 space-y-5">
             <div className="text-center space-y-1">
               <p className="text-[10px] uppercase font-mono tracking-[0.2em] text-catalog-gold font-bold">
@@ -414,24 +344,6 @@ export default function CheckoutConfirmationPage() {
           </div>
         )}
 
-        {/* Simulação em Homologação / Testes Dev */}
-        {process.env.NODE_ENV !== 'production' && paymentStatus === 'PENDING' && (
-          <div className="mb-6 w-full">
-            <button
-              type="button"
-              onClick={handleSimulatePayment}
-              disabled={isSimulating}
-              className="w-full text-[11px] font-mono text-catalog-muted hover:text-catalog-gold py-2 px-3 rounded-xl border border-dashed border-catalog-gold/30 hover:border-catalog-gold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              {isSimulating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <span>⚡ Testar Aprovação Automática (Simular Webhook - Dev Only)</span>
-              )}
-            </button>
-          </div>
-        )}
-
         {/* Ações Finais */}
         <div className="w-full space-y-3">
           {paymentStatus === 'PAID' ? (
@@ -455,7 +367,7 @@ export default function CheckoutConfirmationPage() {
             </>
           ) : (
             <>
-              {order.whatsappNumber && (
+              {view.canContact && order.whatsappNumber && (
                 <button
                   type="button"
                   onClick={handleWhatsApp}

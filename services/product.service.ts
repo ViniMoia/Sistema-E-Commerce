@@ -1,13 +1,15 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { canonicalizeVariant, getVariantCombinationKey, type VariantInput } from "@/lib/product-variants";
+import { CommerceLocks } from '@/lib/commerce/locks';
 
 export class ProductVariantError extends Error {}
+export class ProductConflictError extends Error {}
 
 function prepareVariants(variants: VariantInput[]): VariantInput[] {
   const seen = new Set<string>();
   return variants.map((variant) => {
-    if (!variant.size.trim() || !variant.color.trim() || !Number.isInteger(variant.stock)) {
+    if (!variant.size.trim() || !variant.color.trim() || !Number.isInteger(variant.stock) || variant.stock < 0 || variant.stock > 2147483647) {
       throw new ProductVariantError("Dados de variante inválidos.");
     }
     const normalized = canonicalizeVariant(variant);
@@ -49,6 +51,7 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput {
+  expectedCatalogVersion?: number;
   name?: string;
   description?: string;
   price?: number | Prisma.Decimal;
@@ -76,6 +79,7 @@ export async function getProducts(filters: GetProductsFilters = {}) {
   const skip = all ? undefined : cursor ? 1 : page ? (Math.max(1, Number(page)) - 1) * (take || 20) : 0;
 
   const where: Prisma.ProductWhereInput = {
+    retiredAt: null,
     ...(name ? { name: { contains: name, mode: "insensitive" } } : {}),
     ...((minPrice !== undefined || maxPrice !== undefined)
       ? {
@@ -103,7 +107,7 @@ export async function getProducts(filters: GetProductsFilters = {}) {
     skip: skip > 0 ? skip : undefined,
     cursor: cursor ? { id: cursor } : undefined,
     include: {
-      productVariants: true,
+      productVariants: { where: { retiredAt: null } },
       brand: true,
       categoryTags: {
         include: {
@@ -149,6 +153,7 @@ export async function createProduct(data: CreateProductInput) {
   const { variants, price, ...productData } = data;
 
   const decimalPrice = new Prisma.Decimal(price);
+  if (!Number.isInteger(productData.stock) || productData.stock < 0 || productData.stock > 2147483647) throw new ProductVariantError('Estoque inicial inválido.');
   if (decimalPrice.lessThan(0)) {
     throw new Error("O preço do produto não pode ser negativo");
   }
@@ -171,7 +176,7 @@ export async function createProduct(data: CreateProductInput) {
             : [{
                 size: "Único",
                 color: "Padrão",
-                stock: Math.max(0, productData.stock || 0),
+                stock: productData.stock,
               }],
         },
       },
@@ -210,15 +215,8 @@ export async function updateProduct(
   lojaId?: string,
   actorId?: string
 ) {
-  const existing = await prisma.product.findUnique({
-    where: { id },
-    include: { productVariants: true },
-  });
-  if (!existing || (lojaId && existing.lojaID !== lojaId)) {
-    throw new Error("PRODUCT_NOT_FOUND");
-  }
-
-  const { variants, price, ...productData } = data;
+  // Stock in old full-form payloads is intentionally not a stock command.
+  const { variants, price } = data;
 
   const decimalPrice = price !== undefined ? new Prisma.Decimal(price) : undefined;
   if (decimalPrice && decimalPrice.lessThan(0)) {
@@ -226,12 +224,20 @@ export async function updateProduct(
   }
 
   return await prisma.$transaction(async (tx) => {
-    if (variants !== undefined) {
-      await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${id} FOR UPDATE`;
-    }
+    const locks = new CommerceLocks(tx);
+    await locks.acquire('product', [id]);
+    const existing = await tx.product.findUnique({ where: { id }, include: { productVariants: true } });
+    if (!existing || (lojaId && existing.lojaID !== lojaId)) throw new Error('PRODUCT_NOT_FOUND');
+    if (data.expectedCatalogVersion !== undefined && data.expectedCatalogVersion !== existing.catalogVersion) throw new ProductConflictError('CATALOG_VERSION_CONFLICT');
+    if (variants !== undefined && data.expectedCatalogVersion === undefined) throw new ProductConflictError('CATALOG_VERSION_REQUIRED');
 
     const updateData: Prisma.ProductUpdateInput = {
-      ...productData,
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
+      ...(data.galleryUrls !== undefined ? { galleryUrls: data.galleryUrls } : {}),
+      catalogVersion: { increment: 1 },
+      ...(variants !== undefined ? { inventoryVersion: { increment: 1 } } : {}),
       ...(decimalPrice ? { price: decimalPrice } : {}),
     };
 
@@ -239,6 +245,7 @@ export async function updateProduct(
       where: { id },
       data: updateData,
     });
+    const withdrawals: Array<{ variantId: string; availableBefore: number; unavailableBefore: number; unavailableAfter: number }> = [];
 
     if (variants !== undefined) {
       if (variants.length === 0) throw new ProductVariantError("Adicione pelo menos uma variante.");
@@ -249,11 +256,13 @@ export async function updateProduct(
         where: { ProductID: id },
         orderBy: { createdAt: "asc" },
       });
+      await locks.acquire('variant', existingVariants.map(variant => variant.id));
       const processedVariantIds = new Set<string>();
       for (const variant of incoming) {
         const target = variant.id
           ? existingVariants.find((ev) => ev.id === variant.id)
           : existingVariants.find((ev) =>
+              !ev.retiredAt &&
               !processedVariantIds.has(ev.id) &&
               getVariantCombinationKey(ev) === getVariantCombinationKey(variant)
             );
@@ -263,13 +272,17 @@ export async function updateProduct(
         if (target && processedVariantIds.has(target.id)) {
           throw new ProductVariantError("Não repita o ID da variante.");
         }
-        const variantData = { size: variant.size, color: variant.color, stock: variant.stock };
+        if (target?.retiredAt) throw new ProductConflictError('VARIANT_REACTIVATION_REQUIRED');
+        if ((!target || getVariantCombinationKey(target) !== getVariantCombinationKey(variant)) && existingVariants.some(ev => ev.retiredAt && ev.id !== target?.id && getVariantCombinationKey(ev) === getVariantCombinationKey(variant))) throw new ProductConflictError('VARIANT_COMBINATION_RETIRED');
+        const variantData = { size: variant.size, color: variant.color };
         if (target) {
-          await tx.productVariants.update({ where: { id: target.id }, data: variantData });
+          await tx.productVariants.update({ where: { id: target.id }, data: { ...variantData,
+            ...(target.size !== variantData.size || target.color !== variantData.color ? { inventoryVersion: { increment: 1 } } : {}),
+          } });
           processedVariantIds.add(target.id);
         } else {
           const created = await tx.productVariants.create({
-            data: { ProductID: id, ...variantData },
+            data: { ProductID: id, ...variantData, stock: 0 },
           });
           processedVariantIds.add(created.id);
         }
@@ -279,16 +292,20 @@ export async function updateProduct(
         .filter((variant) => !processedVariantIds.has(variant.id))
         .map((variant) => variant.id);
       if (removedIds.length > 0) {
-        // Desativa as opções removidas que ainda possuem vínculos.
-        await tx.productVariants.updateMany({
-          where: { id: { in: removedIds } },
-          data: { stock: 0 },
-        });
+        // Withdrawal preserves quantities separately from sale availability.
+        for (const removed of existingVariants.filter(variant => removedIds.includes(variant.id) && !variant.retiredAt)) {
+          withdrawals.push({ variantId: removed.id, availableBefore: removed.stock, unavailableBefore: removed.unavailableStock, unavailableAfter: removed.unavailableStock + removed.stock });
+          await tx.productVariants.update({ where: { id: removed.id }, data: {
+            retiredAt: new Date(), stock: 0, unavailableStock: { increment: removed.stock }, inventoryVersion: { increment: 1 },
+          } });
+        }
         await tx.productVariants.deleteMany({
           where: {
             id: { in: removedIds },
             cartItem: { none: {} },
             orderItems: { none: {} },
+            reservations: { none: {} },
+            unavailableStock: 0,
           },
         });
       }
@@ -312,7 +329,7 @@ export async function updateProduct(
             price: product.price.toString(),
             stock: product.stock,
           },
-          metadata: { lojaID: existing.lojaID },
+          metadata: { lojaID: existing.lojaID, withdrawals, catalogVersion: product.catalogVersion },
         },
       });
     }
@@ -329,11 +346,12 @@ export async function updateProduct(
  */
 export async function deleteProduct(id: string, lojaId?: string, actorId?: string) {
   return await prisma.$transaction(async (tx) => {
+    await new CommerceLocks(tx).acquire('product', [id]);
     const existing = await tx.product.findUnique({
       where: { id },
       include: {
         _count: {
-          select: { orderItems: true, cartItem: true },
+          select: { orderItems: true, cartItem: true, reservations: true },
         },
       },
     });
@@ -342,7 +360,7 @@ export async function deleteProduct(id: string, lojaId?: string, actorId?: strin
       throw new Error("PRODUCT_NOT_FOUND");
     }
 
-    if (existing._count.orderItems > 0 || existing._count.cartItem > 0) {
+    if (existing._count.orderItems > 0 || existing._count.cartItem > 0 || existing._count.reservations > 0) {
       throw new Error("PRODUCT_IN_USE");
     }
 

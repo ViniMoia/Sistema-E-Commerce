@@ -8,6 +8,8 @@ interface EditingRule {
   id: string
   cityName: string
   value: number
+  state?: string | null
+  municipalityCode?: string | null
 }
 
 export interface FreightRuleFormProps {
@@ -19,6 +21,8 @@ export interface FreightRuleFormProps {
 export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: FreightRuleFormProps) {
   const [cityName, setCityName] = React.useState('')
   const [value, setValue] = React.useState('')
+  const [state, setState] = React.useState('')
+  const [municipalityCode, setMunicipalityCode] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -26,9 +30,13 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
     if (editingRule) {
       setCityName(editingRule.cityName)
       setValue(editingRule.value.toString())
+      setState(editingRule.state ?? '')
+      setMunicipalityCode(editingRule.municipalityCode ?? '')
     } else {
       setCityName('')
       setValue('')
+      setState('')
+      setMunicipalityCode('')
     }
   }, [editingRule])
 
@@ -61,6 +69,8 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cityName: cityName.trim(),
+          state,
+          municipalityCode,
           value: parsedValue
         })
       })
@@ -116,6 +126,17 @@ export function FreightRuleForm({ onSuccess, editingRule, onCancelEdit }: Freigh
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <label className="space-y-1.5 text-xs text-catalog-gold">
+          UF do município
+          <input required maxLength={2} pattern="[A-Z]{2}" value={state} onChange={e => setState(e.target.value.toUpperCase())}
+            className="block w-full h-11 rounded-xl bg-[#0B132B] border border-catalog-gold/30 px-3 text-white" />
+        </label>
+        <label className="space-y-1.5 text-xs text-catalog-gold">
+          Código IBGE do município (7 dígitos)
+          <input required inputMode="numeric" pattern="[0-9]{7}" maxLength={7} value={municipalityCode}
+            onChange={e => setMunicipalityCode(e.target.value.replace(/\D/g, ''))}
+            className="block w-full h-11 rounded-xl bg-[#0B132B] border border-catalog-gold/30 px-3 text-white" />
+        </label>
         {/* Campo Cidade */}
         <div className="space-y-1.5">
           <label htmlFor="cityName" className="text-xs font-mono uppercase tracking-wider text-catalog-gold font-semibold flex items-center gap-1.5">

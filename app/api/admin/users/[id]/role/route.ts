@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requirePurchaseAdmin as requireAdmin } from "@/lib/auth/guards";
 import { updateUserRole } from "@/services/user.service";
 
 const updateRoleSchema = z.object({
   role: z.enum(["ADMIN", "CUSTOMER"]),
-});
+}).strict();
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -40,7 +40,7 @@ function handleServiceError(error: unknown): NextResponse {
     }
   }
 
-  console.error("[ADMIN_USERS_ROLE_PATCH]", error);
+  console.error("[ADMIN_USERS_ROLE_PATCH] Falha interna na alteração de papel.");
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 }
 
@@ -66,7 +66,8 @@ export async function PATCH(req: Request, context: RouteContext) {
     const updatedUser = await updateUserRole(
       params.id,
       session.user.id,
-      parseResult.data.role
+      parseResult.data.role,
+      session.tenant!.id,
     );
 
     return NextResponse.json(updatedUser, { status: 200 });

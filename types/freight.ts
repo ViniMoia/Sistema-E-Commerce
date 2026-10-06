@@ -25,6 +25,7 @@ export interface FreightQuoteRequest {
   cartTotal: number;
   itemsCount: number;
   items?: FreightCartItemInput[];
+  destination?: { cep: string; state: string; city: string; municipalityCode: string } | null;
   storeSettings?: {
     additionalDays?: number;
     enableCorreios?: boolean;
@@ -36,6 +37,9 @@ export interface FreightQuoteRequest {
 }
 
 export interface FreightOption {
+  freightQuoteToken?: string;
+  freightQuoteId?: string;
+  expiresAt?: string;
   providerId: 'CORREIOS' | 'MELHOR_ENVIO' | 'LOCAL_TABLE' | 'STORE_PICKUP' | 'NONE' | string;
   serviceCode: string;        // '04014' (SEDEX), '04510' (PAC), 'PICKUP', 'NONE', etc.
   serviceName: string;        // 'SEDEX', 'PAC', 'Retirada na Loja', 'A Combinar via WhatsApp'
@@ -50,6 +54,6 @@ export interface FreightOption {
 export interface IFreightProvider {
   readonly id: string;
   readonly name: string;
-  isAvailableForStore(lojaID: string, storeSettings?: any): Promise<boolean>;
+  isAvailableForStore(lojaID: string, storeSettings?: FreightQuoteRequest['storeSettings']): Promise<boolean>;
   calculateQuotes(request: FreightQuoteRequest): Promise<FreightOption[]>;
 }

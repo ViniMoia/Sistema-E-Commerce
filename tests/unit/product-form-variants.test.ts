@@ -36,7 +36,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const initial = {
   id: "product", name: "Aspirador de Pó", description: "Descrição completa do produto",
-  price: 11.95, imageUrl: "https://example.com/p.png", stock: 1,
+  price: 11.95, imageUrl: "https://example.com/p.png", stock: 1, catalogVersion: 0,
   productVariants: [{ id: "persisted-id", size: "Único", color: "Padrão", stock: 10 }],
 };
 
@@ -52,6 +52,9 @@ describe("Payload real do formulário administrativo", () => {
       expect(url).toBe("/api/products/product");
       expect(options.method).toBe("PUT");
       expect(payload.variants[0].id).toBe("persisted-id");
+      expect(payload.stock).toBeUndefined();
+      expect(payload.variants[0].stock).toBe(0);
+      expect(payload.expectedCatalogVersion).toBe(0);
       current = { ...initial, productVariants: payload.variants };
     }
     expect(harness.fetch).toHaveBeenCalledTimes(3);
@@ -64,5 +67,14 @@ describe("Payload real do formulário administrativo", () => {
     const [url, options] = harness.fetch.mock.calls[0];
     expect(url).toBe("/api/products");
     expect(JSON.parse(options.body).variants).toEqual([{ size: "Único", color: "Padrão", stock: 10 }]);
+  });
+  it('conflict keeps catalog draft and does not navigate or resubmit automatically', async () => {
+    harness.fetch.mockResolvedValue({ ok: false, status: 409, json: async () => ({ error: 'CATALOG_VERSION_CONFLICT' }) });
+    renderToStaticMarkup(createElement(ProductForm, { lojaID: 'store', productId: 'product', initialData: { ...initial, name: 'Rascunho preservado' } }));
+    await harness.submit();
+    expect(harness.form.getValues('name')).toBe('Rascunho preservado');
+    expect(harness.fetch).toHaveBeenCalledTimes(1);
+    expect(harness.router.push).not.toHaveBeenCalled();
+    expect(harness.toast).toHaveBeenCalled();
   });
 });

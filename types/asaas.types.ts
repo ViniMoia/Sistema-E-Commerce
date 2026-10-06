@@ -53,7 +53,8 @@ export interface AsaasCreditCardHolderInfo {
 export interface AsaasPaymentPayload {
   customer: string;
   billingType: AsaasBillingType;
-  value: number;
+  value?: number;
+  totalValue?: number;
   dueDate: string; // YYYY-MM-DD
   description?: string;
   externalReference?: string; // ID do pedido em nosso sistema
@@ -91,6 +92,7 @@ export interface AsaasPaymentResponse {
   nossoNumero?: string;
   identificationField?: string;
   installmentNumber?: number;
+  installment?: string;
 }
 
 export interface AsaasPixQrCodeResponse {

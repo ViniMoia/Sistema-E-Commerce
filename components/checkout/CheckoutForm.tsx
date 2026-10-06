@@ -1,6 +1,12 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import type { proposalDTO } from '@/services/checkout-intent.service'
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
+import { AsyncRevision } from '@/lib/commerce/async-revision'
+import { freightClientRequestSchema, freightClientResponseSchema } from '@/lib/commerce/freight-contract'
+import { checkoutAddressSchema } from '@/lib/commerce/checkout-address'
+import { BillingAddressFields, emptyCheckoutAddress } from './BillingAddressFields'
+import { useCartStore } from '@/store/cart.store'
 import { AlertBanner, Spinner } from '@/components/ui'
 import { FreightOption } from '@/types/freight'
 import { LoyaltyPointsWidget } from './LoyaltyPointsWidget'
@@ -23,10 +29,13 @@ import {
   Package,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import type { PaymentConfig } from '@/lib/config/payment.config'
 
 export interface CartItem {
   productId?: string
   productID?: string
+  variantId?: string
+  variantID?: string
   name?: string
   productName?: string
   quantity: number
@@ -37,72 +46,82 @@ export interface CartItem {
   image?: string
 }
 
-export interface CheckoutResult {
-  id?: string
-  orderNumber: number
-  orderId?: string
-  total: number
-  subtotal: number
-  freightValue: number | null
-  shippingCost: number
-  shippingProvider: string | null
-  shippingServiceName: string | null
-  shippingEstimatedDays: number | null
-  pixKey: string | null
-  paymentMethod?: string | null
-  asaasPaymentId?: string | null
-  pixQrCode?: string | null
-  pixPayload?: string | null
-  creditCardBrand?: string | null
-  creditCardLast4?: string | null
-  installments?: number | null
-  installmentValue?: number | null
-  asaasBankSlipUrl?: string | null
-  asaasDigitableLine?: string | null
-  asaasBarCode?: string | null
-  asaasDueDate?: string | null
-  pointsEarned?: number
-  pointsRedeemed?: number
-  pointsDiscountValue?: number
-  customer: { name: string; phone: string; cpfCnpj?: string }
-  items: Array<{ name: string; quantity: number; price: number }>
-  deliveryType: string
-}
+export type CheckoutResult = import('@/services/checkout.service').CreateOrderResult['order']
 
 export interface CheckoutFormProps {
   lojaID: string
   pixKey: string
   whatsappNumber: string
+  cartID?: string
+  cartVersion?: number
+  sourcePending?: boolean
   items?: CartItem[]
   onOrderCreated: (result: CheckoutResult) => void
 }
 
 type Step = 1 | 2 | 3
-export type PaymentMethodTab = 'PIX' | 'CREDIT_CARD' | 'BOLETO'
+export type PaymentMethodTab = 'PIX' | 'WHATSAPP_PIX' | 'CREDIT_CARD' | 'BOLETO'
 
 export function CheckoutForm({
   lojaID,
   pixKey,
   whatsappNumber,
+  cartID,
+  cartVersion,
+  sourcePending = false,
   items = [],
   onOrderCreated,
 }: CheckoutFormProps) {
+  const [review, setReview] = useState<ReturnType<typeof proposalDTO> | null>(null)
+  const reviewDraft = useRef<string | null>(null)
+  const reviewDeadline = useRef(0)
+  const quoteDeadlines = useRef(new Map<string, number>())
   const [step, setStep] = useState<Step>(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const cepRevision = useRef(new AsyncRevision())
+  const freightRevision = useRef(new AsyncRevision())
+  const proposalRevision = useRef(new AsyncRevision())
+  const editedAddressFields = useRef(new Set<string>())
+  const submitting = useRef(false)
+  const mounted = useRef(true)
+  const invalidateReview = () => { proposalRevision.current.invalidate(); reviewDraft.current = null; setReview(null) }
+  const invalidateFreight = () => { freightRevision.current.invalidate(); setSelectedFreight(null); setFreightOptions([]) }
+  useEffect(() => {
+    const cep = cepRevision.current, freight = freightRevision.current, proposal = proposalRevision.current
+    mounted.current = true
+    return () => { mounted.current = false; cep.invalidate(); freight.invalidate(); proposal.invalidate() }
+  }, [])
 
   // Estados de Frete
   const [freightOptions, setFreightOptions] = useState<FreightOption[]>([])
   const [selectedFreight, setSelectedFreight] = useState<FreightOption | null>(null)
   const [isFetchingFreight, setIsFetchingFreight] = useState(false)
   const [isFetchingCep, setIsFetchingCep] = useState(false)
+  const [freightState, setFreightState] = useState<'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'expired'>('idle')
+  const [freightError, setFreightError] = useState<string | null>(null)
+  const [freightRefresh, setFreightRefresh] = useState(0)
+  const [billingAddress, setBillingAddress] = useState(emptyCheckoutAddress)
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(false)
 
   // Estados de Fidelidade / Pontos
   const [pointsToRedeem, setPointsToRedeem] = useState<number>(0)
   const [pointsDiscountValue, setPointsDiscountValue] = useState<number>(0)
+  const [pointsPending, setPointsPending] = useState(false)
 
   // Meio de Pagamento Selecionado
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodTab>('PIX')
+  const [paymentCapabilities, setPaymentCapabilities] = useState<{ methods: PaymentMethodTab[]; maximumInstallments: number; config: PaymentConfig } | null>(null)
+  useEffect(() => {
+    let active = true
+    fetch('/api/payment/capabilities', { cache: 'no-store' }).then(async res => {
+      if (!res.ok) throw new Error('Pagamento temporariamente indisponível.')
+      const data = await res.json()
+      if (active) { setPaymentCapabilities(data); if (data.methods[0]) setPaymentMethod(data.methods[0]) }
+    }).catch(() => { if (active) setError('Não foi possível verificar os meios de pagamento.') })
+    return () => { active = false }
+  }, [lojaID])
 
   // Dados do Cartão de Crédito
   const [cardData, setCardData] = useState({
@@ -131,7 +150,7 @@ export function CheckoutForm({
   })
 
   const subtotal = useMemo(
-    () => items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    () => Math.round(items.reduce((acc, item) => acc + item.price * item.quantity, 0) * 100) / 100,
     [items]
   )
 
@@ -148,15 +167,16 @@ export function CheckoutForm({
   )
 
   const grandTotal = useMemo(
-    () => subtotalAfterPoints + calculatedFreightCost,
+    () => Math.round((subtotalAfterPoints + calculatedFreightCost) * 100) / 100,
     [subtotalAfterPoints, calculatedFreightCost]
   )
 
   // Opções de Parcelamento do Cartão de Crédito
   const installmentOptions: InstallmentOption[] = useMemo(() => {
     if (grandTotal <= 0) return []
-    return calculateInstallmentOptions(grandTotal)
-  }, [grandTotal])
+    if (!paymentCapabilities) return []
+    return calculateInstallmentOptions(grandTotal, { ...paymentCapabilities.config, installmentMaxCount: paymentCapabilities.maximumInstallments })
+  }, [grandTotal, paymentCapabilities])
 
   const selectedInstallmentDetail = useMemo(() => {
     return (
@@ -180,6 +200,8 @@ export function CheckoutForm({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    invalidateReview()
+    if (name.startsWith('address.')) { editedAddressFields.current.add(name.split('.')[1]); invalidateFreight() }
     if (name.includes('.')) {
       const [parent, child] = name.split('.')
       setFormData((prev: any) => ({
@@ -195,6 +217,7 @@ export function CheckoutForm({
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    invalidateReview()
     let val = e.target.value.replace(/\D/g, '')
     if (val.length > 11) val = val.slice(0, 11)
     if (val.length > 6) {
@@ -206,78 +229,77 @@ export function CheckoutForm({
   }
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let raw = e.target.value.replace(/\D/g, '')
-    if (raw.length > 8) raw = raw.slice(0, 8)
-    const formatted = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw
-
-    setFormData((prev) => ({
-      ...prev,
-      address: { ...prev.address, cep: formatted },
-    }))
-
-    if (raw.length === 8) {
-      setIsFetchingCep(true)
-      try {
-        const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`)
-        const data = await res.json()
-        if (!data.erro) {
-          setFormData((prev) => ({
-            ...prev,
-            address: {
-              ...prev.address,
-              state: data.uf,
-              city: data.localidade,
-              neighborhood: data.bairro,
-              street: data.logradouro,
-            },
-          }))
-          calculateFreight(raw)
-        }
-      } catch (err) {
-        console.error('Erro ao consultar CEP:', err)
-      } finally {
-        setIsFetchingCep(false)
-      }
-    }
+    const raw = cleanDigits(e.target.value).slice(0, 8)
+    const formatted = raw.length > 5 ? raw.slice(0,5) + '-' + raw.slice(5) : raw
+    const request = cepRevision.current.begin()
+    invalidateFreight(); invalidateReview(); editedAddressFields.current.clear()
+    setIsFetchingCep(raw.length === 8)
+    setFormData(prev => ({ ...prev, address: { ...prev.address, cep: formatted, state: '', city: '', street: '', neighborhood: '' } }))
+    if (raw.length !== 8) return
+    try {
+      const res = await fetch('https://viacep.com.br/ws/' + raw + '/json/', { signal: request.signal })
+      if (!res.ok) throw new Error('CEP indisponível. Preencha o endereço e tente novamente.')
+      const data = await res.json()
+      if (!request.current()) return
+      if (data.erro || typeof data.uf !== 'string' || typeof data.localidade !== 'string') throw new Error('CEP não encontrado.')
+      setFormData(prev => {
+        const address = { ...prev.address }
+        const derived = { state: data.uf, city: data.localidade, neighborhood: data.bairro ?? '', street: data.logradouro ?? '' }
+        for (const key of ['state','city','neighborhood','street'] as const) if (!editedAddressFields.current.has(key)) address[key] = derived[key]
+        return { ...prev, address }
+      })
+    } catch (error) { if (request.current()) setError(error instanceof Error ? error.message : 'Não foi possível consultar o CEP.') }
+    finally { if (request.current()) setIsFetchingCep(false) }
   }
 
-  const calculateFreight = useCallback(
-    async (cepDigits: string) => {
-      if (!lojaID || cepDigits.length !== 8) return
-      setIsFetchingFreight(true)
-      setSelectedFreight(null)
+  // Every source, merchandise, address and delivery change revokes the quote.
+  useEffect(() => {
+    const gate = freightRevision.current
+    const request = gate.begin()
+    setSelectedFreight(null); setFreightOptions([]); setFreightError(null)
+    const cep = cleanDigits(formData.address.cep)
+    if (formData.deliveryType !== 'DELIVERY' || cep.length !== 8 || !items.length) {
+      setFreightState('idle'); setIsFetchingFreight(false); return () => gate.invalidate()
+    }
+    setFreightState('loading'); setIsFetchingFreight(true)
+    const timer = setTimeout(async () => {
       try {
-        const res = await fetch('/api/freight/calculate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lojaId: lojaID,
-            destinationCep: cepDigits,
-            items: items.map((i) => ({
-              weightInKg: 0.5,
-              heightInCm: 10,
-              widthInCm: 15,
-              lengthInCm: 20,
-              quantity: i.quantity,
-            })),
-          }),
-        })
-        const data = await res.json()
-        if (data.options && data.options.length > 0) {
-          setFreightOptions(data.options)
-          const recommended = data.options.find((o: FreightOption) => o.isRecommended)
-          setSelectedFreight(recommended || data.options[0])
-        } else {
-          setFreightOptions([])
+        const payload = freightClientRequestSchema.parse({ lojaID, destinationCep: cep, deliveryType: 'DELIVERY',
+          items: items.map(i => ({ productId: i.productId || i.productID, variantId: i.variantId || i.variantID, quantity: i.quantity })) })
+        const requestStartedAt = performance.now()
+        const res = await fetch('/api/freight/calculate', { method: 'POST', signal: request.signal,
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        const raw = await res.json()
+        if (!request.current()) return
+        if (!res.ok) throw new Error(raw.error || 'Não foi possível cotar o frete.')
+        const data = freightClientResponseSchema.parse(raw).data
+        if (Number(data.merchandiseSubtotal) !== subtotal) {
+          void useCartStore.getState().fetchCart().catch(() => {})
+          throw new Error('Preços alterados. Atualize o carrinho antes de continuar.')
         }
-      } catch (err) {
-        console.error('Erro ao calcular frete:', err)
-      } finally {
-        setIsFetchingFreight(false)
-      }
-    },
-    [lojaID, items]
-  )
+        const serverNow = new Date(data.serverTime).getTime(), received = performance.now()
+        quoteDeadlines.current.clear()
+        for (const option of data.options) quoteDeadlines.current.set(option.freightQuoteToken, requestStartedAt + new Date(option.expiresAt).getTime() - serverNow)
+        const options = data.options.filter(option => quoteDeadlines.current.get(option.freightQuoteToken)! > received)
+        setFreightOptions(options); setFreightState(options.length ? 'ready' : 'empty')
+        setSelectedFreight(options.find(o => o.isRecommended) ?? options[0] ?? null)
+      } catch (error) {
+        if (request.current()) { setFreightState('error'); setFreightError(error instanceof Error ? error.message : 'Falha na cotação.'); setSelectedFreight(null) }
+      } finally { if (request.current()) setIsFetchingFreight(false) }
+    }, 350)
+    return () => { clearTimeout(timer); gate.invalidate() }
+  }, [lojaID, cartID, cartVersion, formData.address, formData.deliveryType, items, subtotal, freightRefresh])
+
+  useEffect(() => {
+    if (!selectedFreight?.expiresAt) return
+    const timer = setTimeout(() => { setSelectedFreight(null); setFreightOptions([]); setFreightState('expired') },
+      Math.max(0, (quoteDeadlines.current.get(selectedFreight.freightQuoteToken!) ?? 0) - performance.now()))
+    return () => clearTimeout(timer)
+  }, [selectedFreight])
+
+  useLayoutEffect(() => {
+    proposalRevision.current.invalidate(); reviewDraft.current = null; setReview(null)
+  }, [lojaID, cartID, cartVersion, items, formData, billingAddress, billingSameAsShipping, paymentMethod, selectedInstallment, pointsToRedeem, pointsDiscountValue, selectedFreight])
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '')
@@ -323,6 +345,7 @@ export function CheckoutForm({
 
   const validateStep2 = () => {
     if (formData.deliveryType === 'DELIVERY') {
+      if (!checkoutAddressSchema.safeParse(formData.address).success) { setError('Preencha o endereço de entrega completo, com CEP e UF válidos.'); return false }
       const cleanCep = cleanDigits(formData.address.cep)
       if (cleanCep.length !== 8) {
         setError('Por favor, informe um CEP válido com 8 dígitos.')
@@ -336,7 +359,7 @@ export function CheckoutForm({
         setError('Por favor, informe a cidade e o estado.')
         return false
       }
-      if (freightOptions.length > 0 && !selectedFreight) {
+      if (freightState !== 'ready' || !selectedFreight?.freightQuoteToken || (quoteDeadlines.current.get(selectedFreight.freightQuoteToken) ?? 0) <= performance.now()) {
         setError('Por favor, selecione uma modalidade de frete.')
         return false
       }
@@ -346,7 +369,11 @@ export function CheckoutForm({
   }
 
   const validateStep3 = () => {
+    if (['CREDIT_CARD', 'BOLETO'].includes(paymentMethod) && !checkoutAddressSchema.safeParse(billingSameAsShipping && formData.deliveryType === 'DELIVERY' ? formData.address : billingAddress).success) {
+      setError('Preencha o endereço de cobrança completo nesta etapa.'); return false
+    }
     if (paymentMethod === 'CREDIT_CARD') {
+      if (!installmentOptions.some(option => option.count === selectedInstallment)) { setError('Selecione um plano de parcelas disponível.'); return false }
       const cleanNum = cleanDigits(cardData.number)
       if (!validateLuhn(cleanNum)) {
         setError('Número de cartão de crédito inválido.')
@@ -387,7 +414,12 @@ export function CheckoutForm({
   }
 
   const handleSubmit = async () => {
-    if (!validateStep3()) return
+    if (sourcePending) { setError('Aguarde a atualização do carrinho.'); return }
+    if (pointsPending) { setError('Aguarde a conferência dos pontos antes de revisar a compra.'); return }
+    if (!paymentCapabilities?.methods.includes(paymentMethod)) { setError('Método de pagamento indisponível.'); return }
+    if (submitting.current || !validateStep1() || !validateStep2() || !validateStep3()) return
+    submitting.current = true
+    const request = proposalRevision.current.begin()
 
     setIsLoading(true)
     setError(null)
@@ -405,7 +437,10 @@ export function CheckoutForm({
           cpfCnpj: cleanDigits(formData.cpfCnpj),
         },
         deliveryType: formData.deliveryType,
-        address: formData.deliveryType === 'DELIVERY' ? formData.address : undefined,
+        shippingAddress: formData.deliveryType === 'DELIVERY' ? formData.address : undefined,
+        billingAddress: ['CREDIT_CARD', 'BOLETO'].includes(paymentMethod) && !(billingSameAsShipping && formData.deliveryType === 'DELIVERY') ? billingAddress : undefined,
+        billingSameAsShipping: ['CREDIT_CARD', 'BOLETO'].includes(paymentMethod) && billingSameAsShipping && formData.deliveryType === 'DELIVERY',
+        freightQuoteToken: formData.deliveryType === 'DELIVERY' ? selectedFreight?.freightQuoteToken : undefined,
         shippingCost: calculatedFreightCost,
         shippingProvider: selectedFreight?.providerId || undefined,
         shippingServiceName: selectedFreight?.serviceName || undefined,
@@ -413,7 +448,7 @@ export function CheckoutForm({
         paymentMethod,
         pointsToRedeem: pointsDiscountValue > 0 ? pointsToRedeem : 0,
         installments: paymentMethod === 'CREDIT_CARD' ? selectedInstallment : 1,
-        installmentValue: selectedInstallmentDetail?.installmentValue,
+        acceptedFinancialTotal: paymentMethod === 'CREDIT_CARD' ? selectedInstallmentDetail?.totalWithInterest : grandTotal,
         creditCard:
           paymentMethod === 'CREDIT_CARD'
             ? {
@@ -426,6 +461,7 @@ export function CheckoutForm({
             : undefined,
         items: items.map((i: any) => ({
           productId: i.productId || i.productID,
+          variantId: i.variantId || i.variantID,
           name: i.name || i.productName || 'Produto',
           quantity: i.quantity,
           price: i.price,
@@ -434,10 +470,38 @@ export function CheckoutForm({
         })),
       }
 
+      const { creditCard: transientCard, ...draft } = { ...payload, cartID, cartVersion }
+      const draftKey = JSON.stringify(draft)
+      if (!review || reviewDraft.current !== draftKey) {
+        const contextResponse = await fetch('/api/checkout/intents', { cache: 'no-store', signal: request.signal })
+        if (!contextResponse.ok) throw new Error('Não foi possível recuperar a identidade da compra.')
+        const context = (await contextResponse.json()).data
+        const proposalStartedAt = performance.now()
+        const proposalResponse = await fetch('/api/checkout/intents', {
+          method: 'POST', signal: request.signal, headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...draft, basketID: cartID ? undefined : context.basketID }),
+        })
+        const proposalResult = await proposalResponse.json()
+        if (!proposalResponse.ok) throw new Error(proposalResult.error || 'Não foi possível revisar a compra.')
+        if (!request.current() || !mounted.current) return
+        const proposal = proposalResult.data as ReturnType<typeof proposalDTO>
+        const recovered = await fetch('/api/checkout/intents/' + proposal.checkoutIntentID, { cache: 'no-store', signal: request.signal })
+        if (!recovered.ok) throw new Error('Não foi possível verificar a compra existente.')
+        const current = (await recovered.json()).data
+        if (!request.current() || !mounted.current) return
+        const url = new URL(window.location.href); url.searchParams.set('intent', proposal.checkoutIntentID)
+        window.history.replaceState(null, '', url)
+        if (current.result) { onOrderCreated(current.result.order); return }
+        reviewDeadline.current = proposalStartedAt + new Date(proposal.expiresAt).getTime() - new Date(proposal.serverTime).getTime()
+        reviewDraft.current = draftKey; setReview(proposal)
+        return
+      }
+      if (reviewDeadline.current <= performance.now()) { invalidateReview(); setError('A proposta expirou. Revise os valores novamente.'); return }
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ checkoutIntentID: review.checkoutIntentID,
+          acceptedRevision: review.revision, acceptedContentHash: review.contentHash, creditCard: transientCard }),
       })
 
       // Tratamento resiliente de resposta (evita SyntaxError de JSON quando o servidor retorna HTML)
@@ -453,21 +517,24 @@ export function CheckoutForm({
         throw new Error(result.error || result.message || 'Falha ao processar o pedido.')
       }
 
+      if (!request.current() || !mounted.current) return
       const orderData = result.data?.order || result.order || result
 
-      toast.success('Pedido registrado com sucesso!')
+      if (!['CANCELLED', 'DECLINED', 'REVIEW'].includes(orderData.paymentState)) toast.success('Pedido registrado com sucesso!')
       onOrderCreated(orderData)
     } catch (err: any) {
-      console.error('[CHECKOUT_SUBMIT_ERROR]', err)
+      if (!request.current() || !mounted.current) return
       setError(err.message || 'Erro inesperado ao registrar o pedido. Tente novamente.')
       toast.error(err.message || 'Erro ao processar checkout.')
     } finally {
-      setIsLoading(false)
+      submitting.current = false
+      if (mounted.current) setIsLoading(false)
     }
   }
 
   return (
-    <div className="w-full">
+    <fieldset disabled={isLoading || sourcePending} className="w-full min-w-0">
+    {sourcePending && <p role="status">Atualizando carrinho...</p>}
       {/* Grid de 2 Colunas Canônico do Redesign Continental */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* COLUNA ESQUERDA: STEPPER & FORMULÁRIO (7 Colunas no Desktop) */}
@@ -633,6 +700,7 @@ export function CheckoutForm({
                         key={type.id}
                         type="button"
                         onClick={() => {
+                          invalidateFreight(); invalidateReview(); cepRevision.current.invalidate(); setIsFetchingCep(false)
                           setFormData((prev) => ({ ...prev, deliveryType: type.id as any }))
                           if (type.id !== 'DELIVERY') setSelectedFreight(null)
                         }}
@@ -679,6 +747,10 @@ export function CheckoutForm({
                     />
                   </div>
 
+                  {['empty','error','expired'].includes(freightState) && <div role="alert" className="text-sm text-red-400">
+                    <p>{freightError || (freightState === 'expired' ? 'A cotação expirou.' : 'Não há opção de entrega disponível para estes dados.')}</p>
+                    <button type="button" onClick={() => setFreightRefresh(value => value + 1)}>Calcular frete novamente</button>
+                  </div>}
                   {/* Opções de Frete Calculadas */}
                   {freightOptions.length > 0 && (
                     <div className="space-y-2.5 pt-2">
@@ -692,7 +764,8 @@ export function CheckoutForm({
                             selectedFreight?.providerId === opt.providerId
 
                           return (
-                            <div
+                            <button
+                              type="button"
                               key={`${opt.providerId}_${opt.serviceCode}_${idx}`}
                               onClick={() => setSelectedFreight(opt)}
                               className={`p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
@@ -734,7 +807,7 @@ export function CheckoutForm({
                                   `R$ ${opt.price.toFixed(2)}`
                                 )}
                               </span>
-                            </div>
+                            </button>
                           )
                         })}
                       </div>
@@ -839,6 +912,7 @@ export function CheckoutForm({
 
               {/* Widget de Fidelidade e Resgate de Pontos */}
               <LoyaltyPointsWidget
+                onPendingChange={setPointsPending}
                 lojaID={lojaID}
                 subtotal={subtotal}
                 onPointsApplied={({ pointsToRedeem, discountValue }) => {
@@ -853,10 +927,13 @@ export function CheckoutForm({
                   Escolha o Método de Pagamento
                 </label>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {paymentCapabilities?.methods.includes('WHATSAPP_PIX') && <button type="button" onClick={() => setPaymentMethod('WHATSAPP_PIX')}
+                    className="rounded-xl p-4 border border-catalog-gold/30 text-xs text-white">PIX manual via WhatsApp<br />Confirmação pela loja</button>}
                   {/* Aba 1: PIX */}
                   <button
                     type="button"
+                    disabled={!paymentCapabilities?.methods.includes('PIX')}
                     onClick={() => setPaymentMethod('PIX')}
                     className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       paymentMethod === 'PIX'
@@ -872,6 +949,7 @@ export function CheckoutForm({
                   {/* Aba 2: Cartão de Crédito */}
                   <button
                     type="button"
+                    disabled={!paymentCapabilities?.methods.includes('CREDIT_CARD')}
                     onClick={() => setPaymentMethod('CREDIT_CARD')}
                     className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       paymentMethod === 'CREDIT_CARD'
@@ -881,12 +959,13 @@ export function CheckoutForm({
                   >
                     <CreditCard className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">Cartão</span>
-                    <span className="text-[10px] font-mono text-catalog-muted">Até 12x</span>
+                    <span className="text-[10px] font-mono text-catalog-muted">Até {paymentCapabilities?.maximumInstallments ?? 1}x</span>
                   </button>
 
                   {/* Aba 3: Boleto Bancário */}
                   <button
                     type="button"
+                    disabled={!paymentCapabilities?.methods.includes('BOLETO')}
                     onClick={() => setPaymentMethod('BOLETO')}
                     className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
                       paymentMethod === 'BOLETO'
@@ -901,6 +980,15 @@ export function CheckoutForm({
                 </div>
               </div>
 
+              {['BOLETO','CREDIT_CARD'].includes(paymentMethod) && <section className="space-y-4">
+                {formData.deliveryType === 'DELIVERY' && <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={billingSameAsShipping} onChange={e => { invalidateReview(); setBillingSameAsShipping(e.target.checked) }} />
+                  Usar endereço de entrega também para cobrança
+                </label>}
+                {!(billingSameAsShipping && formData.deliveryType === 'DELIVERY') && <BillingAddressFields value={billingAddress} onChange={value => { invalidateReview(); setBillingAddress(value) }} />}
+              </section>}
+              {paymentMethod === 'WHATSAPP_PIX' && <p className="text-sm text-catalog-muted">Pagamento manual com a chave da loja. A confirmação depende da conferência da loja.</p>}
+              {!paymentCapabilities?.methods.length && <p className="text-sm text-red-400">Nenhum meio de pagamento disponível nesta loja.</p>}
               {/* CONTEÚDO DA ABA SELECIONADA */}
 
               {/* PIX */}
@@ -1099,7 +1187,7 @@ export function CheckoutForm({
                   </span>
                   {paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail && selectedInstallmentDetail.count > 1 && (
                     <span className="text-[11px] text-catalog-muted font-mono block">
-                      Em {selectedInstallmentDetail.count}x de R$ {selectedInstallmentDetail.installmentValue.toFixed(2)}
+                      {selectedInstallmentDetail.label}
                     </span>
                   )}
                 </div>
@@ -1130,10 +1218,22 @@ export function CheckoutForm({
                   )}
                 </button>
               ) : (
+                <div className="w-full space-y-4">
+                {review && <section aria-live="polite" className="rounded-xl border border-catalog-gold p-4 text-sm space-y-2">
+                  <h3>Revise a proposta antes de confirmar</h3>
+                  <p>{review.proposal.customer.name} · {review.proposal.deliveryType} · {review.proposal.financial.method}</p>
+                  {review.proposal.items.map(item => <p key={item.variantId}>{item.quantity} × {item.name} ({item.size}, {item.color}) — R$ {item.price}</p>)}
+                  {review.proposal.shippingAddress && <p>Entrega: {review.proposal.shippingAddress.street}, {review.proposal.shippingAddress.number} · {review.proposal.shippingAddress.city}/{review.proposal.shippingAddress.state}</p>}
+                  {review.proposal.billingAddress && <p>Cobrança: {review.proposal.billingAddress.street}, {review.proposal.billingAddress.number} · {review.proposal.billingAddress.city}/{review.proposal.billingAddress.state}</p>}
+                  <p>Mercadorias: R$ {review.proposal.financial.merchandiseSubtotal} · Desconto: R$ {review.proposal.financial.loyaltyDiscount} ({review.proposal.pointsRedeemed} pontos)</p>
+                  <p>Frete: R$ {review.proposal.financial.shippingCost} · Encargos: R$ {review.proposal.financial.financingCharge}</p>
+                  <p>Total: R$ {review.proposal.financial.financialTotal} · Parcelas: {review.proposal.financial.installments.join(' + ')}</p>
+                  <p>Ganho previsto: {review.proposal.earn.points} pontos · Válida até {new Date(review.expiresAt).toLocaleTimeString('pt-BR')}.</p>
+                </section>}
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isLoading}
+                  disabled={isLoading || sourcePending || pointsPending}
                   className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-[1.01]"
                 >
                   {isLoading ? (
@@ -1142,19 +1242,12 @@ export function CheckoutForm({
                     <>
                       <Lock className="w-4 h-4" />
                       <span>
-                        {paymentMethod === 'PIX'
-                          ? 'Confirmar e Pagar via PIX'
-                          : paymentMethod === 'CREDIT_CARD'
-                          ? `Pagar R$ ${
-                              selectedInstallmentDetail?.hasInterest
-                                ? selectedInstallmentDetail.totalWithInterest.toFixed(2)
-                                : grandTotal.toFixed(2)
-                            } no Cartão`
-                          : 'Gerar Boleto Bancário'}
+                        {review ? 'Confirmar proposta e concluir compra' : 'Revisar proposta de compra'}
                       </span>
                     </>
                   )}
                 </button>
+                </div>
               )}
 
               {/* Botão Voltar Etapa */}
@@ -1183,6 +1276,6 @@ export function CheckoutForm({
           </div>
         </div>
       </div>
-    </div>
+    </fieldset>
   )
 }

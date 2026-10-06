@@ -57,4 +57,5 @@ export const createProductSchema = z.object({
 
 export const updateProductSchema = createProductSchema.partial().extend({
   variants: productVariantsSchema.optional(),
+  expectedCatalogVersion: z.number().int().min(0).optional(),
 });

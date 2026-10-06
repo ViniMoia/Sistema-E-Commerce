@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getLojaBySlug } from "@/lib/services/loja.service";
+import { toPublicLojaDTO } from "@/lib/loja-dto";
 
 /**
  * GET /api/loja/[slug]
@@ -29,7 +30,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(loja, { status: 200 });
+    return NextResponse.json(toPublicLojaDTO(loja), { status: 200 });
   } catch (error) {
     console.error("[LOJA_GET_BY_SLUG]", error);
     return NextResponse.json(

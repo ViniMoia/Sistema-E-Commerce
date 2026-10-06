@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { prepareLoyaltyAdjustment, type PendingLoyaltyAdjustment } from '@/lib/commerce/loyalty-adjust-draft';
 import Link from 'next/link';
 import {
   Award,
@@ -48,6 +49,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
     description: '',
   });
   const [isAdjusting, setIsAdjusting] = useState(false);
+  const pendingAdjustment = useRef<PendingLoyaltyAdjustment | null>(null);
 
   // Salvar Configuração Rápida
   const handleSaveConfig = async (e: React.FormEvent) => {
@@ -97,25 +99,25 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
     }
 
     setIsAdjusting(true);
+    const command = prepareLoyaltyAdjustment(adjustState, pendingAdjustment.current, () => crypto.randomUUID());
+    pendingAdjustment.current = command.pending;
 
     try {
       const res = await fetch('/api/admin/loyalty/adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userID: adjustState.userID.trim(),
-          points: Number(adjustState.points),
-          description: adjustState.description.trim(),
-        }),
+        body: JSON.stringify(command.body),
       });
 
       const json = await res.json();
       if (res.ok && json.success) {
+        pendingAdjustment.current = null;
         toast.success(
           `Ajuste de ${adjustState.points > 0 ? '+' : ''}${adjustState.points} pontos realizado!`
         );
         setAdjustState({ userID: '', points: 100, description: '' });
       } else {
+        if (res.status >= 400 && res.status < 500) pendingAdjustment.current = null;
         toast.error(json.error || 'Erro ao processar ajuste de pontos.');
       }
     } catch (err: any) {

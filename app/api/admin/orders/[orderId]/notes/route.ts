@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth/guards';
+import { requirePurchaseAdmin as requireAdmin } from '@/lib/auth/guards';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 

@@ -12,12 +12,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { OrderStatus } from '@prisma/client'
 import { OrderStatusManager } from './OrderStatusManager'
 import { X, ExternalLink } from 'lucide-react'
+import type { allowedOrderActions } from '@/lib/commerce/order-fulfillment'
+import { orderOperationDetailSchema } from '@/lib/validators/order.validators'
 import { getTrackingInfo } from '@/lib/freight/tracking-url'
 
 export interface OrderDetail {
   id: string
   orderNumber: number
   status: OrderStatus
+  version: number
+  actions: ReturnType<typeof allowedOrderActions>
   createdAt: string
   updatedAt: string
   total: number
@@ -62,7 +66,11 @@ export interface OrderDetail {
     id: string
     status: OrderStatus
     createdAt: string
-    performedBy: { name: string }
+    orderVersion: number | null
+    previousStatus: OrderStatus | null
+    actorType: 'USER' | 'SYSTEM'
+    systemActor: string | null
+    performedBy: { name: string } | null
   }>
 }
 
@@ -92,36 +100,52 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
   const [isEditingTracking, setIsEditingTracking] = React.useState(false)
   const [trackingValue, setTrackingValue] = React.useState('')
   const [isSavingTracking, setIsSavingTracking] = React.useState(false)
+  const [trackingError, setTrackingError] = React.useState<string | null>(null)
 
   const [isStatusManagerOpen, setIsStatusManagerOpen] = React.useState(false)
 
-  React.useEffect(() => {
-    if (!orderId) {
-      setOrder(null)
-      return
-    }
-
-    const fetchOrder = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        const res = await fetch(`/api/admin/orders/${orderId}`)
-        if (!res.ok) {
-          throw new Error('Falha ao carregar detalhes do pedido')
-        }
-        const data = await res.json()
-        setOrder(data)
-        setNotesValue(data.adminNotes || '')
-        setTrackingValue(data.trackingCode || '')
-      } catch (err: any) {
-        setError(err.message || 'Erro inesperado')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchOrder()
+  const currentOrderId = React.useRef(orderId)
+  React.useLayoutEffect(() => {
+    currentOrderId.current = orderId
+    return () => { currentOrderId.current = null }
   }, [orderId])
+  const loadRevision = React.useRef(0)
+  const trackingCommand = React.useRef<{ content: string; id: string } | null>(null)
+  const loadOrder = React.useCallback(async () => {
+    if (!orderId) return false
+    const revision = ++loadRevision.current
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('Falha ao carregar detalhes do pedido')
+      const data = await res.json()
+      const detail = data.success ? data.data : data
+      const operation = orderOperationDetailSchema.safeParse(detail)
+      if (operation.success === false || operation.data.id !== orderId) throw new Error('Resposta de pedido inválida.')
+      if (currentOrderId.current !== orderId || loadRevision.current !== revision) return false
+      setOrder({ ...detail, total: Number(detail.total), subtotal: Number(detail.subtotal),
+        shippingCost: Number(detail.shippingCost), freightValue: detail.freightValue === null ? null : Number(detail.freightValue),
+        items: detail.items.map((item: OrderDetail['items'][number]) => ({ ...item, price: Number(item.price) })),
+      })
+      setNotesValue(detail.adminNotes || '')
+      setTrackingValue(detail.trackingCode || '')
+      trackingCommand.current = null
+      return true
+    } catch (err) {
+      if (currentOrderId.current === orderId && loadRevision.current === revision) setError(err instanceof Error ? err.message : 'Erro inesperado')
+      return false
+    } finally {
+      if (currentOrderId.current === orderId && loadRevision.current === revision) setIsLoading(false)
+    }
+  }, [orderId])
+  React.useEffect(() => {
+    setOrder(null)
+    setIsEditingTracking(false)
+    setTrackingError(null)
+    setIsStatusManagerOpen(false)
+    void loadOrder()
+  }, [loadOrder])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
@@ -133,6 +157,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
 
   const handleSaveNotes = async () => {
     if (!order) return
+    const sourceId = order.id
     try {
       setIsSavingNotes(true)
       const res = await fetch(`/api/admin/orders/${order.id}/notes`, {
@@ -143,36 +168,43 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
       if (!res.ok) {
         throw new Error('Falha ao salvar notas')
       }
-      setOrder({ ...order, adminNotes: notesValue })
+      if (currentOrderId.current !== sourceId) return
+      if (!await loadOrder()) throw new Error('Notas salvas, mas não foi possível recarregar o pedido.')
       setIsEditingNotes(false)
     } catch (err) {
-      console.error(err)
+      if (currentOrderId.current === sourceId) setError(err instanceof Error ? err.message : 'Falha ao salvar notas')
     } finally {
       setIsSavingNotes(false)
     }
   }
 
   const handleSaveTracking = async () => {
-    if (!order) return
+    if (!order || isSavingTracking) return
+    const sourceId = order.id
     try {
       setIsSavingTracking(true)
+      setTrackingError(null)
+      const payload = { trackingCode: trackingValue.trim() || null, expectedVersion: order.version, shippingProvider: order.actions.tracking.provider }
+      const content = JSON.stringify(payload)
+      if (!trackingCommand.current || trackingCommand.current.content !== content) trackingCommand.current = { content, id: crypto.randomUUID() }
       const res = await fetch(`/api/admin/orders/${order.id}/tracking`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackingCode: trackingValue })
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, commandId: trackingCommand.current.id })
       })
       if (!res.ok) {
-        throw new Error('Falha ao salvar código de rastreamento')
+        const data = await res.json().catch(() => null)
+        if (res.status === 409) { await loadOrder(); onStatusUpdate() }
+        throw new Error(data?.error || 'Falha ao salvar código de rastreamento')
       }
-      setOrder({ ...order, trackingCode: trackingValue })
+      if (currentOrderId.current !== sourceId) return
+      if (!await loadOrder()) throw new Error('Rastreamento salvo, mas não foi possível recarregar o pedido.')
       setIsEditingTracking(false)
       onStatusUpdate()
     } catch (err) {
-      console.error(err)
-    } finally {
-      setIsSavingTracking(false)
-    }
+      if (currentOrderId.current === sourceId) setTrackingError(err instanceof Error ? err.message : 'Erro ao salvar rastreamento')
+    } finally { setIsSavingTracking(false) }
   }
+
 
   return (
     <Sheet open={Boolean(orderId)} onOpenChange={(open) => !open && onClose()}>
@@ -198,6 +230,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
         {error && (
           <div className="p-6">
             <AlertBanner variant="error" title="Erro" message={error} />
+            <Button onClick={() => void loadOrder()} disabled={isLoading}>Recarregar pedido</Button>
           </div>
         )}
 
@@ -335,25 +368,30 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 </div>
               </section>
 
+              {order.actions.tracking.applicable && <>
               {/* 6. RASTREAMENTO E CÓDIGO DE ENVIO */}
               <section className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-catalog-gold border-b border-catalog-gold/20 pb-2 font-mono">
                   Código de Rastreamento (Correios / Transportadora)
                 </h3>
                 <div className="bg-[#0B132B]/70 rounded-xl p-4 border border-catalog-gold/25">
+                  {trackingError && <AlertBanner variant="error" message={trackingError} />}
                   {isEditingTracking ? (
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
+                        name="editingTrackingCode"
+                        maxLength={128}
+                        disabled={isSavingTracking}
                         value={trackingValue}
                         onChange={(e) => setTrackingValue(e.target.value)}
                         placeholder="Ex: AA123456789BR"
                         className="h-10 flex-1 rounded-xl border border-catalog-gold/30 bg-[#050B14] px-3 text-sm font-mono text-white focus:border-catalog-gold outline-none"
                       />
-                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking} className="bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold">
+                      <Button size="sm" onClick={handleSaveTracking} disabled={isSavingTracking || isLoading || Boolean(error)} className="bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold">
                         {isSavingTracking ? <Spinner className="w-3 h-3" /> : 'Salvar'}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)} className="border-catalog-gold/30 text-slate-300">
+                      <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(false)} disabled={isSavingTracking} className="border-catalog-gold/30 text-slate-300">
                         Cancelar
                       </Button>
                     </div>
@@ -389,7 +427,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                                 </a>
                               ) : null;
                             })()}
-                            <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} className="border-catalog-gold/30 hover:border-catalog-gold hover:text-catalog-gold text-slate-300">
+                            <Button size="sm" variant="outline" onClick={() => setIsEditingTracking(true)} disabled={!order.actions.tracking.editable || Boolean(error)} className="border-catalog-gold/30 hover:border-catalog-gold hover:text-catalog-gold text-slate-300">
                               Alterar
                             </Button>
                           </div>
@@ -407,6 +445,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                 </div>
               </section>
 
+              </>}
               {/* 7. NOTAS INTERNAS */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between border-b border-catalog-gold/20 pb-2">
@@ -459,10 +498,12 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                       <div className="absolute -left-6 w-3 h-3 rounded-full bg-[#F0B40E] ring-4 ring-[#0F172A] mt-1.5" />
                       <div>
                         <p className="text-sm font-medium text-white font-mono">
-                          Status atualizado para <span className="font-bold text-catalog-gold">{statusMap[history.status]?.label}</span>
+                          {history.previousStatus === history.status ? 'Rastreamento atualizado; status mantido em ' : 'Status atualizado para '}<span className="font-bold text-catalog-gold">{statusMap[history.status]?.label}</span>
                         </p>
                         <p className="text-xs text-catalog-muted mt-0.5 font-mono">
-                          {formatDate(history.createdAt)} por {history.performedBy?.name || 'Sistema'}
+                          {formatDate(history.createdAt)} por {history.actorType === 'SYSTEM'
+                            ? `Sistema${history.systemActor ? ` (${history.systemActor})` : ''}`
+                            : history.performedBy?.name || 'Usuário não identificado'}
                         </p>
                       </div>
                     </div>
@@ -474,6 +515,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
             {/* 9. FOOTER ACTIONS */}
             <div className="flex justify-end px-6 py-4 border-t border-catalog-gold/20 bg-[#050B14] sticky bottom-0 z-10">
               <button
+                disabled={Boolean(error) || isLoading || isSavingTracking || order.actions.statuses.length === 0}
                 onClick={() => setIsStatusManagerOpen(true)}
                 className="btn-shimmer px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs tracking-widest uppercase shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40"
               >
@@ -482,12 +524,16 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
               <OrderStatusManager
                 orderId={order.id}
                 currentStatus={order.status}
+                version={order.version}
+                deliveryType={order.deliveryType}
+                trackingCode={order.trackingCode}
+                actions={order.actions}
                 isOpen={isStatusManagerOpen}
                 onClose={() => setIsStatusManagerOpen(false)}
-                onSuccess={() => {
+                onConflict={async () => { await loadOrder(); onStatusUpdate() }}
+                onSuccess={async () => {
+                  if (!await loadOrder()) throw new Error('Transição salva, mas não foi possível recarregar o pedido.')
                   onStatusUpdate()
-                  setOrder(null)
-                  onClose()
                 }}
               />
             </div>

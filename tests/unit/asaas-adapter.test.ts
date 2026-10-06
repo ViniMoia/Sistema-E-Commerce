@@ -16,7 +16,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
     it('deve gerar cobrança PIX com sucesso mapeando DTO de domínio para Asaas', async () => {
       vi.spyOn(asaasClient, 'getOrCreateCustomer').mockResolvedValueOnce('cus_test_123');
       vi.spyOn(asaasClient, 'createPayment').mockResolvedValueOnce({
-        id: 'pay_test_999',
+        id: 'pay_test_999', externalReference: 'ord-uuid-1',
         customer: 'cus_test_123',
         billingType: 'PIX',
         status: 'PENDING',
@@ -130,7 +130,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
 
   describe('Validação Zod de Checkout (Obrigatoriedade de CPF/CNPJ)', () => {
     const validBasePayload = {
-      lojaID: 'loja-continental',
+      paymentMethod: 'PIX', lojaID: 'loja-continental',
       customer: {
         name: 'Maria Santos',
         email: 'maria@santos.com',

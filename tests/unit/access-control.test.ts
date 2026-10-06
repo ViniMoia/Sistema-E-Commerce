@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { updateUserRole } from '@/services/user.service'
 import { setDefaultAddress } from '@/services/address.service'
 import prisma from '@/lib/prisma'
@@ -17,24 +17,23 @@ vi.mock('@/lib/prisma', () => {
       auditLog: {
         create: vi.fn(),
       },
+      $queryRaw: vi.fn(),
+      session: { deleteMany: vi.fn() },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
     },
   }
 })
 
 describe('Controle de Acesso & Isolamento Multi-Tenant (TEN-001, SEC-003)', () => {
+  beforeEach(() => { vi.clearAllMocks(); vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'loja-A' }]); });
   it('deve bloquear alteração de papel se o usuário pertencer a outra loja (TEN-001)', async () => {
     vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ lojaID: 'loja-B' } as never)
+      .mockResolvedValueOnce({ id: 'admin-1', lojaID: 'loja-B', role: 'ADMIN', status: 'ACTIVE' } as never)
       .mockResolvedValueOnce({
         id: 'target-1',
         lojaID: 'loja-A',
         role: 'CUSTOMER',
-        status: 'ACTIVE',
-      } as any)
-      .mockResolvedValueOnce({
-        id: 'admin-1',
-        lojaID: 'loja-B', // Loja diferente!
-        role: 'ADMIN',
         status: 'ACTIVE',
       } as any)
 
@@ -43,6 +42,7 @@ describe('Controle de Acesso & Isolamento Multi-Tenant (TEN-001, SEC-003)', () =
 
   it('deve bloquear auto-alteração de papel (CANNOT_CHANGE_OWN_ROLE)', async () => {
     vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce({ lojaID: 'loja-A' } as never)
       .mockResolvedValueOnce({
         id: 'admin-1',
         lojaID: 'loja-A',

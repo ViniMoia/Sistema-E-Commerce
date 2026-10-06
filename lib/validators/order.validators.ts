@@ -14,6 +14,25 @@ export const listOrdersQuerySchema = z.object({
 
 export const updateOrderStatusBodySchema = z.object({
   newStatus: z.enum(STATUS),
+  commandId: z.string().regex(/^[a-zA-Z0-9_-]{1,96}$/).optional(),
+  expectedVersion: z.number().int().min(0).optional(),
+  trackingCode: z.string().trim().max(128).nullable().optional(),
+  shippingProvider: z.string().trim().max(64).nullable().optional(),
+});
+
+export const updateOrderTrackingBodySchema = updateOrderStatusBodySchema.omit({ newStatus: true }).extend({
+  trackingCode: z.string().trim().max(128).nullable(),
+  commandId: z.string().regex(/^[a-zA-Z0-9_-]{1,96}$/),
+  expectedVersion: z.number().int().min(0),
+});
+
+export const orderOperationDetailSchema = z.object({
+  id: z.string().min(1), version: z.number().int().min(0), status: z.enum(STATUS),
+  deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']), trackingCode: z.string().nullable(), shippingProvider: z.string().nullable(),
+  actions: z.object({ statuses: z.array(z.enum(STATUS)), tracking: z.object({
+    provider: z.string().nullable(), applicable: z.boolean(), required: z.boolean(),
+    format: z.enum(['CORREIOS', 'GENERIC']), editable: z.boolean(),
+  }) }),
 });
 
 export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;

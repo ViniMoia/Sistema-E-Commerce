@@ -89,6 +89,7 @@ async function handleCron(req: Request) {
     const summary = await processExpiredOrders({
       batchSize,
       lojaID,
+      dryRun: process.env.PAYMENT_EXPIRATION_ENABLED !== 'true',
     });
 
     return NextResponse.json({

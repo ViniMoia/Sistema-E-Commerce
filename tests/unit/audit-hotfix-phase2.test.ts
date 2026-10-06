@@ -1,9 +1,11 @@
+import { freightOrchestrator } from '@/services/freight';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET as orderStatusGET } from '@/app/api/orders/[id]/status/route';
 import { POST as freightCalculatePOST } from '@/app/api/freight/calculate/route';
 import { adjustPointsManually, LoyaltyError } from '@/services/loyalty.service';
 import prisma from '@/lib/prisma';
 import * as tenantLib from '@/lib/tenant';
+import * as sessionLib from '@/lib/session';
 import * as rateLimitLib from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 
@@ -20,6 +22,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
     },
     user: {
+      findUnique: vi.fn(),
       findFirst: vi.fn(),
     },
     loja: {
@@ -44,12 +47,14 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/tenant', () => ({
   getLojaFromHeaders: vi.fn(),
 }));
+vi.mock('@/lib/session', () => ({ getCurrentUser: vi.fn() }));
 
 vi.mock('@/services/freight', () => ({
   freightOrchestrator: {
-    calculate: vi.fn().mockResolvedValue([
-      { serviceName: 'SEDEX', price: 25.5, estimatedDays: 2 },
-    ]),
+    calculate: vi.fn().mockResolvedValue({ serverTime: '2026-10-05T12:00:00Z', merchandiseSubtotal: '140.00', options: [
+      { providerId: 'CORREIOS', serviceCode: '04014', serviceName: 'SEDEX', price: 25.5, deliveryTimeInDays: 2,
+        freightQuoteToken: 'fixture-authority', freightQuoteId: 'fixture-id', expiresAt: '2030-01-01T00:00:00Z' },
+    ] }),
   },
 }));
 
@@ -85,7 +90,8 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
       expect(data.error).toContain('Pedido não encontrado');
     });
 
-    it('deve retornar 200 com os dados do pedido se pertencer à loja do domínio', async () => {
+    it('deve retornar 200 para o titular autenticado na loja do domínio', async () => {
+      vi.mocked(sessionLib.getCurrentUser).mockResolvedValueOnce({ id: 'owner-1', lojaID: 'loja-continental-sp', status: 'ACTIVE', role: 'CUSTOMER' } as any);
       vi.mocked(tenantLib.getLojaFromHeaders).mockResolvedValueOnce({
         id: 'loja-continental-sp',
         nome: 'Continental SP',
@@ -94,6 +100,7 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
 
       vi.mocked(prisma.order.findUnique).mockResolvedValueOnce({
         id: 'ord-legitima-1',
+        userID: 'owner-1',
         orderNumber: 1234,
         status: 'PAID',
         lojaID: 'loja-continental-sp',
@@ -126,78 +133,24 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
     });
   });
 
-  describe('AUD-007: Validação de Filiação de Usuário em adjustPointsManually', () => {
-    it('deve rejeitar ajuste com USER_NOT_FOUND se o usuário pertencer a outra loja', async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null); // Não encontrado na loja informada
-
-      await expect(
-        adjustPointsManually({
-          lojaID: 'loja-alpha',
-          userID: 'user-de-outra-loja',
-          points: 100,
-          description: 'Bônus indevido',
-          adminUserId: 'admin-1',
-        })
-      ).rejects.toThrow(LoyaltyError);
-
-      await expect(
-        adjustPointsManually({
-          lojaID: 'loja-alpha',
-          userID: 'user-de-outra-loja',
-          points: 100,
-          description: 'Bônus indevido',
-          adminUserId: 'admin-1',
-        })
-      ).rejects.toThrow(/não pertence a esta loja/);
+  describe('AUD-007: scoped actor and target required for loyalty adjustment', () => {
+    const command = { lojaID: 'loja-alpha', userID: 'foreign-user', points: 100,
+      description: 'Audit fixture', adminUserId: 'admin-1', commandId: 'adjust-1' };
+    it('rejects a target outside the store before any wallet write', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ role: 'ADMIN', status: 'ACTIVE' } as any).mockResolvedValueOnce(null);
+      await expect(adjustPointsManually(command)).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
+      expect(prisma.user.findUnique).toHaveBeenNthCalledWith(2, { where: { id_lojaID: { id: command.userID, lojaID: command.lojaID } }, select: { status: true } });
+      expect(prisma.loyaltyWallet.update).not.toHaveBeenCalled();
     });
-
-    it('deve permitir ajuste se o usuário for validado como pertencente à loja', async () => {
-      vi.mocked(prisma.user.findFirst).mockResolvedValueOnce({
-        id: 'user-legitimo',
-        lojaID: 'loja-alpha',
-      } as any);
-
-      vi.mocked((prisma as any).loja.findUnique).mockResolvedValueOnce({
-        id: 'loja-alpha',
-        loyaltyEnabled: true,
-        loyaltyEarnRate: { toString: () => '1' },
-        loyaltyPointValue: { toString: () => '0.1' },
-        loyaltyMinPointsRedeem: 100,
-        loyaltyMaxDiscountPct: { toString: () => '20' },
-        loyaltyPointsExpiryDays: 365,
-      } as any);
-
-      vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValueOnce({
-        id: 'wallet-1',
-        lojaID: 'loja-alpha',
-        userID: 'user-legitimo',
-        balance: 200,
-      } as any);
-
-      vi.mocked(prisma.loyaltyWallet.update).mockResolvedValueOnce({
-        id: 'wallet-1',
-        balance: 300,
-      } as any);
-
-      vi.mocked(prisma.loyaltyTransaction.create).mockResolvedValueOnce({
-        id: 'tx-adj-1',
-      } as any);
-
-      const result = await adjustPointsManually({
-        lojaID: 'loja-alpha',
-        userID: 'user-legitimo',
-        points: 100,
-        description: 'Bônus fidelidade legítimo',
-        adminUserId: 'admin-1',
-      });
-
-      expect(result.wallet.balance).toBe(300);
-      expect(result.transaction.id).toBe('tx-adj-1');
+    it('rejects missing or cross-tenant administrator even when a target exists', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      await expect(adjustPointsManually(command)).rejects.toThrow(LoyaltyError);
+      expect(prisma.loyaltyWallet.update).not.toHaveBeenCalled();
     });
   });
 
-  describe('AUD-008: Consulta em Lote (Sem N+1) no Cálculo de Frete', () => {
-    it('deve buscar produtos em lote com prisma.product.findMany em vez de loop findUnique', async () => {
+  describe('WF-11: identidade de itens no contrato público de cotação', () => {
+    it('deve delegar identidade de itens sem aceitar economia do cliente', async () => {
       vi.mocked(tenantLib.getLojaFromHeaders).mockResolvedValueOnce({
         id: 'loja-1',
       } as any);
@@ -241,16 +194,12 @@ describe('Auditoria Fase 2 - Validação de Hardening e Otimizações (AUD-006, 
       const res = await freightCalculatePOST(req);
       expect(res.status).toBe(200);
 
-      // Deve ter chamado findMany exatamente 1 vez com todos os IDs dos produtos
-      expect(prisma.product.findMany).toHaveBeenCalledTimes(1);
-      expect(prisma.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: { in: expect.arrayContaining(['prod-1', 'prod-2']) } },
-        })
-      );
-
-      // findUnique NUNCA deve ter sido chamado no loop
-      expect(prisma.product.findUnique).not.toHaveBeenCalled();
+      // Route sends identity only; batching and database economics now belong to the authority service.
+      expect(freightOrchestrator.calculate).toHaveBeenCalledWith(expect.objectContaining({
+        lojaID: 'loja-1', items: [{ productId: 'prod-1', quantity: 2 }, { productId: 'prod-2', quantity: 1 }],
+      }));
     });
   });
 });
+
+vi.mock('@/lib/freight/owner', () => ({ freightOwnerForRequest: vi.fn(async () => 'g:' + 'a'.repeat(64)) }));

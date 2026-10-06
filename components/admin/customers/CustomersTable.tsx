@@ -8,16 +8,8 @@ import {
 } from '@/components/ui'
 import { User, Phone, Mail, ShoppingBag, Calendar, Eye, Search } from 'lucide-react'
 
-interface CustomerRow {
-  id: string
-  name: string
-  email: string
-  phone: string | null
-  totalOrders: number
-  totalSpent: number
-  lastOrderAt: string | null
-  createdAt: string
-}
+import type { CustomerRow } from '@/services/customer.service'
+import { CUSTOMER_METRICS_TIMEZONE } from '@/lib/commerce/customer-metrics-contract'
 
 interface CustomersTableProps {
   data: CustomerRow[]
@@ -111,16 +103,17 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
     },
     {
       key: 'totalSpent',
-      header: 'Total Gasto (LTV)',
+      header: 'LTV líquido reconhecido',
       align: 'right',
-      render: (val) => {
+      render: (val, row) => {
         const amount = typeof val === 'number' ? val : 0
         return (
-          <span className="font-mono font-bold text-catalog-gold text-sm">
+          <span data-testid="customer-list-ltv" className="font-mono font-bold text-catalog-gold text-sm">
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
               currency: 'BRL'
             }).format(amount)}
+            {row.coverage === 'PARTIAL' && <small className="block text-amber-300">Base parcial</small>}
           </span>
         )
       }
@@ -142,7 +135,7 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
         return (
           <span className="text-catalog-muted font-mono text-xs">
             {new Intl.DateTimeFormat('pt-BR', {
-              dateStyle: 'medium'
+              dateStyle: 'medium', timeZone: CUSTOMER_METRICS_TIMEZONE
             }).format(date)}
           </span>
         )

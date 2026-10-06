@@ -30,7 +30,9 @@ export async function GET(
       totalSpent: Number(metrics.totalSpent),
       averageOrderValue: Number(metrics.averageOrderValue),
     }
-    return ok(serialized);
+    const response = ok(serialized);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   } catch (error) {
     if (error instanceof Error && error.message === 'Cliente não encontrado.') {
       return err('Cliente não encontrado.', 404);

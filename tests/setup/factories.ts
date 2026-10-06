@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { randomUUID } from 'node:crypto'
 import { User, Order, OrderItem, Address, OrderStatusHistory, UserStatus, OrderStatus, DeliveryType } from '@prisma/client'
 
 interface UserInput {
@@ -18,7 +19,7 @@ export async function createTestCustomer(data?: Partial<UserInput>): Promise<Use
   return prisma.user.create({
     data: {
       name: data?.name || 'Cliente Teste',
-      email: data?.email || `customer-${Date.now()}@test.com`,
+      email: data?.email || `customer-${randomUUID()}@test.com`,
       password: hashedPassword,
       phone: data?.phone || null,
       role: data?.role || 'CUSTOMER',
@@ -81,13 +82,14 @@ interface OrderItemInput {
 }
 
 export async function createTestOrderItem(data: OrderItemInput): Promise<OrderItem> {
-  const product = await prisma.product.findFirst()
-  const variant = await prisma.productVariants.findFirst()
+  const order = await prisma.order.findUniqueOrThrow({ where: { id: data.orderId } })
+  const product = await prisma.product.findFirst({ where: { lojaID: order.lojaID }, include: { productVariants: true } })
+  const variant = product?.productVariants[0]
 
   return prisma.orderItem.create({
     data: {
       orderId: data.orderId,
-      productId: product?.id || '00000000-0000-0000-0000-000000000001',
+      productId: product?.id || null,
       name: data.name,
       quantity: data.quantity,
       price: data.price,

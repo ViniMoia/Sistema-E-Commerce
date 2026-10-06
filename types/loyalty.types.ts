@@ -10,10 +10,12 @@ export interface LoyaltySettings {
 }
 
 export interface LoyaltyWalletSummary {
-  walletId: string
+  walletId: string | null
   lojaID: string
   userID: string
   balance: number
+  debt: number
+  accountingReady: boolean
   pending: number
   lifetimeEarn: number
   monetaryBalance: number // Saldo convertido em R$
@@ -66,6 +68,8 @@ export interface ManualAdjustmentParams {
   points: number // Positivo para crédito, negativo para débito
   description: string
   adminUserId: string
+  commandId: string
+  expiresAt?: string | null
 }
 
 export interface LoyaltyStatementParams {
@@ -95,6 +99,8 @@ export interface LoyaltyStatementResult {
   totalPages: number
   wallet: {
     balance: number
+    debt: number
+    accountingReady: boolean
     pending: number
     lifetimeEarn: number
     monetaryBalance: number
@@ -104,7 +110,9 @@ export interface LoyaltyStatementResult {
 export interface ExpireLoyaltyPointsParams {
   lojaID: string
   userID: string
-  points: number
+  /** Compatibility only; the debit is always recomputed from locked lots. */
+  points?: number
+  now?: Date
   description?: string
 }
 
@@ -118,5 +126,6 @@ export interface ProcessLoyaltyExpirationsResult {
   expiredCount: number
   totalPointsExpired: number
   errors: Array<{ userId: string; lojaId: string; error: string }>
+  skippedLegacyWallets?: number
 }
 

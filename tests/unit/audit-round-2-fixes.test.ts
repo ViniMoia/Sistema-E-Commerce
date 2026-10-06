@@ -3,13 +3,15 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { InventoryService } from '@/services/inventory.service';
 import { POST as webhookPost } from '@/app/api/webhooks/asaas/route';
 import { GET as orderStatusGet } from '@/app/api/orders/[id]/status/route';
-import { createOrder } from '@/services/checkout.service';
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import * as tenantModule from '@/lib/tenant';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
+    $queryRaw: vi.fn().mockResolvedValue([]),
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
     $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
     loja: {
       findUnique: vi.fn(),
@@ -32,6 +34,7 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
     },
+    paymentInbox: { upsert: vi.fn(async (args: any) => ({ ...args.create, status: 'READY' })) },
     paymentWebhookEvent: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -64,12 +67,12 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
   describe('AUD2-001: Proteção Anti-IDOR / Anti-Impersonation no Checkout', () => {
     it('deve rejeitar checkout se o customer.userId pertencer a outra loja', async () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({ id: 'loja-A' } as any);
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-1',
         lojaID: 'loja-A',
         price: new Prisma.Decimal('100.00'),
         stock: 10,
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any);
 
       // Usuário no banco pertence à loja-B
@@ -96,19 +99,19 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
 
     it('deve rejeitar checkout se o customer.userId não corresponder ao e-mail informado', async () => {
       vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({ id: 'loja-A' } as any);
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-1',
         lojaID: 'loja-A',
         price: new Prisma.Decimal('100.00'),
         stock: 10,
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any);
 
       // Usuário no banco é da loja-A mas com outro e-mail
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
         id: 'user-vitima',
         lojaID: 'loja-A',
-        email: 'legitimo@teste.com',
+        email: 'legitimo@teste.com', status: 'ACTIVE',
       } as any);
 
       await expect(
@@ -165,13 +168,16 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
       const executionOrder: string[] = [];
 
       const mockTx: any = {
+        $queryRaw: vi.fn().mockResolvedValue([]),
         product: {
+          findUnique: vi.fn(async ({ where }) => ({ id: where.id, lojaID: 'loja-1', retiredAt: null })),
           update: vi.fn(async ({ where }) => {
             executionOrder.push(`P:${where.id}`);
             return { id: where.id, stock: 10 };
           }),
         },
         productVariants: {
+          findUnique: vi.fn(async ({ where }) => ({ ProductID: where.id.replace('var-', 'prod-'), retiredAt: null })),
           update: vi.fn(async ({ where }) => {
             executionOrder.push(`V:${where.id}`);
             return { id: where.id, stock: 5 };
@@ -181,111 +187,40 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
 
       // Array intencionalmente em ordem invertida (Z, depois M, depois A)
       const disorderedItems = [
-        { productId: 'prod-Z', variantId: 'var-1', quantity: 1 },
-        { productId: 'prod-A', variantId: 'var-2', quantity: 2 },
-        { productId: 'prod-M', variantId: 'var-1', quantity: 1 },
+        { productId: 'prod-Z', variantId: 'var-Z', quantity: 1 },
+        { productId: 'prod-A', variantId: 'var-A', quantity: 2 },
+        { productId: 'prod-M', variantId: 'var-M', quantity: 1 },
       ];
 
-      await InventoryService.reserveStock(disorderedItems, mockTx);
+      await InventoryService.reserveStock(disorderedItems, mockTx, 'loja-1');
 
       // Deve executar na ordem determinística: prod-A -> prod-M -> prod-Z
       expect(executionOrder).toEqual([
         'P:prod-A',
-        'V:var-2',
+        'V:var-A',
         'P:prod-M',
-        'V:var-1',
+        'V:var-M',
         'P:prod-Z',
-        'V:var-1',
+        'V:var-Z',
       ]);
     });
   });
 
-  describe('AUD2-005: Resiliência em Concorrência de Webhooks Asaas e Pagamento de Pedidos Cancelados', () => {
-    const originalEnv = process.env;
-
-    beforeEach(() => {
-      process.env = { ...originalEnv, ASAAS_WEBHOOK_TOKEN: 'valid-test-token' };
+  describe('AUD2-005: Durable delivery and late-payment reconciliation boundary', () => {
+    beforeEach(() => { vi.stubEnv('ASAAS_WEBHOOK_TOKEN', 'valid-test-token'); vi.stubEnv('PAYMENT_WORKER_ENABLED', 'true'); });
+    const payload = { id: 'evt_fixture', event: 'PAYMENT_CONFIRMED', payment: { id: 'pay_fixture',
+      billingType: 'PIX', status: 'CONFIRMED', value: 150, externalReference: 'ord_cancelled_10' } };
+    const request = () => new Request('http://localhost/api/webhooks/asaas', { method: 'POST',
+      headers: { 'asaas-access-token': 'valid-test-token' }, body: JSON.stringify(payload) });
+    it('durable received marker is not mistaken for already applied effects', async () => {
+      const res = await webhookPost(request());
+      expect(res.status).toBe(200); expect(await res.json()).toMatchObject({ received: true, status: 'RECEIVED' });
+      expect(prisma.paymentInbox.upsert).toHaveBeenCalled(); expect(prisma.order.update).not.toHaveBeenCalled();
     });
-
-    it('deve capturar colisão P2002 em webhook concorrente e retornar ALREADY_PROCESSED graciosamente', async () => {
-      vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
-      // Simula erro de chave única (P2002) disparado quando duas requisições simultâneas tentam create
-      const p2002Error: any = new Error('Unique constraint failed on the fields: (eventId)');
-      p2002Error.code = 'P2002';
-      vi.mocked(prisma.paymentWebhookEvent.create).mockRejectedValueOnce(p2002Error);
-
-      const req = new Request('http://localhost/api/webhooks/asaas', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'asaas-access-token': 'valid-test-token',
-        },
-        body: JSON.stringify({
-          id: 'evt_concurrent_1',
-          event: 'PAYMENT_RECEIVED',
-          payment: { id: 'pay_concurrent_1', status: 'RECEIVED' },
-        }),
-      });
-
-      const res = await webhookPost(req);
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.status).toBe('ALREADY_PROCESSED');
-      expect(json.received).toBe(true);
-    });
-
-    it('deve registrar alerta no AuditLog e em adminNotes se PAYMENT_CONFIRMED chegar para pedido CANCELLED', async () => {
-      vi.mocked(prisma.paymentWebhookEvent.findUnique).mockResolvedValueOnce(null);
-      vi.mocked(prisma.paymentWebhookEvent.create).mockResolvedValueOnce({} as any);
-
-      // Pedido já está CANCELLED
-      vi.mocked(prisma.order.findFirst).mockResolvedValueOnce({
-        id: 'ord_cancelled_10',
-        status: 'CANCELLED',
-        lojaID: 'loja_1',
-        total: new Prisma.Decimal('150.00'),
-      } as any);
-
-      const req = new Request('http://localhost/api/webhooks/asaas', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'asaas-access-token': 'valid-test-token',
-        },
-        body: JSON.stringify({
-          id: 'evt_late_payment',
-          event: 'PAYMENT_CONFIRMED',
-          payment: {
-            id: 'pay_late_123',
-            status: 'CONFIRMED',
-            value: 150.0,
-            externalReference: 'ord_cancelled_10',
-          },
-        }),
-      });
-
-      const res = await webhookPost(req);
-      expect(res.status).toBe(200);
-
-      // Garante que o AuditLog foi chamado com a ação de alerta crítico
-      expect(prisma.auditLog.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            action: 'PAYMENT_RECEIVED_ON_CANCELLED_ORDER',
-            targetId: 'ord_cancelled_10',
-          }),
-        })
-      );
-
-      // Garante que adminNotes do pedido foi atualizado com o alerta explicativo
-      expect(prisma.order.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'ord_cancelled_10' },
-          data: expect.objectContaining({
-            adminNotes: expect.stringContaining('[ALERTA DE PAGAMENTO TARDIO]'),
-          }),
-        })
-      );
+    it('late-payment receipt preserves work for verified reconciliation, without a false commercial transition', async () => {
+      const res = await webhookPost(request()); expect(res.status).toBe(200);
+      expect(prisma.paymentInbox.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ eventType: 'PAYMENT_CONFIRMED' }) }));
+      expect(prisma.auditLog.create).not.toHaveBeenCalled(); expect(prisma.order.update).not.toHaveBeenCalled();
     });
   });
 
@@ -314,4 +249,13 @@ describe('Auditoria Profunda Rodada 2 — Testes de Homologação das Correçõe
       expect(res.status).toBe(404);
     });
   });
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
 });

@@ -368,7 +368,9 @@ export default function HomeClient({
               {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) */}
               <div className="pt-2">
                 <ProductFreightCalculator
+                  key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor)?.id ?? 'selection-pending')}
                   productId={selectedProduct.id}
+                  variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor)?.id}
                   price={selectedProduct.price}
                   lojaID={selectedProduct.lojaID}
                 />

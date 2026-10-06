@@ -1,54 +1,23 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth/guards';
-import prisma from '@/lib/prisma';
-import { z } from 'zod';
+import { requirePurchaseAdmin } from '@/lib/auth/guards';
+import { ok, err } from '@/lib/api-response';
+import { updateOrderTrackingBodySchema } from '@/lib/validators/order.validators';
+import { updateOrderTracking } from '@/lib/commerce/order-command';
+import { invalidateDashboardCache } from '@/services/dashboard.service';
 
-const updateTrackingSchema = z.object({
-  trackingCode: z.string().nullable().optional(),
-});
-
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ orderId: string }> }
-) {
-  try {
-    const guard = await requireAdmin(request);
-    if (guard instanceof NextResponse) return guard;
-
-    const { orderId } = await params;
-    const body = await request.json();
-
-    const parsed = updateTrackingSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    // Garante que o pedido pertence à loja do admin
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-    });
-
-    if (!order || order.lojaID !== guard.user.lojaID) {
-      return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 });
-    }
-
-    const updated = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        trackingCode: parsed.data.trackingCode?.trim() || null,
-        // Se adicionou rastreio e o status era PAID ou PENDING, pode sugerir transição para SHIPPED se desejar
-      },
-    });
-
-    return NextResponse.json({ success: true, data: updated }, { status: 200 });
-  } catch (error: any) {
-    console.error('[ORDER_TRACKING_UPDATE_ERROR]', error);
-    return NextResponse.json(
-      { error: error.message || 'Erro ao atualizar código de rastreamento' },
-      { status: 500 }
-    );
-  }
+export async function PATCH(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
+  const guard = await requirePurchaseAdmin(request);
+  if (guard instanceof NextResponse) return guard;
+  let body: unknown;
+  try { body = await request.json(); } catch { return err('JSON inválido.', 400, 'VALIDATION_ERROR'); }
+  const parsed = updateOrderTrackingBodySchema.safeParse(body);
+  if (!parsed.success) return err('Parâmetros inválidos.', 400, 'VALIDATION_ERROR');
+  const { orderId } = await params;
+  const result = await updateOrderTracking({ ...parsed.data, trackingCode: parsed.data.trackingCode ?? null, orderId, lojaID: guard.user.lojaID,
+    performedById: guard.user.id, actor: { type: 'USER', userId: guard.user.id, lojaID: guard.user.lojaID },
+    ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0].trim() });
+  if (result.success === false) return err(result.error,
+    result.code === 'NOT_FOUND' ? 404 : result.code === 'FORBIDDEN' ? 403 : result.code === 'CONFLICT' ? 409 : 422, result.code);
+  try { invalidateDashboardCache(guard.user.lojaID); } catch { /* Durable event committed. */ }
+  return ok(result.order);
 }

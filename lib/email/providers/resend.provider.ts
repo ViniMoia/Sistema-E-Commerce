@@ -35,7 +35,9 @@ export class ResendEmailService implements IEmailService {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
+          ...(options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
         },
+        signal: AbortSignal.timeout(8000),
         body: JSON.stringify({
           from,
           to,
@@ -48,10 +50,9 @@ export class ResendEmailService implements IEmailService {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("[ResendEmailService] Erro retornado pela API do Resend:", data);
         return {
           success: false,
-          error: data?.message || "Erro desconhecido retornado pelo Resend",
+          error: "EMAIL_PROVIDER_REJECTED",
         };
       }
 
@@ -59,11 +60,10 @@ export class ResendEmailService implements IEmailService {
         success: true,
         messageId: data.id,
       };
-    } catch (error: any) {
-      console.error("[ResendEmailService] Exceção ao enviar e-mail via Resend:", error);
+    } catch {
       return {
         success: false,
-        error: error.message || "Falha de rede ao conectar com a API do Resend",
+        error: "EMAIL_PROVIDER_UNRESOLVED",
       };
     }
   }

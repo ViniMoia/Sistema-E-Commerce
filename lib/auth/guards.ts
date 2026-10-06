@@ -37,6 +37,16 @@ export async function requireAdmin(_req?: Request): Promise<GuardResult> {
   return { user };
 }
 
+/** Purchase administration must agree with the storefront resolved by the host. */
+export async function requirePurchaseAdmin(req?: Request): Promise<GuardResult> {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const tenant = await getLojaFromHeaders();
+  if (!tenant) return NextResponse.json({ error: 'Loja não encontrada.' }, { status: 404 });
+  if (tenant.id !== auth.user.lojaID) return NextResponse.json({ error: 'Sessão não autorizada para esta loja.' }, { status: 403 });
+  return { ...auth, tenant };
+}
+
 /**
  * Exige tenant válido resolvido pelos cabeçalhos autoritativos da requisição (Fail-Closed).
  */

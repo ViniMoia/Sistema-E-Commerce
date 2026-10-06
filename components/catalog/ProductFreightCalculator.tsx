@@ -6,6 +6,7 @@ import { FreightOption } from '@/types/freight';
 
 interface ProductFreightCalculatorProps {
   productId: string;
+  variantId?: string;
   price?: number;
   lojaID?: string;
   className?: string;
@@ -19,7 +20,7 @@ interface LocationInfo {
 
 export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> = ({
   productId,
-  price,
+  variantId,
   lojaID,
   className = '',
 }) => {
@@ -87,8 +88,8 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
             items: [
               {
                 productId,
+                variantId,
                 quantity: 1,
-                price: price || 0,
               },
             ],
           }),
@@ -119,7 +120,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         setIsLoading(false);
       }
     },
-    [cep, productId, price, lojaID]
+    [cep, productId, variantId, lojaID]
   );
 
   // Carrega CEP salvo do localStorage na inicialização e calcula automaticamente se já houver CEP

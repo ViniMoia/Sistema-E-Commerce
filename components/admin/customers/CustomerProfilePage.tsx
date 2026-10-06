@@ -32,16 +32,8 @@ interface CustomerProfile {
   }>
 }
 
-interface CustomerMetrics {
-  totalOrders: number
-  totalSpent: number
-  averageOrderValue: number
-  firstOrderAt: string | null
-  lastOrderAt: string | null
-  mostBoughtProduct: string | null
-  preferredDeliveryType: 'DELIVERY' | 'PICKUP' | null
-  cancelledOrders: number
-}
+import type { CustomerMetrics } from '@/services/customer.service'
+import { customerMetricsSchema, CUSTOMER_METRICS_TIMEZONE } from '@/lib/commerce/customer-metrics-contract'
 
 interface CustomerProfilePageProps {
   customerId: string
@@ -55,48 +47,47 @@ export function CustomerProfilePage({ customerId, onClose }: CustomerProfilePage
   const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
+    let active = true
+    let generation = 0
+    let controller: AbortController
+    let timer: ReturnType<typeof setTimeout>
     async function fetchData() {
+      if (document.hidden) return
+      controller?.abort()
+      controller = new AbortController()
+      const revision = ++generation
+      setIsLoading(true)
+      setError(null)
       try {
-        setIsLoading(true)
-        setError(null)
-
         const [profileRes, metricsRes] = await Promise.all([
-          fetch(`/api/admin/customers/${customerId}`),
-          fetch(`/api/admin/customers/${customerId}/metrics`)
+          fetch(`/api/admin/customers/${customerId}`, { cache: 'no-store', signal: controller.signal }),
+          fetch(`/api/admin/customers/${customerId}/metrics`, { cache: 'no-store', signal: controller.signal }),
         ])
-
-        if (!profileRes.ok) {
-          const errData = await profileRes.json()
-          throw new Error(errData.error || 'Erro ao carregar dados do cliente')
-        }
-
-        if (!metricsRes.ok) {
-          const errData = await metricsRes.json()
-          throw new Error(errData.error || 'Erro ao carregar métricas do cliente')
-        }
-
-        const profileJson = await profileRes.json()
-        const metricsJson = await metricsRes.json()
-
-        if (profileJson.success && profileJson.data) {
-          setProfile(profileJson.data)
-        }
-
-        if (metricsJson.success && metricsJson.data) {
-          setMetrics(metricsJson.data)
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Ocorreu um erro desconhecido')
-        }
+        if (!profileRes.ok || !metricsRes.ok) throw new Error('Erro ao carregar dados e métricas do cliente')
+        const [profileJson, metricsJson] = await Promise.all([profileRes.json(), metricsRes.json()])
+        const parsed = customerMetricsSchema.safeParse(metricsJson.data)
+        if (!profileJson.success || profileJson.data?.id !== customerId || !metricsJson.success || parsed.success === false) throw new Error('Resposta de cliente inválida')
+        if (!active || revision !== generation) return
+        setProfile(profileJson.data)
+        setMetrics(parsed.data as CustomerMetrics)
+      } catch (err) {
+        if (!active || revision !== generation || controller.signal.aborted) return
+        setMetrics(null)
+        setError(err instanceof Error ? err.message : 'Erro ao carregar métricas')
       } finally {
-        setIsLoading(false)
+        if (active && revision === generation) {
+          setIsLoading(false)
+          clearTimeout(timer)
+          timer = setTimeout(() => void fetchData(), 30000)
+        }
       }
     }
-
-    fetchData()
+    const refresh = () => { clearTimeout(timer); void fetchData() }
+    const visibility = () => { if (!document.hidden) refresh(); else { clearTimeout(timer); generation++; controller?.abort() } }
+    void fetchData()
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', visibility)
+    return () => { active = false; generation++; controller?.abort(); clearTimeout(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', visibility) }
   }, [customerId])
 
   function getInitials(name: string): string {
@@ -111,7 +102,7 @@ export function CustomerProfilePage({ customerId, onClose }: CustomerProfilePage
   function formatMemberDate(isoString: string): string {
     return new Intl.DateTimeFormat('pt-BR', {
       year: 'numeric',
-      month: 'long'
+      month: 'long', timeZone: CUSTOMER_METRICS_TIMEZONE
     }).format(new Date(isoString))
   }
 

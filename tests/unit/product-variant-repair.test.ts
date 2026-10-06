@@ -73,4 +73,12 @@ describe("Saneamento do incidente de variantes", () => {
     expect(saveBackup).not.toHaveBeenCalled();
     expect(tx.productVariants.delete).not.toHaveBeenCalled();
   });
+  it('refuses current inventory models before any legacy link or stock mutation', async () => {
+    tx.productVariants.findMany.mockResolvedValue([{ ...primary(), inventoryVersion: 0 }, duplicate()]);
+    await expect(repairVariants(snapshot, saveBackup)).rejects.toThrow('incompatível');
+    expect(saveBackup).not.toHaveBeenCalled();
+    expect(tx.productVariants.delete).not.toHaveBeenCalled();
+    expect(tx.cartItem.update).not.toHaveBeenCalled();
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+  });
 });

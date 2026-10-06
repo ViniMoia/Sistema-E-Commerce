@@ -6,6 +6,7 @@ import { CartProvider } from "@/components/providers/CartProvider";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Toaster } from "@/components/ui/toaster";
 import { getLojaFromHeaders } from "@/lib/tenant";
+import { getCurrentUser } from '@/lib/session';
 
 export async function generateMetadata(): Promise<Metadata> {
   const loja = await getLojaFromHeaders();
@@ -25,7 +26,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const loja = await getLojaFromHeaders();
+  const [loja, user] = await Promise.all([getLojaFromHeaders(), getCurrentUser()]);
 
   const themeStyle = {
     "--primary": loja?.primaryColor || "#DDAF02",
@@ -35,7 +36,7 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" className="dark" style={themeStyle}>
       <body className="antialiased">
-        <CartProvider>
+        <CartProvider lojaID={loja?.id ?? ''} userID={user?.lojaID === loja?.id ? user?.id ?? null : null}>
           <ConditionalHeader>
             <Header />
           </ConditionalHeader>

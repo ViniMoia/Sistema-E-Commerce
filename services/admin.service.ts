@@ -11,6 +11,7 @@
  */
 
 import prisma from "@/lib/prisma";
+import { getCustomerMetrics as canonicalCustomerMetrics } from "@/services/customer.service";
 import { Prisma } from "@prisma/client";
 import type {
   ListOrdersParams,
@@ -19,24 +20,18 @@ import type {
   ListCustomersParams,
   CustomerMetrics,
 } from "@/types/admin.types";
-import { updateOrderStatus, OrderError } from "@/services/order.service";
+import { updateOrderStatus } from "@/services/order.service";
 
 // ─── Valid status transitions ─────────────────────────────────────────────────
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ["PAID", "CANCELLED"],
-  PAID: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["DELIVERED"],
-  DELIVERED: [],
-  CANCELLED: [],
-};
 
 // ─── 1. LIST ORDERS (admin) ────────────────────────────────────────────────────
 
 export async function listOrders(params: ListOrdersParams) {
+  if (!params.lojaID) throw new Error("PURCHASE_TENANT_REQUIRED");
   const { pageSize = 20, status, search, dateFrom, dateTo, cursor } = params;
 
   const where: Prisma.OrderWhereInput = {
+    lojaID: params.lojaID,
     ...(status && { status }),
     ...(dateFrom || dateTo
       ? {
@@ -79,57 +74,11 @@ export async function listOrders(params: ListOrdersParams) {
 
 // ─── 2. UPDATE ORDER STATUS (admin) ───────────────────────────────────────────
 
-export async function updateOrderStatusAdmin(
-  input: UpdateOrderStatusInput
-): Promise<UpdateStatusResult> {
-  const { orderId, newStatus, performedById, ipAddress } = input;
-
-  // Resolve current order to validate transition
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    select: { id: true, status: true },
-  });
-
-  if (!order) {
-    return { success: false, error: "Order not found", code: "NOT_FOUND" };
-  }
-
-  const allowed = VALID_TRANSITIONS[order.status] ?? [];
-  if (!allowed.includes(newStatus)) {
-    return {
-      success: false,
-      error: `Transition ${order.status} → ${newStatus} is not allowed`,
-      code: "INVALID_TRANSITION",
-    };
-  }
-
-  try {
-    await updateOrderStatus({ orderId, newStatus, performedById });
-
-    // Audit the status change
-    await prisma.auditLog.create({
-      data: {
-        action: `ORDER_STATUS_CHANGED:${order.status}→${newStatus}`,
-        targetId: performedById,
-        actorId: performedById,
-        entity: "Order",
-        entityId: orderId,
-        metadata: {
-          orderId,
-          from: order.status,
-          to: newStatus,
-          ...(ipAddress && { ipAddress }),
-        },
-      },
-    });
-
-    return { success: true, order: { id: orderId, status: newStatus } };
-  } catch (err) {
-    if (err instanceof OrderError) {
-      return { success: false, error: err.message, code: "INVALID_TRANSITION" };
-    }
-    throw err;
-  }
+export async function updateOrderStatusAdmin(input: UpdateOrderStatusInput): Promise<UpdateStatusResult> {
+  const user = await prisma.user.findUnique({ where: { id: input.performedById }, select: { lojaID: true, status: true, role: true } });
+  if (!user || user.status !== 'ACTIVE' || user.role !== 'ADMIN') return { success: false, error: 'Acesso negado.', code: 'FORBIDDEN' };
+  return updateOrderStatus({ ...input, lojaID: user.lojaID,
+    actor: { type: 'USER', userId: input.performedById, lojaID: user.lojaID } });
 }
 
 // ─── 3. LIST CUSTOMERS (admin) ────────────────────────────────────────────────
@@ -174,30 +123,8 @@ export async function listCustomers(params: ListCustomersParams) {
 
 // ─── 4. CUSTOMER METRICS ──────────────────────────────────────────────────────
 
-export async function getCustomerMetrics(userId: string): Promise<CustomerMetrics> {
-  const [aggregate, lastOrder] = await Promise.all([
-    prisma.order.aggregate({
-      where: { userID: userId },
-      _count: { id: true },
-      _sum: { total: true },
-      _avg: { total: true },
-    }),
-    prisma.order.findFirst({
-      where: { userID: userId },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    }),
-  ]);
-
-  const totalOrders = aggregate._count.id;
-  // Prisma.Decimal → number boundary conversion (flagged in schema audit)
-  const totalSpent = aggregate._sum.total?.toNumber() ?? 0;
-  const averageTicket = aggregate._avg.total?.toNumber() ?? 0;
-
-  return {
-    totalOrders,
-    totalSpent,
-    averageTicket,
-    lastOrderDate: lastOrder?.createdAt ?? null,
-  };
+export async function getCustomerMetrics(userId: string, lojaID?: string): Promise<CustomerMetrics> {
+  if (!lojaID) throw new Error('ACCOUNT_ACCESS_DENIED');
+  const metrics = await canonicalCustomerMetrics({ customerId: userId, lojaID });
+  return { ...metrics, averageTicket: metrics.averageOrderValue, lastOrderDate: metrics.lastOrderAt ? new Date(metrics.lastOrderAt) : null };
 }

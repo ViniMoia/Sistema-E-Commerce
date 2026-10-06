@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server'
 import { ok, err } from '@/lib/api-response'
 import { requireAuth } from '@/lib/auth/guards'
 import { getStatement } from '@/services/loyalty.service'
+import { getLojaFromHeaders } from '@/lib/tenant'
 
 export async function GET(req: Request) {
   const auth = await requireAuth(req)
   if (auth instanceof NextResponse) return auth
+  const activeLoja = await getLojaFromHeaders()
+  if (!activeLoja) return err('Loja não encontrada.', 404)
+  if (auth.user.lojaID !== activeLoja.id) return err('Acesso não autorizado à loja.', 403)
 
   const url = new URL(req.url)
   const page = parseInt(url.searchParams.get('page') || '1', 10)

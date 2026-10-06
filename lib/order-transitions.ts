@@ -13,6 +13,7 @@ export function isValidTransition(
   next: OrderStatus,
   deliveryType?: string
 ): boolean {
+  if (next === 'SHIPPED' && deliveryType && deliveryType !== 'DELIVERY') return false
   // Retirada presencial (PICKUP) e modalidade sem frete (NONE) podem transicionar direto de PAGO para ENTREGUE
   if (current === 'PAID' && next === 'DELIVERED') {
     return deliveryType === 'PICKUP' || deliveryType === 'NONE'

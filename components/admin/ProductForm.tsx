@@ -10,6 +10,7 @@ import { Trash2, Plus, Loader2, Sparkles, Check, ArrowLeft, Layers, Image as Ima
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
+import { InventoryPanel } from '@/components/admin/InventoryPanel';
 import {
   Form,
   FormControl,
@@ -32,6 +33,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 
 interface ProductInitialData {
+  catalogVersion?: number;
   id?: string;
   name: string;
   description: string;
@@ -44,6 +46,7 @@ interface ProductInitialData {
     size: string;
     color: string;
     stock: number;
+    retiredAt?: Date | string | null;
   }>;
 }
 
@@ -77,7 +80,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       stock: initialData?.stock ?? 0,
       variants:
         initialData?.productVariants && initialData.productVariants.length > 0
-          ? initialData.productVariants.map((v) => ({
+          ? initialData.productVariants.filter(v => !v.retiredAt).map((v) => ({
               id: v.id,
               size: v.size,
               color: v.color,
@@ -112,13 +115,13 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl,
-        stock: data.stock,
+        ...(!isEditing ? { stock: data.stock } : { expectedCatalogVersion: initialData?.catalogVersion }),
         lojaID: lojaID,
         variants: data.variants.map((v) => ({
           id: v.id,
           size: v.size,
           color: v.color,
-          stock: v.stock,
+          stock: isEditing ? 0 : v.stock,
         })),
         galleryUrls: data.galleryUrls.map((g) => g.url),
       };
@@ -135,6 +138,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       const json = await res.json();
 
       if (!res.ok) {
+        if (res.status === 409 && json.code) throw new Error('O catálogo foi alterado em outra operação. Seu rascunho foi preservado; compare com os dados atuais antes de salvar novamente.');
         let errorDetails = "";
         if (json.details?.fieldErrors) {
           const errors = Object.entries(json.details.fieldErrors)
@@ -198,6 +202,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
 
   return (
     <Form {...form}>
+      {isEditing && productId && <InventoryPanel key={productId} productId={productId} />}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* Seção 1: Dados Cadastrais Principais */}
         <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
@@ -289,6 +294,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                       <input
                         type="number"
                         placeholder="100"
+                        disabled={isEditing}
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
@@ -347,7 +353,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
 
             <button
               type="button"
-              onClick={() => append({ size: "500ml", color: "Padrão", stock: 10 })}
+              onClick={() => append({ size: "500ml", color: "Padrão", stock: isEditing ? 0 : 10 })}
               className="px-4 py-2 rounded-full border border-catalog-gold/40 bg-catalog-gold/15 text-catalog-gold hover:bg-catalog-gold/25 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -395,6 +401,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                   <input
                     type="number"
                     {...form.register(`variants.${index}.stock`, { valueAsNumber: true })}
+                    disabled={isEditing}
                     placeholder="10"
                     className="w-full bg-[#050B14] border border-catalog-gold/30 text-white rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-catalog-gold"
                   />

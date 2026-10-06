@@ -18,10 +18,13 @@ export async function GET(request: NextRequest) {
     return err('Parâmetros de consulta inválidos.', 400);
   }
 
-  const customers = await listCustomers({
-    lojaID: auth.user.lojaID,
-    ...result.data
-  });
-
-  return ok(customers);
+  try {
+    const customers = await listCustomers({ lojaID: auth.user.lojaID, ...result.data });
+    const response = ok(customers);
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'CUSTOMER_CURSOR_INVALID') return err('Cursor de cliente inválido.', 400);
+    throw error;
+  }
 }

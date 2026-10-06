@@ -26,10 +26,10 @@ export class CorreiosProvider implements IFreightProvider {
 
     const options: FreightOption[] = [];
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
     try {
       // Chamada HTTP para API de cálculo com Timeout de 3.5 segundos
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
 
       // Endpoint da API de Preço e Prazo dos Correios
       const url = new URL('https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx');
@@ -45,7 +45,7 @@ export class CorreiosProvider implements IFreightProvider {
       url.searchParams.append('nVlLargura', widthCm.toString());
       url.searchParams.append('nVlDiametro', '0');
       url.searchParams.append('sCdMaoPropria', 'N');
-      url.searchParams.append('nVlValorDeclarado', '0');
+      url.searchParams.append('nVlValorDeclarado', request.cartTotal.toFixed(2));
       url.searchParams.append('sCdAvisoRecebimento', 'N');
       url.searchParams.append('StrRetorno', 'xml');
 
@@ -53,8 +53,6 @@ export class CorreiosProvider implements IFreightProvider {
         signal: controller.signal,
         headers: { 'User-Agent': 'E-Commerce-Freight-Service/1.0' },
       });
-
-      clearTimeout(timeoutId);
 
       if (response.ok) {
         const text = await response.text();
@@ -86,15 +84,13 @@ export class CorreiosProvider implements IFreightProvider {
           }
         }
       }
-    } catch (err: any) {
-      // Log seguro sem derrubar o fluxo em caso de timeout / offline dos Correios
-      console.warn(`[CORREIOS_PROVIDER_WARNING] Falha na consulta direta aos Correios: ${err.message}. Aplicando tabela de contingência.`);
-    }
+    } catch {
+      throw new Error('CORREIOS_UNAVAILABLE');
+    } finally { clearTimeout(timeoutId); }
 
-    // Se a API dos Correios falhar temporariamente, aplica fallback tarifário estimado
+    // An unavailable provider does not authorize an invented shipping price.
     if (options.length === 0) {
-      const fallbackOptions = this.calculateContingencyTariffs(originCep, destCep, weightKg, additionalDays);
-      options.push(...fallbackOptions);
+      throw new Error('CORREIOS_OPTIONS_UNAVAILABLE');
     }
 
     return options;
@@ -128,45 +124,4 @@ export class CorreiosProvider implements IFreightProvider {
     return results;
   }
 
-  /**
-   * Tabela tarifária de contingência caso os servidores dos Correios estejam instáveis.
-   * Evita perda de vendas durante quedas pontuais da API governamental.
-   */
-  private calculateContingencyTariffs(originCep: string, destCep: string, weightKg: number, additionalDays: number): FreightOption[] {
-    const isSameRegion = originCep.substring(0, 2) === destCep.substring(0, 2);
-    const isSameState = originCep.substring(0, 1) === destCep.substring(0, 1);
-
-    let basePac = isSameRegion ? 18.50 : isSameState ? 24.90 : 32.50;
-    let baseSedex = isSameRegion ? 26.00 : isSameState ? 38.50 : 54.00;
-
-    // Adicional por peso acima de 1kg
-    const extraWeight = Math.max(0, weightKg - 1);
-    basePac += extraWeight * 4.5;
-    baseSedex += extraWeight * 8.0;
-
-    const pacDays = (isSameRegion ? 3 : isSameState ? 5 : 8) + additionalDays;
-    const sedexDays = (isSameRegion ? 1 : isSameState ? 2 : 4) + additionalDays;
-
-    return [
-      {
-        providerId: 'CORREIOS',
-        serviceCode: '04510',
-        serviceName: 'PAC (Estimado)',
-        carrier: 'Correios',
-        price: Number(basePac.toFixed(2)),
-        deliveryTimeInDays: pacDays,
-        description: `Envio econômico (${pacDays} dias úteis)`,
-        isRecommended: true,
-      },
-      {
-        providerId: 'CORREIOS',
-        serviceCode: '04014',
-        serviceName: 'SEDEX (Estimado)',
-        carrier: 'Correios',
-        price: Number(baseSedex.toFixed(2)),
-        deliveryTimeInDays: sedexDays,
-        description: `Envio expresso (${sedexDays} dias úteis)`,
-      },
-    ];
-  }
 }

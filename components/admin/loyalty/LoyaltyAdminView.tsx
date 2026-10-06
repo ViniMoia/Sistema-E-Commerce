@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { prepareLoyaltyAdjustment, type PendingLoyaltyAdjustment } from '@/lib/commerce/loyalty-adjust-draft'
 import {
   Award,
   Settings,
@@ -56,6 +57,7 @@ export function LoyaltyAdminView() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [adjusting, setAdjusting] = useState(false)
+  const pendingAdjustment = useRef<PendingLoyaltyAdjustment | null>(null)
   const [activeTab, setActiveTab] = useState<'config' | 'adjust' | 'history'>('config')
 
   // Form State para Configurações
@@ -138,23 +140,23 @@ export function LoyaltyAdminView() {
     }
 
     setAdjusting(true)
+    const command = prepareLoyaltyAdjustment(adjustForm, pendingAdjustment.current, () => crypto.randomUUID())
+    pendingAdjustment.current = command.pending
     try {
       const res = await fetch('/api/admin/loyalty/adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userID: adjustForm.userID.trim(),
-          points: Number(adjustForm.points),
-          description: adjustForm.description.trim(),
-        }),
+        body: JSON.stringify(command.body),
       })
 
       const data = await res.json()
-      if (data.success) {
+      if (res.ok && data.success) {
+        pendingAdjustment.current = null
         toast.success(`Ajuste de saldo realizado! Novo saldo: ${data.data.newBalance} pts`)
         setAdjustForm({ userID: '', points: 100, description: '' })
         loadData()
       } else {
+        if (res.status >= 400 && res.status < 500) pendingAdjustment.current = null
         toast.error(data.error || 'Erro ao executar ajuste.')
       }
     } catch (err) {

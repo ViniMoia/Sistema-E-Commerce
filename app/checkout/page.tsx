@@ -4,48 +4,47 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCartStore } from '@/store/cart.store'
-import { CheckoutForm } from '@/components/checkout/CheckoutForm'
+import { CheckoutForm, type CheckoutResult } from '@/components/checkout/CheckoutForm'
 import { Spinner } from '@/components/ui'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
 import { ShieldCheck, ShoppingBag, ArrowLeft } from 'lucide-react'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cart } = useCartStore()
+  const { cart, fetchCart, loadState, error: cartError, context, isLoading } = useCartStore()
   const items = cart?.items || []
-  const [loja, setLoja] = useState<any>(null)
+  const [loja, setLoja] = useState<{ id: string; name?: string; pixKey?: string; whatsappNumber?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reload, setReload] = useState(0)
+
 
   useEffect(() => {
-    fetchActiveLojaSettings()
-  }, [])
-
-  const fetchActiveLojaSettings = async () => {
-    try {
-      setLoading(true)
+    let disposed = false
+    const controller = new AbortController()
+    const loadSettings = async () => {
       setError(null)
-
-      const res = await fetch('/api/loja/active')
-
-      if (!res.ok) {
-        setError('Loja não encontrada')
-        setLoading(false)
-        return
-      }
-
-      const lojaData = await res.json()
-
-      setLoja(lojaData)
-      setLoading(false)
-    } catch (err) {
-      console.error('[CHECKOUT_PAGE_ERROR]', err)
-      setError('Erro ao carregar configurações da loja')
-      setLoading(false)
+      try {
+        const response = await fetch('/api/loja/active', { cache: 'no-store', signal: controller.signal })
+        if (!response.ok) throw new Error('Loja não encontrada')
+        const data = await response.json()
+        if (typeof data?.id !== 'string') throw new Error('Loja inválida')
+        await fetchCart()
+        if (!disposed) { setLoja(data); setLoading(false) }
+      } catch { if (!disposed) { setError('Erro ao carregar configurações da loja'); setLoading(false) } }
     }
-  }
+    void loadSettings()
+    const intentID = new URL(window.location.href).searchParams.get('intent')
+    if (intentID) fetch('/api/checkout/intents/' + encodeURIComponent(intentID), { cache: 'no-store', signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Falha na recuperação')
+        const data = (await response.json()).data
+        if (!disposed && data?.result?.order) router.replace('/checkout/confirmation?intent=' + encodeURIComponent(intentID))
+      }).catch(() => { if (!disposed) setError('Não foi possível recuperar a compra. Tente carregar a página novamente.') })
+    return () => { disposed = true; controller.abort() }
+  }, [router, fetchCart, context?.lojaID, context?.userID, reload])
 
-  if (loading) {
+  if (loading || !cart && (loadState === 'idle' || loadState === 'loading')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-catalog-bg text-catalog-text">
         <div className="text-center space-y-3">
@@ -58,11 +57,12 @@ export default function CheckoutPage() {
     )
   }
 
-  if (error) {
+  if (error || loadState === 'error' && !cart) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-catalog-bg text-catalog-text px-4">
         <div className="max-w-md w-full bg-catalog-card border border-red-500/40 rounded-3xl p-8 text-center shadow-2xl backdrop-blur-xl">
-          <p className="text-red-400 font-mono text-sm mb-6">{error}</p>
+          <p className="text-red-400 font-mono text-sm mb-6">{error || cartError}</p>
+          <button onClick={() => { setLoading(true); setReload(value => value + 1) }} className="mb-4 text-white">Tentar carregar novamente</button>
           <button
             onClick={() => router.push('/')}
             className="btn-shimmer px-6 py-3 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs uppercase tracking-widest"
@@ -88,42 +88,11 @@ export default function CheckoutPage() {
   }
 
   // Handle form submission
-  const handleOrderCreated = (rawResult: any) => {
-    const result = rawResult?.data?.order || rawResult?.order || rawResult
-    if (!result) return
-
-    sessionStorage.setItem(
-      'last_order',
-      JSON.stringify({
-        orderId: result.id || result.orderId,
-        orderNumber: result.orderNumber,
-        customer: {
-          name: result.customer?.name || '',
-          phone: result.customer?.phone || '',
-        },
-        items: result.items || [],
-        deliveryType: result.deliveryType,
-        address: result.address || undefined,
-        freightValue: result.freightValue,
-        total: result.total,
-        pixKey: result.pixKey,
-        pixQrCode: result.pixQrCode || null,
-        pixPayload: result.pixPayload || null,
-        asaasPaymentId: result.asaasPaymentId || null,
-        paymentMethod: result.paymentMethod,
-        creditCardBrand: result.creditCardBrand,
-        creditCardLast4: result.creditCardLast4,
-        installments: result.installments,
-        installmentValue: result.installmentValue,
-        asaasBankSlipUrl: result.asaasBankSlipUrl,
-        asaasDigitableLine: result.asaasDigitableLine,
-        asaasBarCode: result.asaasBarCode,
-        asaasDueDate: result.asaasDueDate,
-        whatsappNumber: loja?.whatsappNumber || '',
-      })
-    )
-
-    router.push('/checkout/confirmation')
+  const handleOrderCreated = (result: CheckoutResult) => {
+    if (!result.checkoutIntentID) return
+    // Recovery authority remains in the backend; storage is optional navigation support.
+    try { sessionStorage.setItem('last_checkout_intent', result.checkoutIntentID); sessionStorage.removeItem('last_order') } catch {}
+    router.push('/checkout/confirmation?intent=' + encodeURIComponent(result.checkoutIntentID))
   }
 
   return (
@@ -172,6 +141,9 @@ export default function CheckoutPage() {
 
       {/* Conteúdo Principal */}
       <div className="relative z-10 flex-1 flex flex-col justify-center">
+        {cart && loadState === 'error' && <div role="alert" className="p-4 text-red-400 text-center">
+          <p>{cartError}</p><button onClick={() => { void fetchCart().catch(() => {}) }}>Tentar atualizar o carrinho</button>
+        </div>}
         {items.length === 0 ? (
           <div className="max-w-lg mx-auto px-4 py-16 text-center animate-in fade-in zoom-in duration-500">
             <div className="bg-catalog-card border border-catalog-gold/45 rounded-3xl p-8 sm:p-12 shadow-2xl backdrop-blur-2xl space-y-6">
@@ -197,10 +169,14 @@ export default function CheckoutPage() {
         ) : (
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
             <CheckoutForm
+              key={loja.id + ':' + (context?.userID ?? 'guest') + ':' + cart?.id}
+              sourcePending={isLoading || loadState !== 'ready'}
+        cartID={cart?.id}
+        cartVersion={cart?.version}
               lojaID={loja.id}
               pixKey={loja.pixKey || ''}
               whatsappNumber={loja.whatsappNumber || ''}
-              items={items as any}
+              items={items}
               onOrderCreated={handleOrderCreated}
             />
           </main>

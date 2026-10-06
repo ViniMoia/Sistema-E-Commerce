@@ -1,12 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { debitRedeemedPoints, simulatePointsRedemption, LoyaltyError } from '@/services/loyalty.service'
-import { createOrder } from '@/services/checkout.service'
+import { createOrder } from '@/tests/helpers/checkout-domain-fixture'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { assertPoints } from '@/lib/commerce/loyalty-policy'
+vi.mock('@/services/loyalty.service', async importOriginal => ({ ...await importOriginal<typeof import('@/services/loyalty.service')>(), debitRedeemedPoints: vi.fn().mockResolvedValue(null) }))
 
-vi.mock('@/lib/prisma', () => {
+vi.mock('@/lib/prisma', async () => {
+  const { paymentAttemptFixture } = await import('@/tests/helpers/payment-fixture-mock');
   return {
     default: {
+      paymentAttempt: paymentAttemptFixture(),
+    $queryRaw: vi.fn().mockResolvedValue([]),
+      orderBuyer: { create: vi.fn(async ({ data }: any) => ({ id: "buyer-1", ...data })) },
       $transaction: vi.fn((cb) => (typeof cb === 'function' ? cb(prisma) : cb)),
       loja: {
         findUnique: vi.fn(),
@@ -24,6 +30,7 @@ vi.mock('@/lib/prisma', () => {
       },
       user: {
         upsert: vi.fn(),
+        findUnique: vi.fn(),
       },
       address: {
         create: vi.fn(),
@@ -33,6 +40,7 @@ vi.mock('@/lib/prisma', () => {
         findUnique: vi.fn(),
         update: vi.fn(),
       },
+      loyaltyLot: { aggregate: vi.fn().mockResolvedValue({ _sum: { remaining: 0 } }) },
       loyaltyWallet: {
         findUnique: vi.fn(),
         upsert: vi.fn(),
@@ -51,74 +59,17 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
     vi.mocked(prisma.productVariants.findMany).mockResolvedValue([])
   })
 
-  describe('1. Prevenção de Concorrência & Double-Spending', () => {
-    it('deve bloquear double-spending em requisições concorrentes de débito com rollback', async () => {
-      let currentBalance = 500
-
-      // Simulação de execução concorrente atômica no banco
-      ;(prisma.loyaltyWallet.findUnique as any).mockImplementation(async () => {
-        return {
-          id: 'wal-1',
-          lojaID: 'loja-1',
-          userID: 'usr-1',
-          balance: currentBalance,
-          pending: 0,
-          lifetimeEarn: 500,
-          version: 1,
-        }
-      })
-
-      ;(prisma.loyaltyWallet.update as any).mockImplementation(async ({ data }: any) => {
-        const decrementAmount = data.balance.decrement
-        if (currentBalance < decrementAmount) {
-          throw new LoyaltyError('INSUFFICIENT_POINTS', 'Saldo insuficiente para resgate.')
-        }
-        currentBalance -= decrementAmount
-        return {
-          id: 'wal-1',
-          balance: currentBalance,
-          version: 2,
-        }
-      })
-
-      vi.mocked(prisma.loyaltyTransaction.create).mockResolvedValue({
-        id: 'tx-1',
-      } as any)
-
-      // Primeira requisição: consome 500 pontos
-      const req1 = debitRedeemedPoints({
-        lojaID: 'loja-1',
-        userID: 'usr-1',
-        orderId: 'ord-1',
-        points: 500,
-        monetaryValue: 25.0,
-      })
-
-      // Segunda requisição (aba concorrente tentando gastar os mesmos 500 pontos)
-      const req2 = debitRedeemedPoints({
-        lojaID: 'loja-1',
-        userID: 'usr-1',
-        orderId: 'ord-2',
-        points: 500,
-        monetaryValue: 25.0,
-      })
-
-      const [res1, res2] = await Promise.allSettled([req1, req2])
-
-      // Assert: Exatamente uma requisição é aprovada e a concorrente é rejeitada
-      expect(res1.status).toBe('fulfilled')
-      expect(res2.status).toBe('rejected')
-      if (res2.status === 'rejected') {
-        expect(res2.reason.message).toContain('Saldo insuficiente')
-      }
-      expect(currentBalance).toBe(0)
+  describe('1. Input boundary; double-spending is verified in real PostgreSQL', () => {
+    it('rejects fractional, non-finite and out-of-range points before database access', () => {
+      for (const value of [1.5, NaN, Infinity, -1, 2147483648]) expect(() => assertPoints(value)).toThrow(LoyaltyError)
+      expect(prisma.loyaltyWallet.update).not.toHaveBeenCalled()
     })
   })
 
   describe('2. Isolamento Multi-Tenant Estrito (Cross-Tenant)', () => {
     const lojaA = 'loja-alpha'
     const lojaB = 'loja-beta'
-    const userId = 'usr-comum'
+    const userId = 'usr-loja-alpha'
 
     it('não deve permitir que pontos da Loja A sejam consultados ou resgatados na Loja B', async () => {
       // Configuração das duas lojas
@@ -148,10 +99,11 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
         return null
       })
 
-      // Usuário tem 1000 pontos na Loja A e 0 pontos na Loja B
-      ;(prisma.loyaltyWallet.upsert as any).mockImplementation(async ({ where }: any) => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: userId, status: 'ACTIVE' } as any).mockResolvedValueOnce(null)
+      // A conta pertence à Loja A. Simulação não cria carteira em outra loja.
+      ;(prisma.loyaltyWallet.findUnique as any).mockImplementation(async ({ where }: any) => {
         if (where.lojaID_userID.lojaID === lojaA) {
-          return { id: 'wal-a', lojaID: lojaA, userID: userId, balance: 1000 }
+          return { id: 'wal-a', lojaID: lojaA, userID: userId, balance: 1000, accountingReady: true, debt: 0 }
         }
         return { id: 'wal-b', lojaID: lojaB, userID: userId, balance: 0 }
       })
@@ -167,16 +119,13 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
       expect(simLojaA.pointsToRedeem).toBe(500)
       expect(simLojaA.discountValue).toBe(25)
 
-      // Simulação na Loja B com os mesmos pontos: Deve ser rejeitado por saldo insuficiente
-      const simLojaB = await simulatePointsRedemption({
+      await expect(simulatePointsRedemption({
         lojaID: lojaB,
         userID: userId,
         subtotal: 500,
         requestedPoints: 500,
-      })
-      expect(simLojaB.eligible).toBe(false)
-      expect(simLojaB.pointsToRedeem).toBe(0)
-      expect(simLojaB.reason).toContain('Saldo mínimo')
+      })).rejects.toMatchObject({ code: 'USER_NOT_FOUND' })
+      expect(prisma.loyaltyWallet.upsert).not.toHaveBeenCalled()
     })
   })
 
@@ -192,9 +141,11 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
         loyaltyMaxDiscountPct: new Prisma.Decimal('20.0'), // Max 20%
       } as any)
 
-      vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValueOnce({
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'usr-1', status: 'ACTIVE' } as any)
+      vi.mocked(prisma.loyaltyWallet.findUnique).mockResolvedValueOnce({
         id: 'wal-1',
-        balance: 5000, // Cliente tem muitos pontos (R$ 250 em descontos)
+        balance: 5000,
+        accountingReady: true, debt: 0, // Cliente tem muitos pontos (R$ 250 em descontos)
       } as any)
 
       // Subtotal R$ 100,00 -> Teto de 20% é R$ 20,00 (400 pontos)
@@ -212,6 +163,7 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
     })
 
     it('não deve abater desconto de pontos sobre o valor do frete', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: 'usr-1', lojaID: 'loja-1', email: 'c@teste.com', status: 'ACTIVE' } as any)
       vi.mocked(prisma.loja.findUnique).mockResolvedValue({
         id: 'loja-1',
         name: 'Loja Teste',
@@ -224,13 +176,13 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
       } as any)
 
       // Produto: R$ 50,00
-      vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.product.findUnique).mockResolvedValue({
         id: 'prod-1',
         name: 'Camisa',
         price: new Prisma.Decimal('50.00'),
         stock: 5,
         lojaID: 'loja-1',
-        productVariants: [],
+        productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
       } as any)
 
       vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
@@ -254,14 +206,17 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
       vi.mocked(prisma.loyaltyWallet.findUnique).mockResolvedValue({
         id: 'wal-1',
         balance: 1000,
+        accountingReady: true, debt: 0,
       } as any)
       vi.mocked(prisma.loyaltyWallet.upsert).mockResolvedValue({
         id: 'wal-1',
         balance: 1000,
+        accountingReady: true, debt: 0,
       } as any)
       vi.mocked(prisma.loyaltyWallet.update).mockResolvedValue({
         id: 'wal-1',
         balance: 0,
+        accountingReady: true, debt: 0,
       } as any)
       vi.mocked(prisma.loyaltyTransaction.create).mockResolvedValue({
         id: 'tx-1',
@@ -290,10 +245,11 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
 
       // Cliente usa 1000 pontos para zerar o subtotal de R$ 50,00
       const result = await createOrder({
+      paymentMethod: 'WHATSAPP_PIX',
         lojaID: 'loja-1',
         customer: { name: 'Cliente', email: 'c@teste.com', phone: '11999999999', userId: 'usr-1' },
         items: [{ productId: 'prod-1', quantity: 1 }],
-        deliveryType: 'DELIVERY',
+        deliveryType: 'DELIVERY', freightQuoteToken: 'authorized-fixture-quote', freightOwnerKey: 'g:' + 'a'.repeat(64),
         address: {
           cep: '01001-000',
           state: 'SP',
@@ -317,3 +273,23 @@ describe('Segurança, Concorrência e Isolamento Multi-Tenant do Sistema de Pont
     })
   })
 })
+
+vi.mock('@/lib/freight/acceptance', async () => {
+  const { freightAcceptanceMock } = await import('@/tests/helpers/freight-acceptance-mock');
+  return freightAcceptanceMock(30);
+});
+
+vi.mock('@/services/payment/capabilities.service', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/services/payment/capabilities.service')>();
+  const { completePaymentStore } = await import('@/tests/helpers/payment-fixture-mock');
+  return { paymentCapabilities: (store: Parameters<typeof actual.paymentCapabilities>[0], gateway: Parameters<typeof actual.paymentCapabilities>[1]) => actual.paymentCapabilities(completePaymentStore(store), gateway) };
+});
+
+vi.mock('@/services/checkout-intent.service', async importOriginal => {
+  const { intentUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return intentUnitMock(await importOriginal<typeof import('@/services/checkout-intent.service')>());
+});
+vi.mock('@/services/checkout-plan.service', async importOriginal => {
+  const { planUnitMock } = await import('@/tests/helpers/checkout-domain-fixture');
+  return planUnitMock(await importOriginal<typeof import('@/services/checkout-plan.service')>());
+});

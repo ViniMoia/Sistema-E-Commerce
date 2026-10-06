@@ -1,111 +1,55 @@
-import { getPaymentConfig, type PaymentConfig } from '@/lib/config/payment.config';
-
-export interface InstallmentOption {
-  count: number;
-  installmentValue: number;
-  totalWithInterest: number;
-  hasInterest: boolean;
-  label: string;
+import { getPaymentConfig, paymentConfigSchema, type PaymentConfig } from '@/lib/config/payment.config';
+export interface InstallmentOption { count: number; installmentValue: number; totalWithInterest: number; hasInterest: boolean; label: string }
+const ZERO = BigInt(0), HUNDRED = BigInt(100);
+export function moneyCents(value: number | string): bigint {
+  const text = String(value);
+  if (!/^(0|[1-9]\d{0,7})(\.\d{1,2})?$/.test(text)) throw new Error('PAYMENT_AMOUNT_INVALID');
+  const [whole, decimals = ''] = text.split('.'); return BigInt(whole) * HUNDRED + BigInt(decimals.padEnd(2, '0'));
 }
-
-/**
- * Calcula uma única opção de parcelamento para um determinado número de parcelas.
- */
-export function calculateSingleInstallment(
-  total: number,
-  count: number,
-  customConfig?: Partial<PaymentConfig>
-): { installmentValue: number; totalWithInterest: number; hasInterest: boolean } {
-  const config = { ...getPaymentConfig(), ...customConfig };
-
-  if (count <= 1) {
-    return {
-      installmentValue: total,
-      totalWithInterest: total,
-      hasInterest: false,
-    };
-  }
-
-  if (config.installmentAbsorbFees) {
-    // Modo "Sem Juros": divide o valor diretamente
-    const rawVal = Math.round((total / count) * 100) / 100;
-    return {
-      installmentValue: rawVal,
-      totalWithInterest: total,
-      hasInterest: false,
-    };
-  }
-
-  // Modo com repasse de juros (Tabela Price padrão bancário)
-  const i = config.installmentMonthlyRate;
-  const factor = Math.pow(1 + i, count);
-  const pmt = total * ((i * factor) / (factor - 1));
-  const installmentValue = Math.round(pmt * 100) / 100;
-  const totalWithInterest = Math.round(installmentValue * count * 100) / 100;
-
-  return {
-    installmentValue,
-    totalWithInterest,
-    hasInterest: true,
-  };
+export function centsMoney(cents: bigint): string {
+  if (cents < ZERO || cents > BigInt(9999999999)) throw new Error('PAYMENT_AMOUNT_INVALID');
+  return String(cents / HUNDRED) + '.' + String(cents % HUNDRED).padStart(2, '0');
 }
-
-/**
- * Gera todas as opções de parcelamento permitidas para o valor total da compra,
- * respeitando o valor mínimo da parcela (R$ 20,00 padrão) e o limite de parcelas.
- */
-export function calculateInstallmentOptions(
-  total: number,
-  customConfig?: Partial<PaymentConfig>
-): InstallmentOption[] {
-  const config = { ...getPaymentConfig(), ...customConfig };
-
-  if (total <= 0) {
-    return [];
+/** Exact rational Price calculation, HALF_UP PMT. No floating point powers.
+ * Asaas totalValue compensates any remaining cents in the LAST installment. */
+export function installmentPlan(total: number | string, count: number, customConfig?: Partial<PaymentConfig>) {
+  const config = paymentConfigSchema.parse({ ...getPaymentConfig(), ...customConfig }); const principal = moneyCents(total);
+  if (!Number.isInteger(count) || count < 1 || count > config.installmentMaxCount || principal <= ZERO) throw new Error('PAYMENT_PLAN_INVALID');
+  if (count > 1 && count > Number(principal / moneyCents(config.installmentMinValue))) throw new Error('PAYMENT_PLAN_INVALID');
+  let financial = principal;
+  if (count > 1 && !config.installmentAbsorbFees && config.installmentMonthlyRate > 0) {
+    const rate = String(config.installmentMonthlyRate);
+    if (!/^0\.\d{1,6}$|^1$/.test(rate)) throw new Error('PAYMENT_CONFIGURATION_INVALID');
+    const fraction = rate === '1' ? { numerator: BigInt(1), base: BigInt(1) } :
+      { numerator: BigInt(rate.split('.')[1]), base: BigInt(10) ** BigInt(rate.split('.')[1].length) };
+    const power = (fraction.base + fraction.numerator) ** BigInt(count);
+    const numerator = principal * fraction.numerator * power;
+    const denominator = fraction.base * (power - fraction.base ** BigInt(count));
+    const pmt = (numerator * BigInt(2) + denominator) / (denominator * BigInt(2));
+    financial = pmt * BigInt(count);
+    if (financial < principal) financial = principal;
   }
-
-  // maxParcelasPermitidas = min(12, max(1, floor(total / minValue)))
-  const allowedMax = Math.min(
-    config.installmentMaxCount,
-    Math.max(1, Math.floor(total / config.installmentMinValue))
-  );
-
+  const ordinary = financial / BigInt(count);
+  if (count > 1 && ordinary < moneyCents(config.installmentMinValue)) throw new Error('PAYMENT_PLAN_INVALID');
+  const installments = Array.from({ length: count }, (_, index) => centsMoney(index === count - 1 ? financial - ordinary * BigInt(count - 1) : ordinary));
+  return { financialTotal: centsMoney(financial), financingCharge: centsMoney(financial - principal), installments,
+    installmentValue: Number(installments[0]), totalWithInterest: Number(centsMoney(financial)), hasInterest: financial > principal };
+}
+export function calculateSingleInstallment(total: number, count: number, config?: Partial<PaymentConfig>) { return installmentPlan(total, count, config); }
+export function calculateInstallmentOptions(total: number, customConfig?: Partial<PaymentConfig>): InstallmentOption[] {
+  if (total <= 0) return [];
+  const config = paymentConfigSchema.parse({ ...getPaymentConfig(), ...customConfig });
   const options: InstallmentOption[] = [];
-
-  for (let count = 1; count <= allowedMax; count++) {
-    const { installmentValue, totalWithInterest, hasInterest } = calculateSingleInstallment(
-      total,
-      count,
-      config
-    );
-
-    const formattedInstallment = installmentValue.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-
-    const formattedTotal = totalWithInterest.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-
-    let label: string;
-    if (count === 1) {
-      label = `1x de ${formattedInstallment} à vista`;
-    } else if (!hasInterest) {
-      label = `${count}x de ${formattedInstallment} sem juros`;
-    } else {
-      label = `${count}x de ${formattedInstallment} com juros (${formattedTotal})`;
+  for (let count = 1; count <= config.installmentMaxCount; count++) {
+    let plan; try { plan = installmentPlan(total, count, config); } catch (error) {
+      if (error instanceof Error && error.message === 'PAYMENT_PLAN_INVALID') continue; throw error;
     }
-
-    options.push({
-      count,
-      installmentValue,
-      totalWithInterest,
-      hasInterest,
-      label,
-    });
+    const first = plan.installmentValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const totalText = plan.totalWithInterest.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const unequal = plan.installments.some(value => value !== plan.installments[0]);
+    options.push({ count, ...plan, label: count === 1 ? '1x de ' + first + ' à vista' :
+      unequal ? count + ' parcelas, total ' + totalText + ' (ajuste de centavos na última)' :
+      count + 'x de ' + first + (plan.hasInterest ? ' com juros (' + totalText + ')' : ' sem juros') });
   }
-
   return options;
 }

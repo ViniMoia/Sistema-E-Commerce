@@ -91,24 +91,26 @@ async function handleCron(req: Request) {
 
     const executionTimeMs = Date.now() - startTime;
 
-    logger.info('Rotina de expiração de pontos concluída com sucesso', {
-      action: 'CRON_LOYALTY_EXPIRATION_SUCCESS',
+    logger.info(result.errors.length ? 'Rotina de expiração concluída com falhas retomáveis' : 'Rotina de expiração de pontos concluída', {
+      action: result.errors.length ? 'CRON_LOYALTY_EXPIRATION_PARTIAL' : 'CRON_LOYALTY_EXPIRATION_SUCCESS',
       lojaID,
       processedWallets: result.processedWallets,
       expiredCount: result.expiredCount,
       totalPointsExpired: result.totalPointsExpired,
       errorCount: result.errors.length,
+      skippedLegacyWallets: result.skippedLegacyWallets ?? 0,
       executionTimeMs,
     });
 
     return NextResponse.json({
-      success: true,
+      success: result.errors.length === 0,
       processedWallets: result.processedWallets,
       expiredCount: result.expiredCount,
       totalPointsExpired: result.totalPointsExpired,
       errors: result.errors,
+      skippedLegacyWallets: result.skippedLegacyWallets ?? 0,
       executionTimeMs,
-    });
+    }, { status: result.errors.length ? 503 : 200, headers: { 'Cache-Control': 'no-store' } });
   } catch (error: any) {
     const executionTimeMs = Date.now() - startTime;
     logger.error('Erro ao processar rotina de expiração de pontos', error, {

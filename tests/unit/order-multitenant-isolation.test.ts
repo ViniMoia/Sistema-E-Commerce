@@ -7,6 +7,7 @@ import * as tenant from '@/lib/tenant';
 
 vi.mock('@/lib/prisma', () => ({
   default: {
+    user: { findUnique: vi.fn() },
     order: {
       findMany: vi.fn(),
     },
@@ -31,6 +32,7 @@ vi.mock('@/lib/tenant', () => ({
 describe('Blindagem Multi-Tenant e Eliminação de Vazamento Cross-Tenant (REV-004)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.user.findUnique as any).mockImplementation(async ({ where }: any) => ({ id: where.id, lojaID: 'loja-1', status: 'ACTIVE' }));
   });
 
   describe('1. Testes de Serviço: getOrdersByUser', () => {
@@ -168,7 +170,7 @@ describe('Blindagem Multi-Tenant e Eliminação de Vazamento Cross-Tenant (REV-0
   });
 
   describe('3. Testes de Rota: POST /api/orders (Prevenção de Spoofing)', () => {
-    it('deve rejeitar com 403 se o cliente tentar forjar criação de pedido em lojaID diferente da loja ativa', async () => {
+    it('rejeita o contrato antigo incompleto sem criar pedido nem aceitar lojaID do payload', async () => {
       vi.mocked(guards.requireAuth).mockResolvedValueOnce({
         user: {
           id: 'usr-1',
@@ -194,9 +196,12 @@ describe('Blindagem Multi-Tenant e Eliminação de Vazamento Cross-Tenant (REV-0
       });
 
       const res = await POST(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(422);
       const json = await res.json();
-      expect(json.error).toContain('Loja inválida ou inconsistente');
+      expect(json.error).toBe('CHECKOUT_INTENT_REQUIRED');
     });
   });
 });
+
+vi.mock('@/lib/session', () => ({ getCurrentUser: vi.fn(async () => ({ id: 'usr-1', lojaID: 'loja-vitima-1', status: 'ACTIVE' })) }));
+vi.mock('@/lib/freight/owner', () => ({ freightOwnerForRequest: vi.fn(async () => 'u:usr-1') }));

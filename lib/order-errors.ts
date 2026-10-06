@@ -3,6 +3,7 @@ import { OrderError } from "@/services/order.service";
 
 // Error code → HTTP status map shared by all order routes
 export const ORDER_ERROR_MAP: Record<string, number> = {
+  ACCOUNT_ACCESS_DENIED: 403,
   CART_NOT_FOUND: 404,
   CART_ACCESS_DENIED: 403,
   CART_NOT_ACTIVE: 400,

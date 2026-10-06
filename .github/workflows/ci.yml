@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
 
       - name: Install Dependencies
@@ -38,5 +38,17 @@ jobs:
       - name: Run Unit Tests
         run: npm test
 
-      - name: Production Build
-        run: npm run build
+      - name: Rebuild and Verify Runtime Migration History
+        run: npm run test:migrations:isolated
+
+      - name: Reject Missing or Mismatched Test Database Sentinel
+        run: npm run test:isolation:negative
+
+      - name: Verify Isolated Database and HTTP Server
+        run: npm run test:integration:isolated -- tests/integration/test-environment-isolation.test.ts tests/integration/loja-credentials.test.ts tests/integration/commerce-model.test.ts tests/integration/loyalty-simulation-identity.test.ts tests/integration/purchase-tenant-scope.test.ts tests/integration/guest-buyer-identity.test.ts tests/integration/order-transition-atomicity.test.ts tests/integration/inventory-admin-integrity.test.ts tests/integration/cart-mutation-atomicity.test.ts tests/integration/loyalty-lot-accounting.test.ts tests/integration/auth-eligibility-atomicity.test.ts tests/integration/freight-authority.test.ts tests/integration/payment-plan-authority.test.ts tests/integration/checkout-intent-authority.test.ts tests/integration/payment-durable-execution.test.ts tests/integration/checkout-client-boundaries.test.ts tests/integration/checkout-browser-state.test.ts tests/integration/order-fulfillment-atomicity.test.ts tests/integration/order-fulfillment-browser.test.ts tests/integration/customer-financial-metrics.test.ts tests/integration/customer-financial-metrics-browser.test.ts tests/integration/legacy-commerce-compatibility.test.ts
+
+      - name: Production Build and Two-Instance Runtime Regression
+        run: npm run test:production:isolated
+
+      - name: Relocated Standalone Package and Runtime Regression
+        run: npm run test:standalone:isolated

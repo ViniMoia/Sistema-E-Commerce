@@ -20,6 +20,8 @@ interface FreightRule {
   id: string
   cityName: string
   value: number
+  state?: string | null
+  municipalityCode?: string | null
 }
 
 export default function FreightPage() {
@@ -84,19 +86,22 @@ export default function FreightPage() {
     }
   }
 
-  const freeShippingRulesCount = React.useMemo(() => rules.filter((r) => r.value === 0).length, [rules])
+  const freeShippingRulesCount = React.useMemo(() => rules.filter((r) => r.value === 0 && r.state && r.municipalityCode).length, [rules])
 
   const columns: ColumnDef<FreightRule>[] = [
     {
       key: 'cityName',
       header: 'Município / Região de Atendimento',
-      render: (val) => (
+      render: (val, row) => (
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold shrink-0">
             <MapPin className="w-3.5 h-3.5" />
           </div>
           <span className="font-semibold text-white tracking-tight">
             {String(val)}
+            <span className="block text-xs text-catalog-muted">
+              {row.state && row.municipalityCode ? `${row.state} · IBGE ${row.municipalityCode}` : 'Indisponível: configure UF e código IBGE'}
+            </span>
           </span>
         </div>
       )
@@ -168,7 +173,7 @@ export default function FreightPage() {
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted self-start sm:self-auto">
-          <span>Regras ativas:</span>
+          <span>Regras cadastradas:</span>
           <span className="font-bold text-catalog-gold px-2.5 py-0.5 rounded-full bg-catalog-gold/15 border border-catalog-gold/40">
             {rules.length} {rules.length === 1 ? 'regra' : 'regras'}
           </span>
