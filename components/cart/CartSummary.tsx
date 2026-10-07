@@ -7,10 +7,9 @@ interface CartSummaryProps {
   total: number;
   onCheckout?: () => void;
   onContinueShopping?: () => void;
-  checkoutDisabled?: boolean;
 }
 
-function AnimatedCheckoutButton({ onClick, disabled }: { onClick?: () => void; disabled: boolean }) {
+function AnimatedCheckoutButton({ onClick }: { onClick?: () => void }) {
   return (
     <div className="group relative scale-100">
       {/* Glow Behind */}
@@ -23,8 +22,7 @@ function AnimatedCheckoutButton({ onClick, disabled }: { onClick?: () => void; d
 
       <button 
         onClick={onClick}
-        disabled={disabled}
-        className="group relative z-10 flex w-full items-center justify-center overflow-hidden p-[1px] leading-none disabled:cursor-wait disabled:opacity-60"
+        className="group relative z-10 flex w-full items-center justify-center overflow-hidden p-[1px] leading-none cursor-pointer"
       >
         <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0_340deg,white_360deg)]" />
         <span className="relative flex h-full w-full items-center justify-center bg-black py-4 ring-1 ring-white/10 hover:bg-neutral-900 transition-colors">
@@ -44,8 +42,7 @@ export function CartSummary({
   subtotal, 
   total,
   onCheckout,
-  onContinueShopping,
-  checkoutDisabled = false
+  onContinueShopping
 }: CartSummaryProps) {
   return (
     <div className="space-y-6">
@@ -66,7 +63,7 @@ export function CartSummary({
       </div>
 
       <div className="space-y-3">
-        <AnimatedCheckoutButton onClick={onCheckout} disabled={checkoutDisabled} />
+        <AnimatedCheckoutButton onClick={onCheckout} />
 
         <Button 
           variant="outline" 

@@ -113,6 +113,7 @@ export function CheckoutForm({
   // Meio de Pagamento Selecionado
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodTab>('PIX')
   const [paymentCapabilities, setPaymentCapabilities] = useState<{ methods: PaymentMethodTab[]; maximumInstallments: number; config: PaymentConfig } | null>(null)
+  const selectedPaymentAvailable = paymentCapabilities?.methods.includes(paymentMethod) ?? false
   useEffect(() => {
     let active = true
     fetch('/api/payment/capabilities', { cache: 'no-store' }).then(async res => {
@@ -935,8 +936,9 @@ export function CheckoutForm({
                     type="button"
                     disabled={!paymentCapabilities?.methods.includes('PIX')}
                     onClick={() => setPaymentMethod('PIX')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
-                      paymentMethod === 'PIX'
+                    aria-pressed={paymentMethod === 'PIX' && selectedPaymentAvailable}
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                      paymentMethod === 'PIX' && selectedPaymentAvailable
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
@@ -951,8 +953,9 @@ export function CheckoutForm({
                     type="button"
                     disabled={!paymentCapabilities?.methods.includes('CREDIT_CARD')}
                     onClick={() => setPaymentMethod('CREDIT_CARD')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
-                      paymentMethod === 'CREDIT_CARD'
+                    aria-pressed={paymentMethod === 'CREDIT_CARD' && selectedPaymentAvailable}
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                      paymentMethod === 'CREDIT_CARD' && selectedPaymentAvailable
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
@@ -967,8 +970,9 @@ export function CheckoutForm({
                     type="button"
                     disabled={!paymentCapabilities?.methods.includes('BOLETO')}
                     onClick={() => setPaymentMethod('BOLETO')}
-                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer ${
-                      paymentMethod === 'BOLETO'
+                    aria-pressed={paymentMethod === 'BOLETO' && selectedPaymentAvailable}
+                    className={`rounded-xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                      paymentMethod === 'BOLETO' && selectedPaymentAvailable
                         ? 'bg-catalog-gold/20 border-2 border-catalog-gold text-white shadow-[0_0_20px_rgba(240,180,14,0.25)]'
                         : 'bg-[#0B132B]/50 border border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                     }`}
@@ -980,7 +984,7 @@ export function CheckoutForm({
                 </div>
               </div>
 
-              {['BOLETO','CREDIT_CARD'].includes(paymentMethod) && <section className="space-y-4">
+              {selectedPaymentAvailable && ['BOLETO','CREDIT_CARD'].includes(paymentMethod) && <section className="space-y-4">
                 {formData.deliveryType === 'DELIVERY' && <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={billingSameAsShipping} onChange={e => { invalidateReview(); setBillingSameAsShipping(e.target.checked) }} />
                   Usar endereço de entrega também para cobrança
@@ -988,11 +992,12 @@ export function CheckoutForm({
                 {!(billingSameAsShipping && formData.deliveryType === 'DELIVERY') && <BillingAddressFields value={billingAddress} onChange={value => { invalidateReview(); setBillingAddress(value) }} />}
               </section>}
               {paymentMethod === 'WHATSAPP_PIX' && <p className="text-sm text-catalog-muted">Pagamento manual com a chave da loja. A confirmação depende da conferência da loja.</p>}
-              {!paymentCapabilities?.methods.length && <p className="text-sm text-red-400">Nenhum meio de pagamento disponível nesta loja.</p>}
+              {!paymentCapabilities && !error && <p className="text-sm text-catalog-muted">Verificando os meios de pagamento...</p>}
+              {paymentCapabilities && !paymentCapabilities.methods.length && <p className="text-sm text-red-400">Nenhum meio de pagamento disponível nesta loja.</p>}
               {/* CONTEÚDO DA ABA SELECIONADA */}
 
               {/* PIX */}
-              {paymentMethod === 'PIX' && (
+              {paymentMethod === 'PIX' && selectedPaymentAvailable && (
                 <div className="p-5 bg-[#0B132B]/80 border border-catalog-gold/30 rounded-xl space-y-2">
                   <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold uppercase">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1005,7 +1010,7 @@ export function CheckoutForm({
               )}
 
               {/* CARTÃO DE CRÉDITO */}
-              {paymentMethod === 'CREDIT_CARD' && (
+              {paymentMethod === 'CREDIT_CARD' && selectedPaymentAvailable && (
                 <div className="p-6 bg-[#0B132B]/80 border border-catalog-gold/30 rounded-xl space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-catalog-gold/20">
                     <div className="flex items-center gap-2">
@@ -1085,7 +1090,7 @@ export function CheckoutForm({
               )}
 
               {/* BOLETO BANCÁRIO */}
-              {paymentMethod === 'BOLETO' && (
+              {paymentMethod === 'BOLETO' && selectedPaymentAvailable && (
                 <div className="p-5 bg-[#0B132B]/80 border border-catalog-gold/30 rounded-xl space-y-2">
                   <div className="flex items-center gap-2 text-catalog-gold font-mono text-xs font-bold uppercase">
                     <AlertCircle className="w-4 h-4 shrink-0 text-catalog-gold" />
@@ -1233,7 +1238,7 @@ export function CheckoutForm({
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isLoading || sourcePending || pointsPending}
+                  disabled={isLoading || sourcePending || pointsPending || !selectedPaymentAvailable}
                   className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-[1.01]"
                 >
                   {isLoading ? (

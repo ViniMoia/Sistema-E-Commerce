@@ -24,10 +24,11 @@ function announce() { if (typeof window !== 'undefined') window.dispatchEvent(ne
 /** One queue per identity; no optimistic whole-object rollback. */
 export function createCartStore(transport: typeof fetch = (input, init) => fetch(input, init)) {
   let epoch = 0, queue = Promise.resolve(), pending = 0;
+  let pendingRead: Promise<void> | null = null;
   const controllers = new Set<AbortController>();
   return create<CartStore>((set, get) => {
     const reset = (context: CartContext | null, cart: CartType | null = null) => {
-      epoch++; for (const c of controllers) c.abort(); controllers.clear(); queue = Promise.resolve(); pending = 0;
+      epoch++; for (const c of controllers) c.abort(); controllers.clear(); queue = Promise.resolve(); pending = 0; pendingRead = null;
       set({ context, cart, isLoading: false, error: null, loadState: context?.userID ? 'idle' : context ? 'guest' : 'idle' });
     };
     const enqueue = (work: (current: () => boolean, signal: AbortSignal) => Promise<void>) => {
@@ -59,7 +60,10 @@ export function createCartStore(transport: typeof fetch = (input, init) => fetch
       if (get().cart?.id === cart.id && get().cart!.version > cart.version) return;
       set({ cart, loadState: 'ready', error: null });
     };
-    const mutate = (method: 'POST' | 'PATCH' | 'DELETE', parameters: object) => enqueue(async (current, signal) => {
+    const mutate = (method: 'POST' | 'PATCH' | 'DELETE', parameters: object) => {
+      // A read requested after a write must observe the write's result.
+      pendingRead = null;
+      return enqueue(async (current, signal) => {
       const context = get().context;
       if (!context?.userID) throw new Error('Entre na sua conta para usar o carrinho.');
       if (get().loadState !== 'ready') await read(current, signal);
@@ -89,15 +93,22 @@ export function createCartStore(transport: typeof fetch = (input, init) => fetch
         if (current()) set({ error: error instanceof Error ? error.message : 'Falha ao alterar carrinho.' });
         throw error;
       }
-    });
+      });
+    };
     return { cart: null, context: null, loadState: 'idle', error: null, isLoading: false,
       setContext: context => { if (JSON.stringify(context) !== JSON.stringify(get().context)) reset(context); },
       clearCart: () => reset(get().context),
-      fetchCart: () => enqueue(async (current, signal) => {
-        if (current()) set({ loadState: 'loading', error: null });
-        try { await read(current, signal); }
-        catch (error) { if (current()) set({ loadState: 'error', error: error instanceof Error ? error.message : 'Falha ao carregar carrinho.' }); }
-      }),
+      fetchCart: () => {
+        if (pendingRead) return pendingRead;
+        const result = enqueue(async (current, signal) => {
+          if (current()) set({ loadState: 'loading', error: null });
+          try { await read(current, signal); }
+          catch (error) { if (current()) set({ loadState: 'error', error: error instanceof Error ? error.message : 'Falha ao carregar carrinho.' }); }
+        });
+        pendingRead = result;
+        void result.finally(() => { if (pendingRead === result) pendingRead = null; }).catch(() => {});
+        return result;
+      },
       addToCart: (variantID, productID, quantity) => mutate('POST', { variantID, productID, quantity }),
       updateQuantity: (variantID, quantity) => mutate('PATCH', { variantID, quantity }),
       removeItem: variantID => mutate('DELETE', { variantID }),

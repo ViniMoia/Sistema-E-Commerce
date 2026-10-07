@@ -84,7 +84,6 @@ export function CartDrawer() {
             <CartSummary 
               subtotal={subtotal} 
               total={total} 
-              checkoutDisabled={loadState !== 'ready' || isLoading}
               onCheckout={() => {
                 setIsOpen(false);
                 router.push("/checkout");

@@ -10,6 +10,49 @@ async function setup(transport = vi.fn<typeof fetch>()) {
   transport.mockResolvedValueOnce(json(cart(1, [item]))); await store.getState().fetchCart(); return { store, transport };
 }
 describe('WF-15 cart client uses identity, command and authoritative revision', () => {
+  it('joins concurrent refreshes without queuing repeated GETs', async () => {
+    const { store, transport } = await setup(); const waiting = deferred<Response>(); transport.mockReturnValueOnce(waiting.promise);
+    const reads = [store.getState().fetchCart(), store.getState().fetchCart(), store.getState().fetchCart()];
+    await Promise.resolve();
+    expect(transport).toHaveBeenCalledTimes(2);
+    waiting.resolve(json(cart(2, [item]))); await Promise.all(reads);
+    expect(transport).toHaveBeenCalledTimes(2); expect(store.getState().isLoading).toBe(false);
+  });
+  it('does not join a pre-mutation read when a refresh must observe the subsequent write', async () => {
+    const { store, transport } = await setup(); const waiting = deferred<Response>(); transport.mockReturnValueOnce(waiting.promise);
+    transport.mockResolvedValueOnce(json(cart(2, [{ ...item, quantity: 2 }])));
+    transport.mockResolvedValueOnce(json(cart(2, [{ ...item, quantity: 2 }])));
+    const before = store.getState().fetchCart();
+    const update = store.getState().updateQuantity(item.variantID, 2);
+    const after = store.getState().fetchCart();
+    waiting.resolve(json(cart(1, [item]))); await Promise.all([before, update, after]);
+    expect(transport.mock.calls.map(([, init]) => init?.method ?? 'GET')).toEqual(['GET', 'GET', 'PATCH', 'GET']);
+    expect(store.getState().cart?.items[0].quantity).toBe(2);
+  });
+  it('a new identity starts its own read instead of joining an obsolete request', async () => {
+    const { store, transport } = await setup(); const waiting = deferred<Response>(); transport.mockReturnValueOnce(waiting.promise);
+    const before = store.getState().fetchCart(); await Promise.resolve();
+    store.getState().setContext({ lojaID: 'store-B', userID: 'user-B' });
+    transport.mockResolvedValueOnce(json({ ...cart(1, [item]), userID: 'user-B', lojaID: 'store-B', id: 'cart-B' }));
+    await store.getState().fetchCart();
+    waiting.resolve(json(cart(99, [item]))); await before;
+    expect(transport).toHaveBeenCalledTimes(3);
+    expect(store.getState().cart).toMatchObject({ userID: 'user-B', lojaID: 'store-B', id: 'cart-B' });
+  });
+  it('completion of an obsolete read cannot discard the newer identity pending read', async () => {
+    const { store, transport } = await setup(); const old = deferred<Response>(); const next = deferred<Response>();
+    transport.mockReturnValueOnce(old.promise);
+    const before = store.getState().fetchCart(); await Promise.resolve();
+    store.getState().setContext({ lojaID: 'store-B', userID: 'user-B' });
+    transport.mockReturnValueOnce(next.promise);
+    const after = store.getState().fetchCart(); await Promise.resolve();
+    old.resolve(json(cart(99, [item]))); await before;
+    const duplicate = store.getState().fetchCart(); await Promise.resolve();
+    expect(transport).toHaveBeenCalledTimes(3);
+    next.resolve(json({ ...cart(), userID: 'user-B', lojaID: 'store-B', id: 'cart-B' }));
+    await Promise.all([after, duplicate]);
+    expect(store.getState()).toMatchObject({ cart: { id: 'cart-B' }, isLoading: false, loadState: 'ready' });
+  });
   it('loads explicitly and distinguishes HTTP failure from an empty cart', async () => {
     const { store, transport } = await setup(); transport.mockResolvedValueOnce(json({ error: 'unavailable' }, 503));
     await store.getState().fetchCart(); expect(store.getState().loadState).toBe('error'); expect(store.getState().cart?.items).toHaveLength(1);

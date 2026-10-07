@@ -28,6 +28,18 @@ async function openCart() {
   await browser.evaluate('document.querySelector(\'button[aria-label^="Carrinho de compras"]\').click()');
   await browser.waitFor(drawerOpen);
 }
+async function expectVisibleBadge(count: number) {
+  await browser.evaluate('window.scrollTo(0, 80)');
+  await browser.waitFor(`(() => {
+    const button = [...document.querySelectorAll('header button[aria-label^="Carrinho de compras"]')].find(e => e.checkVisibility({ checkOpacity: true }));
+    const badge = button?.querySelector('span');
+    if (!badge || badge.textContent.trim() !== '${count}') return false;
+    const rect = badge.getBoundingClientRect(); const style = getComputedStyle(badge);
+    return style.opacity === '1' && style.animationName === 'none' && style.backgroundColor !== 'rgba(0, 0, 0, 0)'
+      && rect.width >= 18 && rect.top >= 0 && rect.right <= innerWidth
+      && button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+  })()`);
+}
 async function footerState() {
   return browser.evaluate(`(() => {
     const checkout = ${checkoutButton};
@@ -77,12 +89,13 @@ afterEach(async () => {
 });
 
 describe('Cart drawer: stable actions during real HTTP revalidation', () => {
-  it('keeps totals and actions visible on opening/focus, blocks checkout during pending/error reads and allows closing', async () => {
+  it('shows a visible header badge, retains totals on slow/error reads and navigates without waiting for cart refresh', async () => {
     await browser.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await browser.navigate('/');
     await browser.waitFor('(() => { const button = document.querySelector(\'button[aria-label="Carrinho de compras (1 item)"]\'); const key = button && Object.keys(button).find(k => k.startsWith("__reactProps")); return key && typeof button[key].onClick === "function"; })()');
+    await expectVisibleBadge(1);
     await openCart();
-    await browser.waitFor(`!!(${checkoutButton}) && !(${checkoutButton}).disabled`);
+    await browser.waitFor(`!!(${checkoutButton}) && !document.querySelector("[role=dialog][data-state=open] .animate-spin")`);
     const ready = await footerState();
     expect(ready).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     await browser.click('Continue Shopping');
@@ -92,35 +105,42 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await openCart();
     await expect.poll(() => heldReads).toBeGreaterThan(0);
     const opening = await footerState();
-    expect(opening).toMatchObject({ visible: true, checkoutDisabled: true, continueDisabled: false });
+    expect(opening).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     expect(Math.abs(opening!.top - ready!.top)).toBeLessThan(1);
     expect(Math.abs(opening!.bottom - ready!.bottom)).toBeLessThan(1);
     expect(await browser.evaluate(`(${checkoutButton}).closest('.space-y-6').textContent`)).toMatch(/49[,.]90/);
-    await browser.evaluate(`(${checkoutButton}).click()`);
-    expect(await browser.evaluate('location.pathname')).toBe('/');
     resumeReads();
-    await browser.waitFor(`!(${checkoutButton}).disabled`);
+    await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin")');
 
     holdReads();
     await browser.evaluate('window.dispatchEvent(new Event("focus"))');
     await expect.poll(() => heldReads).toBeGreaterThan(0);
-    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: true, continueDisabled: false });
+    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     await browser.click('Continue Shopping');
     await browser.waitFor('!' + drawerOpen);
     resumeReads();
     await openCart();
-    await browser.waitFor(`!(${checkoutButton}).disabled`);
+    await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin")');
 
     readUnavailable = true;
     await browser.evaluate('window.dispatchEvent(new Event("focus"))');
     await browser.waitFor('document.querySelector("[role=alert]")?.innerText.includes("Não foi possível carregar o carrinho")');
-    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: true, continueDisabled: false });
+    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     readUnavailable = false;
     await browser.click('Tentar novamente');
-    await browser.waitFor(`!(${checkoutButton}).disabled`);
+    await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin") && !document.querySelector("[role=alert]")');
     expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
     await browser.click('Continue Shopping');
     await browser.waitFor('!' + drawerOpen);
+    holdReads();
+    await openCart();
+    await expect.poll(() => heldReads).toBeGreaterThan(0);
+    await browser.click('Finalizar Compra');
+    await browser.waitFor('location.pathname === "/checkout"', 10000);
+    expect(readGate).not.toBeNull();
+    expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
+    resumeReads();
+    await browser.waitFor('!!document.querySelector(\'input[name="name"]\') && !document.querySelector("fieldset").disabled');
   }, 120000);
 
   it('keeps the footer inside a mobile viewport with a scrollable long cart and enables checkout after refresh', async () => {
@@ -128,10 +148,11 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 700, deviceScaleFactor: 1, mobile: true });
     await browser.navigate('/');
     await browser.waitFor('!!document.querySelector(\'button[aria-label="Carrinho de compras (7 itens)"]\')');
+    await expectVisibleBadge(7);
     holdReads();
     await openCart();
     await expect.poll(() => heldReads).toBeGreaterThan(0);
-    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: true, continueDisabled: false });
+    expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     const before = await footerState();
     expect(await browser.evaluate(`(() => {
       const viewport = document.querySelector('[role=dialog][data-state=open] [data-radix-scroll-area-viewport]');
@@ -143,6 +164,25 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.waitFor(`!(${checkoutButton}).disabled`);
     await browser.click('Finalizar Compra');
     await browser.waitFor('location.pathname === "/checkout"');
+    expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
+  }, 120000);
+
+  it('does not present unavailable PIX as selected, offer QR instructions or enable purchase review without a payment method', async () => {
+    await prisma.loja.update({ where: { id: lojaID }, data: { enableManualPix: false } });
+    await browser.navigate('/checkout');
+    await browser.waitFor('!!document.querySelector(\'input[name="name"]\') && !document.querySelector("fieldset").disabled');
+    for (const [name, value] of Object.entries({ name: 'Cliente teste', email: 'checkout@example.invalid', phone: '11999999999', cpfCnpj: '52998224725' })) {
+      await browser.input(name, value);
+      await browser.waitFor(`document.querySelector('input[name="${name}"]').value.length > 0`);
+    }
+    await browser.click('Avançar para Entrega');
+    await browser.click('Retirar na Loja');
+    await browser.click('Avançar para Pagamento');
+    await browser.waitFor('document.body.innerText.includes("Nenhum meio de pagamento disponível nesta loja.")');
+    expect(await browser.evaluate('[...document.querySelectorAll("button[aria-pressed]")].map(e => ({ disabled: e.disabled, selected: e.getAttribute("aria-pressed") }))'))
+      .toEqual(Array.from({ length: 3 }, () => ({ disabled: true, selected: 'false' })));
+    expect(await browser.evaluate('document.body.innerText.includes("Pagamento Instantâneo via QR Code")')).toBe(false);
+    expect(await browser.evaluate('[...document.querySelectorAll("button")].find(e => e.textContent.includes("Revisar proposta de compra")).disabled')).toBe(true);
     expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
   }, 120000);
 });

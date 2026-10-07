@@ -23,7 +23,7 @@ export function CartButton({ className = "", iconClassName = "w-5 h-5" }: CartBu
     >
       <ShoppingCart className={`${iconClassName} transition-transform duration-200 group-hover:scale-110`} />
       {itemCount > 0 && (
-        <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-black bg-brand-yellow rounded-full shadow-[0_0_8px_rgba(240,180,14,0.6)] animate-in">
+        <span aria-hidden="true" className="absolute z-10 -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] leading-none font-bold text-black bg-brand-yellow border border-black rounded-full shadow-[0_0_8px_rgba(240,180,14,0.6)]">
           {itemCount}
         </span>
       )}
