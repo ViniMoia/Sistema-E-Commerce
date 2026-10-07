@@ -39,7 +39,7 @@ export function CartDrawer() {
 
         className="w-full sm:max-w-lg bg-neutral-900/90 backdrop-blur-xl border-l border-white/10 text-white flex flex-col p-0"
       >
-        <SheetHeader className="p-6 border-b border-white/10 flex flex-row justify-between items-center space-y-0">
+        <SheetHeader className="shrink-0 p-6 border-b border-white/10 flex flex-row justify-between items-center space-y-0">
           <SheetTitle className="text-white flex items-center gap-2 text-xl font-medium tracking-tight">
             <ShoppingCart className="w-5 h-5" />
             Your Cart
@@ -50,7 +50,7 @@ export function CartDrawer() {
           </span>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 p-6">
+        <ScrollArea className="min-h-0 flex-1 p-6">
           {loadState === 'error' ? <div role="alert"><p>{error}</p><button onClick={() => void fetchCart().catch(() => {})}>Tentar novamente</button></div>
           : loadState === 'guest' ? <p>Entre na sua conta para acessar o carrinho.</p>
           : (loadState === 'idle' || loadState === 'loading') && !cart ? (
@@ -79,11 +79,12 @@ export function CartDrawer() {
         </ScrollArea>
 
         {error && loadState !== 'error' && <p role="alert" className="px-6 text-red-400">{error}</p>}
-        {items.length > 0 && loadState === 'ready' && !isLoading && (
-          <div className="border-t border-white/10 p-6 bg-black/40 backdrop-blur-md">
+        {items.length > 0 && (
+          <div className="shrink-0 border-t border-white/10 p-6 bg-black/40 backdrop-blur-md">
             <CartSummary 
               subtotal={subtotal} 
               total={total} 
+              checkoutDisabled={loadState !== 'ready' || isLoading}
               onCheckout={() => {
                 setIsOpen(false);
                 router.push("/checkout");
