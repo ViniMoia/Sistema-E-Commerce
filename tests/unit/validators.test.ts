@@ -67,11 +67,11 @@ describe('customerIdSchema', () => {
 })
 
 describe('registerSchema (ACT-005)', () => {
-  it('deve aprovar dados de cadastro válidos com senha >= 8 caracteres', () => {
+  it('deve aprovar dados de cadastro válidos com senha de exatamente 6 caracteres', () => {
     const result = registerSchema.safeParse({
       name: 'João Silva',
       email: 'JOAO@TESTE.COM',
-      password: 'senhaForte123',
+      password: 'abc123',
       phone: '11999998888',
     })
     expect(result.success).toBe(true)
@@ -81,7 +81,7 @@ describe('registerSchema (ACT-005)', () => {
     }
   })
 
-  it('deve rejeitar senha com menos de 8 caracteres', () => {
+  it('deve rejeitar senha com menos de 6 caracteres', () => {
     const result = registerSchema.safeParse({
       name: 'João Silva',
       email: 'joao@teste.com',

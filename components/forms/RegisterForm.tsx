@@ -5,22 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ContinentalLogo } from "@/components/brand/ContinentalLogo";
 import { AlertCircle, CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
-
-type RegisterDTO = {
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  address: {
-    cep: string;
-    state: string; // Requerido pelo backend
-    city: string;
-    district: string;
-    street: string;
-    number: string;
-    complement?: string;
-  };
-};
+import { REGISTRATION_PASSWORD_MIN_LENGTH, registerSchema, type RegisterInput } from "@/lib/validators/auth";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -56,7 +41,7 @@ export function RegisterForm() {
     if (apiError) setApiError("");
   };
 
-  const validate = () => {
+  const validate = (data: RegisterInput) => {
     const newErrors: Record<string, string> = {};
     const requiredFields = [
       "name", "email", "password", "phone", 
@@ -69,30 +54,23 @@ export function RegisterForm() {
       }
     });
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "E-mail inválido";
-    }
-    
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = "A senha deve ter no mínimo 6 caracteres";
+    const parsed = registerSchema.safeParse(data);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const field = String(issue.path[0] === "address" ? issue.path[1] : issue.path[0]);
+        if (!newErrors[field]) newErrors[field] = issue.message;
+      }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return parsed.success && Object.keys(newErrors).length === 0 ? parsed.data : null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError("");
     
-    if (!validate()) {
-      setApiError("Por favor, preencha todos os campos obrigatórios corretamente.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    const dataToSend: RegisterDTO = {
+    const dataToSend = validate({
       name: formData.name,
       email: formData.email,
       password: formData.password,
@@ -106,7 +84,14 @@ export function RegisterForm() {
         number: formData.number,
         complement: formData.complement || undefined,
       },
-    };
+    });
+
+    if (!dataToSend) {
+      setApiError("Por favor, preencha todos os campos obrigatórios corretamente.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -118,8 +103,24 @@ export function RegisterForm() {
       if (!response.ok) {
         let errorMessage = "Ocorreu um erro ao realizar o cadastro.";
         try {
-          const errorData = await response.json();
-          errorMessage = typeof errorData === 'string' ? errorData : (errorData?.message || errorMessage);
+          const errorData: unknown = await response.json();
+          if (typeof errorData === "string" && errorData) {
+            errorMessage = errorData;
+          } else if (errorData && typeof errorData === "object") {
+            const body = errorData as Record<string, unknown>;
+            if (typeof body.error === "string" && body.error) errorMessage = body.error;
+            else if (typeof body.message === "string" && body.message) errorMessage = body.message;
+
+            if (body.details && typeof body.details === "object") {
+              const fieldErrors = (body.details as Record<string, unknown>).fieldErrors;
+              if (fieldErrors && typeof fieldErrors === "object") {
+                const messages = Object.values(fieldErrors).flatMap(value =>
+                  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && !!item) : []
+                );
+                if (messages.length) errorMessage += ": " + [...new Set(messages)].join(" ");
+              }
+            }
+          }
         } catch {
           // Se não conseguir parsear o JSON, mantém a mensagem padrão
         }
@@ -135,9 +136,9 @@ export function RegisterForm() {
         router.refresh();
       }, 2000);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao registrar:", error);
-      setApiError(error.message || "Erro de conexão. Verifique sua internet e tente novamente.");
+      setApiError(error instanceof Error ? error.message : "Erro de conexão. Verifique sua internet e tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -272,12 +273,18 @@ export function RegisterForm() {
                 id="password" 
                 name="password" 
                 type="password" 
+                autoComplete="new-password"
                 value={formData.password} 
                 onChange={handleChange} 
-                placeholder="Mínimo 6 caracteres"
+                placeholder={`Mínimo ${REGISTRATION_PASSWORD_MIN_LENGTH} caracteres`}
+                aria-describedby={errors.password ? "register-password-hint register-password-error" : "register-password-hint"}
+                aria-invalid={Boolean(errors.password)}
                 className={getInputClassName("password")}
               />
-              {errors.password && <p className="text-red-400 text-[11px] font-mono mt-1">{errors.password}</p>}
+              <p id="register-password-hint" className="text-[11px] text-catalog-muted leading-relaxed">
+                Pelo menos {REGISTRATION_PASSWORD_MIN_LENGTH} caracteres; símbolos são opcionais.
+              </p>
+              {errors.password && <p id="register-password-error" className="text-red-400 text-[11px] font-mono mt-1">{errors.password}</p>}
             </div>
 
             <div className="space-y-1.5">

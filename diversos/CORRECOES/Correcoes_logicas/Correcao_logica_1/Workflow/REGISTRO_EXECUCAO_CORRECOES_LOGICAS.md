@@ -1417,3 +1417,80 @@ Os casos Preview usam variáveis/chaves controladas, sem fetch. Os30 testes diri
 4. Ensaiar Pix, cartão e boleto, eventos/falhas/replays/cancelamentos/estornos elegíveis e efeitos finais. Fechar também provas/aceites de WF-18, página completa/capacidade e demais serviços de WF-19, operação e rollout WF-20.
 
 **Sem chamada financeira externa, mutação no banco persistente, configuração/deploy na Vercel, alteração de .env, commit ou promoção de LA. WF-19 EM EXECUÇÃO; WF-20 NÃO INICIADO; LA-002/033 parciais. O projeto ainda não está pronto para produção.**
+
+## 29. WF-19 — cadastro no Preview: validação e apresentação de erros
+
+**Requisito vigente:** mínimo de6 caracteres, conforme solicitação posterior do usuário registrada em29.5. As referências a8 caracteres em29.1–29.4 descrevem o diagnóstico e a implementação anteriores a essa solicitação.
+
+**Data local:**06/10/2026. O usuário informou concluir as migrations do banco separado de homologação, criar a loja fictícia, cadastrar variáveis para Preview da branch homologacao_teste e concluir o redeploy. As imagens anteriores mostraram as migrations, a loja e o escopo das variáveis; seus valores privados e o funcionamento completo do ambiente remoto não foram verificados por acesso autenticado.
+
+### 29.1. Ocorrência e diagnóstico
+
+A imagem da tentativa de cadastro mostra POST /api/auth/register com HTTP400 e uma mensagem genérica. A resposta JSON dessa tentativa foi solicitada em Network/Response; não foi recebida nesta etapa. Não se inferiu o tamanho da senha pelos caracteres mascarados nem se atribuíram os401 anteriores de login, a falha de extensão do navegador ou o bloqueio CSP do feedback Vercel como causa do cadastro.
+
+Dois defeitos independentes foram confirmados nas fontes publicadas na revisão56f3d345d8248adea567993ca8a50ea3f4930213:
+
+1. **Validações incompatíveis:** components/forms/RegisterForm.tsx aceitava senhas a partir de6 caracteres e anunciava esse mínimo. lib/validators/auth.ts exige8 caracteres, e app/api/auth/register/route.ts utiliza esse schema. Com6 ou7 caracteres, o formulário envia dados que a API rejeita com400. Essa sequência é demonstrável pelo código, mas não confirma a senha da tentativa remota.
+2. **Erro real ocultado:** a API responde com error e, em falhas de validação, details.fieldErrors. O formulário procurava somente message, mantendo a mensagem genérica mesmo quando a resposta explicava a rejeição. Isso também ocultava o erro de e-mail já cadastrado na loja.
+
+HTTP400 sozinho não distingue validação, e-mail duplicado e falhas posteriores: o catch do handler também devolve400. A causa exata da tentativa publicada permanece pendente da resposta ou dos logs correspondentes.
+
+### 29.2. Correção local
+
+O formulário passou a utilizar registerSchema e RegisterInput compartilhados com a API; mantém a exigência de telefone/endereço dessa interface, associa problemas de endereço aos campos correspondentes e envia os dados validados. O aviso da senha anuncia8 caracteres. Nenhuma regra de senha foi relaxada no servidor.
+
+O tratamento de falha lê error, preserva compatibilidade com message e respostas em texto, apresenta os detalhes de validação e verifica os tipos antes de usar valores externos. Uma resposta inesperada conserva a mensagem genérica, sem renderizar objetos como texto. Campos preenchidos permanecem disponíveis para correção e uma rejeição não mostra sucesso.
+
+### 29.3. Verificação
+
+| Verificação | Resultado e alcance |
+|---|---|
+| TypeScript | npx --no-install tsc --noEmit --incremental false passou |
+| ESLint direcionado | Zero erros/avisos em RegisterForm.tsx e registration-browser.test.ts |
+| Unitários existentes |23 passaram em validators.test.ts e cpf-cnpj-persistence.test.ts;2 arquivos,2,07s |
+| Navegador isolado |3 passaram em tests/integration/registration-browser.test.ts;17,13s no total da suite |
+| Cadastro real local | React/Next, handler, serviço e PostgreSQL: senha de8 caracteres, hash verificável, endereço padrão, sessão persistida e perfil autenticado com HTTP200 |
+| Rejeições no navegador | Senhas de6/7 caracteres, CEP curto e telefone ausente não enviam cadastro; e-mail duplicado exibe a resposta real e não duplica usuário |
+| Respostas controladas | Proxy do teste injeta details.fieldErrors e corpo de erro inesperado para verificar a apresentação; essas respostas não representam uma falha observada na conta remota |
+
+Executor: node scripts/run-isolated-tests.mjs tests/integration/registration-browser.test.ts. PostgreSQL16 descartável,33 migrations, identidade/sentinela conferidas, cópia temporária de fontes sem arquivos .env e navegador com perfil próprio. RunId final **eed61b3ae0ac95437944721a5edf6f54**. O executor descartou os recursos próprios.
+
+Duas rodadas exploratórias falharam em condições da automação: interação antes de hidratação completa, comparação sensível à caixa de texto transformado por CSS e seleção do formulário de logout após autenticação. O teste foi ajustado para aguardar o formulário de cadastro hidratado e seus valores controlados, localizar esse formulário pelo campo de senha e comparar o texto visível sem depender da caixa. Essas rodadas não são evidência de novos defeitos de cadastro e não entram na contagem de26 testes aprovados na verificação final desta etapa. O aviso existente do Vitest sobre seu loader futuro permaneceu sem impedir os testes.
+
+### 29.4. Estado e próximo requisito
+
+Correção e teste permanecem **locais, sem commit/push ou redeploy nesta etapa**. HEAD continua56f3d345d8248adea567993ca8a50ea3f4930213 na branch homologacao_teste; main local80f00369029fe06360dbe6a150096c5e04e24e6f e origin/main7f9b26e062ec2654420fecffb6dd78ad3ba1e017 foram preservadas. Não houve mudança de schema, migration nova, alteração de .env, acesso ao banco persistente ou chamada financeira externa.
+
+Para confirmar a ocorrência publicada, obter somente o JSON da resposta400, sem o payload que contém senha. A versão remota continua sujeita às incompatibilidades anteriores até receber a correção; senha com pelo menos8 caracteres atende ao requisito atual, mas não elimina outras possíveis causas. Depois da publicação, repetir cadastro/login no Preview e prosseguir com os demais ensaios de WF-19. **WF-19 EM EXECUÇÃO; WF-20 NÃO INICIADO. Esta validação local não certifica prontidão para produção.**
+
+### 29.5. Alteração autorizada do mínimo para6 caracteres
+
+Em06/10/2026, o usuário solicitou que o cadastro aceite senhas com pelo menos6 caracteres. Atualizado registerSchema em lib/validators/auth.ts, utilizado pela API e pelo formulário, e ajustados aviso e mensagens do cadastro. O tratamento de error/details implementado anteriormente permanece. Não houve mudança de schema do banco ou necessidade de migration.
+
+Atualizados os testes de limite: senha de5 caracteres é rejeitada pelo schema; senha de exatamente6 é aceita. O ensaio no navegador rejeita4/5 caracteres antes do envio e conclui um cadastro real local com6 caracteres, verificando hash, endereço padrão, sessão persistida e perfil autenticado. Também verifica e-mail duplicado e apresentação de respostas de erro.
+
+**Verificações:**23 unitários passaram/2 arquivos,1,99s;3 testes no navegador passaram/1 arquivo,16,47s; TypeScript e ESLint direcionado passaram. RunId do PostgreSQL16 descartável **a807106f49fa52eb5715b13f585db037**;33 migrations aplicadas no banco temporário, com identidade/sentinela conferidas. Não houve acesso ao banco persistente ou chamada financeira externa.
+
+Alteração permanece local em homologacao_teste, sem commit, push ou redeploy. main permanece inalterada. O requisito de6 caracteres só estará disponível na versão publicada após envio dessa revisão e novo deployment Preview; essa mudança não confirma, por si só, a causa do400 da tentativa anterior.
+
+### 29.6. Orientação discreta sobre a senha no cadastro
+
+Em06/10/2026, o usuário relatou sucesso após acrescentar um caractere especial e solicitou regras claras sem poluição visual. A inspeção do schema, serviço de cadastro e emissão de sessão não encontrou exigência de símbolos. Acrescentar um caractere também altera o comprimento da senha; a versão publicada ainda não recebeu as alterações locais anteriores. Não foi atribuída uma causa definitiva à tentativa remota sem sua resposta JSON.
+
+Incluída uma orientação permanente em texto pequeno e cor secundária abaixo do campo: **“Pelo menos 6 caracteres; símbolos são opcionais.”** REGISTRATION_PASSWORD_MIN_LENGTH, em lib/validators/auth.ts, é compartilhado pelo schema, placeholder e orientação, evitando mínimos independentes nesses pontos. O campo vincula orientação/erro com aria-describedby, informa o estado inválido com aria-invalid e utiliza autoComplete=new-password. Não foram adicionados painéis, medidores ou listas de requisitos.
+
+**Verificações:**14 testes unitários de validação passaram;3 testes no navegador passaram,16,40s, incluindo cadastro real local com senha abc123, sem símbolos, e perfil autenticado. TypeScript e ESLint direcionado passaram. Executor isolado com PostgreSQL16,33 migrations e runId **8283bd35848c3b2394018363a2bb1c99**; recursos próprios descartados. Nenhum teste novo foi criado para a alteração de texto.
+
+Alteração local em homologacao_teste, sem commit, push, redeploy, mudança de .env ou acesso ao banco persistente. main preservada. Publicação no Preview e verificação no ambiente remoto continuam pendentes; WF-19 EM EXECUÇÃO e WF-20 NÃO INICIADO.
+
+## 30. Alterações pontuais para o Preview de homologação
+
+**Data local:**06/10/2026. O usuário solicitou o ID no painel de usuários e informou que ele ainda não aparecia no site. A conferência da branch remota mostrou a revisão56f3d345d8248adea567993ca8a50ea3f4930213, cujo painel ainda não exibe o ID. As alterações descritas em29 estavam somente na cópia local; um redeploy da revisão antiga não incorpora esses arquivos.
+
+**Escopo desta publicação:** ID completo abaixo do nome na tabela administrativa, em texto discreto e selecionável; validação compartilhada de cadastro com mínimo de6 caracteres; orientação de que símbolos são opcionais; apresentação dos erros da API; atualização dos testes relacionados e deste registro. O ID já faz parte da resposta autenticada de /api/admin/users; não foi necessário alterar a API, o schema ou o banco. A listagem continua limitada à loja do administrador. Não foram criados testes para essa pequena alteração de apresentação.
+
+**Verificação do candidato:**635 testes unitários passaram/78 arquivos,11,29s; TypeScript sem emissão e ESLint direcionado passaram. O cadastro com6 caracteres sem símbolos já foi verificado em3 testes de navegador isolado na etapa29.6. Essas provas locais não demonstram a disponibilidade do novo deployment na Vercel.
+
+**Destino:** somente refs/heads/homologacao_teste. Base local e remota anterior56f3d345d8248adea567993ca8a50ea3f4930213. main local80f00369029fe06360dbe6a150096c5e04e24e6f e main remota7f9b26e062ec2654420fecffb6dd78ad3ba1e017 são referências de preservação. .env/.env.local não integram o envio. Não há migration nova, promoção para Production, alteração de credenciais ou acesso ao banco persistente.
+
+Após o push, a integração Git/Vercel deve construir um novo Preview dessa branch. A confirmação do ID no site exige que esse deployment esteja Ready e que a página esteja usando essa revisão. A imagem anterior comprova a ausência do ID na versão antiga, não uma falha de renderização na nova. **Validação visual remota e continuidade dos ensaios de WF-19 permanecem pendentes; WF-20 NÃO INICIADO.**

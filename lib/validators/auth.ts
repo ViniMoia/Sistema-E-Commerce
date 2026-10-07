@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { validateCpfCnpj } from "@/lib/validators/cpf-cnpj";
 
+export const REGISTRATION_PASSWORD_MIN_LENGTH = 6;
+
 export const loginSchema = z.object({
   email: z
     .string()
@@ -16,7 +18,10 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").trim(),
   email: z.string().email("E-mail inválido").trim().toLowerCase(),
-  password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
+  password: z.string().min(
+    REGISTRATION_PASSWORD_MIN_LENGTH,
+    `Senha deve ter no mínimo ${REGISTRATION_PASSWORD_MIN_LENGTH} caracteres`
+  ),
   phone: z.string().optional(),
   cpfCnpj: z
     .string()

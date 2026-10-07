@@ -217,10 +217,13 @@ export default function UsersPage() {
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0B132B] to-[#1E293B] border border-catalog-gold/40 flex items-center justify-center text-catalog-gold font-bold text-xs shrink-0 shadow-[0_0_10px_rgba(240,180,14,0.15)]">
                             {initials}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <span className="font-semibold text-white block group-hover:text-catalog-gold transition-colors">
                               {user.name}
                             </span>
+                            <p className="mt-1 text-[10px] text-catalog-muted leading-relaxed">
+                              ID: <span className="font-mono select-all break-all cursor-text">{user.id}</span>
+                            </p>
                             <span className="text-[10px] text-catalog-muted font-mono sm:hidden">
                               {user.email}
                             </span>
