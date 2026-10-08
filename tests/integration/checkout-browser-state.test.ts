@@ -25,6 +25,9 @@ let lojaID: string, userID: string, adminID: string, productID: string, variantI
 let unavailable = false;
 let cartUnavailable = false;
 let freightAvailable = false;
+let confirmationHold: Promise<void> | null = null;
+let releaseConfirmation = () => {};
+let heldConfirmationRequests = 0;
 const cepRequests: string[] = [];
 const freightRequests: Record<string, unknown>[] = [];
 let releaseA: () => void, releaseB: () => void;
@@ -51,6 +54,10 @@ beforeAll(async () => {
   });
   browser = await isolatedBrowser({ host: loja.slug + '.plataforma.com', intercept: async ({ url, body, method }) => {
     if (url === '/api/cart' && method === 'GET' && cartUnavailable) return { status: 503, body: { error: 'Fixture cart temporarily unavailable' } };
+    if (url.startsWith('/api/checkout/intents/') && method === 'GET' && confirmationHold) {
+      heldConfirmationRequests++;
+      await confirmationHold;
+    }
     if (url.startsWith('/api/checkout/intents/') && unavailable) return { status: 503, body: { error: 'Fixture temporarily unavailable' } };
     if (url.startsWith('/__wf15/cep/')) {
       const cep = url.split('/').at(-1)!; cepRequests.push(cep);
@@ -77,7 +84,7 @@ beforeAll(async () => {
     };
   ` });
 }, 120000);
-afterAll(async () => { releaseA(); releaseB(); if (browser) await browser.close(); await cleanupFixtureStores(); await prisma.$disconnect(); }, 30000);
+afterAll(async () => { releaseA(); releaseB(); releaseConfirmation(); if (browser) await browser.close(); await cleanupFixtureStores(); await prisma.$disconnect(); }, 30000);
 const text = (value: string) => 'document.body.innerText.toLocaleLowerCase().includes(' + JSON.stringify(value.toLocaleLowerCase()) + ')';
 async function customer() {
   await browser.waitFor('!!document.querySelector(\'input[name="name"]\') && !document.querySelector("fieldset").disabled');
@@ -108,6 +115,37 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     const intentID = await browser.evaluate('new URL(location.href).searchParams.get("intent")') as string;
     const order = await prisma.order.findFirstOrThrow({ where: { checkoutIntentID: intentID, lojaID } });
     expect(order.status).toBe('PENDING'); expect((await prisma.cart.findUniqueOrThrow({ where: { id: order.sourceCartID! } })).status).toBe('COMPLETED');
+    // Tab/window return must retain the summary, suspend instructions and
+    // coalesce repeated focus notifications while verification is in flight.
+    confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
+    heldConfirmationRequests = 0;
+    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor(text('Atualizando o estado da compra'));
+    await expect.poll(() => heldConfirmationRequests).toBe(1);
+    expect(await browser.evaluate(text('Total do Pedido'))).toBe(true);
+    expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(false);
+    await browser.evaluate('window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("pageshow")); document.dispatchEvent(new Event("visibilitychange")); new Promise(resolve=>setTimeout(resolve,250))');
+    expect(heldConfirmationRequests).toBe(1);
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true}); document.dispatchEvent(new Event("visibilitychange")); window.dispatchEvent(new Event("focus")); new Promise(resolve=>setTimeout(resolve,250))');
+    expect(heldConfirmationRequests).toBe(1);
+    expect(await browser.evaluate(text('Total do Pedido'))).toBe(true);
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false}); document.dispatchEvent(new Event("visibilitychange")); window.dispatchEvent(new Event("focus"))');
+    await expect.poll(() => heldConfirmationRequests).toBe(2);
+    await browser.evaluate('delete document.hidden');
+    confirmationHold = null; releaseConfirmation();
+    await browser.waitFor(text('Aguardando pagamento'));
+    expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(true);
+    // A stalled read has a deadline and an explicit connection state; the
+    // same existing order recovers after the transport is available again.
+    confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
+    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor(text('As ações de pagamento estão suspensas'), 25000);
+    expect(await browser.evaluate(text('Total do Pedido'))).toBe(true);
+    expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(false);
+    confirmationHold = null; releaseConfirmation();
+    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor(text('Aguardando pagamento'));
+    expect(await prisma.order.count({ where: { checkoutIntentID: intentID } })).toBe(1);
     const newCart = await addToCart(userID, { productID, variantID, quantity: 2, commandId: randomUUID() }, lojaID);
     await browser.navigate('/checkout/confirmation?intent=' + encodeURIComponent(intentID)); await browser.waitFor(text('Aguardando pagamento'));
     const active = await prisma.cart.findUniqueOrThrow({ where: { id: newCart.id }, include: { items: true } });

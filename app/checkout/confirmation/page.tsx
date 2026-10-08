@@ -46,17 +46,20 @@ export default function CheckoutConfirmationPage() {
     let controller: AbortController | undefined
     setOrder(null); setFresh(false); setRecoveryError(null)
     const load = async () => {
-      if (document.hidden || disposed) return
+      if (document.hidden || disposed || (controller && !controller.signal.aborted)) return
       const revision = ++sequence
-      controller?.abort(); controller = new AbortController()
+      const currentController = new AbortController()
+      controller = currentController
+      const deadline = setTimeout(() => currentController.abort(), 15000)
       const startedAt = performance.now()
       try {
-        const res = await fetch('/api/checkout/intents/' + encodeURIComponent(intentID), { cache: 'no-store', signal: controller.signal })
+        const res = await fetch('/api/checkout/intents/' + encodeURIComponent(intentID), { cache: 'no-store', signal: currentController.signal })
         if (!res.ok) throw new Error('Não foi possível recuperar esta compra para a identidade atual.')
         const raw = (await res.json()).data?.result?.order
         if (!raw) throw new Error('A compra ainda não foi concluída. Volte à revisão do checkout.')
         const current = purchaseClientSchema.parse(raw)
         if (disposed || sequence !== revision) return
+        if (currentController.signal.aborted) throw new Error('Verificação excedeu o prazo de resposta.')
         const timestamp = performance.now()
         // Include transport time conservatively; a slow response must not extend validity.
         setOrder({ ...current, orderId: current.id }); setRequestStartedAt(startedAt); setNow(timestamp)
@@ -67,14 +70,24 @@ export default function CheckoutConfirmationPage() {
           void useCartStore.getState().consumeCart(current.sourceCartID, current.sourceCartVersion).catch(() => {})
         }
         const view = purchaseView(current)
-        timer = setTimeout(() => { void load() }, view.kind === 'approved' ? 15000 : ['cancelled','declined','refunded'].includes(view.kind) ? 30000 : 3500)
+        timer = setTimeout(() => { void load() }, view.kind === 'approved' ? 15000 : ['cancelled','declined','refunded'].includes(view.kind) ? 30000 : 10000)
       } catch {
         if (disposed || sequence !== revision) return
         setFresh(false); setConnectionError(true); failures++
         timer = setTimeout(() => { void load() }, Math.min(30000, 3500 * 2 ** Math.min(failures, 4)))
+      } finally {
+        clearTimeout(deadline)
+        if (controller === currentController) controller = undefined
       }
     }
-    const refresh = () => { sequence++; controller?.abort(); if (timer) clearTimeout(timer); setFresh(false); void load() }
+    const refresh = () => {
+      if (timer) clearTimeout(timer)
+      setFresh(false)
+      // Hiding the tab suspends instructions. On return, reuse an active
+      // verification instead of aborting it again for each focus/pageshow.
+      if (document.hidden) { sequence++; controller?.abort(); return }
+      void load()
+    }
     const clock = setInterval(() => setNow(performance.now()), 1000)
     window.addEventListener('focus', refresh); window.addEventListener('pageshow', refresh)
     document.addEventListener('visibilitychange', refresh)
@@ -91,7 +104,7 @@ export default function CheckoutConfirmationPage() {
   const method = order.paymentMethod
   const isCreditCard = method === 'CREDIT_CARD'
   const isBoleto = method === 'BOLETO'
-  const isPix = view.canPayPix || view.canContact
+  const isPix = fresh && (view.canPayPix || view.canContact)
 
   const pixCopyText = order.pixPayload || order.pixKey || ''
 
@@ -137,12 +150,6 @@ export default function CheckoutConfirmationPage() {
     ? new Date(order.asaasDueDate).toLocaleDateString('pt-BR')
     : 'Próximo dia útil'
 
-  if (!fresh || !['approved','action_required'].includes(view.kind)) return <main className="min-h-screen bg-catalog-bg p-10 text-white">
-    <h1>{view.title}</h1><p>Pedido #{order.orderNumber} · {order.status}</p><p>{view.description}</p>
-    {!fresh && <p role="alert">{connectionError ? 'Não foi possível verificar o estado atual. As ações de pagamento estão suspensas enquanto tentamos novamente.' : 'Atualizando o estado da compra...'}</p>}
-    <Link href="/">Voltar à loja</Link>
-  </main>
-
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30 relative flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">
       {/* Glow de Iluminação Continental no Topo */}
@@ -182,12 +189,15 @@ export default function CheckoutConfirmationPage() {
         {/* O mesmo estado canônico determina título e instruções. */}
         <h1 className="text-2xl md:text-3xl font-bold text-white text-center mb-2 tracking-tight uppercase font-mono">
           {paymentStatus === 'PAID' && <Sparkles className="w-6 h-6 text-emerald-400 inline mr-2" />}
-          {view.title}
+          {fresh ? view.title : 'Verificando o pagamento'}
         </h1>
         <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md">
-          Pedido #{order.orderNumber} · {view.canContact ? 'Efetue o PIX com a chave informada e envie o comprovante à loja para conferência manual.' : view.description}
-          {view.canPayBoleto && <> Vencimento: {formattedDueDate}.</>}
+          Pedido #{order.orderNumber} · {fresh ? view.canContact ? 'Efetue o PIX com a chave informada e envie o comprovante à loja para conferência manual.' : view.description : 'Aguarde a conferência do estado atual desta compra.'}
+          {fresh && view.canPayBoleto && <> Vencimento: {formattedDueDate}.</>}
         </p>
+        {!fresh && <p role="alert" className="mb-6 rounded-xl border border-catalog-gold/30 bg-catalog-gold/10 p-4 text-center text-sm text-catalog-text">
+          {connectionError ? 'Não foi possível verificar o estado atual. As ações de pagamento estão suspensas enquanto tentamos novamente.' : 'Atualizando o estado da compra...'}
+        </p>}
 
         {/* Resumo do Pedido */}
         <div className="w-full bg-[#0B132B]/70 rounded-2xl p-5 border border-catalog-gold/30 mb-6 space-y-3 font-mono">
@@ -227,19 +237,11 @@ export default function CheckoutConfirmationPage() {
 
           <div className="flex justify-between items-center text-xs">
             <span className="text-catalog-muted uppercase">Status do Pedido</span>
-            {paymentStatus === 'PAID' ? (
+            {!fresh ? (
+              <span className="text-catalog-gold">Verificando</span>
+            ) : paymentStatus === 'PAID' ? (
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-500/50 font-bold uppercase text-[10px]">
                 Aprovado / Pago
-              </span>
-            ) : isCreditCard ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 font-bold uppercase text-[10px] flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-catalog-gold animate-pulse" />
-                Em Análise
-              </span>
-            ) : isBoleto ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 font-bold uppercase text-[10px] flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-catalog-gold animate-pulse" />
-                Aguardando Pagamento
               </span>
             ) : (
               <span className="px-2.5 py-0.5 rounded-full bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/40 font-bold uppercase text-[10px] flex items-center gap-1.5">
@@ -306,7 +308,7 @@ export default function CheckoutConfirmationPage() {
         )}
 
         {/* BLOCO ESPECÍFICO DE BOLETO BANCÁRIO */}
-        {view.canPayBoleto && paymentStatus === 'PENDING' && (
+        {fresh && view.canPayBoleto && paymentStatus === 'PENDING' && (
           <div className="w-full bg-[#0B132B]/80 rounded-2xl p-6 border border-catalog-gold/30 mb-6 space-y-5">
             <div className="text-center space-y-1">
               <p className="text-[10px] uppercase font-mono tracking-[0.2em] text-catalog-gold font-bold">
@@ -367,7 +369,7 @@ export default function CheckoutConfirmationPage() {
             </>
           ) : (
             <>
-              {view.canContact && order.whatsappNumber && (
+              {fresh && view.canContact && order.whatsappNumber && (
                 <button
                   type="button"
                   onClick={handleWhatsApp}
