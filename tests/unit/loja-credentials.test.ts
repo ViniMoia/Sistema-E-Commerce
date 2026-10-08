@@ -4,7 +4,7 @@ import { tenantCache } from '@/lib/cache'
 import { getLojaBySlug, getLojaSettings, updateLojaSettings } from '@/services/loja.service'
 import { GET as publicGet } from '@/app/api/loja/[slug]/route'
 import { GET as adminGet, PUT as adminPut } from '@/app/api/loja/settings/route'
-import { correiosCredentialChanges } from '@/lib/loja-dto'
+import { correiosCredentialChanges, lojaSettingsFormChanges } from '@/lib/loja-dto'
 import { requirePurchaseAdmin } from '@/lib/auth/guards'
 
 vi.mock('@/lib/prisma', () => {
@@ -103,6 +103,25 @@ describe('LA-038: contratos de configurações da loja', () => {
     const { details } = await response.json()
     expect(Object.keys(details.fieldErrors)).toEqual(['coverImageUrl', 'primaryColor', 'secondaryColor'])
     expect(prisma.loja.update).not.toHaveBeenCalled()
+  })
+  it('o formulário salva o Pix sem reenviar imagem ou identidade visual que não podem ser editadas nessa tela', async () => {
+    vi.mocked(prisma.loja.findUnique).mockResolvedValue({ ...row, coverImageUrl: '/images/logo.svg',
+      primaryColor: '#abc', enableManualPix: false, enablePix: false, enableCreditCard: false, enableBoleto: false } as never)
+    const settings = await (await adminGet(new Request('http://localhost/api/loja/settings'))).json()
+    const body = { ...lojaSettingsFormChanges({ ...settings, enablePix: true }), ...correiosCredentialChanges('', '', false) }
+    for (const field of ['coverImageUrl', 'primaryColor', 'secondaryColor', 'description', 'customDomain', 'id', 'hasCorreiosPassword', 'correiosPassword']) {
+      expect(body).not.toHaveProperty(field)
+    }
+    const response = await adminPut(new Request('http://localhost/api/loja/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }))
+    expect(response.status).toBe(200)
+    const data = vi.mocked(prisma.loja.update).mock.calls[0][0].data
+    expect(data).toMatchObject({ enablePix: true, enableManualPix: false })
+    expect(data).not.toHaveProperty('coverImageUrl')
+    expect(data).not.toHaveProperty('primaryColor')
+    expect(data).not.toHaveProperty('correiosPassword')
+    assertNoSecrets(await response.json())
   })
   it('permite substituição e remoção explícitas sem revelar o valor anterior', async () => {
     assertNoSecrets(await updateLojaSettings('store', { correiosPassword: 'replacement' }))

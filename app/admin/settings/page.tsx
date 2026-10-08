@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { correiosCredentialChanges } from '@/lib/loja-dto';
+import { correiosCredentialChanges, lojaSettingsFormChanges } from '@/lib/loja-dto';
 import {
   Settings,
   QrCode,
@@ -158,22 +158,8 @@ export default function AdminSettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...settings,
-          pixKey: settings.pixKey === '' ? null : settings.pixKey,
-          pixKeyType: settings.pixKeyType === '' ? null : settings.pixKeyType,
-          whatsappNumber: settings.whatsappNumber === '' ? null : settings.whatsappNumber,
-          primaryColor: settings.primaryColor === '' ? null : settings.primaryColor,
-          secondaryColor: settings.secondaryColor === '' ? null : settings.secondaryColor,
-          customDomain: settings.customDomain === '' ? null : settings.customDomain,
-          originCep: settings.originCep === '' ? null : settings.originCep,
-          originState: settings.originState === '' ? null : settings.originState,
-          originCity: settings.originCity === '' ? null : settings.originCity,
-          originDistrict: settings.originDistrict === '' ? null : settings.originDistrict,
-          originStreet: settings.originStreet === '' ? null : settings.originStreet,
-          originNumber: settings.originNumber === '' ? null : settings.originNumber,
-          originComplement: settings.originComplement === '' ? null : settings.originComplement,
+          ...lojaSettingsFormChanges(settings),
           ...correiosCredentialChanges(correiosContractCode, correiosPassword, removeCorreiosCredentials),
-          additionalDays: Number(settings.additionalDays) || 0,
         }),
       });
 

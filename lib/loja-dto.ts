@@ -47,3 +47,26 @@ export function correiosCredentialChanges(contractCode: string, password: string
     ...(password && { correiosPassword: password }),
   }
 }
+
+type LojaSettingsFormFields = Pick<AdminLojaDTO,
+  'name' | 'slug' | 'pixKey' | 'pixKeyType' | 'whatsappNumber' |
+  'enableManualPix' | 'enablePix' | 'enableCreditCard' | 'enableBoleto' |
+  'originCep' | 'originState' | 'originCity' | 'originDistrict' | 'originStreet' | 'originNumber' |
+  'enableCorreios' | 'enablePickup' | 'enableNoFreight' | 'additionalDays'>
+
+/** Send only fields edited by PIX, Contato & Logística; preserve unrelated store metadata. */
+export function lojaSettingsFormChanges(settings: LojaSettingsFormFields) {
+  const nullable = (value: string | null) => value === '' ? null : value
+  return {
+    name: settings.name, slug: settings.slug,
+    enableManualPix: settings.enableManualPix, enablePix: settings.enablePix,
+    enableCreditCard: settings.enableCreditCard, enableBoleto: settings.enableBoleto,
+    pixKey: nullable(settings.pixKey), pixKeyType: nullable(settings.pixKeyType),
+    whatsappNumber: nullable(settings.whatsappNumber),
+    originCep: nullable(settings.originCep), originState: nullable(settings.originState),
+    originCity: nullable(settings.originCity), originDistrict: nullable(settings.originDistrict),
+    originStreet: nullable(settings.originStreet), originNumber: nullable(settings.originNumber),
+    enableCorreios: settings.enableCorreios, enablePickup: settings.enablePickup,
+    enableNoFreight: settings.enableNoFreight, additionalDays: Number(settings.additionalDays) || 0,
+  }
+}
