@@ -5,10 +5,19 @@ import { getLojaBySlug, getLojaSettings, updateLojaSettings } from '@/services/l
 import { GET as publicGet } from '@/app/api/loja/[slug]/route'
 import { GET as adminGet, PUT as adminPut } from '@/app/api/loja/settings/route'
 import { correiosCredentialChanges } from '@/lib/loja-dto'
+import { requirePurchaseAdmin } from '@/lib/auth/guards'
 
-vi.mock('@/lib/prisma', () => ({ default: { loja: { findUnique: vi.fn(), update: vi.fn() } } }))
+vi.mock('@/lib/prisma', () => {
+  const loja = { findUnique: vi.fn(), update: vi.fn() }
+  return { default: { loja, $transaction: vi.fn(async (work: (tx: unknown) => Promise<unknown>) => work({
+    loja, $queryRaw: vi.fn(), user: { findUnique: vi.fn(async () => ({ id: 'admin', lojaID: 'store', role: 'ADMIN', status: 'ACTIVE' })) },
+  })) } }
+})
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
-vi.mock('@/lib/auth/guards', () => ({ requireAdmin: vi.fn(async () => ({ user: { lojaID: 'store' } })) }))
+vi.mock('@/lib/auth/guards', () => ({
+  requireAdmin: vi.fn(async () => ({ user: { id: 'admin', lojaID: 'store' } })),
+  requirePurchaseAdmin: vi.fn(async () => ({ user: { id: 'admin', lojaID: 'store' } })),
+}))
 
 const row = {
   id: 'store', name: 'Loja', slug: 'loja', description: '', coverImageUrl: '',
@@ -67,6 +76,33 @@ describe('LA-038: contratos de configurações da loja', () => {
     expect(response.status).toBe(200)
     assertNoSecrets(await response.json())
     expect(vi.mocked(prisma.loja.update).mock.calls[0][0].data).not.toHaveProperty('correiosPassword')
+  })
+  it('salva Pix automático a partir da leitura administrativa sem imagem, cores ou chave manual', async () => {
+    vi.mocked(prisma.loja.findUnique).mockResolvedValue({ ...row, pixKey: null, pixKeyType: null,
+      whatsappNumber: null, primaryColor: null, secondaryColor: null } as never)
+    const settings = await (await adminGet(new Request('http://localhost/api/loja/settings'))).json()
+    const response = await adminPut(new Request('http://localhost/api/loja/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...settings, enablePix: true }),
+    }))
+    expect(response.status).toBe(200)
+    expect(requirePurchaseAdmin).toHaveBeenCalledOnce()
+    expect(prisma.$transaction).toHaveBeenCalledOnce()
+    expect(vi.mocked(prisma.loja.update).mock.calls[0][0].data).toMatchObject({
+      enablePix: true, coverImageUrl: '', primaryColor: null, secondaryColor: null, pixKey: null, pixKeyType: null,
+    })
+    expect(vi.mocked(prisma.loja.update).mock.calls[0][0].data).not.toHaveProperty('correiosPassword')
+    assertNoSecrets(await response.json())
+  })
+  it('continua rejeitando imagem preenchida inválida e cores fora do formato permitido', async () => {
+    const response = await adminPut(new Request('http://localhost/api/loja/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coverImageUrl: 'imagem-invalida', primaryColor: 'vermelho', secondaryColor: '#123' }),
+    }))
+    expect(response.status).toBe(422)
+    const { details } = await response.json()
+    expect(Object.keys(details.fieldErrors)).toEqual(['coverImageUrl', 'primaryColor', 'secondaryColor'])
+    expect(prisma.loja.update).not.toHaveBeenCalled()
   })
   it('permite substituição e remoção explícitas sem revelar o valor anterior', async () => {
     assertNoSecrets(await updateLojaSettings('store', { correiosPassword: 'replacement' }))

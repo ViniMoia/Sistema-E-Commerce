@@ -57,11 +57,7 @@ export default function AdminSettingsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cepLoading, setCepLoading] = useState(false);
 
-  useEffect(() => {
-    loadUserAndSettings();
-  }, []);
-
-  const loadUserAndSettings = async () => {
+  async function loadUserAndSettings() {
     try {
       const res = await fetch('/api/loja/settings');
       if (!res.ok) {
@@ -109,7 +105,11 @@ export default function AdminSettingsPage() {
       setErrorMessage('Erro ao carregar configurações');
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadUserAndSettings();
+  }, []);
 
   const handleCepOriginChange = async (cepValue: string) => {
     const clean = cepValue.replace(/\D/g, '');
@@ -187,7 +187,25 @@ export default function AdminSettingsPage() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const errData = await res.json().catch(() => null);
-        setErrorMessage(errData?.error || 'Falha ao atualizar configurações');
+        if (res.status === 422) {
+          const labels: Record<string, string> = {
+            name: 'Nome da loja', slug: 'Slug da loja', description: 'Descrição',
+            coverImageUrl: 'Imagem da loja', primaryColor: 'Cor primária', secondaryColor: 'Cor secundária',
+            pixKey: 'Chave PIX', pixKeyType: 'Tipo de chave PIX', whatsappNumber: 'WhatsApp',
+            correiosContractCode: 'Código do contrato dos Correios', correiosPassword: 'Senha dos Correios',
+            additionalDays: 'Dias extras de expedição',
+          };
+          const fieldErrors = errData?.details?.fieldErrors;
+          const messages = fieldErrors && typeof fieldErrors === 'object'
+            ? Object.entries(fieldErrors).flatMap(([field, issues]) => Array.isArray(issues)
+              ? issues.filter((issue): issue is string => typeof issue === 'string')
+                .map(issue => `${labels[field] || field}: ${issue}`)
+              : [])
+            : [];
+          setErrorMessage(messages.length ? messages.join(' ') : 'Confira os campos informados antes de salvar.');
+        } else {
+          setErrorMessage(errData?.error || 'Falha ao atualizar configurações');
+        }
       }
     } catch (err) {
       console.error('[ADMIN_SETTINGS_UPDATE_ERROR]', err);
@@ -231,7 +249,7 @@ export default function AdminSettingsPage() {
 
         <div className="flex items-center gap-3 self-start sm:self-auto">
           <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted">
-            <span>Status PIX:</span>
+            <span>Chave PIX manual:</span>
             <span
               className={`font-bold px-2.5 py-0.5 rounded-full border text-xs ${
                 isPixConfigured
@@ -239,7 +257,7 @@ export default function AdminSettingsPage() {
                   : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
               }`}
             >
-              {isPixConfigured ? 'Ativo' : 'Pendente'}
+              {isPixConfigured ? 'Configurada' : 'Não configurada'}
             </span>
           </div>
         </div>
@@ -278,10 +296,10 @@ export default function AdminSettingsPage() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold font-continental-display text-white tracking-tight">
-                    1. Recebimento Instantâneo via PIX
+                    1. Chave PIX para pagamento manual
                   </h2>
                   <p className="text-xs text-catalog-muted font-light">
-                    Chave oficial para liquidação direta das compras com geração automática de QR Code no checkout.
+                    Utilizada no Pix manual via WhatsApp. O Pix automático usa a cobrança e o QR Code gerados pelo Asaas.
                   </p>
                 </div>
               </div>
@@ -290,7 +308,7 @@ export default function AdminSettingsPage() {
             <div className="p-4 rounded-xl bg-[#050B14] border border-catalog-gold/20 flex items-start gap-3">
               <ShieldCheck className="w-4 h-4 text-catalog-gold shrink-0 mt-0.5" />
               <p className="text-xs text-catalog-muted leading-relaxed font-light">
-                O cliente terá acesso imediato ao <strong className="text-catalog-gold">QR Code dinâmico</strong> e à chave <strong className="text-catalog-gold">Copia e Cola</strong> na página de confirmação do pedido com conciliação manual ou automática.
+                Para Pix manual, informe a chave de recebimento e o WhatsApp de atendimento. No <strong className="text-catalog-gold">Pix automático</strong>, esses campos podem ficar vazios.
               </p>
             </div>
 

@@ -13,9 +13,9 @@ const updateLojaSettingsSchema = z.object({
   name: z.string().min(2, "Nome da loja deve ter pelo menos 2 caracteres").optional(),
   slug: z.string().min(2, "Slug da loja deve ter pelo menos 2 caracteres").optional(),
   description: z.string().optional(),
-  coverImageUrl: z.string().url("URL da logomarca/capa inválida").optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor primária inválida (deve ser hex #RRGGBB)").optional(),
-  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor secundária inválida (deve ser hex #RRGGBB)").optional(),
+  coverImageUrl: z.union([z.literal(''), z.string().url()], { error: 'URL da logomarca/capa inválida' }).optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor primária inválida (deve ser hex #RRGGBB)").nullable().optional(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor secundária inválida (deve ser hex #RRGGBB)").nullable().optional(),
   customDomain: z.string().nullable().optional(),
   // Configurações de Frete & Expedição
   originCep: z.string().nullable().optional(),

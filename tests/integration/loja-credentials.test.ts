@@ -7,6 +7,30 @@ import { get, put } from '@/tests/helpers/request'
 afterAll(async () => { await cleanupFixtureStores(); await prisma.$disconnect() })
 
 describe('WF-02: credenciais-canário no banco e no servidor HTTP', () => {
+  it('persiste Pix automático no formulário completo com imagem vazia e cores nulas, preservando credenciais', async () => {
+    await verifyTestDatabase()
+    const lojaID = await createFixtureStore()
+    const host = `pix-${lojaID}.example.test`
+    await prisma.loja.update({ where: { id: lojaID }, data: {
+      customDomain: host,
+      coverImageUrl: '', primaryColor: null, secondaryColor: null,
+      enableManualPix: false, pixKey: null, pixKeyType: null, whatsappNumber: null,
+      correiosPassword: 'CANARY_UNCHANGED_PASSWORD', correiosContractCode: 'CANARY_UNCHANGED_CONTRACT',
+    } })
+    const user = await prisma.user.create({ data: { lojaID, name: 'Admin', email: 'pix@fixture.test', password: '', role: 'ADMIN' } })
+    const session = await prisma.session.create({ data: { id: randomUUID(), userId: user.id, expiresAt: new Date(Date.now() + 60000) } })
+    const options = { headers: { Host: host, Cookie: `session_id=${session.id}` } }
+    const current = await get('/api/loja/settings', options)
+    expect(current.status).toBe(200)
+    const result = await put('/api/loja/settings', { ...(current.body as Record<string, unknown>), enablePix: true }, options)
+    expect(result.status).toBe(200)
+    expect(result.body).toMatchObject({ enablePix: true, coverImageUrl: '', primaryColor: null, secondaryColor: null,
+      pixKey: null, pixKeyType: null, hasCorreiosPassword: true, hasCorreiosContractCode: true })
+    expect(JSON.stringify(result.body)).not.toContain('CANARY_')
+    const stored = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } })
+    expect(stored).toMatchObject({ enablePix: true, correiosPassword: 'CANARY_UNCHANGED_PASSWORD', correiosContractCode: 'CANARY_UNCHANGED_CONTRACT' })
+    expect((await get('/api/loja/settings', options)).body).toMatchObject({ enablePix: true })
+  })
   it('não entrega segredos; edição comum preserva, substituição e remoção são explícitas', async () => {
     await verifyTestDatabase()
     const lojaID = await createFixtureStore()
