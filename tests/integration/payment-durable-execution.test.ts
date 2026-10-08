@@ -10,6 +10,9 @@ import { requestPaymentOperation } from '@/services/payment/payment-operations.s
 import { manualRefund } from '@/services/payment/manual-refund.service';
 import { requestPaymentReconciliation } from '@/services/payment/payment-supervision.service';
 import { applyPaymentEvidence } from '@/services/payment/payment-evidence.service';
+import { AsaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
+import { asaasClient } from '@/services/asaas/asaas.client';
+import type { AsaasPaymentResponse } from '@/types/asaas.types';
 import { CommerceLocks } from '@/lib/commerce/locks';
 import { processExpiredOrders } from '@/services/order-timeout.service';
 import { transitionOrder } from '@/lib/commerce/order-command';
@@ -80,6 +83,46 @@ async function event(p: Awaited<ReturnType<typeof purchase>>, type = 'PAYMENT_RE
 async function stock(p: Awaited<ReturnType<typeof purchase>>) { return (await prisma.product.findUniqueOrThrow({ where: { id: p.product.id } })).stock; }
 
 describe('WF-14: real PostgreSQL, controlled remote operations, resumable executor', () => {
+  it.each([false, true])('real adapter persists/replays PIX with nullable installment metadata; lost response=%s', async lostResponse => {
+    const p = port(), adapter = new AsaasPaymentAdapter();
+    let remotePayment: AsaasPaymentResponse | undefined;
+    const customer = vi.spyOn(asaasClient, 'getOrCreateCustomer').mockResolvedValue('cus-fixture');
+    const submit = vi.spyOn(asaasClient, 'createPayment').mockImplementation(async input => {
+      remotePayment = { id: randomUUID(), customer: 'cus-fixture', externalReference: input.externalReference,
+        billingType: 'PIX', status: 'PENDING', value: input.value!, netValue: input.value!, dateCreated: '2026-10-08',
+        dueDate: input.dueDate, installment: null, installmentNumber: null };
+      return remotePayment;
+    });
+    const qr = vi.spyOn(asaasClient, 'getPixQrCode').mockResolvedValue({ payload: 'fixture-copy', encodedImage: 'fixture-qr', expirationDate: '2030-10-05T12:00:00Z' });
+    const lookup = vi.spyOn(asaasClient, 'listPaymentsByReference').mockImplementation(async reference => {
+      expect(reference).toBe(remotePayment?.externalReference);
+      return remotePayment ? [remotePayment] : [];
+    });
+    p.gateway.createPixCharge = vi.fn(async input => {
+      const result = await adapter.createPixCharge(input);
+      if (lostResponse) throw new Error('Controlled response loss after issuance');
+      return result;
+    });
+    p.gateway.inspectAttempt = adapter.inspectAttempt.bind(adapter);
+    try {
+      const order = await purchase(p);
+      expect(order.result.paymentState).toBe(lostResponse ? 'PROCESSING' : 'ISSUED');
+      if (lostResponse) {
+        await due(order.attempt.id);
+        expect(await reconcilePaymentAttempts(50, p.gateway)).toMatchObject({ completed: 1, retried: 0, review: 0 });
+      }
+      const replay = await createOrder(order.input);
+      expect(replay).toMatchObject({ paymentState: 'ISSUED', order: { id: order.result.order.id,
+        pixPayload: 'fixture-copy', pixQrCode: 'fixture-qr', allowedActions: ['PAY_PIX'] } });
+      expect(submit).toHaveBeenCalledTimes(1);
+      expect((await stored(order.result.order.id)).paymentAttempts[0]).toMatchObject({ status: 'PENDING',
+        charges: [{ providerPaymentId: remotePayment!.id, instructions: { pixPayload: 'fixture-copy', pixQrCodeBase64: 'fixture-qr' } }] });
+      expect(await stock(order)).toBe(4);
+    } finally {
+      customer.mockRestore(); submit.mockRestore(); qr.mockRestore(); lookup.mockRestore();
+    }
+  });
+
   it('lost creation response is looked up without a second charge; QR is recovered', async () => {
     const p = port(), original = vi.mocked(p.gateway.createPixCharge).getMockImplementation()!;
     vi.mocked(p.gateway.createPixCharge).mockImplementationOnce(async args => { await original(args); throw new Error('lost response'); });

@@ -3,7 +3,11 @@ import { moneyCents } from './installment.service';
 import { PaymentGatewayError } from '@/types/payment-gateway.types';
 const paymentSchema = z.object({ id: z.string().min(1).max(128), billingType: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']),
   value: z.number().finite().positive(), status: z.enum(['PENDING', 'CONFIRMED', 'RECEIVED', 'AWAITING_RISK_ANALYSIS']),
-  externalReference: z.string(), installment: z.string().optional(), installmentNumber: z.number().int().positive().optional() });
+  // Asaas represents non-applicable installment metadata as either null or
+  // omitted. Normalize only those optional fields; installment contracts
+  // below still require a matching contract ID and every positive ordinal.
+  externalReference: z.string(), installment: z.string().nullish().transform(value => value ?? undefined),
+  installmentNumber: z.number().int().positive().nullish().transform(value => value ?? undefined) });
 export function verifyRemotePayment(raw: unknown, expected: { orderId: string; method: string; value: number }) {
   const result = paymentSchema.safeParse(raw);
   if (!result.success || result.data.externalReference !== expected.orderId || result.data.billingType !== expected.method ||

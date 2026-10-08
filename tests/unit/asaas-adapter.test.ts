@@ -24,6 +24,7 @@ describe('AsaasPaymentAdapter (DIP / Clean Architecture)', () => {
         netValue: 148.0,
         dateCreated: '2026-09-18',
         dueDate: '2026-09-19',
+        installmentNumber: null,
         invoiceUrl: 'https://asaas.com/i/test999',
       });
       vi.spyOn(asaasClient, 'getPixQrCode').mockResolvedValueOnce({

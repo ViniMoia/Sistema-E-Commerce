@@ -51,7 +51,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
       }
       charges.push({ paymentId: payment.id, externalReference: payment.externalReference ?? '', method: payment.billingType as PaymentMethod,
         ordinal: payment.installmentNumber ?? 1, value: payment.value, status: payment.status, deleted: payment.deleted,
-        contractId: payment.installment, instructions,
+        contractId: payment.installment ?? undefined, instructions,
         // YYYY-MM-DD in Brazil ends at 03:00 UTC the following day. Boleto
         // confirmation grace is applied separately by the domain policy.
         dueAt: /^\d{4}-\d{2}-\d{2}$/.test(payment.dueDate) ? new Date(new Date(payment.dueDate + 'T00:00:00-03:00').getTime() + 86400000).toISOString() : undefined });
@@ -237,7 +237,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
       return {
         paymentId: payment.id,
         status: payment.status,
-        value: input.value, contractId: payment.installment, charges: verifiedCharges,
+        value: input.value, contractId: payment.installment ?? undefined, charges: verifiedCharges,
         approvedForEntireContract: verifiedCharges.every(charge => ['CONFIRMED', 'RECEIVED'].includes(charge.status)),
         creditCardBrand: payment.creditCard?.creditCardBrand || 'CARTAO',
         creditCardLast4: payment.creditCard?.creditCardNumber

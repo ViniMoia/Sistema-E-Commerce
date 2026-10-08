@@ -91,8 +91,8 @@ export interface AsaasPaymentResponse {
   };
   nossoNumero?: string;
   identificationField?: string;
-  installmentNumber?: number;
-  installment?: string;
+  installmentNumber?: number | null;
+  installment?: string | null;
 }
 
 export interface AsaasPixQrCodeResponse {
