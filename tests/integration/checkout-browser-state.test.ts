@@ -14,6 +14,8 @@ import { freightOrchestrator } from '@/services/freight';
 import { getLojaFromHeaders } from '@/lib/tenant';
 import { getCurrentUser } from '@/lib/session';
 import { sanitizeUser } from '@/lib/utils/dto-sanitizer';
+import { createOrder } from '@/tests/setup/checkout-fixture';
+import type { PaymentGateway } from '@/types/payment-gateway.types';
 // Only the in-process freight boundary uses injected identity/geography.
 // The isolated Next server keeps real session/tenant/cart/checkout handlers.
 vi.mock('@/lib/tenant', () => ({ getLojaFromHeaders: vi.fn() }));
@@ -115,15 +117,35 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     const intentID = await browser.evaluate('new URL(location.href).searchParams.get("intent")') as string;
     const order = await prisma.order.findFirstOrThrow({ where: { checkoutIntentID: intentID, lojaID } });
     expect(order.status).toBe('PENDING'); expect((await prisma.cart.findUniqueOrThrow({ where: { id: order.sourceCartID! } })).status).toBe('COMPLETED');
-    // Tab/window return must retain the summary, suspend instructions and
+    // With the tab continuously visible, automatic reads must keep the
+    // validated payment instructions mounted, including during transport.
+    await browser.evaluate(`window.__confirmationTransitions = [];
+      window.__confirmationObserver = new MutationObserver(() => {
+        if (!document.body.innerText.toLocaleLowerCase().includes('aguardando pagamento') ||
+          ![...document.querySelectorAll('button')].some(e => e.textContent.toLocaleLowerCase().includes('copiar')))
+          window.__confirmationTransitions.push(document.body.innerText.slice(0, 1000));
+      });
+      window.__confirmationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });`);
+    for (let poll = 0; poll < 2; poll++) {
+      confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
+      heldConfirmationRequests = 0;
+      await expect.poll(() => heldConfirmationRequests, { timeout: 20000 }).toBe(1);
+      expect(await browser.evaluate(text('Aguardando pagamento'))).toBe(true);
+      expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(true);
+      confirmationHold = null; releaseConfirmation();
+      await browser.waitFor('!' + text('Conferindo o estado do pedido'));
+    }
+    expect(await browser.evaluate('window.__confirmationTransitions')).toEqual([]);
+    await browser.evaluate('window.__confirmationObserver.disconnect(); delete window.__confirmationObserver; delete window.__confirmationTransitions');
+    // A brief tab/window return must retain the summary and instructions and
     // coalesce repeated focus notifications while verification is in flight.
     confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
     heldConfirmationRequests = 0;
     await browser.evaluate('window.dispatchEvent(new Event("focus"))');
-    await browser.waitFor(text('Atualizando o estado da compra'));
+    await browser.waitFor(text('Conferindo o estado do pedido'));
     await expect.poll(() => heldConfirmationRequests).toBe(1);
     expect(await browser.evaluate(text('Total do Pedido'))).toBe(true);
-    expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(false);
+    expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(true);
     await browser.evaluate('window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("pageshow")); document.dispatchEvent(new Event("visibilitychange")); new Promise(resolve=>setTimeout(resolve,250))');
     expect(heldConfirmationRequests).toBe(1);
     await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true}); document.dispatchEvent(new Event("visibilitychange")); window.dispatchEvent(new Event("focus")); new Promise(resolve=>setTimeout(resolve,250))');
@@ -133,6 +155,7 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     await expect.poll(() => heldConfirmationRequests).toBe(2);
     await browser.evaluate('delete document.hidden');
     confirmationHold = null; releaseConfirmation();
+    await browser.waitFor('!' + text('Conferindo o estado do pedido'));
     await browser.waitFor(text('Aguardando pagamento'));
     expect(await browser.evaluate('[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))')).toBe(true);
     // A stalled read has a deadline and an explicit connection state; the
@@ -233,5 +256,82 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
       expect(await browser.evaluate(text('Produto navegador WF15'))).toBe(false);
       expect((await prisma.cart.findUniqueOrThrow({ where: { id: cart.id }, include: { items: true } })).items[0].quantity).toBe(2);
     } finally { await browser.send('Target.closeTarget', { targetId: target.targetId }); }
+  }, 120000);
+  it('keeps the same issued PIX image during screenshot focus events but suspends failed, stale and expired instructions', async () => {
+    await prisma.loja.update({ where: { id: lojaID }, data: { enablePix: true } });
+    const unused = async () => { throw new Error('Unused fixture gateway operation'); };
+    const gateway: PaymentGateway = {
+      capabilities: async () => ({ configured: true, methods: ['PIX'], maximumInstallments: 1 }),
+      createPixCharge: vi.fn(async input => ({ paymentId: randomUUID(), externalReference: input.orderId,
+        method: 'PIX', ordinal: 1, value: input.value, status: 'PENDING', pixPayload: 'fixture-pix-copy',
+        pixQrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jOJkAAAAASUVORK5CYII=',
+        expirationDate: '2030-10-05T12:00:00Z' })),
+      createBoletoCharge: unused, createCreditCardCharge: unused, inspectAttempt: unused,
+      cancelPayment: unused, refundPayment: unused, getPaymentStatus: unused,
+    };
+    const created = await createOrder({ lojaID, customer: { userId: userID, name: 'Cliente', email,
+      phone: '11999999999', cpfCnpj: '52998224725' },
+      items: [{ productId: productID, variantId: variantID, quantity: 1 }], deliveryType: 'PICKUP',
+      paymentMethod: 'PIX', paymentGateway: gateway });
+    const intentID = created.order.checkoutIntentID!;
+    const attempt = await prisma.paymentAttempt.findFirstOrThrow({ where: { orderId: created.order.id } });
+    const session = await prisma.session.create({ data: { userId: userID, expiresAt: new Date(Date.now() + 3600000) } });
+    await browser.send('Network.setCookie', { name: 'session_id', value: session.id, url: browser.origin, httpOnly: true });
+    await browser.navigate('/checkout/confirmation?intent=' + encodeURIComponent(intentID));
+    const image = 'document.querySelector(\'img[alt="QR Code PIX Dinâmico"]\')';
+    const copy = '[...document.querySelectorAll("button")].some(e=>e.textContent.includes("Copiar"))';
+    await browser.waitFor('!!' + image);
+    await browser.evaluate('void (window.__issuedPixImage = ' + image + ')');
+    confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
+    heldConfirmationRequests = 0;
+    await browser.evaluate('window.dispatchEvent(new Event("focus")); window.dispatchEvent(new Event("pageshow"))');
+    await expect.poll(() => heldConfirmationRequests).toBe(1);
+    await browser.waitFor(text('Conferindo o estado do pedido'));
+    expect(await browser.evaluate(image + ' === window.__issuedPixImage')).toBe(true);
+    expect(await browser.evaluate(copy)).toBe(true);
+    expect(await browser.evaluate(text('Verificando o pagamento'))).toBe(false);
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true}); document.dispatchEvent(new Event("visibilitychange")); window.dispatchEvent(new Event("focus")); new Promise(resolve=>setTimeout(resolve,250))');
+    expect(heldConfirmationRequests).toBe(1);
+    expect(await browser.evaluate(image + ' === window.__issuedPixImage')).toBe(true);
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false}); document.dispatchEvent(new Event("visibilitychange")); window.dispatchEvent(new Event("focus"))');
+    await expect.poll(() => heldConfirmationRequests).toBe(2);
+    expect(await browser.evaluate(image + ' === window.__issuedPixImage')).toBe(true);
+    await browser.evaluate('delete document.hidden');
+    confirmationHold = null; releaseConfirmation();
+    await browser.waitFor('!' + text('Conferindo o estado do pedido'));
+    expect(await browser.evaluate(image + ' === window.__issuedPixImage')).toBe(true);
+    // A failed read revokes actions immediately, then a verified response can
+    // restore the existing charge. It must never cause another submission.
+    unavailable = true; await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor(text('As ações de pagamento estão suspensas'));
+    expect(await browser.evaluate('!!' + image)).toBe(false);
+    expect(await browser.evaluate(copy)).toBe(false);
+    unavailable = false; await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor('!!' + image);
+    // A long hidden interval must not keep authorizing an old snapshot.
+    confirmationHold = new Promise<void>(resolve => { releaseConfirmation = resolve; });
+    heldConfirmationRequests = 0;
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true}); document.dispatchEvent(new Event("visibilitychange"))');
+    await browser.waitFor(text('Verificando o pagamento'), 35000);
+    expect(heldConfirmationRequests).toBe(0);
+    expect(await browser.evaluate('!!' + image)).toBe(false);
+    expect(await browser.evaluate(copy)).toBe(false);
+    await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false}); document.dispatchEvent(new Event("visibilitychange"))');
+    await expect.poll(() => heldConfirmationRequests).toBe(1);
+    expect(await browser.evaluate('!!' + image)).toBe(false);
+    await browser.evaluate('delete document.hidden');
+    confirmationHold = null; releaseConfirmation();
+    await browser.waitFor('!!' + image);
+    // Server deadline plus monotonic elapsed time removes the image even
+    // without another HTTP response or a change of window.
+    await prisma.paymentAttempt.update({ where: { id: attempt.id }, data: { externalExpiresAt: new Date(Date.now() + 2500) } });
+    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await browser.waitFor('!' + text('Conferindo o estado do pedido'));
+    await browser.waitFor(text('Prazo de pagamento encerrado'));
+    expect(await browser.evaluate('!!' + image)).toBe(false);
+    expect(await browser.evaluate(copy)).toBe(false);
+    expect(gateway.createPixCharge).toHaveBeenCalledTimes(1);
+    expect(await prisma.order.count({ where: { checkoutIntentID: intentID } })).toBe(1);
+    expect(await prisma.paymentCharge.count({ where: { attemptId: attempt.id } })).toBe(1);
   }, 120000);
 });

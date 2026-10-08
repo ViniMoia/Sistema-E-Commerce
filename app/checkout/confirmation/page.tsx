@@ -25,13 +25,16 @@ import {
   MessageCircle,
 } from 'lucide-react'
 
+const verificationMaxAgeMs = 30_000
+
 export default function CheckoutConfirmationPage() {
   const router = useRouter()
   const context = useCartStore(state => state.context)
   const [recoveryError, setRecoveryError] = useState<string | null>(null)
   const [connectionError, setConnectionError] = useState(false)
   const [order, setOrder] = useState<(PurchaseClient & { orderId: string }) | null>(null)
-  const [fresh, setFresh] = useState(false)
+  const [verified, setVerified] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [requestStartedAt, setRequestStartedAt] = useState(0)
   const [now, setNow] = useState(0)
   const [copiedPix, setCopiedPix] = useState(false)
@@ -44,7 +47,7 @@ export default function CheckoutConfirmationPage() {
     let disposed = false, sequence = 0, failures = 0
     let timer: ReturnType<typeof setTimeout> | undefined
     let controller: AbortController | undefined
-    setOrder(null); setFresh(false); setRecoveryError(null)
+    setOrder(null); setVerified(false); setRefreshing(false); setRecoveryError(null)
     const load = async () => {
       if (document.hidden || disposed || (controller && !controller.signal.aborted)) return
       const revision = ++sequence
@@ -52,6 +55,7 @@ export default function CheckoutConfirmationPage() {
       controller = currentController
       const deadline = setTimeout(() => currentController.abort(), 15000)
       const startedAt = performance.now()
+      setNow(startedAt); setRefreshing(true)
       try {
         const res = await fetch('/api/checkout/intents/' + encodeURIComponent(intentID), { cache: 'no-store', signal: currentController.signal })
         if (!res.ok) throw new Error('Não foi possível recuperar esta compra para a identidade atual.')
@@ -63,7 +67,7 @@ export default function CheckoutConfirmationPage() {
         const timestamp = performance.now()
         // Include transport time conservatively; a slow response must not extend validity.
         setOrder({ ...current, orderId: current.id }); setRequestStartedAt(startedAt); setNow(timestamp)
-        setFresh(true); setConnectionError(false); setRecoveryError(null); failures = 0
+        setVerified(true); setConnectionError(false); setRecoveryError(null); failures = 0
         const identity = current.checkoutIntentID + ':' + current.sourceCartID
         if (current.sourceCartID && current.sourceCartVersion != null && consumed.current !== identity) {
           consumed.current = identity
@@ -73,19 +77,20 @@ export default function CheckoutConfirmationPage() {
         timer = setTimeout(() => { void load() }, view.kind === 'approved' ? 15000 : ['cancelled','declined','refunded'].includes(view.kind) ? 30000 : 10000)
       } catch {
         if (disposed || sequence !== revision) return
-        setFresh(false); setConnectionError(true); failures++
+        setVerified(false); setConnectionError(true); failures++
         timer = setTimeout(() => { void load() }, Math.min(30000, 3500 * 2 ** Math.min(failures, 4)))
       } finally {
         clearTimeout(deadline)
         if (controller === currentController) controller = undefined
+        if (!disposed && sequence === revision) setRefreshing(false)
       }
     }
     const refresh = () => {
       if (timer) clearTimeout(timer)
-      setFresh(false)
-      // Hiding the tab suspends instructions. On return, reuse an active
-      // verification instead of aborting it again for each focus/pageshow.
-      if (document.hidden) { sequence++; controller?.abort(); return }
+      setNow(performance.now())
+      // A brief focus/visibility change preserves recently verified instructions.
+      // Their age and payment deadline keep advancing while the tab is hidden.
+      if (document.hidden) { sequence++; controller?.abort(); setRefreshing(false); return }
       void load()
     }
     const clock = setInterval(() => setNow(performance.now()), 1000)
@@ -98,7 +103,11 @@ export default function CheckoutConfirmationPage() {
 
   if (recoveryError) return <main className="p-10"><p>{recoveryError}</p><Link href="/checkout">Voltar ao checkout</Link></main>
   if (!order) return <main className="p-10"><p>{connectionError ? 'Não foi possível verificar a compra. Tentando recuperar o estado atual...' : 'Recuperando compra...'}</p><Link href="/checkout">Voltar ao checkout</Link></main>
-  const view = purchaseView(order, now - requestStartedAt)
+  const elapsed = now - requestStartedAt
+  const view = purchaseView(order, elapsed)
+  // Age limits payment instructions; it does not erase a known non-actionable
+  // state, such as a confirmed payment or the passage of its deadline.
+  const fresh = verified && (view.kind !== 'action_required' || elapsed < verificationMaxAgeMs)
   const paymentStatus = view.kind === 'approved' ? 'PAID' : 'PENDING'
 
   const method = order.paymentMethod
@@ -108,8 +117,16 @@ export default function CheckoutConfirmationPage() {
 
   const pixCopyText = order.pixPayload || order.pixKey || ''
 
+  // Check the current monotonic clock again at the action boundary, including
+  // when the browser has throttled rendering in a background tab.
+  const currentActions = () => {
+    const elapsed = performance.now() - requestStartedAt
+    return verified && !document.hidden && elapsed < verificationMaxAgeMs ? purchaseView(order, elapsed) : null
+  }
+
   const handleCopyPix = () => {
-    if (fresh && (view.canPayPix || view.canContact) && pixCopyText) {
+    const current = currentActions()
+    if ((current?.canPayPix || current?.canContact) && pixCopyText) {
       navigator.clipboard.writeText(pixCopyText)
       setCopiedPix(true)
       setTimeout(() => setCopiedPix(false), 2500)
@@ -117,7 +134,7 @@ export default function CheckoutConfirmationPage() {
   }
 
   const handleCopyBoleto = () => {
-    if (fresh && view.canPayBoleto && order.asaasDigitableLine) {
+    if (currentActions()?.canPayBoleto && order.asaasDigitableLine) {
       navigator.clipboard.writeText(order.asaasDigitableLine)
       setCopiedBoleto(true)
       setTimeout(() => setCopiedBoleto(false), 2500)
@@ -125,7 +142,7 @@ export default function CheckoutConfirmationPage() {
   }
 
   const handleWhatsApp = () => {
-    if (!fresh || !view.canContact) return
+    if (!currentActions()?.canContact) return
     const msg = buildWhatsAppMessage({
       orderNumber: order.orderNumber,
       customerName: order.customer.name,
@@ -194,6 +211,9 @@ export default function CheckoutConfirmationPage() {
         <p className="text-catalog-muted text-center mb-6 text-xs sm:text-sm max-w-md">
           Pedido #{order.orderNumber} · {fresh ? view.canContact ? 'Efetue o PIX com a chave informada e envie o comprovante à loja para conferência manual.' : view.description : 'Aguarde a conferência do estado atual desta compra.'}
           {fresh && view.canPayBoleto && <> Vencimento: {formattedDueDate}.</>}
+        </p>
+        <p role="status" aria-live="polite" className="h-5 mb-3 text-xs text-catalog-muted flex items-center gap-2">
+          {fresh && refreshing && <><Loader2 aria-hidden="true" className="w-3 h-3 animate-spin" />Conferindo o estado do pedido...</>}
         </p>
         {!fresh && <p role="alert" className="mb-6 rounded-xl border border-catalog-gold/30 bg-catalog-gold/10 p-4 text-center text-sm text-catalog-text">
           {connectionError ? 'Não foi possível verificar o estado atual. As ações de pagamento estão suspensas enquanto tentamos novamente.' : 'Atualizando o estado da compra...'}
@@ -319,7 +339,7 @@ export default function CheckoutConfirmationPage() {
 
             {order.asaasBankSlipUrl && (
               <button
-                onClick={() => window.open(order.asaasBankSlipUrl!, '_blank')}
+                onClick={() => { if (currentActions()?.canPayBoleto) window.open(order.asaasBankSlipUrl!, '_blank') }}
                 className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
