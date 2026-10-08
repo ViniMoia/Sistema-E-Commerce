@@ -1,4 +1,5 @@
 import { randomUUID, randomBytes } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import prisma, { verifyTestDatabase } from '@/lib/prisma';
 import { createFixtureStore, cleanupFixtureStores } from '@/tests/setup/fixture-scope';
@@ -21,8 +22,19 @@ import { post, get } from '@/tests/helpers/request';
 import type { PaymentGateway, PaymentMethod, RemoteCharge } from '@/types/payment-gateway.types';
 let lojaID: string, adminID: string, host: string;
 const inboxIds = new Set<string>();
+const approvalLatency = new AsyncLocalStorage<{ delayed: boolean }>();
 beforeAll(async () => {
   await verifyTestDatabase(); lojaID = await createFixtureStore();
+  prisma.$use(async (params, next) => {
+    const latency = approvalLatency.getStore();
+    if (latency && !latency.delayed && params.runInTransaction && params.model === 'Order' && params.action === 'findUnique') {
+      latency.delayed = true;
+      // Simulate a slow DB round trip at the commercial approval boundary.
+      // Real Prisma/PostgreSQL must keep the transaction alive beyond 5s.
+      await new Promise(resolve => setTimeout(resolve, 5500));
+    }
+    return next(params);
+  });
   await prisma.loja.update({ where: { id: lojaID }, data: { enablePix: true, enableBoleto: true, enableCreditCard: true, enablePickup: true } });
   adminID = (await prisma.user.create({ data: { lojaID, name: 'Admin', email: randomUUID() + '@example.invalid', password: '', role: 'ADMIN' } })).id;
   host = (await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } })).slug + '.plataforma.com';
@@ -57,10 +69,11 @@ function port() {
   };
   return { gateway, remote };
 }
-async function purchase(p = port(), method: PaymentMethod = 'PIX') {
+async function purchase(p = port(), method: PaymentMethod = 'PIX', userId?: string) {
+  const buyer = userId ? await prisma.user.findUniqueOrThrow({ where: { id: userId } }) : null;
   const product = await prisma.product.create({ data: { lojaID, userID: adminID, name: 'Produto financeiro', description: '', imageUrl: '', price: 100, stock: 5,
     productVariants: { create: { size: 'Único', color: 'Padrão', stock: 5 } } }, include: { productVariants: true } });
-  const input: CreateOrderParams = { lojaID, customer: { name: 'Comprador', email: randomUUID() + '@example.invalid', phone: '11999999999', cpfCnpj: '52998224725' },
+  const input: CreateOrderParams = { lojaID, customer: { userId, name: 'Comprador', email: buyer?.email ?? randomUUID() + '@example.invalid', phone: '11999999999', cpfCnpj: '52998224725' },
     items: [{ productId: product.id, variantId: product.productVariants[0].id, quantity: 1 }], deliveryType: 'PICKUP', paymentMethod: method,
     freightOwnerKey: 'g:' + randomBytes(32).toString('hex'), paymentGateway: p.gateway,
     ...(method === 'BOLETO' || method === 'CREDIT_CARD' ? { address: { cep: '01001000', state: 'SP', city: 'São Paulo', street: 'Rua', neighborhood: 'Centro', number: '1' } } : {}),
@@ -83,6 +96,40 @@ async function event(p: Awaited<ReturnType<typeof purchase>>, type = 'PAYMENT_RE
 async function stock(p: Awaited<ReturnType<typeof purchase>>) { return (await prisma.product.findUniqueOrThrow({ where: { id: p.product.id } })).stock; }
 
 describe('WF-14: real PostgreSQL, controlled remote operations, resumable executor', () => {
+  it.each(['inbox', 'reconciliation'] as const)('slow DB approval through %s stays atomic and replay creates no duplicate effects', async consumer => {
+    const config = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } });
+    await prisma.loja.update({ where: { id: lojaID }, data: { loyaltyEnabled: true, loyaltyEarnRate: 1 } });
+    try {
+      const buyer = await prisma.user.create({ data: { lojaID, name: 'Comprador', email: randomUUID() + '@example.invalid', password: '' } });
+      const p = await purchase(port(), 'PIX', buyer.id);
+      p.remote[0].status = 'RECEIVED';
+      const e = await event(p);
+      await due(p.attempt.id);
+      const latency = { delayed: false };
+      const result = await approvalLatency.run(latency, () => consumer === 'inbox'
+        ? drainPaymentInbox(50, p.gateway) : reconcilePaymentAttempts(50, p.gateway));
+      expect(latency.delayed).toBe(true);
+      expect(result).toMatchObject({ retried: 0, review: 0 });
+      const order = await stored(p.result.order.id);
+      expect(order).toMatchObject({ status: 'PAID', version: 1, pointsCredited: 100,
+        reservations: [{ status: 'COMMITTED' }], paymentAttempts: [{ status: 'APPROVED' }] });
+      // Replay both entry points against the same provider receipt.
+      await due(p.attempt.id);
+      await reconcilePaymentAttempts(50, p.gateway);
+      await drainPaymentInbox(50, p.gateway);
+      expect((await prisma.paymentInbox.findUniqueOrThrow({ where: { id: e.row.id } })).status).toBe('COMPLETED');
+      expect((await stored(order.id)).version).toBe(1);
+      expect(await prisma.financialFact.count({ where: { orderId: order.id } })).toBe(2);
+      expect(await prisma.orderStatusHistory.count({ where: { orderId: order.id } })).toBe(1);
+      expect(await prisma.loyaltyTransaction.count({ where: { orderId: order.id, type: 'EARN' } })).toBe(1);
+      expect(await prisma.commerceOutbox.count({ where: { effectKey: 'payment-confirmation:' + order.id } })).toBe(1);
+      expect(await stock(p)).toBe(4);
+      expect(p.gateway.createPixCharge).toHaveBeenCalledTimes(1);
+    } finally {
+      await prisma.loja.update({ where: { id: lojaID }, data: { loyaltyEnabled: config.loyaltyEnabled, loyaltyEarnRate: config.loyaltyEarnRate } });
+    }
+  });
+
   it.each([false, true])('real adapter persists/replays PIX with nullable installment metadata; lost response=%s', async lostResponse => {
     const p = port(), adapter = new AsaasPaymentAdapter();
     let remotePayment: AsaasPaymentResponse | undefined;
