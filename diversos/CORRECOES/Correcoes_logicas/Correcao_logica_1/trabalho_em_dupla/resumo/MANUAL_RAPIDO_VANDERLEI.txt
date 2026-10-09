@@ -1,0 +1,11 @@
+MANUAL RÁPIDO — Vanderlei (Que dá idéia errada)
+Plano completo (caminho a partir da raiz do projeto): diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/PLANO_DE_EXECUCAO_EM_DUPLA_PARA_PRODUCAO.md
+
+1. Objetivo: concluir as pendências de homologação e preparar produção no Google Cloud. O projeto ainda não está liberado para produção.
+2. Sua frente: pacotes V-00 a V-09 — interface, acesso, frete, expedição/retirada, métricas, infraestrutura e observabilidade. Você possui acesso ao Google Cloud e coordena/executa o deploy final e a entrada em produção, após os gates. Leno (Brega) conduz financeiro, dados, estoque, pontos e checkout no servidor, entregando o aceite e os procedimentos dessa frente.
+3. Comece por V-00 (ambiente local isolado) e V-01 (desempenho da home), se ainda pendentes. Use clone/branch e banco Docker próprios; não rode testes com as conexões remotas recebidas. Consulte a seção 9 para variáveis e plataformas; nunca cole segredos no agente ou Git.
+4. Avance um pacote por vez, preserve os contratos e combine mudanças em arquivos da outra frente. Preview financeiro, migrations e operações externas exigem coordenação com Leno (Brega); branches diferentes não isolam o banco compartilhado.
+5. Entregue PR pequeno com testes, evidências, pendências e próximo passo; peça revisão de Leno (Brega). Para o deploy final, reúna os gates de WF-18/WF-19 e o aceite de dados/financeiro de Leno, combine a janela e publique no Google Cloud. Implementação local não encerra homologação; use o plano completo como referência.
+
+COPIE NO CODEX/GEMINI, COM O REPOSITÓRIO ABERTO:
+“Sou Vanderlei (Que dá idéia errada). Leia diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/PLANO_DE_EXECUCAO_EM_DUPLA_PARA_PRODUCAO.md, o AGENTS.md e as fontes do meu pacote. Confira a revisão atual, liste minhas tarefas como responsável primário e escolha a primeira desbloqueada. Execute o trabalho local autorizado, começando por V-00/V-01 se pendentes, valide e registre a entrega. Possuo acesso ao Google Cloud e farei o deploy final e a entrada em produção após os gates e o aceite de dados/financeiro de Leno (Brega). Preserve a frente dele. Este início de trabalho não dispara operações financeiras externas nem publicação; siga a janela coordenada do plano.”

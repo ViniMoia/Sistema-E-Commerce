@@ -7,6 +7,9 @@
 .env.test.local
 .env.production.local
 
+# Private credentials shared outside Git
+/diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/variaveis_compartilhadas/
+
 # Next.js & TypeScript build output
 .next/
 out/

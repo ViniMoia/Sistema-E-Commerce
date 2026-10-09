@@ -1,0 +1,12 @@
+{
+  "id": "evt_d26e303b238e509335ac9ba210e51b0f&21426306",
+  "event": "PAYMENT_RECEIVED",
+  "dateCreated": "2026-10-08 15:53:37",
+  "payment": {
+    "id": "pay_r4gdsmosa0lh851z",
+    "externalReference": "04e34a9a-70da-4816-b691-3e31c85935b9",
+    "billingType": "PIX",
+    "value": 24.95,
+    "status": "RECEIVED"
+  }
+}

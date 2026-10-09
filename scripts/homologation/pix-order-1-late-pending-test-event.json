@@ -1,0 +1,12 @@
+{
+  "id": "evt_hml_test_order_1_late_pending_v1",
+  "event": "PAYMENT_CREATED",
+  "dateCreated": "2026-10-08 13:30:00",
+  "payment": {
+    "id": "pay_r4gdsmosa0lh851z",
+    "externalReference": "04e34a9a-70da-4816-b691-3e31c85935b9",
+    "billingType": "PIX",
+    "value": 24.95,
+    "status": "PENDING"
+  }
+}

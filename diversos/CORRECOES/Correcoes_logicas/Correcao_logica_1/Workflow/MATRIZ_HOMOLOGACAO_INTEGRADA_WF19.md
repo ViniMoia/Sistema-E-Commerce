@@ -271,3 +271,15 @@ runId **6f324b8e289bd600031e37200147c57e**, UTC **2026-10-06T16:41:23.571Z /2026
 
 **Gate financeiro continua aberto:** localização/escopo privados, banco/tenant/schema de homologação, Preview/revisão/variáveis de sistema, conta/endpoint/token e recebimento externo, scheduler/consumidor e Pix/cartão/boleto reais no Sandbox. Ter credenciais não fecha esses itens; um Preview não isola a branch main. Nenhum LA promovido, chamada financeira, configuração privada real alterada, migration persistente, commit ou deploy. **WF-19 EM EXECUÇÃO; WF-20 NÃO INICIADO.**
 
+
+## 13. Complemento de homologação PIX e prontidão — 08/10/2026
+
+As seções anteriores preservam os checkpoints de 05/06 de outubro. As declarações históricas de ausência de teste financeiro/email externo não descrevem mais todos os ensaios atuais. As evidências abaixo estão no registro de execução, seções 61/65/70; não representam encerramento de todos os gates ou aprovação final dos 38 LA.
+
+| Cenário recente | Resultado observado | Alcance e pendência |
+|---|---|---|
+| PIX do pedido #1 | Cobrança Sandbox recebida, webhook, pedido Pago e e-mail entregue; total R$24,95 | Caminho controlado aprovado. Valores/descontos/datas bancárias, outros métodos, cancelamento/expiração/estorno e estoque/ledger completo ainda exigem critérios próprios. |
+| Webhook duplicado após conclusão | PROCESSED, inbox COMPLETED=1/outbox COMPLETED=3 inalteradas; pedido/pontos/e-mail únicos na conferência do operador | Cenário aprovado; não comprova concorrência ou recuperação de processo/lease. |
+| Notificação antiga sintética após pagamento | Evento novo consumido sem retry/review, carteira preservada, supervisão sandbox-hml de 21:53:02.744Z com inbox COMPLETED=2/outbox COMPLETED=3 e nenhuma pendência | Cenário simulado aprovado; não se tratou de reordenação real do Asaas. |
+
+As correções de compatibilidade do Asaas, estabilidade da confirmação e prazo transacional foram publicadas somente na homologação; seus testes dirigidos não são regressão completa do candidato final. O planejamento consolidado das pendências está na seção 12 do workflow: WF-18 (legados/LA-002/033), WF-19 (demais contratos/métodos, falhas/concorrência, fluxos, capacidade/operação e candidato final) e WF-20 (implantação/observação). Scheduler temporário ensaiado permanece desligado; produção precisa de agendamento, monitoramento e orçamento próprios. Home fora da meta no piloto anterior segue gate de capacidade a resolver/revalidar. Nenhum LA promovido automaticamente a VALIDADO ou ENCERRADO EM PRODUÇÃO.
