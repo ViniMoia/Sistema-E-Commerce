@@ -5,6 +5,7 @@ import { transitionOrder } from '@/lib/commerce/order-command';
 import { applyPaymentEvidence, paymentNow } from '@/services/payment/payment-evidence.service';
 import { inspectPaymentAttempt } from '@/services/payment/payment-worker.service';
 import type { PaymentGateway } from '@/types/payment-gateway.types';
+import { paymentEvidenceTransactionOptions } from '@/services/payment/payment-execution-policy';
 
 export const DEFAULT_ASAAS_TIMEOUT_MINUTES = 60; // Deprecated: never used as remote expiry.
 export const DEFAULT_MANUAL_TIMEOUT_HOURS = 24;
@@ -68,7 +69,7 @@ export async function processExpiredOrders(options: ProcessExpiredOrdersOptions 
             reason: 'Prazo manual persistido expirado.' }, tx);
           if (!result.success) throw new Error('EXPIRY_APPLICATION_RETRY');
           return true;
-        });
+        }, paymentEvidenceTransactionOptions);
         if (cancelled) summary.cancelledOrderIds.push(candidate.orderId);
       } catch { summary.errors.push({ orderId: candidate.orderId, error: 'PAYMENT_EXPIRY_RECONCILIATION_REQUIRED' }); }
     }

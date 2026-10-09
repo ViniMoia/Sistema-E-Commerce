@@ -5,13 +5,15 @@
 **Participantes:** **Leno (Brega)** e **Vanderlei (Que dá idéia errada)**.  
 **Acesso e deploy final:** **Vanderlei (Que dá idéia errada)** possui acesso ao Google Cloud e é responsável por executar o deploy final e colocar o projeto em produção após os gates. **Leno (Brega)** entrega o aceite de dados/financeiro e acompanha a implantação nessa frente.  
 **Objetivo:** concluir as pendências de WF-18/WF-19, preparar a implantação no Google Cloud e executar WF-20 com evidências e observação.  
-**Estado do plano:** divisão proposta para execução; criar este documento não executou tarefas, alterou credenciais ou liberou produção.
+**Estado do plano:** execução iniciada por **Leno (Brega)** em 09/10/2026, com blocos locais de L-01 e L-04 aprovados; revisão/integração e demais gates continuam pendentes. A criação original deste documento não executou tarefas, alterou credenciais ou liberou produção.
 
 Os nomes acima são as chaves de identificação dos responsáveis. Um agente deve procurar o nome completo para selecionar atribuições. IDs `L-*` e `V-*` ajudam na rastreabilidade, mas não substituem o campo **Responsável** de cada tarefa.
 
 **Acesso rápido:** [estado e pendências](#3-o-que-já-está-feito-e-o-que-ainda-falta) · [tarefas de Leno (Brega)](#5-pacotes-de-leno-brega) · [tarefas de Vanderlei (Que dá idéia errada)](#6-pacotes-de-vanderlei-que-dá-idéia-errada) · [cobertura dos achados](#7-cobertura-nominal-dos-38-achados-e-dos-critérios-integrados) · [plataformas e variáveis](#9-plataformas-e-uso-correto-das-variáveis) · [prompts para agentes](#104-prompts-de-início-por-responsável) · [gates de liberação](#112-gates-para-produção).
 
 ## 1. Divisão principal e como começar
+
+**Entrega de revisão de 09/10/2026:** Leno (Brega) autorizou compartilhar o código/testes atuais de L-01/L-04 e os três documentos em [PACOTE_REVISAO_VANDERLEI](../../../../../PACOTE_REVISAO_VANDERLEI/) pela branch `homologacao_teste`. O [roteiro de revisão](../../../../../PACOTE_REVISAO_VANDERLEI/REVISAO_LENO_L01_L04_PARA_VANDERLEI.md) explica como identificar o commit. Esta publicação prepara a revisão de Vanderlei (Que dá idéia errada); os aceites e gates continuam pendentes. Menções anteriores a entrega local/sem publicação descrevem os checkpoints de testes antes desta autorização.
 
 | Responsável | Frente principal | Primeiro trabalho independente |
 |---|---|---|
@@ -171,6 +173,10 @@ Não mudar webhook, segredo, flags, allowlist, remetente ou deployment durante a
 
 **Responsável: Leno (Brega).** **Revisor: Vanderlei (Que dá idéia errada).**
 
+**Checkpoint de 09/10/2026:** primeiro bloco local aprovado na branch `trabalho/leno/l01-recuperacao-financeira`, base `e0214e699b71de51696133de19808a1f8dbdc795`: 12 cenários novos entre processos e 40 regressões existentes passaram, além de duas provas negativas de isolamento. Corrigida a resposta atrasada do checkout que regredia o status Asaas após aprovação pelo webhook. [Evidências, reprodução e limites](../../../../../PACOTE_REVISAO_VANDERLEI/L-01-RECUPERACAO_FINANCEIRA_PROCESSOS.md). Revisão de **Vanderlei (Que dá idéia errada)**, integração/publicação e demais pontos de falha continuam pendentes; L-01 não está encerrado. Nenhuma sessão externa foi aberta.
+
+**Segundo checkpoint de 09/10/2026 — Leno (Brega):** adicionados nove casos de interrupção da transação inicial e de cancelamento/estorno integral em transporte controlado. Execução conjunta final: **61 aprovados** (21 entre processos + 40 regressões), TypeScript/lint aprovados. Retomada conserva estoque, fatos e compensação de pontos; operação sem prova gera revisão após o prazo, sem permissão de reenvio pelo replay administrativo. Detalhes na seção 6 da evidência acima. Nenhuma nova correção de produção foi necessária neste bloco. Próxima entrega: revisão/consolidação com **Vanderlei (Que dá idéia errada)** e preparação do ciclo financeiro L-04; contratos externos, métodos restantes, infraestrutura final e aceite integral seguem pendentes.
+
 **WF/critério:** WF-14/19; E07/E08; LA-003/004/005/010/011/012/013 e integração com LA-027/033.
 
 - Completar morte real do processo antes/depois de I/O e commit, evento antes da resposta do checkout e retomada por outro executor.
@@ -209,6 +215,8 @@ Não mudar webhook, segredo, flags, allowlist, remetente ou deployment durante a
 ### L-04 — Ciclo financeiro completo e métodos
 
 **Responsável: Leno (Brega).** **Revisor: Vanderlei (Que dá idéia errada).**
+
+**Checkpoint local de 09/10/2026:** oito novos casos de prazos/métodos e aplicação financeira com banco lento. Duas regressões de transação expirada no checkout/expiração foram demonstradas e corrigidas com a política existente de aplicação de evidência. Execução final: **90 testes em quatro suítes**, TypeScript/lint aprovados. [Evidência, limites e roteiro externo](../../../../../PACOTE_REVISAO_VANDERLEI/L-04-CICLO_FINANCEIRO_LOCAL_E_ENSAIOS_EXTERNOS.md). [Material de revisão para Vanderlei (Que dá idéia errada)](../../../../../PACOTE_REVISAO_VANDERLEI/REVISAO_LENO_L01_L04_PARA_VANDERLEI.md) preparado; revisão e publicação pendentes. Métodos/capacidades reais da conta, política comercial, estorno de valor parcial, chargeback e devolução física não foram encerrados. Nenhuma operação externa nesta rodada.
 
 **WF/critério:** WF-12/14/19; E06/E07/E08/E13; LA-005/009/010/023/033/035.
 

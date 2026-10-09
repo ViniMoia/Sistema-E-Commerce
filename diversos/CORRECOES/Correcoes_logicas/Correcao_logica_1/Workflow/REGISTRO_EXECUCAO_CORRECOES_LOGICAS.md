@@ -1973,3 +1973,31 @@ Na conferência seguinte, o operador forneceu a terceira conclusão `processed`,
 **Documentos alinhados:** plano em dupla, manuais rápidos de ambos, relatórios 1/2 e consolidação do workflow. A nota no estudo de caso preserva seu caráter genérico. A preparação de L-09 precede o deploy; a observação ocorre em conjunto com V-09, sem exigir que a implantação já esteja concluída para entregar os procedimentos.
 
 **Limites:** acesso informado não comprova serviço/região/billing já configurados. Os critérios de WF-18/WF-19 permanecem obrigatórios; esta atualização apenas distribui responsabilidades. Nenhuma operação externa, configuração, código, segredo ou deployment foi alterado. WF-18/19 seguem abertos; WF-20 NÃO INICIADO.
+
+## 75. L-01 — Recuperação financeira com encerramento de processos — 09/10/2026
+
+**Responsável: Leno (Brega). Revisor previsto: Vanderlei (Que dá idéia errada), pendente.** Branch local `trabalho/leno/l01-recuperacao-financeira`, base `e0214e699b71de51696133de19808a1f8dbdc795`. Primeiro bloco local de L-01 iniciado após o compartilhamento do projeto informado pelo operador.
+
+**Resultado:** 12 testes novos com processos Node separados e PostgreSQL descartável, junto de 40 regressões financeiras existentes, passaram (52/2 arquivos, 78,18 s de Vitest). Duas provas negativas de isolamento, TypeScript e ESLint direcionado passaram. Harness aplicou 33 migrations no banco temporário; consulta final por label sem containers próprios remanescentes. Provedores controlados via IPC, sem operação externa.
+
+**Correção demonstrada por regressão:** webhook aprovava antes da resposta de criação e `executePaymentAttempt` sobrescrevia `Order.asaasPaymentStatus` RECEIVED com PENDING. A gravação complementar deixou de definir esse campo; a projeção permanece com `applyPaymentEvidence`. Sem alteração de schema/contrato público.
+
+**Cobertura e limites:** morte antes/depois da criação remota e conclusão local, antes/depois do commit financeiro de inbox/reconciliação, disputa/retomada de lease, executor antigo e e-mail aceito antes do ack. Expiração antecipada apenas na fixture; aceitação/idempotência externa simuladas. Não comprova todos os pontos de falha, contratos Sandbox, pacote de release ou operação Google Cloud. [Evidência detalhada e próximos passos](../../../../../PACOTE_REVISAO_VANDERLEI/L-01-RECUPERACAO_FINANCEIRA_PROCESSOS.md). Entrega local ainda sem publicação; revisão/integração pendentes. L-01 e WF-18/19 permanecem abertos; WF-20 NÃO INICIADO.
+
+## 76. L-01 — Commit inicial e reversões interrompidas — 09/10/2026
+
+**Responsável: Leno (Brega). Revisão de Vanderlei (Que dá idéia errada) pendente.** Na mesma branch/base da seção 75, acrescentados nove testes: queda antes do commit inicial e CANCEL/REFUND, cada um antes do transporte, depois da aceitação, antes do commit financeiro e depois da conclusão local. Cada retomada usa outro processo e o mesmo banco descartável.
+
+**Resultado final:** 61 testes/2 arquivos aprovados (21 entre processos + 40 regressões), 130,33 s de Vitest; TypeScript/lint direcionado aprovados. Preservados os resultados anteriores sem somar repetições. Nenhuma nova correção de produção necessária neste bloco. O estorno integral da fixture não expedida restitui estoque e compensa ganho de pontos uma vez; operações sem prova conservam estado e entram em revisão após prazo. Repetir comando/solicitar conciliação não concede permissão para reenviar operação inconclusiva.
+
+**Limites:** transporte controlado via IPC e prazos antecipados só nas fixtures; nenhum cancelamento/estorno/e-mail externo, migration persistente, publicação ou deploy. [Reprodução, cenários e pendências](../../../../../PACOTE_REVISAO_VANDERLEI/L-01-RECUPERACAO_FINANCEIRA_PROCESSOS.md), seção 6. Revisão/integração e ciclo externo L-04 permanecem pendentes; WF-18/19 abertos e WF-20 NÃO INICIADO.
+
+## 77. L-04 — Prazos/métodos e aplicação financeira com banco lento — 09/10/2026
+
+**Responsável: Leno (Brega). Revisor: Vanderlei (Que dá idéia errada), pendente.** Mesma branch/base da seção 75. Acrescentada `payment-lifecycle-homologation.test.ts` com oito casos: checkout/expiração com aprovação e consulta lenta, boleto dentro/depois da tolerância congelada, cartão em risco, recusa integral de três parcelas, estorno de uma parcela inteira com revisão e estado de chargeback não implementado.
+
+**Regressões e correção:** antes do patch, dois testes reproduziram transação expirada após 5,5 s: checkout retornava PROCESSING e expiração reportava erro ao aplicar pagamento recebido. Ambos agora reutilizam `paymentEvidenceTransactionOptions` (maxWait 5 s, timeout 30 s) nas transações locais pertinentes. I/O externo continua fora; nenhum timeout global, schema, migration ou política comercial foi alterado. A projeção monotônica corrigida em L-01 permanece na entrega.
+
+**Validação final:** 90 testes/quatro arquivos aprovados (8 ciclo + 40 duráveis + 21 plano + 21 processos), 147,97 s de Vitest; TypeScript e lint direcionado aprovados. Casos anteriores incluídos, não somados novamente. PostgreSQL Docker descartável, 33 migrations e identidade do harness conferida. [Evidência e roteiro externo](../../../../../PACOTE_REVISAO_VANDERLEI/L-04-CICLO_FINANCEIRO_LOCAL_E_ENSAIOS_EXTERNOS.md); [material de revisão](../../../../../PACOTE_REVISAO_VANDERLEI/REVISAO_LENO_L01_L04_PARA_VANDERLEI.md) preparado.
+
+**Limites:** gateway injetado; uma parcela inteira estornada não demonstra produtor de estorno de valor parcial; chargeback conservado para revisão não equivale à implementação do ciclo. Sem recurso externo, alteração de configuração/segredo, operação do pedido #1, build final, publicação ou deploy. Disponibilidade real dos métodos da conta e revisão/integração aguardadas. L-04 e WF-18/19 permanecem abertos, WF-20 NÃO INICIADO.

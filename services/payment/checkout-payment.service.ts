@@ -5,6 +5,7 @@ import type { PaymentGateway, PaymentCustomerData, CreditCardData } from '@/type
 import { moneyCents } from './installment.service';
 import { applyPaymentEvidence } from './payment-evidence.service';
 import { CommerceLocks } from '@/lib/commerce/locks';
+import { paymentEvidenceTransactionOptions } from './payment-execution-policy';
 const baseResult = z.object({ paymentId: z.string().min(1).max(128), value: z.number().finite().positive(),
   status: z.enum(['PENDING', 'CONFIRMED', 'RECEIVED', 'AWAITING_RISK_ANALYSIS']), invoiceUrl: z.string().url().optional() });
 const cardMetadata = z.object({ creditCardBrand: z.string().regex(/^[A-Z_ -]{1,32}$/).optional(), creditCardLast4: z.string().regex(/^\d{4}$/).optional() });
@@ -46,10 +47,13 @@ export async function executePaymentAttempt(input: { orderId: string; orderNumbe
         dueAt: boleto ? new Date(new Date(boleto.dueDate + 'T00:00:00-03:00').getTime() + 86400000).toISOString() : undefined,
         instructions: pix ? { ...pix, ...(expiration ? { expiresAt: expiration } : {}) } : boleto ? { bankSlipUrl: boleto.bankSlipUrl, digitableLine: boleto.digitableLine } : undefined })) });
       if (evidence.review) throw new Error('PAYMENT_EVIDENCE_REVIEW');
-      await tx.order.update({ where: { id: input.orderId }, data: { asaasPaymentId: verified.paymentId, asaasPaymentStatus: verified.status,
+      // applyPaymentEvidence owns the monotonic status projection. A webhook
+      // may have settled the charge while this creation response was in flight.
+      // Persist only supplementary artifacts, never the older response status.
+      await tx.order.update({ where: { id: input.orderId }, data: { asaasPaymentId: verified.paymentId,
         asaasInvoiceUrl: verified.invoiceUrl, ...(metadata ? metadata : {}),
         ...(boleto ? { asaasBankSlipUrl: boleto.bankSlipUrl, asaasDigitableLine: boleto.digitableLine } : {}) } });
-    });
+    }, paymentEvidenceTransactionOptions);
     return { kind: 'ISSUED' as const, result };
   } catch {
     // Includes receipt lookup/validation and local persistence failures AFTER
