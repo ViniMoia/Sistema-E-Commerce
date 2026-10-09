@@ -62,7 +62,10 @@ function port() {
       for (const [index, value] of values.entries()) remote.push({ paymentId: randomUUID(), externalReference: input.orderId, method: 'CREDIT_CARD', ordinal: index + 1, value, status: 'PENDING', contractId });
       return { ...remote[0], value: input.value, contractId, charges: remote, approvedForEntireContract: false };
     }),
-    inspectAttempt: vi.fn(async () => ({ complete: true, charges: structuredClone(remote) })),
+    inspectAttempt: vi.fn(async input => ({ complete: true, charges: structuredClone(remote).map(row => ({ ...row,
+      ...(input.refundPaymentIds?.includes(row.paymentId) && !row.refundHistory ? { refundHistory: { complete: true,
+        records: row.status === 'REFUNDED' ? [{ status: 'DONE' as const, value: row.value }] :
+          vi.mocked(gateway.refundPayment!).mock.calls.some(call => call[0] === row.paymentId) ? [{ status: 'PENDING' as const, value: row.value }] : [] } } : {}) })) })),
     cancelPayment: vi.fn(async id => { remote.find(r => r.paymentId === id)!.deleted = true; }),
     refundPayment: vi.fn(async id => { remote.find(r => r.paymentId === id)!.status = 'REFUNDED'; }),
     getPaymentStatus: vi.fn(async () => { throw new Error('unused'); }),
@@ -398,6 +401,154 @@ describe('WF-14: real PostgreSQL, controlled remote operations, resumable execut
     expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1); expect((await stored(p.result.order.id)).paymentAttempts[0].status).toBe('REFUND_PENDING');
     expect((await transitionOrder({ orderId: p.result.order.id, lojaID, newStatus: 'DELIVERED', performedById: adminID })).success).toBe(false);
     expect(await stock(p)).toBe(4);
+  });
+  it.each([
+    ['cancelled', 'PAYMENT_REFUND_CANCELLED_REVIEW'],
+    ['authorization', 'PAYMENT_REFUND_AUTHORIZATION_REVIEW'],
+    ['incomplete', 'PAYMENT_REFUND_HISTORY_REVIEW'],
+    ['ambiguous', 'PAYMENT_REFUND_HISTORY_REVIEW'],
+    ['missing', 'PAYMENT_REFUND_HISTORY_REVIEW'],
+    ['lost-response', 'PAYMENT_REFUND_CANCELLED_REVIEW'],
+  ])('real adapter escalates %s refund history without changing paid effects or resubmitting', async (scenario, reason) => {
+    const config = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } });
+    await prisma.loja.update({ where: { id: lojaID }, data: { loyaltyEnabled: true, loyaltyEarnRate: 1 } });
+    const buyer = await prisma.user.create({ data: { lojaID, name: 'Comprador', email: randomUUID() + '@example.invalid', password: '' } });
+    const p = await purchase(port(), 'PIX', buyer.id);
+    p.remote[0].status = 'RECEIVED'; await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    const walletBefore = await prisma.loyaltyWallet.findFirstOrThrow({ where: { userID: buyer.id, lojaID } });
+    const command = { orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND' as const, commandId: randomUUID(), expectedVersion: 1 };
+    const accepted = await requestPaymentOperation(command);
+    const operationId = accepted.operations[0].id;
+    let remoteHistory: unknown = { data: [], hasMore: false };
+    const listed = vi.spyOn(asaasClient, 'listPaymentsByReference').mockImplementation(async () => p.remote.map(row => ({
+      id: row.paymentId, externalReference: row.externalReference, billingType: row.method, value: row.value,
+      status: row.status, dueDate: '2026-10-10',
+    } as AsaasPaymentResponse)));
+    const history = vi.spyOn(asaasClient, 'listPaymentRefunds').mockImplementation(async id => {
+      expect(id).toBe(p.remote[0].paymentId); return remoteHistory;
+    });
+    const fallback = vi.spyOn(asaasClient, 'getPayment').mockRejectedValue(new Error('Unknown fixture charge'));
+    const adapter = new AsaasPaymentAdapter();
+    p.gateway.inspectAttempt = adapter.inspectAttempt.bind(adapter);
+    vi.mocked(p.gateway.refundPayment!).mockImplementationOnce(async () => {
+      remoteHistory = { data: [{ status: 'PENDING', value: 100 }], hasMore: false };
+      if (scenario === 'lost-response') throw new Error('response lost');
+    });
+    try {
+      await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+      expect((await stored(p.result.order.id)).paymentAttempts[0].operations[0].status).toBe(scenario === 'lost-response' ? 'UNKNOWN' : 'PENDING');
+      expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
+      const cancelled = { status: 'CANCELLED', value: 100 };
+      remoteHistory = scenario === 'incomplete' ? { data: [cancelled], hasMore: true } :
+        { data: scenario === 'missing' ? [] : scenario === 'authorization' ? [{ ...cancelled, status: 'AWAITING_CRITICAL_ACTION_AUTHORIZATION' }] :
+          scenario === 'ambiguous' ? [cancelled, { ...cancelled, status: 'PENDING' }] : [cancelled], hasMore: false };
+      await requestPaymentReconciliation({ orderId: p.result.order.id, lojaID, userId: adminID, commandId: randomUUID() });
+      expect((await reconcilePaymentAttempts(50, p.gateway)).review).toBeGreaterThanOrEqual(1);
+      const beforeReplay = await stored(p.result.order.id);
+      expect(beforeReplay).toMatchObject({ status: 'PAID', version: 1, pointsCredited: 100, reservations: [{ status: 'COMMITTED' }],
+        paymentAttempts: [{ status: 'REFUND_PENDING', failureCode: reason, operations: [{ id: operationId, status: scenario === 'lost-response' ? 'UNKNOWN' : 'PENDING', lastErrorCode: reason, completedAt: null }] }] });
+      expect(await prisma.loyaltyWallet.findUnique({ where: { id: walletBefore.id } })).toEqual(walletBefore);
+      expect(await prisma.loyaltyTransaction.count({ where: { orderId: p.result.order.id } })).toBe(1);
+      expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(0);
+      expect(await stock(p)).toBe(4);
+      // Reconciliation, webhook and command replay must preserve the original operation.
+      expect(await requestPaymentOperation(command)).toMatchObject({ replay: true, operations: [{ id: operationId, status: scenario === 'lost-response' ? 'UNKNOWN' : 'PENDING' }] });
+      await event(p, 'PAYMENT_UPDATED'); await drainPaymentInbox(50, p.gateway);
+      await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+      expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
+      const key = 'payment-review:' + p.attempt.id + ':' + reason;
+      expect(await prisma.auditLog.count({ where: { effectKey: key } })).toBe(1);
+      expect((await prisma.auditLog.findUniqueOrThrow({ where: { effectKey: key } })).metadata).toMatchObject({
+        attemptId: p.attempt.id, reasonCode: reason, evidence: { operationId, providerPaymentId: p.remote[0].paymentId,
+          chargeStatus: 'RECEIVED', refundHistory: { complete: scenario !== 'incomplete' } } });
+      expect(await prisma.commerceOutbox.count({ where: { effectKey: key } })).toBe(1);
+      expect(await prisma.orderStatusHistory.count({ where: { orderId: p.result.order.id } })).toBe(1);
+      // A later definitive provider correction is observed, never requested again.
+      remoteHistory = { data: [{ status: 'DONE', value: 100 }], hasMore: false };
+      p.remote[0].status = 'REFUNDED';
+      await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+      await due(p.attempt.id); await event(p, 'PAYMENT_REFUNDED'); await drainPaymentInbox(50, p.gateway);
+      expect(await stored(p.result.order.id)).toMatchObject({ status: 'CANCELLED', version: 2, reservations: [{ status: 'RETURNED' }],
+        paymentAttempts: [{ status: 'REFUNDED', failureCode: null, operations: [{ id: operationId, status: 'COMPLETED', lastErrorCode: null }] }] });
+      expect(await stock(p)).toBe(5);
+      expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(1);
+      expect((await prisma.loyaltyWallet.findUniqueOrThrow({ where: { id: walletBefore.id } })).balance).toBe(0);
+      expect(await prisma.loyaltyTransaction.count({ where: { orderId: p.result.order.id } })).toBe(2);
+      expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
+    } finally {
+      listed.mockRestore(); history.mockRestore(); fallback.mockRestore();
+      await prisma.loja.update({ where: { id: lojaID }, data: { loyaltyEnabled: config.loyaltyEnabled, loyaltyEarnRate: config.loyaltyEarnRate } });
+    }
+  });
+  it('reports review discovered immediately after dispatch instead of reporting a completed reconciliation', async () => {
+    const p = await purchase(); p.remote[0].status = 'RECEIVED'; await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
+    p.remote[0].refundHistory = { complete: true, records: [] };
+    vi.mocked(p.gateway.refundPayment!).mockImplementationOnce(async () => {
+      p.remote[0].refundHistory = { complete: true, records: [{ status: 'CANCELLED', value: 100 }] };
+    });
+    await due(p.attempt.id);
+    expect((await reconcilePaymentAttempts(50, p.gateway)).review).toBeGreaterThanOrEqual(1);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].operations[0]).toMatchObject({ status: 'PENDING', lastErrorCode: 'PAYMENT_REFUND_CANCELLED_REVIEW' });
+    expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1); expect(await stock(p)).toBe(4);
+  });
+  it.each(['absent', 'historical-cancelled'])('holds READY operation for %s history and does not rearm it when history disappears', async scenario => {
+    const p = await purchase(); p.remote[0].status = 'RECEIVED'; await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
+    p.gateway.inspectAttempt = vi.fn(async () => ({ complete: true, charges: structuredClone(p.remote) }));
+    if (scenario === 'historical-cancelled') p.remote[0].refundHistory = { complete: true, records: [{ status: 'CANCELLED', value: 100 }] };
+    const reason = scenario === 'absent' ? 'PAYMENT_REFUND_HISTORY_REVIEW' : 'PAYMENT_REFUND_CANCELLED_REVIEW';
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].operations[0]).toMatchObject({ status: 'READY', submittedAt: null, lastErrorCode: reason });
+    p.remote[0].refundHistory = { complete: true, records: [] };
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect(p.gateway.refundPayment).not.toHaveBeenCalled(); expect(await stock(p)).toBe(4);
+    expect((await stored(p.result.order.id)).paymentAttempts[0]).toMatchObject({ failureCode: reason,
+      operations: [{ status: 'READY', submittedAt: null, lastErrorCode: reason }] });
+  });
+  it.each(['PENDING', 'UNKNOWN'] as const)('asynchronous refund %s stays promptly due without granting another submission', async operationStatus => {
+    const p = await purchase(); p.remote[0].status = 'RECEIVED';
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    const approved = (await stored(p.result.order.id)).paymentAttempts[0];
+    // A settled payment without a reversal keeps the normal daily observation.
+    expect(approved.reconcileAfter!.getTime() - approved.updatedAt.getTime()).toBeGreaterThan(23 * 3600000);
+    await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
+    vi.mocked(p.gateway.refundPayment!).mockImplementationOnce(async () => {
+      // Provider accepted the request but still reports RECEIVED on inspection.
+      if (operationStatus === 'UNKNOWN') throw new Error('lost response after submission');
+    });
+    await reconcilePaymentAttempts(50, p.gateway);
+    const pending = await stored(p.result.order.id), attempt = pending.paymentAttempts[0];
+    expect(pending).toMatchObject({ status: 'PAID', version: 1, reservations: [{ status: 'COMMITTED' }] });
+    expect(attempt).toMatchObject({ status: 'REFUND_PENDING', operations: [{ status: operationStatus, completedAt: null }] });
+    // The next automatic read must occur well before the 24-hour review deadline.
+    const delay = attempt.reconcileAfter!.getTime() - attempt.updatedAt.getTime();
+    expect(delay).toBeGreaterThan(30000); expect(delay).toBeLessThanOrEqual(90000);
+    expect(attempt.reconcileAfter!.getTime()).toBeLessThan(attempt.reviewAfter!.getTime());
+    expect(await stock(p)).toBe(4);
+    expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(0);
+    const operationId = attempt.operations[0].id;
+    // An audited wake-up advances inspection only; it never resets the operation.
+    await requestPaymentReconciliation({ orderId: p.result.order.id, lojaID, userId: adminID, commandId: randomUUID() });
+    await reconcilePaymentAttempts(50, p.gateway);
+    expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].operations[0]).toMatchObject({ id: operationId, status: operationStatus });
+    p.remote[0].status = 'REFUNDED';
+    await requestPaymentReconciliation({ orderId: p.result.order.id, lojaID, userId: adminID, commandId: randomUUID() });
+    await reconcilePaymentAttempts(50, p.gateway);
+    expect(await stored(p.result.order.id)).toMatchObject({ status: 'CANCELLED', version: 2,
+      paymentAttempts: [{ status: 'REFUNDED', operations: [{ id: operationId, status: 'COMPLETED' }] }], reservations: [{ status: 'RETURNED' }] });
+    expect(await stock(p)).toBe(5); expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
+    expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(1);
+  });
+  it('authorized payment without reversal retains hourly observation until settlement', async () => {
+    const p = await purchase(); p.remote[0].status = 'CONFIRMED';
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    const attempt = (await stored(p.result.order.id)).paymentAttempts[0];
+    expect(attempt.status).toBe('APPROVED');
+    const delay = attempt.reconcileAfter!.getTime() - attempt.updatedAt.getTime();
+    expect(delay).toBeGreaterThan(59 * 60000); expect(delay).toBeLessThanOrEqual(3600000);
+    expect(p.gateway.refundPayment).not.toHaveBeenCalled();
   });
   it('payment arriving after expiry selection preserves PAID when the job relocks the order', async () => {
     const p = await purchase(); await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data: { reservationExpiresAt: new Date(0), externalExpiresAt: new Date(0) } });

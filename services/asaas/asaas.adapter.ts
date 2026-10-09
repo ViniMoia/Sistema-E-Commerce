@@ -15,13 +15,14 @@ import { logger } from '@/lib/logger';
 import { verifyRemotePayment, verifyInstallmentContract } from '@/services/payment/gateway-contract';
 import { getPaymentConfig } from '@/lib/config/payment.config';
 import type { PaymentMethod } from '@/types/payment-gateway.types';
+import { parseRefundHistory } from '@/services/payment/refund-history';
 
 /**
  * Adapter concreto para o gateway Asaas implementando a porta de domínio PaymentGateway (DIP / Clean Architecture).
  * Suporta PIX Dinâmico, Cartão de Crédito (1x a 12x com PCI-DSS Zero-Storage) e Boleto Bancário (D+1).
  */
 export class AsaasPaymentAdapter implements PaymentGateway {
-  async inspectAttempt(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number }) {
+  async inspectAttempt(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[] }) {
     // An empty search is not proof of non-creation. The domain retains UNKNOWN.
     // List all payments by reference to detect an unexpected second contract.
     const listed = await asaasClient.listPaymentsByReference(input.externalReference);
@@ -35,6 +36,15 @@ export class AsaasPaymentAdapter implements PaymentGateway {
     }
     const charges = [];
     for (const payment of payments) {
+      let refundHistory: import('@/types/payment-gateway.types').RemoteRefundHistory | undefined;
+      if (input.refundPaymentIds?.includes(payment.id)) {
+        // Only inspect the known charge after checking its reference and method.
+        if (payment.externalReference !== input.externalReference || payment.billingType !== input.method) {
+          throw new PaymentGatewayError('PAYMENT_CORRELATION_CONFLICT');
+        }
+        try { refundHistory = parseRefundHistory(await asaasClient.listPaymentRefunds(payment.id)); }
+        catch { refundHistory = { complete: false, records: [] }; }
+      }
       const instructions: import('@/types/payment-gateway.types').RemoteCharge['instructions'] = {};
       if (!payment.deleted && payment.status === 'PENDING' && payment.billingType === 'PIX') {
         try {
@@ -51,7 +61,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
       }
       charges.push({ paymentId: payment.id, externalReference: payment.externalReference ?? '', method: payment.billingType as PaymentMethod,
         ordinal: payment.installmentNumber ?? 1, value: payment.value, status: payment.status, deleted: payment.deleted,
-        contractId: payment.installment ?? undefined, instructions,
+        contractId: payment.installment ?? undefined, instructions, ...(refundHistory ? { refundHistory } : {}),
         // YYYY-MM-DD in Brazil ends at 03:00 UTC the following day. Boleto
         // confirmation grace is applied separately by the domain policy.
         dueAt: /^\d{4}-\d{2}-\d{2}$/.test(payment.dueDate) ? new Date(new Date(payment.dueDate + 'T00:00:00-03:00').getTime() + 86400000).toISOString() : undefined });

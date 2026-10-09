@@ -48,7 +48,10 @@ async function worker(task: ProcessTask) {
       remote.set(payment.paymentId, payment);
       value = { ...payment, pixPayload: 'process-copy', pixQrCodeBase64: 'process-qr', expirationDate: payment.instructions!.expiresAt };
     } else if (raw.operation === 'inspect') {
-      value = { complete: true, charges: [...remote.values()].filter(c => c.externalReference === input.externalReference) };
+      value = { complete: true, charges: [...remote.values()].filter(c => c.externalReference === input.externalReference).map(c => ({ ...c,
+        ...(Array.isArray(input.refundPaymentIds) && input.refundPaymentIds.includes(c.paymentId) ? {
+          refundHistory: { complete: true, records: c.status === 'REFUNDED' ? [{ status: 'DONE', value: c.value }] : [] },
+        } : {}) })) };
     } else if (raw.operation === 'cancel' || raw.operation === 'refund') {
       const payment = remote.get(String(input.paymentId));
       if (!payment || (raw.operation === 'refund' && input.amount !== payment.value)) {
@@ -208,8 +211,9 @@ describe('L-01: real process death, isolated PostgreSQL and controlled provider'
       // An unresolved reversal must become visible for review, not silently remain pending forever.
       await prisma.paymentAttempt.update({ where: { id: requested.attemptId }, data: { reviewAfter: new Date(0), reconcileAfter: new Date(0) } });
       expect(await (await worker({ action: 'reconcile' })).finish()).toMatchObject({ review: 1 });
-      expect((await order()).paymentAttempts[0]).toMatchObject({ failureCode: 'PAYMENT_REVERSAL_OVERDUE' });
-      expect(await prisma.commerceOutbox.count({ where: { effectKey: 'payment-review:' + requested.attemptId + ':PAYMENT_REVERSAL_OVERDUE' } })).toBe(1);
+      const reason = kind === 'REFUND' ? 'PAYMENT_REFUND_HISTORY_REVIEW' : 'PAYMENT_REVERSAL_OVERDUE';
+      expect((await order()).paymentAttempts[0]).toMatchObject({ failureCode: reason });
+      expect(await prisma.commerceOutbox.count({ where: { effectKey: 'payment-review:' + requested.attemptId + ':' + reason } })).toBe(1);
       await requestPaymentReconciliation({ orderId: row.id, lojaID, userId: admin.id, commandId: randomUUID() });
       await (await worker({ action: 'reconcile' })).finish();
       await effects(p, kind === 'REFUND');

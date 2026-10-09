@@ -12,11 +12,12 @@ import { logger } from '@/lib/logger';
 import { paymentEvidenceTransactionOptions, paymentRetryCode } from './payment-execution-policy';
 
 export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter): Promise<PaymentInspection> {
-  const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true } });
+  const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
   if (attempt.providerAccount !== paymentAccountScope()) throw new Error('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
   if (!gateway.inspectAttempt || (gateway === asaasPaymentAdapter && !asaasClient.configurationReady())) throw new Error('PAYMENT_LOOKUP_UNAVAILABLE');
   return gateway.inspectAttempt({ externalReference: attempt.externalReference, paymentIds: attempt.charges.map(c => c.providerPaymentId),
-    method: attempt.method as PaymentMethod, installments: attempt.installments });
+    method: attempt.method as PaymentMethod, installments: attempt.installments,
+    refundPaymentIds: attempt.charges.filter(c => attempt.operations.some(op => op.chargeId === c.id && op.kind === 'REFUND')).map(c => c.providerPaymentId) });
 }
 
 export async function drainPaymentInbox(limit = 10, gateway: PaymentGateway = asaasPaymentAdapter) {
@@ -93,11 +94,12 @@ export async function reconcilePaymentAttempts(limit = 10, gateway: PaymentGatew
       }, paymentEvidenceTransactionOptions);
       const current = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id } });
       const pendingReversal = current.status === 'REFUND_PENDING' && ['LATE_PAYMENT', 'PAYMENT_PARTIAL_REVERSAL_REVIEW'].includes(current.failureCode ?? '');
+      let operationReview = false;
       if (!first.review || pendingReversal) {
         phase = 'operations';
-        await dispatchPaymentOperations(id, owner, gateway);
+        operationReview = await dispatchPaymentOperations(id, owner, gateway);
       }
-      if (first.review) summary.review++; else summary.completed++;
+      if (first.review || operationReview) summary.review++; else summary.completed++;
     } catch (error) {
       logger.warn('Conciliação de pagamento preservada para nova tentativa.', {
         action: 'PAYMENT_RECONCILIATION_RETRY', attemptId: id, phase, errorCode: paymentRetryCode(error),
@@ -132,7 +134,7 @@ async function fenceAttempt(tx: import('@prisma/client').Prisma.TransactionClien
 }
 
 async function dispatchPaymentOperations(attemptId: string, owner: string, gateway: PaymentGateway) {
-  const operations = await prisma.paymentOperation.findMany({ where: { attemptId, status: 'READY' }, include: { charge: true } });
+  const operations = await prisma.paymentOperation.findMany({ where: { attemptId, status: 'READY', lastErrorCode: null }, include: { charge: true } });
   for (const operation of operations) {
     const submit = await prisma.$transaction(async tx => {
       const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
@@ -141,7 +143,7 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
       const current = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
       const stateValid = operation.kind === 'CANCEL' ? current.status === 'CANCEL_PENDING' && order.status === 'PENDING' : current.status === 'REFUND_PENDING';
       if (!stateValid) return false;
-      const applied = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'READY' }, data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
+      const applied = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'READY', lastErrorCode: null }, data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
       return applied.count === 1;
     });
     if (!submit) continue;
@@ -162,9 +164,11 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
   if (operations.length) {
     const inspection = await inspectPaymentAttempt(attemptId, gateway);
     const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
-    await prisma.$transaction(async tx => {
+    const result = await prisma.$transaction(async tx => {
       await new CommerceLocks(tx).acquire('order', [attempt.orderId]); await fenceAttempt(tx, attemptId, owner);
-      await applyPaymentEvidence(tx, attemptId, inspection);
+      return applyPaymentEvidence(tx, attemptId, inspection);
     }, paymentEvidenceTransactionOptions);
+    return result.review;
   }
+  return false;
 }

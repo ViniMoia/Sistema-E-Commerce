@@ -110,7 +110,7 @@ export class PaymentGatewayError extends Error {
 }
 
 export interface PaymentGateway {
-  inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number }): Promise<PaymentInspection>;
+  inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[] }): Promise<PaymentInspection>;
   cancelPayment?(paymentId: string): Promise<void>;
   refundPayment?(paymentId: string, amount: number): Promise<void>;
   capabilities(lojaID: string): Promise<{ configured: boolean; methods: PaymentMethod[]; maximumInstallments: number }>;
@@ -139,7 +139,12 @@ export interface RemoteCharge {
   paymentId: string; externalReference: string; method: PaymentMethod;
   ordinal: number; value: number; status: string; deleted?: boolean;
   contractId?: string; dueAt?: string; paidAt?: string;
+  refundHistory?: RemoteRefundHistory;
   instructions?: { pixPayload?: string; pixQrCodeBase64?: string; bankSlipUrl?: string; digitableLine?: string; expiresAt?: string };
+}
+export interface RemoteRefundHistory {
+  complete: boolean;
+  records: Array<{ status: 'DONE' | 'PENDING' | 'CANCELLED' | 'AWAITING_CRITICAL_ACTION_AUTHORIZATION'; value: number }>;
 }
 export interface PaymentInspection {
   complete: boolean; charges: RemoteCharge[]; contractApproved?: boolean;

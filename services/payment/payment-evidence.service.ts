@@ -5,6 +5,7 @@ import { moneyCents } from './installment.service';
 import type { PaymentInspection } from '@/types/payment-gateway.types';
 import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { refundOrderPoints } from '@/services/loyalty.service';
+import { parseRefundHistory, refundHistoryReview } from './refund-history';
 
 const chargeSchema = z.object({ paymentId: z.string().min(1).max(128), externalReference: z.string().min(1).max(128),
   method: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']), ordinal: z.number().int().positive(), value: z.number().finite().positive(),
@@ -18,7 +19,7 @@ export async function paymentNow(tx: Prisma.TransactionClient): Promise<Date> {
   return rows[0].now;
 }
 
-export async function markPaymentReview(tx: Prisma.TransactionClient, attemptId: string, code: string) {
+export async function markPaymentReview(tx: Prisma.TransactionClient, attemptId: string, code: string, evidence?: Prisma.InputJsonObject) {
   const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
   const key = 'payment-review:' + attemptId + ':' + code;
   const order = await tx.order.findUniqueOrThrow({ where: { id: attempt.orderId } });
@@ -26,7 +27,7 @@ export async function markPaymentReview(tx: Prisma.TransactionClient, attemptId:
   await tx.auditLog.upsert({ where: { effectKey: key }, update: {}, create: { effectKey: key,
     actorType: 'SYSTEM', actorId: null, systemActor: 'PAYMENT_RECONCILIATION', targetId: order.userID,
     action: code === 'LATE_PAYMENT' ? 'PAYMENT_RECEIVED_ON_CANCELLED_ORDER' : 'PAYMENT_REVIEW_REQUIRED', entity: 'Order', entityId: order.id,
-    metadata: { attemptId, reasonCode: code } } });
+    metadata: { attemptId, reasonCode: code, ...(evidence ? { evidence } : {}) } } });
   if (code === 'LATE_PAYMENT' && !existing) await tx.order.update({ where: { id: order.id }, data: {
     adminNotes: [order.adminNotes, '[ALERTA DE PAGAMENTO TARDIO] Evidência financeira conciliada; revisar estorno sem reabrir estoque.'].filter(Boolean).join('\n') } });
   await tx.paymentAttempt.update({ where: { id: attemptId }, data: { failureCode: code, version: { increment: 1 } } });
@@ -37,7 +38,7 @@ export async function markPaymentReview(tx: Prisma.TransactionClient, attemptId:
 // Caller holds Order FOR UPDATE. All evidence, projection, commercial effects
 // and inbox acknowledgement share this transaction. No network I/O here.
 export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attemptId: string, inspection: PaymentInspection) {
-  const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { order: true, charges: { include: { financialFacts: true } } } });
+  const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { order: true, operations: true, charges: { include: { financialFacts: true } } } });
   if (attempt.provider !== 'ASAAS') throw new Error('PAYMENT_PROVIDER_MISMATCH');
   if (attempt.providerAccount !== paymentAccountScope()) throw new Error('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
   if (!inspection.complete || inspection.charges.length === 0) throw new Error('PAYMENT_REFERENCE_UNRESOLVED');
@@ -55,6 +56,25 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
     return { review: true, state: attempt.status };
   }
   const now = await paymentNow(tx);
+  for (const operation of attempt.operations.filter(op => op.kind === 'REFUND' && op.status !== 'COMPLETED')) {
+    const charge = attempt.charges.find(c => c.id === operation.chargeId)!;
+    const row = inspection.charges.find(c => c.paymentId === charge.providerPaymentId)!;
+    const parsedHistory = parseRefundHistory(row.refundHistory?.records);
+    const history = { ...parsedHistory, complete: row.refundHistory?.complete === true && parsedHistory.complete };
+    const reason = refundHistoryReview(history, row.status, Number(charge.amount), operation.submittedAt !== null);
+    const heldForReview = operation.lastErrorCode?.startsWith('PAYMENT_REFUND_') && operation.lastErrorCode.endsWith('_REVIEW');
+    if (reason || (heldForReview && row.status !== 'REFUNDED')) {
+      const code = reason ?? operation.lastErrorCode ?? 'PAYMENT_REFUND_HISTORY_REVIEW';
+      await tx.paymentOperation.update({ where: { id: operation.id }, data: { lastErrorCode: code } });
+      await markPaymentReview(tx, attemptId, code, { operationId: operation.id, chargeId: charge.id,
+        providerPaymentId: charge.providerPaymentId, providerAccount: attempt.providerAccount,
+        chargeStatus: row.status, refundHistory: { complete: history.complete,
+          records: history.records.map(record => ({ status: record.status, value: record.value })) } });
+      // Keep observation possible, but do not hot-loop a case requiring review.
+      await tx.paymentAttempt.update({ where: { id: attemptId }, data: { reconcileAfter: new Date(now.getTime() + 3600000) } });
+      return { review: true, state: attempt.status };
+    }
+  }
   const chargeStates: string[] = [];
   let unknown = false;
   for (const row of rows) {
@@ -99,12 +119,16 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
   const expiry = attempt.method === 'PIX' ? rows[0].instructions?.expiresAt : attempt.method === 'BOLETO' ? rows[0].dueAt : undefined;
   const policy = attempt.planSnapshot as { expiryPolicy?: { boletoConfirmationGraceHours?: number } };
   const graceHours = policy.expiryPolicy?.boletoConfirmationGraceHours;
-  await tx.paymentAttempt.update({ where: { id: attemptId }, data: { status: late ? attempt.status : next,
+  const reconciledStatus = late ? attempt.status : next;
+  // A pending reversal still needs prompt evidence even while the charge is RECEIVED.
+  const reversalPending = ['CANCEL_PENDING', 'REFUND_PENDING'].includes(reconciledStatus);
+  const reconcileDelay = reversalPending || !paid ? 60000 : chargeStates.every(s => s === 'RECEIVED') ? 86400000 : 3600000;
+  await tx.paymentAttempt.update({ where: { id: attemptId }, data: { status: reconciledStatus,
     providerContractId: rows[0].contractId ?? attempt.providerContractId, failureCode: null,
     ...(expiry ? { externalExpiresAt: new Date(expiry),
       reservationExpiresAt: attempt.method === 'BOLETO' && (!Number.isInteger(graceHours) || graceHours! < 0) ? null :
         new Date(new Date(expiry).getTime() + (attempt.method === 'BOLETO' ? graceHours! * 3600000 : 0)) } : {}),
-    reconcileAfter: new Date(now.getTime() + (paid ? chargeStates.every(s => s === 'RECEIVED') ? 86400000 : 3600000 : 60000)),
+    reconcileAfter: new Date(now.getTime() + reconcileDelay),
     reconcileAttempts: 0, version: { increment: 1 } } });
   if (attempt.status !== (late ? attempt.status : next)) await tx.auditLog.create({ data: {
     actorType: 'SYSTEM', actorId: null, systemActor: 'PAYMENT_RECONCILIATION', entity: 'PaymentAttempt', entityId: attempt.id,
