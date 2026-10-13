@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Atualização de escopo em 13/10/2026:** o usuário tornou **boleto e cartão de débito obrigatórios antes da produção**, além de PIX, crédito até 12x e entrega. Esta decisão substitui as exclusões/adiamentos de boleto nas matrizes e no backlog anteriores deste documento. Débito é uma lacuna de implementação, não uma modalidade já habilitável por flag: os contratos e o adapter atuais não o oferecem. Ver seção 17. Nenhuma publicação ou aprovação de gates decorre desta atualização local.
+
 **Data:** 10/10/2026; retomada e escopo atualizados em 12/10/2026 — America/Sao_Paulo.
 
 **Prazo:** até 48 horas corridas a partir do início coordenado em 10/10; limite no mesmo horário de 12/10/2026. Registrar o horário de início no quadro de execução.
@@ -27,7 +29,9 @@ O prazo é um compromisso de execução, não prova de prontidão. Não é tecni
 | PIX dinâmico | Obrigatório | Pagamento, expiração, recuperação e devolução verificáveis. |
 | Cartão de crédito à vista, 1x | Obrigatório | Conta habilitada, aprovação/recusa/resultado incerto e devolução validados. |
 | Parcelamento | Obrigatório, até 12x por decisão de 12/10 | Repasse ao comprador, padrão 2,99% a.m., mínimo R$ 20; validar configuração, contrato completo, centavos, aprovação e reversão de todas as parcelas. |
-| Boleto e PIX manual/WhatsApp | Bloqueados inicialmente | Sem novos pedidos por esses métodos em nenhum escritor. Obrigações existentes continuam atendidas. |
+| Boleto | Obrigatório por decisão de 13/10 | Validar emissão, pagamento, vencimento, recuperação, devolução e efeitos únicos em estoque/pontos antes da produção. |
+| Cartão de débito | Obrigatório por decisão de 13/10 | Validar suporte do provedor/conta e implementar contrato, fluxo e recuperação próprios; não tratar cartão de crédito como débito. |
+| PIX manual/WhatsApp | Bloqueado inicialmente | Decisão anterior não alterada especificamente; obrigações existentes continuam atendidas. |
 | Pontos | Obrigatório | Ganho, resgate, expiração, compensação e saldo/déficit corretos; não desligar silenciosamente para cumprir prazo. |
 | Catálogo, variantes e estoque | Obrigatório | Criar, editar, retirar variante vinculada e ajustar estoque sem perder IDs ou sobrescrever reservas. |
 | Retirada no balcão | Modalidade adicional se ofertada | Não substitui entrega no lançamento. |
@@ -408,3 +412,32 @@ Ponto de entrada do colega: [guia de revisão e continuidade](../../../../../../
 **Validação executada em 13/10:** 64 testes dirigidos em seis arquivos passaram, TypeScript e ESLint direcionado passaram, sintaxe do script de retomada passou e build otimizado isolado passou (Next 16.3.5, 55 páginas, PostgreSQL 18 descartável). Isso confirma a validação local desta entrega; não comprova Preview Ready, deploy Google Cloud, cartão/estorno externos ou gates G1–G8. A CI atual não dispara para push em homologacao_teste; não atribuir sua aprovação a esta publicação. A instrução para reproduzir os testes está no guia.
 
 O prazo original permanece registrado, sem reinício. Próximas ações continuam sendo revisão de Vanderlei, configuração e identificação do candidato, ensaio financeiro de cartão até 12x/PIX/devolução, validação de frete e preparação do ambiente de produção separado.
+
+## 17. Ampliação do escopo e retomada da homologação — 13/10/2026
+
+O usuário informou ter habilitado crédito e boleto no Admin de homologação e determinou que boleto e compras com cartão de débito estejam prontos antes do lançamento. Boleto passa a P0, substituindo seu adiamento em G1, LA-010, nas matrizes financeiras e no backlog D+7–14. Débito também passa a P0: levantar contrato do provedor/conta, implementar e testar a cadeia completa antes de declará-lo disponível. A inspeção local de `types/payment-gateway.types.ts`, `lib/commerce/contracts.ts` e `services/asaas/asaas.adapter.ts` encontrou somente PIX, BOLETO, CREDIT_CARD e, no domínio, WHATSAPP_PIX. Não foi verificado nesta etapa o suporte externo a débito; não inferi-lo pelo uso de cartão físico ou múltiplo.
+
+G1/G3 devem incluir todos os novos métodos exigidos, assim como os gates transversais de segurança, pontos, estoque, recuperação e operação. O requisito de prontidão integral não equivale a prova de ausência absoluta de falhas nem permite considerar habilitação de UI como homologação. O prazo original não é automaticamente prorrogado ou reiniciado.
+
+Próximo passo de crédito: recarregar o checkout do mesmo Preview após salvar a configuração, selecionar cartão e verificar o seletor de parcelas e totais, ainda sem concluir compra. Com o total comercial de R$ 49,90 mostrado anteriormente, o piso R$ 20 permite até 2x. Para conferir o teto 12x, preparar total comercial de pelo menos R$ 240 antes dos juros, usando produtos/variantes com estoque disponível, sem resgatar pontos nessa conferência inicial. Registrar subtotal, frete, total comercial e oferta de 12x (prestação e total financiado). Não alterar estoque/preço apenas para forçar o teste. Depois dessa conferência, preparar o pagamento Sandbox e evidências anteriores/posteriores em uma rodada coordenada.
+
+## 18. Estoque geral e por variante — entrega de homologação de 13/10/2026
+
+Em 13/10/2026, o usuário solicitou a correção do saldo exibido após ajustes, a edição explícita por variante e a adequação visual ao design do Admin. Em seguida, autorizou publicar este pacote na branch `homologacao_teste` para atualização do Preview Vercel. Identificar a entrega pelo commit que contém esta seção e conferir seu SHA no remoto e no deployment. A publicação para homologação não aprova produção nem encerra os testes pendentes abaixo.
+
+- `InventoryPanel` comunica o saldo consultado ao `ProductForm`, atualizando estoque geral e variantes por ID persistido. Nome, preço, combinações em edição e revisão do catálogo são preservados; salvar catálogo continua sem sobrescrever estoque.
+- O painel apresenta a tabela **Estoque por variante**, com disponível, indisponível e botão **Ajustar estoque** em cada linha. O botão seleciona a variante e direciona ao campo Quantidade; o operador informa a contagem ou reposição/baixa e o motivo, depois usa **Registrar ajuste**. Trocar de item limpa quantidade e motivo para evitar reaplicar o rascunho a outra variante.
+- O ajuste reutiliza o endpoint administrativo existente, com ID da variante, controle de revisão, identidade do comando e auditoria. O limite geral permanece independente das variantes. Variantes novas no cadastro em edição precisam ser salvas antes de receber ajuste; itens retirados continuam sujeitos à reativação explícita.
+- Adequação visual ao cadastro de produtos: fundo `catalog-card`, bordas e títulos `catalog-gold`, campos azul-escuros, tipografia monoespaçada de rótulos, cantos arredondados e botão principal amarelo. Saldos em destaque, tabela com seleção visível, foco de teclado e rolagem acessível no celular, campos em duas colunas no desktop e empilhados no celular. Mensagens em caixa própria e indicador de processamento. Não há migration nem alteração de configuração de ambiente.
+
+**Conferência visual:** renderização estática do componente com dados fictícios e CSS do projeto inspecionada no Chrome em desktop e viewport móvel de 390 px, sem transbordamento horizontal da página; a tabela tem rolagem própria. Essa conferência não substitui o teste funcional de navegador com banco descrito abaixo. Após a adequação visual, os 14 testes unitários, TypeScript e ESLint foram executados novamente e passaram.
+
+**Validação local:** 14 testes unitários passaram (`product-form-variants`, `inventory-draft`, `inventory-lifecycle`); TypeScript e ESLint dos arquivos envolvidos passaram. O teste novo `tests/integration/inventory-admin-browser.test.ts` cobre ajuste de duas variantes e do geral, preservação do rascunho, persistência após recarregar e três auditorias. Sua execução junto de `inventory-admin-integrity` ficou pendente: Docker Desktop não iniciou, impedindo provisionar PostgreSQL descartável. Não houve acesso ou ajuste no banco de homologação por esta execução.
+
+Antes de aprovar a entrega, executar em ambiente isolado:
+
+```powershell
+node scripts/run-isolated-tests.mjs tests/integration/inventory-admin-browser.test.ts tests/integration/inventory-admin-integrity.test.ts
+```
+
+Esta entrega reúne os dois componentes e os testes unitário/de navegador, junto desta documentação. A conferência anterior ao commit encontrou a base local e remota em `d66a416`, sem divergência; 14 testes, TypeScript e ESLint passaram novamente. Docker permaneceu indisponível. No Preview correspondente, conferir que o ajuste de uma variante atualiza tabela e campo do formulário, preserva as outras variantes e o limite geral, e que ajustar o geral também atualiza seu campo sem recarregar. Confirmar persistência e auditoria com dados de teste dedicados. Este pacote não encerra os gates financeiros nem comprova resolução do atraso no carrinho.

@@ -4,12 +4,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ProductForm } from "@/components/admin/ProductForm";
 
 const harness = vi.hoisted(() => ({
-  form: null as any, submit: null as any, fetch: vi.fn(), toast: vi.fn(),
+  form: null as any, submit: null as any, inventoryRead: null as any, fetch: vi.fn(), toast: vi.fn(),
   router: { push: vi.fn(), refresh: vi.fn() },
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => harness.router }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: harness.toast }) }));
 vi.mock("@/components/admin/ProductImageUpload", () => ({ ProductImageUpload: () => null }));
+vi.mock("@/components/admin/InventoryPanel", () => ({ InventoryPanel: (props: any) => {
+  harness.inventoryRead = props.onInventoryRead;
+  return null;
+} }));
 vi.mock("react-hook-form", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-hook-form")>();
   return { ...actual, useForm: (options: any) => {
@@ -41,6 +45,38 @@ const initial = {
 };
 
 describe("Payload real do formulário administrativo", () => {
+  it('refreshes stock by persisted variant ID while preserving unsaved catalog edits and inventory-free save', async () => {
+    renderToStaticMarkup(createElement(ProductForm, { lojaID: 'store', productId: 'product', initialData: initial }));
+    // SSR has no mounting effects; subscribe through RHF's public API so reads
+    // observe live values, as they do in the mounted browser form.
+    const unsubscribe = harness.form.subscribe({ formState: { values: true }, callback: () => {} });
+    harness.form.setValue('name', 'Nome ainda não salvo', { shouldDirty: true });
+    harness.form.setValue('price', 49.90, { shouldDirty: true });
+    harness.form.setValue('variants', [
+      { size: 'Nova', color: 'Azul', stock: 0 },
+      { id: 'persisted-id', size: 'Tamanho editado', color: 'Vermelho', stock: 10 },
+    ]);
+    harness.inventoryRead({ id: 'product', stock: 100, productVariants: [
+      { id: 'persisted-id', stock: 25, size: 'Único', color: 'Padrão' },
+      { id: 'not-in-draft', stock: 50 },
+    ] });
+    expect(harness.form.getValues()).toMatchObject({ name: 'Nome ainda não salvo', price: 49.9, stock: 100,
+      variants: [{ size: 'Nova', color: 'Azul', stock: 0 }, { id: 'persisted-id', size: 'Tamanho editado', color: 'Vermelho', stock: 25 }] });
+    expect(harness.fetch).not.toHaveBeenCalled();
+    await harness.submit();
+    const payload = JSON.parse(harness.fetch.mock.calls[0][1].body);
+    expect(payload.stock).toBeUndefined();
+    expect(payload.expectedCatalogVersion).toBe(0);
+    expect(payload.variants.map((variant: any) => variant.stock)).toEqual([0, 0]);
+    unsubscribe();
+  });
+  it('ignores an inventory snapshot belonging to another product', () => {
+    renderToStaticMarkup(createElement(ProductForm, { lojaID: 'store', productId: 'product', initialData: initial }));
+    harness.inventoryRead({ id: 'another-product', stock: 100, productVariants: [{ id: 'persisted-id', stock: 90 }] });
+    expect(harness.form.getValues('stock')).toBe(initial.stock);
+    expect(harness.form.getValues('variants')[0].stock).toBe(10);
+    expect(harness.fetch).not.toHaveBeenCalled();
+  });
   it("preserva o ID persistido em três salvamentos usando o resolver e o useFieldArray reais", async () => {
     let current = initial;
     for (let attempt = 0; attempt < 3; attempt++) {

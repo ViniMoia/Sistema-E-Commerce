@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,7 +10,7 @@ import { Trash2, Plus, Loader2, Sparkles, Check, ArrowLeft, Layers, Image as Ima
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
-import { InventoryPanel } from '@/components/admin/InventoryPanel';
+import { InventoryPanel, type InventorySnapshot } from '@/components/admin/InventoryPanel';
 import {
   Form,
   FormControl,
@@ -105,6 +105,18 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
     name: "galleryUrls",
     control: form.control,
   });
+
+  // Refresh only stock displays. Catalog drafts, field-array keys and the
+  // original catalog revision must survive a separate inventory adjustment.
+  const onInventoryRead = useCallback((snapshot: InventorySnapshot) => {
+    if (snapshot.id !== productId) return;
+    form.setValue('stock', snapshot.stock);
+    const stocks = new Map(snapshot.productVariants.map(variant => [variant.id, variant.stock]));
+    form.getValues('variants').forEach((variant, index) => {
+      const stock = variant.id ? stocks.get(variant.id) : undefined;
+      if (stock !== undefined) form.setValue(`variants.${index}.stock`, stock);
+    });
+  }, [form, productId]);
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsLoading(true);
@@ -202,7 +214,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
 
   return (
     <Form {...form}>
-      {isEditing && productId && <InventoryPanel key={productId} productId={productId} />}
+      {isEditing && productId && <InventoryPanel key={productId} productId={productId} onInventoryRead={onInventoryRead} />}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* Seção 1: Dados Cadastrais Principais */}
         <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
