@@ -16,14 +16,18 @@ export function checkProductionEnvironment(env, declaration = {}) {
   const runtimeEnv = { ...env, NODE_ENV: 'production' };
   const gatewayTarget = asaasGatewayTarget(env.ASAAS_API_URL);
   const expectedGatewayTarget = expectedAsaasEnvironment(runtimeEnv);
+  if (expectedGatewayTarget === 'INVALID') {
+    issue('PAYMENT_DEPLOYMENT_ENVIRONMENT_INVALID', 'ERROR',
+      'Declaração financeira inválida: usar SANDBOX ou PRODUCTION, escopo de conta explícito válido e contexto de hospedagem compatível.');
+  }
   if (declaration.nonempty && declaration.unescapedDollarReference && !env.ASAAS_API_KEY) {
     issue('ASAAS_KEY_REMOVED_BY_ENV_EXPANSION', remoteEnabled ? 'ERROR' : 'WARNING',
       'A chave declarada ficou vazia após expansão do Next.js. Preservar dólar literal conforme contrato dotenv; não ativar pagamentos para diagnosticar.');
   }
   if (remoteEnabled) {
-    if (!asaasConfigurationReady(runtimeEnv, env.ASAAS_API_URL, env.ASAAS_API_KEY)) {
+    if (expectedGatewayTarget !== 'INVALID' && !asaasConfigurationReady(runtimeEnv, env.ASAAS_API_URL, env.ASAAS_API_KEY)) {
       issue(expectedGatewayTarget === 'PRODUCTION' ? 'ASAAS_PRODUCTION_CONFIGURATION_MISSING' : 'ASAAS_SANDBOX_CONFIGURATION_MISSING', 'ERROR',
-        'Endpoint e prefixo de chave devem corresponder ao ambiente: Preview Vercel identificado usa Sandbox; outros runtimes otimizados usam produção. Presença não valida credencial/conta ou autoriza operação.');
+        'Endpoint e prefixo de chave devem corresponder ao ambiente financeiro. Fora da Vercel, usar declaração explícita e escopo de conta para Sandbox otimizado; sem declaração, preservar a política anterior. Presença não valida credencial/conta ou autoriza operação.');
     }
     if (!(env.ASAAS_ENABLED_LOJA_IDS ?? '').split(',').some(id => id.trim())) {
       issue('ASAAS_TENANT_ALLOWLIST_MISSING', 'ERROR', 'Pagamentos remotos requerem allowlist explícita de lojas homologadas.');

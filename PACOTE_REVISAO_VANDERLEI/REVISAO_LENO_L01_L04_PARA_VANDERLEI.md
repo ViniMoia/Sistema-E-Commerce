@@ -1,5 +1,67 @@
 # Revisão da entrega L-01/L-04 de Leno (Brega)
 
+## Continuidade atual — entrega de homologação em 13/10/2026
+
+**Começar por esta seção.** Os checkpoints abaixo dela preservam o histórico de 09/10; afirmações antigas de "ainda local" não descrevem o pacote atual quando este commit estiver em `origin/homologacao_teste`. Publicar nesta branch foi autorizado pelo usuário em 13/10. Publicação do código não equivale a ativação de variáveis, Preview Ready ou liberação comercial.
+
+### Obter e identificar a versão
+
+Em clone próprio sem alterações pendentes (preservar trabalho local antes de atualizar):
+
+```powershell
+git fetch origin
+git switch homologacao_teste
+git pull --ff-only origin homologacao_teste
+git rev-parse HEAD
+npm ci
+```
+
+Se a branch local ainda não existir, usar `git switch --track origin/homologacao_teste`. Havendo divergência, revisar/integrar sem reset destrutivo. Registrar o SHA de HEAD no parecer e confrontá-lo com o deployment usado nos ensaios. Dependências e lockfile seguem no repositório; Node 22 é a referência da CI. Docker com containers Linux é necessário para os wrappers de build/testes isolados.
+
+### Conteúdo e ordem de leitura
+
+1. [Replanejamento de produção](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md): documento condutor atual, gates, divisão de responsabilidades, seção 14 (ambiente financeiro explícito) e seção 15 (juros e frete). O prazo original de 10–12/10 não é reiniciado por esta publicação.
+2. Correção local incluída: `lib/config/asaas-environment.mjs`, `scripts/lib/production-environment-policy.mjs` e respectivos testes. Permite Sandbox em runtime otimizado fora da Vercel mediante declaração explícita, bloqueando configuração inválida/conflitante. Sem migrations novas neste pacote.
+3. [Modelo de ambiente](../.env.example): nomes de variáveis e exemplos ilustrativos, incluindo a nova declaração. Segredos reais, `.env` privados, banco, backups, `node_modules` e artefatos `.next` não são distribuídos nesta entrega; configurar por canal privado/gestor de segredos do ambiente.
+4. [Roteiro PIX #3, seções 32–36](L-04-ROTEIRO_ESTORNO_INTEGRAL_PIX_SANDBOX.md#32-preview-publicado-e-supervisão-anterior-à-retomada-recebida): evidência mais recente do caso cancelado no provedor. O script `L-04-RETOMAR_CONCILIACAO_ESTORNO_PEDIDO_3.js` acompanha o registro para rastreabilidade; **já foi executado, não é etapa de instalação nem deve ser repetido**.
+5. [Guia geral de continuidade](../diversos/HOMOLOGACAO/Relatorio_1/RELATORIO_GERAL_HOMOLOGACAO_E_GUIA_DE_CONTINUIDADE.md), especialmente ferramentas/infra, e [plano em dupla](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/PLANO_DE_EXECUCAO_EM_DUPLA_PARA_PRODUCAO.md), usando as decisões posteriores do replanejamento quando o escopo diferir.
+
+### Configuração que Vanderlei precisa conferir
+
+| Frente | Contrato de continuidade |
+|---|---|
+| Preview atual | Branch `homologacao_teste`, conta `sandbox-hml`, banco/branch de homologação. Conferir o SHA efetivamente publicado antes dos ensaios. |
+| Google Cloud de homologação | `NODE_ENV=production`, `PAYMENT_DEPLOYMENT_ENVIRONMENT=SANDBOX`, URL/chave Sandbox, escopo da mesma conta e banco de homologação identificado. Não forjar `VERCEL`/`VERCEL_ENV`. |
+| Produção futura | Declaração `PRODUCTION`, conta/escopo reais e banco separado. Credenciais/URLs precisam corresponder; o nome do escopo não comprova conta/ambiente. Configuração de produção não é aplicada por este push. |
+| Cartão até 12x | Política decidida: `INSTALLMENT_MAX_COUNT=12`, `INSTALLMENT_ABSORB_FEES=false`, `INSTALLMENT_MIN_VALUE=20`, `INSTALLMENT_MONTHLY_RATE=0.0299`. Ensaio requer `ASAAS_INSTALLMENTS_APPROVED=true`, `enableCreditCard` da loja, configuração Asaas válida, allowlist da loja e pagamento remoto habilitado. O exemplo mantém flags desligadas; ativação é separada e específica do ambiente. |
+| Frete | Correios PAC/SEDEX, J&T por tabela restrita à origem 67140-615 e entrega local por município. Conferir tarifas/revisões no banco, origem, pesos/medidas reais, configuração da loja e segredo de assinatura comum às instâncias. Validar consulta real dos Correios: o provider usa `CalcPrecoPrazo.aspx`, não CWS/Mini Envios. |
+| Dados | Usuário confirmou somente testes. Preparar banco de produção separado e carga aprovada de catálogo/configuração/tarifas/estoque; preservar Sandbox, sem importar saldos e vendas fictícios nem limpar a base atual por este roteiro. |
+| Infra/operação | Conferir proxy/tenant/domínio/cookies, storage, domínio/remetente Resend, webhook autenticado, executor autenticado recorrente e alertas. Migração é etapa controlada, não automática no build de cada instância. |
+
+O preflight `node scripts/check-production-environment.mjs` é somente de leitura, sem chamadas externas, mas carrega configuração privada pelo loader do Next. Vanderlei deve executá-lo no ambiente escolhido e compartilhar apenas o resultado sanitizado; `configurationPassed=true` não significa `productionReady=true`. Segredos de painel/gestor são valores literais; o escape de dólar descrito em `.env.example` é específico do arquivo dotenv processado pelo Next.
+
+### Validação reproduzível e limites
+
+```powershell
+node node_modules/vitest/vitest.mjs run tests/unit/asaas-environment.test.ts tests/unit/production-environment-policy.test.ts tests/unit/asaas-adapter.test.ts tests/unit/asaas-credit-card.test.ts tests/unit/asaas-boleto.test.ts tests/unit/refund-history.test.ts
+node node_modules/typescript/bin/tsc --noEmit --incremental false
+node node_modules/eslint/bin/eslint.js lib/config/asaas-environment.mjs scripts/lib/production-environment-policy.mjs tests/unit/asaas-environment.test.ts tests/unit/production-environment-policy.test.ts
+npm run build:isolated
+```
+
+Os wrappers provisionam banco descartável e copiam fontes sem `.env` para o build. Não substituir por integração/carga apontando para Neon compartilhado. A CI atual só dispara para main/master/develop; push em homologacao_teste não comprova execução dessa CI. O deploy Vercel, quando disparado, tem resultado separado.
+
+**Resultados locais de 13/10/2026:** 64 testes em seis arquivos aprovados; TypeScript sem emissão e lint dos quatro arquivos de código/testes aprovados; sintaxe do script histórico de retomada aprovada. `npm run build:isolated` concluiu compilação, TypeScript e geração das 55 páginas em Next 16.3.5, com PostgreSQL 18 descartável e integrações sem credenciais. O banco/container e a cópia temporária foram descartados pelo wrapper, preservando `.next` e `next-env.d.ts` do workspace. Aviso do Vite sobre futura mudança de configLoader não impediu os testes. Sem nova execução financeira externa, teste de parcelamento remoto ou pacote standalone Linux nesta rodada.
+
+### Próxima atuação e impedimentos ainda abertos
+
+- Vanderlei: revisar a alteração de ambiente, conferir o candidato/configuração, preparar infraestrutura/executor e validar entrega/segurança. Devolver SHA, achados e evidências, sem credenciais.
+- Leno: executar ensaios coordenados de PIX/cartão à vista/parcelado e devolução, pontos e integridade dos dados, após configuração conferida. Total comercial de pelo menos R$ 240 permite ensaiar 12x com piso R$ 20; usar instrumentos de teste no Sandbox.
+- Pedido #3 permanece como caso de revisão: estorno remoto CANCELLED, operação PENDING com `PAYMENT_REFUND_CANCELLED_REVIEW`, outbox PAYMENT_REVIEW em DEAD_LETTER. Na última evidência, pedido PAID, carteira 137/0/636 e estoque 7/3/4 preservados. Esses números são históricos, não leitura feita em 13/10. Não rearmar REFUND, apagar revisão ou repetir scripts financeiros como parte da atualização.
+- Continuam pendentes devolução efetivamente concluída, cartão parcelado externo, frete no candidato, preparação/restore do banco alvo, execução automática e parecer independente. Publicação não aprova G1–G8.
+
+---
+
 **Autor: Leno (Brega). Revisor: Vanderlei (Que dá idéia errada). Data: 09/10/2026.** Revisão ainda não realizada. Este arquivo prepara a entrega; não foi enviado por ferramenta ao outro desenvolvedor.
 
 ## O que revisar

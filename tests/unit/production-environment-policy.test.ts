@@ -2,6 +2,30 @@ import { describe, expect, it } from 'vitest';
 import { checkProductionEnvironment } from '../../scripts/lib/production-environment-policy.mjs';
 const signing = { FREIGHT_QUOTE_SECRET: 'f'.repeat(32) };
 describe('WF-19: configuration approval is distinct from production readiness', () => {
+  it('accepts explicit optimized Sandbox outside Vercel without approving production or exposing secrets', () => {
+    const env = { ...signing, PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX', ASAAS_ACCOUNT_SCOPE: 'sandbox-hml',
+      PAYMENT_REMOTE_ENABLED: 'true', ASAAS_API_URL: 'https://api-sandbox.asaas.com/v3',
+      ASAAS_API_KEY: '$aact_hml_CANARY', ASAAS_ENABLED_LOJA_IDS: 'fixture', ASAAS_WEBHOOK_TOKEN: 'CANARY' };
+    const result = checkProductionEnvironment(env);
+    expect(result).toMatchObject({ configurationPassed: true, expectedGatewayTarget: 'SANDBOX',
+      productionReady: false, externalCalls: 0, mutations: 0 });
+    expect(JSON.stringify(result)).not.toContain('CANARY');
+    expect(checkProductionEnvironment({ ...env, ASAAS_API_URL: 'https://api.asaas.com/v3',
+      ASAAS_API_KEY: '$aact_prod_CANARY' }).issues.map(issue => issue.code)).toContain('ASAAS_SANDBOX_CONFIGURATION_MISSING');
+  });
+  it('rejects invalid declarations even with remote execution disabled', () => {
+    for (const extra of [
+      { PAYMENT_DEPLOYMENT_ENVIRONMENT: '' },
+      { PAYMENT_DEPLOYMENT_ENVIRONMENT: 'sandbox', ASAAS_ACCOUNT_SCOPE: 'sandbox-hml' },
+      { PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX' },
+      { PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX', ASAAS_ACCOUNT_SCOPE: 'bad/scope' },
+      { PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX', ASAAS_ACCOUNT_SCOPE: 'sandbox-hml', VERCEL_ENV: 'production' },
+    ]) {
+      const result = checkProductionEnvironment({ ...signing, ...extra });
+      expect(result).toMatchObject({ configurationPassed: false, expectedGatewayTarget: 'INVALID', productionReady: false });
+      expect(result.issues.map(issue => issue.code)).toEqual(['PAYMENT_DEPLOYMENT_ENVIRONMENT_INVALID']);
+    }
+  });
   it('accepts held remote flags without requiring or activating financial credentials', () => {
     expect(checkProductionEnvironment(signing)).toMatchObject({ configurationPassed: true,
       remoteEnabled: false, workerEnabled: false, expirationEnabled: false, productionReady: false, externalCalls: 0, mutations: 0 });

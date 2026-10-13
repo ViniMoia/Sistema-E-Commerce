@@ -2,7 +2,7 @@
 
 **Preparação:** 09/10/2026. **Operador/responsável:** Leno (Brega). **Revisor independente:** Vanderlei (Que dá idéia errada).
 
-**Estado atual:** Leno (Brega) autorizou explicitamente em 09/10/2026 iniciar este ensaio no Sandbox antes do parecer de Vanderlei (Que dá idéia errada), conforme seção 9. Pedido #3 Pago, ganho de 24 pontos e confirmação da loja recebidos. Histórico remoto mostrou exatamente um estorno de 49,90 CANCELLED, nenhum valor DONE e cobrança RECEIVED. Nova leitura interna em 09/10/2026 às 20:27:40 UTC confirmou operação PENDING e tentativa REFUND_PENDING inalteradas, conforme seção 29. Tratamento local dessa divergência implementado na primeira etapa autorizada, conforme seção 30, junto ao patch anterior de agendamento; publicação e validação no Preview ainda pendentes. Motivo do cancelamento remoto permanece desconhecido; preservar a operação original. Estorno concluído e compensações reais ainda não comprovados; parecer independente e gates de produção continuam pendentes.
+**Estado atual:** Leno (Brega) autorizou explicitamente em 09/10/2026 iniciar este ensaio no Sandbox antes do parecer de Vanderlei (Que dá idéia errada), conforme seção 9. Pedido #3 Pago, ganho de 24 pontos e confirmação da loja recebidos. Histórico remoto mostrou exatamente um estorno de 49,90 CANCELLED, nenhum valor DONE e cobrança RECEIVED. Leitura interna às 20:27:40 UTC confirmou operação PENDING e tentativa REFUND_PENDING inalteradas. Correção publicada em homologacao_teste no commit 461437d, com deployment Preview concluído; StatusOnly às 20:58:04 UTC confirmou sandbox-hml, REFUND PENDING e filas sem trabalho pendente. Próxima ação preparada: retomada auditada da conciliação existente, conforme seção 32; sua execução e classificação real ainda a conferir. Motivo do cancelamento remoto permanece desconhecido; preservar a operação original. Estorno concluído e compensações reais ainda não comprovados; parecer independente e gates de produção continuam pendentes.
 
 ## 1. Objetivo e referências preservadas
 
@@ -469,3 +469,53 @@ Depois de o deployment correspondente estar Ready, a primeira ação operacional
 O pedido #3 e a operação original permanecem como alvo. Se ainda não estiver elegível, preparar a retomada pelo endpoint auditado `payment-reconcile`, que antecipa consulta e não redefine permissão de REFUND. Somente depois de conferir a resposta e as filas, processar a janela coordenada e reler o SQL dirigido. Resultado esperado enquanto o histórico remoto continua cancelado: pedido PAID v1, carteira 137/0/636 e uma movimentação do pedido; operação original sem nova submittedAt/COMPLETED e lastErrorCode/failureCode `PAYMENT_REFUND_CANCELLED_REVIEW`, com revisão auditada. Reconferir estoque separadamente (referência 7/3/4); esse SQL não o consulta.
 
 Nenhum novo estorno solicitado ou cancelamento manual do pedido orientado. O motivo remoto e eventual recuperação financeira continuam pendentes; esta etapa valida a identificação da divergência, sem aprovar o cenário de devolução concluída.
+
+## 32. Preview publicado e supervisão anterior à retomada recebida
+
+Correção publicada em homologacao_teste no commit **461437d60a77f2ba5150a30527f188b5c5d8e437**. GitHub informou status Vercel success, deployment Preview 6970799297 concluído em 09/10/2026 às 20:53:02 UTC; [deployment correspondente](https://vercel.com/vinimoias-projects/continental-prototipo/5imNcYZR3W1iJUTY7meGWVnWbsbM). Essa evidência confirma publicação, não efeitos financeiros.
+
+Operador enviou StatusOnly às **2026-10-09T20:58:04.309Z**: SCOPE_VERIFIED, sandbox-hml, inbox 3 COMPLETED, outbox 8 COMPLETED, CANCEL 1 COMPLETED e REFUND 1 PENDING. uncertain/overdue/abandonedLeases/untrackedLegacyOrders=0, oldestUnresolvedInboxAt=null, processingAttempted=false. Estado agregado não comprova que a conciliação nova já observou o histórico cancelado; nenhuma nova evidência financeira apresentada.
+
+Preparado [script de retomada auditada do #3](L-04-RETOMAR_CONCILIACAO_ESTORNO_PEDIDO_3.js). Executar uma vez no Console do Admin do mesmo Preview, após atualizar a página. Guarda de origem, leitura do pedido e conferência de identidade/PAID v1/RECEIVED/49,90/pontos/item/histórico antes de um único POST payment-reconcile, commandId `l04-pix-reconcile-pedido3-461437d-v1`. Aceitação esperada: HTTP 202, tentativa original `03422a6b-8223-41eb-9240-089c6dd9cf22`, status REFUND_PENDING e requeuedEvents=0.
+
+Essa retomada não é somente leitura: o endpoint antecipa reconcileAfter, renova reviewAfter e pode reenfileirar DEAD_LETTER, caso exista ao executar. Não cria REFUND, não redefine operações e não processa filas. Guards do navegador não tornam leitura/POST atômicos; resposta divergente ou incerta exige consultar o estado, sem repetir automaticamente. O comando conserva identidade para auditoria, mas repetir a chamada pode alterar prazos novamente. Enviar o JSON antes de orientar lote. Script e este registro são complementos locais posteriores à publicação, sem novo deployment necessário para executar o endpoint já publicado.
+
+Validação local do novo script: sintaxe JavaScript e nove cenários com mocks sem rede aprovados (aceitação, origem incorreta, pedido alterado, falha/timeout de leitura, timeout após POST, tentativa divergente, eventos reenfileirados inesperados e acesso negado). Conferidos método/endpoint/body, no máximo um POST, ausência de processamento e de mensagens brutas. Nenhuma retomada real executada pelo agente.
+## 33. Retomada aceita; lote de conciliação pendente
+
+Operador retornou HTTP 202 e RECONCILIATION_REQUEST_ACCEPTED para o pedido #3, commandId `l04-pix-reconcile-pedido3-461437d-v1` e tentativa original `03422a6b-8223-41eb-9240-089c6dd9cf22`. attemptStatus=REFUND_PENDING, requeuedEvents=0, requestAttempted=true, refundRequested=false e processingAttempted=false. O retorno não contém horário e não comprova processamento ou estorno concluído.
+
+Próxima ação orientada: executar uma vez `.\scripts\homologation\process-payments-once.ps1`, sem -StatusOnly, e enviar o JSON. O script confere o escopo antes de um único POST com limit=1; o lote não é exclusivo do pedido #3. Uma contagem reconciliation.review=1 pode corresponder à revisão esperada do cancelamento remoto, a confirmar pelo SQL dirigido. Não repetir a retomada nem solicitar outro REFUND. Após o lote, conferir códigos de revisão e preservação do pedido, operação original e pontos.
+
+## 34. Lote retornou revisão; confirmar motivo no pedido
+
+Operador enviou o resultado do lote: inbox sem itens; reconciliation claimed=1, completed=0, retried=0, review=1; outbox claimed=1, completed=0, retried=0, review=1. Expiração success=true, processedCount/cancelledCount/errorCount=0, listas vazias, executionTimeMs=592. O retorno não contém horário nem IDs dos itens processados.
+
+Os contadores são compatíveis com a revisão prevista. O consumidor de outbox encaminha PAYMENT_REVIEW para revisão quando a tentativa permanece pendente ou com failureCode; outras condições também podem incrementar esse contador. Portanto, o resumo sozinho não identifica o motivo nem comprova estorno, preservação dos efeitos ou vínculo de ambos os itens ao pedido #3.
+
+Próxima leitura: executar `L-04-DIAGNOSTICAR_CONSUMO_ESTORNO_PEDIDO_3.sql` no banco/branch efetivos do Preview e enviar evidence. Conferir failureCode/lastErrorCode PAYMENT_REFUND_CANCELLED_REVIEW, IDs e submittedAt originais, pedido PAID v1, ausência de fato REFUNDED e carteira 137/0/636 com uma movimentação do pedido. Conferir também o registro de outbox PAYMENT_REVIEW. Não repetir lote ou retomada antes dessa conferência; estoque exige leitura separada.
+
+## 35. Leitura confirma classificação do cancelamento remoto
+
+Evidência enviada pelo operador em `2026-10-10T01:08:33.116874+00:00` (09/10/2026 às 22:08:33 em Brasília), banco GMT, orderCount=1:
+
+- Tentativa original `03422a6b-8223-41eb-9240-089c6dd9cf22`, REFUND_PENDING v6, reconcileAttempts=1 e failureCode=PAYMENT_REFUND_CANCELLED_REVIEW. Conta sandbox-hml e identidade esperadas correspondem.
+- Operação original `895e8eec-8052-49ae-86b8-f35812003b7e`, PENDING, lastErrorCode=PAYMENT_REFUND_CANCELLED_REVIEW; submittedAt preservado em 09/10/2026 às 19:29:07.726 UTC, completedAt=null. Nenhuma nova operação aparece na consulta.
+- Pedido PAID v1, cobrança RECEIVED de 49,90, paidAt original e pontos 24 creditados/0 resgatados preservados. Fatos AUTHORIZED e SETTLED originais; nenhum REFUNDED.
+- Carteira 137 disponíveis, 0 pendentes, 636 acumulados; uma movimentação vinculada ao pedido, sem reversão de pontos evidenciada.
+- Novo outbox `24c2a64b-0d7e-43a2-85fa-27fbaa656134`, PAYMENT_REVIEW, DEAD_LETTER, attempts=1, lastErrorCode=PAYMENT_REVIEW_REQUIRED. Neste caminho, DEAD_LETTER é o encaminhamento intencional para revisão; não indica por si só falha técnica de entrega. Os três outboxes anteriores e o inbox PAYMENT_RECEIVED continuam COMPLETED.
+- reconcileAfter=10/10/2026 às 01:59:15.908 UTC (09/10 às 22:59:15.908 em Brasília), reconcileDue=false, lease disponível e sem proprietário. O prazo futuro explica a inelegibilidade nessa leitura; não é necessário antecipá-lo novamente.
+
+Validada em homologação a classificação do histórico cancelado e a preservação dos registros de pedido/pagamento/pontos observados. A consulta não prova ausência absoluta de chamadas remotas, nem lê estoque, reservas ou AuditLog. Não declarar devolução concluída ou aprovação integral do L-04. Motivo do cancelamento remoto e recuperação financeira permanecem pendentes, assim como o parecer independente.
+
+Para completar este checkpoint, solicitar apenas StatusOnly e confirmação visual do estoque 7 / Pequeno-Vermelho 3 / Médio-Azul 4. Preservar a revisão existente, sem novo REFUND, reenvio da retomada ou alteração manual de status. O agente somente registrou a evidência nesta etapa.
+
+## 36. Conferência encerrada: tratamento do cancelamento validado
+
+Operador confirmou visualmente estoque geral 7, Pequeno/Vermelho 3 e Médio/Azul 4. Trata-se de confirmação da interface, não de nova auditoria das reservas.
+
+StatusOnly recebido às `2026-10-10T01:12:21.984Z` (09/10/2026 às 22:12:21.984 em Brasília): SCOPE_VERIFIED, sandbox-hml, inbox 3 COMPLETED, outbox 8 COMPLETED e 1 DEAD_LETTER; operações CANCEL 1 COMPLETED e REFUND 1 PENDING. uncertain=0, overdue=0, abandonedLeases=0, untrackedLegacyOrders=0, oldestUnresolvedInboxAt=null, processingAttempted=false. Coerente com o PAYMENT_REVIEW identificado no SQL anterior; os indicadores zerados não eliminam essa revisão pendente.
+
+Encerrada a conferência desta correção em homologação: identificação explícita do cancelamento remoto, operação original preservada, pedido pago e pontos preservados pelo SQL, estoque preservado conforme operador. Não há necessidade de novo lote ou retomada para provar novamente este resultado. Não houve processamento pelo agente nesta etapa.
+
+O ensaio de devolução integral permanece incompleto: falta esclarecer no provedor por que o estorno foi cancelado e definir a recuperação antes de outra tentativa. Não registrar REFUNDED, limpar DEAD_LETTER ou rearmar a operação manualmente. Próxima etapa é obter o motivo do cancelamento da cobrança `pay_cra35xq1ltkb6oka` e do estorno de 49,90 criado em `2026-10-09 16:29:08` (horário literal do provedor), pelos detalhes disponíveis no Sandbox ou suporte Asaas. Nenhum contato externo foi enviado pelo agente. Parecer de Vanderlei e aprovação integral do L-04 continuam pendentes.

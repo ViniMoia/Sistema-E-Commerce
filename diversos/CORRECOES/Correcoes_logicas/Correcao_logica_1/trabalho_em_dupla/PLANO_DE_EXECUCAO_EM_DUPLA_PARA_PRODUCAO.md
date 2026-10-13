@@ -1,5 +1,7 @@
 # Plano de execução em dupla para concluir o workflow e preparar produção
 
+**Continuidade em 13/10/2026:** seguir o [replanejamento de produção](Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md), que incorpora cartão até 12x e entrega obrigatórios, e a seção inicial do [guia atualizado de revisão para Vanderlei](../../../../../PACOTE_REVISAO_VANDERLEI/REVISAO_LENO_L01_L04_PARA_VANDERLEI.md). Este plano mantém atribuições e histórico; checkpoints antigos de próximo ensaio não devem ser reexecutados sem conferir os resultados posteriores.
+
 **Data:** 08/10/2026.  
 **Base inspecionada:** `homologacao_teste`, revisão `f4f936c8e46d40f0310b7930583413c7942d3845`, com documentação e ferramentas locais posteriores ainda não integralmente versionadas.  
 **Participantes:** **Leno (Brega)** e **Vanderlei (Que dá idéia errada)**.  
