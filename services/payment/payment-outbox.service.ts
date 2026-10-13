@@ -51,6 +51,9 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
         const buyer = orderCustomer(order), address = order.address ?? snapshotDeliveryAddress(order.buyer);
         const content = renderOrderPaymentConfirmedEmail({ to: buyer.email, customerName: buyer.name, orderNumber: order.orderNumber,
           totalValue: Number(order.financialTotal ?? order.total), paymentDate: order.paidAt ?? order.createdAt,
+          paymentMethod: order.paymentMethod, installments: order.installments,
+          installmentValue: order.installmentValue == null ? null : Number(order.installmentValue),
+          financingCharge: order.financingCharge == null ? null : Number(order.financingCharge),
           items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: Number(i.price), color: i.color, size: i.size })),
           deliveryType: order.deliveryType, shippingServiceName: order.shippingServiceName, shippingEstimatedDays: order.shippingEstimatedDays,
           addressFormatted: address ? [address.street, address.number, address.district, address.city, address.state, address.cep].join(', ') : null,

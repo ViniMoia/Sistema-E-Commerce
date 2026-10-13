@@ -37,6 +37,26 @@ export function renderOrderPaymentConfirmedEmail(
   const formattedTotal = formatCurrency(params.totalValue);
   const formattedDate = formatDate(new Date(params.paymentDate));
   const orderUrl = params.orderUrl || '#';
+  const paymentMethod = params.paymentMethod === 'CREDIT_CARD' ? 'Cartão de Crédito'
+    : params.paymentMethod === 'BOLETO' ? 'Boleto Bancário'
+    : params.paymentMethod === 'PIX' ? 'PIX Dinâmico'
+    : params.paymentMethod === 'WHATSAPP_PIX' ? 'PIX Manual'
+    : 'Não informado';
+  const paymentDetails: Array<[string, string]> = [['Método de Pagamento', paymentMethod]];
+  if (params.paymentMethod === 'CREDIT_CARD' && Number.isInteger(params.installments) && params.installments! > 0) {
+    const value = params.installmentValue;
+    const plan = value != null && Number.isFinite(value) && value > 0
+      ? `${params.installments}x de ${formatCurrency(value)}` : `${params.installments}x`;
+    paymentDetails.push(['Parcelamento', plan]);
+    if (params.financingCharge != null && Number.isFinite(params.financingCharge) && params.financingCharge >= 0) {
+      paymentDetails.push(['Juros do parcelamento', formatCurrency(params.financingCharge)]);
+    }
+  }
+  const paymentDetailsText = paymentDetails.map(([label, value]) => `${label}: ${value}`).join('\n');
+  const paymentDetailsHtml = paymentDetails.map(([label, value]) => `<tr>
+    <td style="color: #888888; padding: 4px 0;">${label}:</td>
+    <td style="color: #e5e5e5; text-align: right; padding: 4px 0;">${escapeHtml(value)}</td>
+  </tr>`).join('');
 
   // Informações de entrega
   let shippingText = 'A Combinar';
@@ -65,7 +85,7 @@ export function renderOrderPaymentConfirmedEmail(
     ? `\nEndereço de Entrega:\n${params.addressFormatted}\n`
     : '';
 
-  const text = `Olá, ${firstName}!\n\nSeu pagamento no valor de ${formattedTotal} referente ao pedido #${params.orderNumber} foi aprovado com sucesso!\n\nDetalhes do Pedido #${params.orderNumber}:\nData da Confirmação: ${formattedDate}\nMétodo: PIX\nForma de Entrega: ${shippingText}${addressText}\nItens do Pedido:\n${itemsTextList}\n\nValor Total: ${formattedTotal}${pointsText}\n\nPara acompanhar o envio e status do seu pedido, acesse:\n${orderUrl}\n\nAgradecemos pela preferência!\nEquipe ${storeName}`;
+  const text = `Olá, ${firstName}!\n\nSeu pagamento no valor de ${formattedTotal} referente ao pedido #${params.orderNumber} foi aprovado com sucesso!\n\nDetalhes do Pedido #${params.orderNumber}:\nData da Confirmação: ${formattedDate}\n${paymentDetailsText}\nForma de Entrega: ${shippingText}${addressText}\nItens do Pedido:\n${itemsTextList}\n\nTotal do pagamento: ${formattedTotal}${pointsText}\n\nPara acompanhar o envio e status do seu pedido, acesse:\n${orderUrl}\n\nAgradecemos pela preferência!\nEquipe ${storeName}`;
 
   // Geração das linhas de itens em HTML
   const itemsHtmlRows = params.items
@@ -238,7 +258,7 @@ export function renderOrderPaymentConfirmedEmail(
 
       <div class="content">
         <h1>Obrigado pela sua compra, ${firstName}!</h1>
-        <p>Confirmamos o recebimento do seu pagamento via PIX. Seu pedido já está sendo preparado pela nossa equipe com todo o cuidado.</p>
+        <p>Seu pagamento foi aprovado. Acompanhe o andamento do seu pedido pelo botão abaixo.</p>
 
         <div class="summary-card">
           <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -251,13 +271,10 @@ export function renderOrderPaymentConfirmedEmail(
               <td style="color: #ffffff; font-weight: 600; text-align: right; padding: 4px 0;">#${params.orderNumber}</td>
             </tr>
             <tr>
-              <td style="color: #888888; padding: 4px 0;">Data de Liquidação:</td>
+              <td style="color: #888888; padding: 4px 0;">Data da Confirmação:</td>
               <td style="color: #e5e5e5; text-align: right; padding: 4px 0;">${formattedDate}</td>
             </tr>
-            <tr>
-              <td style="color: #888888; padding: 4px 0;">Método de Pagamento:</td>
-              <td style="color: #e5e5e5; text-align: right; padding: 4px 0;">PIX Dinâmico</td>
-            </tr>
+            ${paymentDetailsHtml}
             <tr>
               <td style="color: #888888; padding: 4px 0;">Modalidade de Entrega:</td>
               <td style="color: #e5e5e5; text-align: right; padding: 4px 0;">${shippingText}</td>
@@ -270,7 +287,7 @@ export function renderOrderPaymentConfirmedEmail(
         <table class="items-table">
           ${itemsHtmlRows}
           <tr>
-            <td style="padding: 16px 0 0; color: #ffffff; font-size: 16px; font-weight: 700;">Total Pago</td>
+            <td style="padding: 16px 0 0; color: #ffffff; font-size: 16px; font-weight: 700;">Total do pagamento</td>
             <td style="padding: 16px 0 0; color: #DDAF02; font-size: 18px; font-weight: 700; text-align: right;">${formattedTotal}</td>
           </tr>
         </table>

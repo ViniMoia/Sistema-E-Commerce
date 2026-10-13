@@ -10,6 +10,7 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
     customerName: 'Vinicius Moia',
     orderNumber: 1054,
     totalValue: 289.9,
+    paymentMethod: 'PIX',
     paymentDate: new Date('2026-09-22T14:30:00Z'),
     items: [
       {
@@ -35,6 +36,42 @@ describe('Notificação de Pagamento ao Cliente via E-mail (PEND-COM-002)', () =
   };
 
   describe('1. Renderização do Template HTML & Texto', () => {
+    it('apresenta o cartão em 12x do pedido #4 sem afirmar PIX ou liquidação', () => {
+      const result = renderOrderPaymentConfirmedEmail({ ...baseParams, orderNumber: 4,
+        paymentMethod: 'CREDIT_CARD', totalValue: 360.72, installments: 12,
+        installmentValue: 30.06, financingCharge: 61.32, pointsEarned: 149 });
+      for (const content of [result.html, result.text]) {
+        const normalized = content.replace(/\u00a0/g, ' ');
+        expect(normalized).toContain('Cartão de Crédito');
+        expect(normalized).toContain('12x de R$ 30,06');
+        expect(normalized).toContain('R$ 61,32');
+        expect(normalized).toContain('R$ 360,72');
+        expect(normalized).toContain('Data da Confirmação');
+        expect(normalized).not.toContain('PIX');
+        expect(normalized).not.toContain('Liquidação');
+      }
+    });
+
+    it.each([['PIX', 'PIX Dinâmico'], ['BOLETO', 'Boleto Bancário'],
+      ['WHATSAPP_PIX', 'PIX Manual'], [null, 'Não informado'], ['UNKNOWN', 'Não informado']])(
+      'identifica %s sem atribuir parcelas de cartão', (paymentMethod, label) => {
+        const result = renderOrderPaymentConfirmedEmail({ ...baseParams, paymentMethod, installments: 12, installmentValue: 30.06 });
+        for (const content of [result.html, result.text]) {
+          expect(content).toContain(label!);
+          expect(content).not.toContain('12x');
+          if (paymentMethod !== 'PIX' && paymentMethod !== 'WHATSAPP_PIX') expect(content).not.toContain('PIX');
+        }
+      });
+
+    it('apresenta cartão em 1x sem calcular juros ou parcelas ausentes', () => {
+      const result = renderOrderPaymentConfirmedEmail({ ...baseParams, paymentMethod: 'CREDIT_CARD', installments: 1 });
+      for (const content of [result.html, result.text]) {
+        expect(content).toContain('1x');
+        expect(content).not.toContain('Juros do parcelamento');
+        expect(content).not.toContain('NaN');
+      }
+    });
+
     it('deve compilar com sucesso com todos os dados do pedido', () => {
       const { html, text } = renderOrderPaymentConfirmedEmail(baseParams);
 

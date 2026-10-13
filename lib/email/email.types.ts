@@ -33,6 +33,10 @@ export interface OrderPaymentConfirmedEmailParams {
   customerName: string;
   orderNumber: number;
   totalValue: number;
+  paymentMethod: string | null;
+  installments?: number | null;
+  installmentValue?: number | null;
+  financingCharge?: number | null;
   paymentDate: Date;
   items: OrderPaymentConfirmedEmailItem[];
   deliveryType: string;
