@@ -11,6 +11,9 @@ let readGate: Promise<void> | null = null;
 let releaseRead: (() => void) | undefined;
 let heldReads = 0;
 let readUnavailable = false;
+let postGate: Promise<void> | null = null;
+let releasePost: (() => void) | undefined;
+let cartReads = 0, cartPosts = 0;
 const checkoutButton = '[...document.querySelectorAll("[role=dialog][data-state=open] button")].find(e => e.textContent.includes("Finalizar Compra"))';
 const continueButton = '[...document.querySelectorAll("[role=dialog][data-state=open] button")].find(e => e.textContent.includes("Continuar comprando"))';
 const drawerOpen = '!!document.querySelector("[role=dialog][data-state=open]")';
@@ -25,8 +28,12 @@ function resumeReads() {
   releaseRead = undefined;
 }
 async function openCart() {
+  if (readGate) await invalidateCart();
   await browser.evaluate('document.querySelector(\'button[aria-label^="Carrinho de compras"]\').click()');
   await browser.waitFor(drawerOpen);
+}
+async function invalidateCart() {
+  await browser.evaluate(`(() => { const channel = new BroadcastChannel('commerce-cart-v1'); channel.postMessage({ type: 'invalidate' }); channel.close(); })()`);
 }
 async function expectVisibleBadge(count: number) {
   await browser.evaluate('window.scrollTo(0, 80)');
@@ -65,7 +72,9 @@ beforeAll(async () => {
   const session = await prisma.session.create({ data: { userId: userID, expiresAt: new Date(Date.now() + 3600000) } });
   const loja = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } });
   browser = await isolatedBrowser({ host: loja.slug + '.plataforma.com', intercept: async ({ url, method }) => {
+    if (url === '/api/cart' && method === 'POST') { cartPosts++; if (postGate) await postGate; }
     if (url !== '/api/cart' || method !== 'GET') return null;
+    cartReads++;
     if (readGate) { heldReads++; await readGate; }
     return readUnavailable ? { status: 503, body: { error: 'Fixture cart unavailable' } } : null;
   } });
@@ -73,6 +82,7 @@ beforeAll(async () => {
 }, 120000);
 
 afterAll(async () => {
+  releasePost?.(); postGate = null;
   resumeReads();
   if (browser) await browser.close();
   await cleanupFixtureStores();
@@ -80,6 +90,7 @@ afterAll(async () => {
 }, 30000);
 
 afterEach(async () => {
+  releasePost?.(); postGate = null;
   resumeReads();
   readUnavailable = false;
   if (browser) {
@@ -113,7 +124,7 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin")');
 
     holdReads();
-    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await invalidateCart();
     await expect.poll(() => heldReads).toBeGreaterThan(0);
     expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     await browser.click('Continuar comprando');
@@ -123,7 +134,7 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin")');
 
     readUnavailable = true;
-    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await invalidateCart();
     await browser.waitFor('document.querySelector("[role=alert]")?.innerText.includes("Não foi possível carregar o carrinho")');
     expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
     readUnavailable = false;
@@ -184,5 +195,24 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     expect(await browser.evaluate('document.body.innerText.includes("Pagamento Instantâneo via QR Code")')).toBe(false);
     expect(await browser.evaluate('[...document.querySelectorAll("button")].find(e => e.textContent.includes("Revisar proposta de compra")).disabled')).toBe(true);
     expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
+  }, 120000);
+
+  it('opens immediately during a held inclusion, prevents double click and reuses the POST snapshot', async () => {
+    await browser.navigate('/');
+    await browser.waitFor('!!document.querySelector(\'button[aria-label="Carrinho de compras (7 itens)"]\')');
+    await browser.evaluate(`document.querySelector('#catalogo h4 button').click()`);
+    await browser.waitFor(`!!document.querySelector('button[aria-label="Comprar Agora"]')`);
+    const readsBefore = cartReads, postsBefore = cartPosts;
+    postGate = new Promise(resolve => { releasePost = resolve; });
+    await browser.evaluate(`(() => { const button = document.querySelector('button[aria-label="Comprar Agora"]'); button.click(); button.click(); })()`);
+    await browser.waitFor(drawerOpen);
+    await browser.waitFor(`document.querySelector('[role=dialog][data-state=open]')?.textContent.includes('Atualizando carrinho...')`);
+    await expect.poll(() => cartPosts).toBe(postsBefore + 1);
+    expect(await footerState()).toMatchObject({ checkoutDisabled: true });
+    releasePost!(); postGate = null;
+    await browser.waitFor(`!!(${checkoutButton}) && !(${checkoutButton}).disabled`);
+    expect(cartReads).toBe(readsBefore);
+    expect(cartPosts).toBe(postsBefore + 1);
+    expect(await prisma.cartItem.aggregate({ where: { lojaID }, _sum: { quantity: true } })).toMatchObject({ _sum: { quantity: 8 } });
   }, 120000);
 });

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { getLojaFromHeaders } from '@/lib/tenant';
 import { cartMutationSchema, cartAbsoluteMutationSchema } from '@/lib/commerce/cart-command';
+import { observeCartRequest } from '@/lib/commerce/cart-diagnostics';
 
 async function cartTenant(user: { lojaID: string }) {
   const tenant = await getLojaFromHeaders();
@@ -25,7 +26,8 @@ const updateCartSchema = z.object({
 }).merge(cartAbsoluteMutationSchema);
 const deleteCartSchema = cartAbsoluteMutationSchema.extend({ variantID: z.string().uuid('ID da variação inválido') });
 
-export async function GET(req: Request) {
+export async function GET(req: Request) { return observeCartRequest(req, handleGet); }
+async function handleGet(req: Request) {
   try {
     const auth = await requireAuth(req);
     if (auth instanceof NextResponse) return auth;
@@ -42,7 +44,8 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request) { return observeCartRequest(req, handlePost); }
+async function handlePost(req: Request) {
   try {
     const auth = await requireAuth(req);
     if (auth instanceof NextResponse) return auth;
@@ -72,7 +75,8 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: Request) { return observeCartRequest(req, handlePatch); }
+async function handlePatch(req: Request) {
   try {
     const auth = await requireAuth(req);
     if (auth instanceof NextResponse) return auth;
@@ -109,7 +113,8 @@ export async function PATCH(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: Request) { return observeCartRequest(req, handleDelete); }
+async function handleDelete(req: Request) {
   try {
     const auth = await requireAuth(req);
     if (auth instanceof NextResponse) return auth;

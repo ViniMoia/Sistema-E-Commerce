@@ -67,7 +67,8 @@ export default function HomeClient({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isCatalogDrawerOpen, setIsCatalogDrawerOpen] = useState(false);
-  const { addToCart, isLoading: isAddingToCart } = useCartStore();
+  const addToCart = useCartStore(state => state.addToCart);
+  const isAddingToCart = useCartStore(state => state.isMutating);
   const { setIsOpen } = useCart();
   const { toast } = useToast();
   const selectedVariants = selectedProduct?.productVariants ?? [];
@@ -140,7 +141,7 @@ export default function HomeClient({
 
   const handleBuy = async (e: React.MouseEvent, product?: Product) => {
     e.stopPropagation();
-    if (isAddingToCart) return;
+    if (useCartStore.getState().isMutating) return;
     const prod = product || selectedProduct;
     if (!prod) return;
     const variants = prod.productVariants || [];
@@ -174,11 +175,12 @@ export default function HomeClient({
       return;
     }
     try {
-      await addToCart(variant?.id ?? null, prod.id, 1);
+      const adding = addToCart(variant?.id ?? null, prod.id, 1);
       setIsOpen(true);
+      await adding;
     } catch (error) {
       toast({
-        title: "Não foi possível adicionar ao carrinho",
+        title: useCartStore.getState().hasUnresolvedMutation ? "Confira a alteração no carrinho" : "Não foi possível adicionar ao carrinho",
         description: error instanceof Error ? error.message : "Tente novamente.",
         variant: "destructive",
       });

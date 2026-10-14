@@ -16,13 +16,13 @@ export function CartDrawer() {
     fetchCart, 
     updateQuantity, 
     removeItem, 
-    isLoading, loadState, error
+    isLoading, isMutating, hasUnresolvedMutation, retryMutation, loadState, error
   } = useCartStore();
 
   // Fetch cart data when drawer is opened
   useEffect(() => {
-    if (isOpen) {
-      void fetchCart().catch(() => {});
+    if (isOpen && !useCartStore.getState().isMutating) {
+      void fetchCart({ maxAgeMs: 5000 }).catch(() => {});
     }
   }, [isOpen, fetchCart]);
 
@@ -35,7 +35,7 @@ export function CartDrawer() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent 
 
-        className="w-full sm:max-w-lg bg-neutral-900/90 backdrop-blur-xl border-l border-white/10 text-white flex flex-col p-0"
+        className="w-full sm:max-w-lg bg-neutral-900/90 backdrop-blur-xl border-l border-white/10 text-white flex flex-col p-0 data-[state=open]:duration-150 data-[state=closed]:duration-150 motion-reduce:animate-none"
       >
         <SheetHeader className="shrink-0 p-6 border-b border-white/10 flex flex-row justify-between items-center space-y-0">
           <SheetTitle className="text-white flex items-center gap-2 text-xl font-medium tracking-tight">
@@ -48,6 +48,12 @@ export function CartDrawer() {
           </span>
         </SheetHeader>
 
+        {isMutating && <p role="status" className="px-6 pt-3 text-sm">Atualizando carrinho...</p>}
+        {hasUnresolvedMutation && !isMutating && <div role="alert" className="px-6 pt-3 text-sm">
+          <p>A alteração ainda precisa ser confirmada. Confira o resultado antes de continuar.</p>
+          <button type="button" className="underline" onClick={() => void retryMutation().catch(() => {})}>Conferir alteração</button>
+        </div>}
+
         <ScrollArea className="min-h-0 flex-1 p-6">
           {loadState === 'error' ? <div role="alert"><p>{error}</p><button onClick={() => void fetchCart().catch(() => {})}>Tentar novamente</button></div>
           : loadState === 'guest' ? <p>Entre na sua conta para acessar o carrinho.</p>
@@ -56,7 +62,7 @@ export function CartDrawer() {
               <Loader2 className="w-10 h-10 animate-spin text-neutral-500" />
               <p className="text-neutral-400 font-light">Carregando carrinho...</p>
             </div>
-          ) : items.length === 0 ? (
+          ) : items.length === 0 && !isMutating ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-70 mt-32">
               <ShoppingCart className="w-16 h-16 text-neutral-500" />
               <p className="text-neutral-400 font-light">Seu carrinho está vazio</p>
@@ -69,7 +75,7 @@ export function CartDrawer() {
                   item={item} 
                   onRemove={id => { void removeItem(id).catch(() => {}); }}
                   onUpdateQuantity={(id, quantity) => { void updateQuantity(id, quantity).catch(() => {}); }}
-                  isLoading={isLoading}
+                  isLoading={isMutating || hasUnresolvedMutation}
                 />
               ))}
             </div>
@@ -82,7 +88,10 @@ export function CartDrawer() {
             <CartSummary 
               subtotal={subtotal} 
               total={total} 
+              disabled={isMutating || hasUnresolvedMutation}
               onCheckout={() => {
+                const state = useCartStore.getState();
+                if (state.isMutating || state.hasUnresolvedMutation || !state.cart) return;
                 setIsOpen(false);
                 // Checkout starts from the persisted cart/session. A document
                 // navigation also avoids racing an in-flight storefront RSC

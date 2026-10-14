@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useLayoutEffect, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useCartStore } from '@/store/cart.store';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const CartDrawer = dynamic(() => import("@/components/cart/CartDrawer").then(mod => mod.CartDrawer), {
   ssr: false,
@@ -18,34 +18,36 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children, lojaID, userID }: { children: React.ReactNode; lojaID: string; userID: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
+  const pathname = usePathname();
+  const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/');
   useLayoutEffect(() => { useCartStore.getState().setContext({ lojaID, userID }); }, [lojaID, userID]);
   useEffect(() => {
+    if (isAdmin) { setIsOpen(false); return; }
     const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('commerce-cart-v1') : null;
     const refresh = () => {
       void useCartStore.getState().fetchCart().catch(() => {});
-      // Checkout adds its recovery intent to the URL while the draft is open.
-      // Refreshing the route after that URL change can remount the page and
-      // discard its transient fields. The cart read still checks identity and
-      // revisions; checkout revalidates the purchase on the server at submit.
-      if (window.location.pathname !== '/checkout') router.refresh();
+      // Cart invalidation must not refresh/remount an unrelated route or draft.
     };
     const publish = () => channel?.postMessage({ type: 'invalidate' });
-    const focus = () => { if (!document.hidden) refresh(); };
+    const focus = () => {
+      // The store joins concurrent reads. Do not suppress a later focus event
+      // after completion: it may represent a real session/cart change.
+      if (!document.hidden) refresh();
+    };
     if (channel) channel.onmessage = refresh;
     window.addEventListener('commerce-cart-changed', publish);
     window.addEventListener('focus', focus);
     window.addEventListener('pageshow', focus);
     document.addEventListener('visibilitychange', focus);
-    refresh();
+    focus();
     return () => { channel?.close(); window.removeEventListener('commerce-cart-changed', publish);
       window.removeEventListener('focus', focus); window.removeEventListener('pageshow', focus); document.removeEventListener('visibilitychange', focus); };
-  }, [lojaID, userID, router]);
+  }, [lojaID, userID, isAdmin]);
 
   return (
     <CartContext.Provider value={{ isOpen, setIsOpen }}>
       {children}
-      <CartDrawer />
+      {!isAdmin && <CartDrawer />}
     </CartContext.Provider>
   );
 }

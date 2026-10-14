@@ -12,6 +12,7 @@ interface CacheEntry<T> {
 }
 
 const memoryCache = new Map<string, CacheEntry<any>>();
+const pendingCache = new Map<string, { lojaID: string; resource: string; promise: Promise<unknown> }>();
 
 // Limpeza periódica de entradas expiradas
 if (typeof setInterval !== "undefined") {
@@ -58,6 +59,7 @@ export const tenantCache = {
     ttlMs = 60000
   ): void {
     const key = buildTenantCacheKey(lojaID, resource, identifier);
+    pendingCache.delete(key);
     memoryCache.set(key, {
       value,
       expiresAt: Date.now() + ttlMs,
@@ -69,12 +71,16 @@ export const tenantCache = {
   del(lojaID: string, resource: string, identifier: string): void {
     const key = buildTenantCacheKey(lojaID, resource, identifier);
     memoryCache.delete(key);
+    pendingCache.delete(key);
   },
 
   /**
    * Invalida todas as entradas de cache de um tenant específico ou recurso.
    */
   invalidateTenant(lojaID: string, resource?: string): void {
+    for (const [key, entry] of pendingCache) {
+      if (entry.lojaID === lojaID && (!resource || entry.resource === resource)) pendingCache.delete(key);
+    }
     for (const [key, entry] of memoryCache.entries()) {
       if (entry.lojaID === lojaID) {
         if (!resource || entry.resource === resource) {
@@ -100,14 +106,24 @@ export const tenantCache = {
       return cached;
     }
 
-    const fresh = await factory();
-    if (fresh !== null && fresh !== undefined) {
-      tenantCache.set(lojaID, resource, identifier, fresh, ttlMs);
+    const pending = pendingCache.get(key);
+    if (pending) return pending.promise as Promise<T>;
+    const entry = { lojaID, resource, promise: Promise.resolve().then(factory) };
+    pendingCache.set(key, entry);
+    try {
+      const fresh = await entry.promise;
+      // An invalidation or explicit set during computation fences this result.
+      if (pendingCache.get(key) === entry && fresh !== null && fresh !== undefined) {
+        tenantCache.set(lojaID, resource, identifier, fresh, ttlMs);
+      }
+      return fresh;
+    } finally {
+      if (pendingCache.get(key) === entry) pendingCache.delete(key);
     }
-    return fresh;
   },
 
   clear(): void {
     memoryCache.clear();
+    pendingCache.clear();
   },
 };

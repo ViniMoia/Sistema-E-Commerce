@@ -3,6 +3,9 @@ import { getCurrentUser } from "@/lib/session";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
+import { cache } from 'react';
+
+const getStoreName = cache((lojaID: string) => prisma.loja.findUnique({ where: { id: lojaID }, select: { name: true } }));
 
 export async function generateMetadata(): Promise<Metadata> {
   const user = await getCurrentUser();
@@ -12,10 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
-  const loja = await prisma.loja.findUnique({
-    where: { id: user.lojaID },
-    select: { name: true },
-  });
+  const loja = await getStoreName(user.lojaID);
 
   const name = loja?.name || "E-Commerce";
 
@@ -40,10 +40,7 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const loja = await prisma.loja.findUnique({
-    where: { id: user.lojaID },
-    select: { name: true },
-  });
+  const loja = await getStoreName(user.lojaID);
   const lojaName = loja?.name || "Admin";
 
   const initials = user.name
