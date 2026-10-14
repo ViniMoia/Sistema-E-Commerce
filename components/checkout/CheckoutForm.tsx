@@ -55,6 +55,7 @@ export interface CheckoutFormProps {
   cartID?: string
   cartVersion?: number
   sourcePending?: boolean
+  sourceUnavailable?: boolean
   items?: CartItem[]
   onOrderCreated: (result: CheckoutResult) => void
 }
@@ -69,6 +70,7 @@ export function CheckoutForm({
   cartID,
   cartVersion,
   sourcePending = false,
+  sourceUnavailable = false,
   items = [],
   onOrderCreated,
 }: CheckoutFormProps) {
@@ -161,6 +163,9 @@ export function CheckoutForm({
     }
     return selectedFreight ? selectedFreight.price : 0
   }, [formData.deliveryType, selectedFreight])
+
+  const deliveryQuoteMissing = formData.deliveryType === 'DELIVERY' &&
+    (freightState !== 'ready' || !selectedFreight?.freightQuoteToken)
 
   const subtotalAfterPoints = useMemo(
     () => Math.max(0, subtotal - pointsDiscountValue),
@@ -415,7 +420,7 @@ export function CheckoutForm({
   }
 
   const handleSubmit = async () => {
-    if (sourcePending) { setError('Aguarde a atualização do carrinho.'); return }
+    if (sourcePending || sourceUnavailable) { setError('Aguarde a atualização do carrinho.'); return }
     if (pointsPending) { setError('Aguarde a conferência dos pontos antes de revisar a compra.'); return }
     if (!paymentCapabilities?.methods.includes(paymentMethod)) { setError('Método de pagamento indisponível.'); return }
     if (submitting.current || !validateStep1() || !validateStep2() || !validateStep3()) return
@@ -533,8 +538,10 @@ export function CheckoutForm({
     }
   }
 
+  // Background cart reads must not steal focus or discard the first keystroke.
+  // Purchase review stays blocked until the authoritative cart is ready.
   return (
-    <fieldset disabled={isLoading || sourcePending} className="w-full min-w-0">
+    <fieldset disabled={isLoading || sourceUnavailable} className="w-full min-w-0">
     {sourcePending && <p role="status">Atualizando carrinho...</p>}
       {/* Grid de 2 Colunas Canônico do Redesign Continental */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -752,12 +759,19 @@ export function CheckoutForm({
                     <p>{freightError || (freightState === 'expired' ? 'A cotação expirou.' : 'Não há opção de entrega disponível para estes dados.')}</p>
                     <button type="button" onClick={() => setFreightRefresh(value => value + 1)}>Calcular frete novamente</button>
                   </div>}
+                  <div className="space-y-1 pt-2">
+                    <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
+                      Modalidade de frete
+                    </h3>
+                    <p className="text-xs text-catalog-muted">
+                      {freightOptions.length > 0
+                        ? 'Escolha abaixo o serviço de entrega, comparando preço e prazo.'
+                        : 'Após calcular o frete, os serviços disponíveis para seu CEP e produtos aparecerão aqui.'}
+                    </p>
+                  </div>
                   {/* Opções de Frete Calculadas */}
                   {freightOptions.length > 0 && (
                     <div className="space-y-2.5 pt-2">
-                      <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
-                        Opções de Envio Disponíveis
-                      </label>
                       <div className="space-y-2">
                         {freightOptions.map((opt, idx) => {
                           const isSelected =
@@ -768,8 +782,9 @@ export function CheckoutForm({
                             <button
                               type="button"
                               key={`${opt.providerId}_${opt.serviceCode}_${idx}`}
+                              aria-pressed={isSelected}
                               onClick={() => setSelectedFreight(opt)}
-                              className={`p-4 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
+                              className={`w-full gap-3 p-4 rounded-xl border transition-all flex items-center justify-between text-left cursor-pointer ${
                                 isSelected
                                   ? 'border-2 border-catalog-gold bg-catalog-gold/20 shadow-[0_0_15px_rgba(240,180,14,0.2)]'
                                   : 'border-catalog-gold/30 bg-[#0B132B]/60 hover:border-catalog-gold/50'
@@ -1176,7 +1191,11 @@ export function CheckoutForm({
                   Frete ({formData.deliveryType === 'PICKUP' ? 'Retirada' : selectedFreight?.serviceName || 'Envio'})
                 </span>
                 <span className="font-semibold text-white">
-                  {calculatedFreightCost === 0 ? (
+                  {deliveryQuoteMissing ? (
+                    <span className="text-catalog-muted">{isFetchingFreight ? 'Calculando...' : 'A calcular'}</span>
+                  ) : formData.deliveryType === 'NONE' ? (
+                    'A combinar'
+                  ) : calculatedFreightCost === 0 ? (
                     <span className="text-emerald-400 font-bold uppercase">Grátis</span>
                   ) : (
                     `R$ ${calculatedFreightCost.toFixed(2)}`
@@ -1188,16 +1207,18 @@ export function CheckoutForm({
               <div className="pt-3 border-t border-catalog-gold/30 flex justify-between items-baseline">
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold block font-bold">
-                    Total do Pedido
+                    {deliveryQuoteMissing ? 'Subtotal sem frete' : 'Total do Pedido'}
                   </span>
-                  {paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail && selectedInstallmentDetail.count > 1 && (
+                  {!deliveryQuoteMissing && paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail && selectedInstallmentDetail.count > 1 && (
                     <span className="text-[11px] text-catalog-muted font-mono block">
                       {selectedInstallmentDetail.label}
                     </span>
                   )}
                 </div>
                 <span className="text-2xl sm:text-3xl font-bold font-mono text-catalog-gold tracking-tight">
-                  {paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail?.hasInterest
+                  {deliveryQuoteMissing
+                    ? `R$ ${subtotalAfterPoints.toFixed(2)}`
+                    : paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail?.hasInterest
                     ? `R$ ${selectedInstallmentDetail.totalWithInterest.toFixed(2)}`
                     : `R$ ${grandTotal.toFixed(2)}`}
                 </span>
@@ -1210,8 +1231,8 @@ export function CheckoutForm({
                 <button
                   type="button"
                   onClick={nextStep}
-                  disabled={isFetchingFreight || isFetchingCep}
-                  className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-[1.01]"
+                  disabled={isFetchingFreight || isFetchingCep || (step === 2 && deliveryQuoteMissing)}
+                  className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {(isFetchingFreight || isFetchingCep) ? (
                     <Spinner className="h-4 w-4" />
@@ -1238,7 +1259,7 @@ export function CheckoutForm({
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isLoading || sourcePending || pointsPending || !selectedPaymentAvailable}
+                  disabled={isLoading || sourcePending || sourceUnavailable || pointsPending || !selectedPaymentAvailable || deliveryQuoteMissing}
                   className="btn-shimmer w-full py-4 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-sm tracking-widest uppercase shadow-[0_0_25px_rgba(240,180,14,0.4)] border border-[#F5BD1E]/40 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-[1.01]"
                 >
                   {isLoading ? (
@@ -1254,6 +1275,11 @@ export function CheckoutForm({
                 </button>
                 </div>
               )}
+
+              {step > 1 && deliveryQuoteMissing && <p role="status" className="text-xs text-catalog-muted text-center">
+                Calcule o frete e selecione uma modalidade válida para continuar.
+                {step === 3 && ' Retorne à etapa de entrega para calcular novamente.'}
+              </p>}
 
               {/* Botão Voltar Etapa */}
               {step > 1 && (

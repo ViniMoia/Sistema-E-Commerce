@@ -16,6 +16,7 @@ import { getCurrentUser } from '@/lib/session';
 import { sanitizeUser } from '@/lib/utils/dto-sanitizer';
 import { createOrder } from '@/tests/setup/checkout-fixture';
 import type { PaymentGateway } from '@/types/payment-gateway.types';
+import { getPaymentConfig } from '@/lib/config/payment.config';
 // Only the in-process freight boundary uses injected identity/geography.
 // The isolated Next server keeps real session/tenant/cart/checkout handlers.
 vi.mock('@/lib/tenant', () => ({ getLojaFromHeaders: vi.fn() }));
@@ -30,6 +31,10 @@ let freightAvailable = false;
 let confirmationHold: Promise<void> | null = null;
 let releaseConfirmation = () => {};
 let heldConfirmationRequests = 0;
+let cardEntryFixture = false;
+let cartReadHold: Promise<void> | null = null;
+let releaseCartRead = () => {};
+let heldCartReads = 0;
 const cepRequests: string[] = [];
 const freightRequests: Record<string, unknown>[] = [];
 let releaseA: () => void, releaseB: () => void;
@@ -55,6 +60,13 @@ beforeAll(async () => {
     return freight.calculate(input);
   });
   browser = await isolatedBrowser({ host: loja.slug + '.plataforma.com', intercept: async ({ url, body, method }) => {
+    if (cardEntryFixture && url === '/api/payment/capabilities') return { body: {
+      methods: ['CREDIT_CARD'], maximumInstallments: 12, config: getPaymentConfig(),
+    } };
+    if (url === '/api/cart' && method === 'GET' && cartReadHold) {
+      heldCartReads++;
+      await cartReadHold;
+    }
     if (url === '/api/cart' && method === 'GET' && cartUnavailable) return { status: 503, body: { error: 'Fixture cart temporarily unavailable' } };
     if (url.startsWith('/api/checkout/intents/') && method === 'GET' && confirmationHold) {
       heldConfirmationRequests++;
@@ -86,7 +98,7 @@ beforeAll(async () => {
     };
   ` });
 }, 120000);
-afterAll(async () => { releaseA(); releaseB(); releaseConfirmation(); if (browser) await browser.close(); await cleanupFixtureStores(); await prisma.$disconnect(); }, 30000);
+afterAll(async () => { releaseA(); releaseB(); releaseConfirmation(); releaseCartRead(); if (browser) await browser.close(); await cleanupFixtureStores(); await prisma.$disconnect(); }, 30000);
 const text = (value: string) => 'document.body.innerText.toLocaleLowerCase().includes(' + JSON.stringify(value.toLocaleLowerCase()) + ')';
 async function customer() {
   await browser.waitFor('!!document.querySelector(\'input[name="name"]\') && !document.querySelector("fieldset").disabled');
@@ -95,18 +107,60 @@ async function customer() {
   await browser.click('Avançar para Entrega');
 }
 describe('WF-15: real Next/React browser, persisted source, financial recovery and delayed transport', () => {
+  it('accepts the first card click and typing while a focus refresh waits for the cart, but blocks purchase review', async () => {
+    cardEntryFixture = true;
+    try {
+      await browser.navigate('/checkout'); await customer();
+      await browser.click('Retirar na Loja'); await browser.click('Avançar para Pagamento');
+      await browser.waitFor('!!document.querySelector(\'input[placeholder="0000 0000 0000 0000"]\')');
+      await browser.waitFor('!document.querySelector("fieldset").disabled');
+      const reviewButton = '[...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta"))';
+      await browser.waitFor(`!!${reviewButton} && !(${reviewButton}).disabled`);
+      cartReadHold = new Promise<void>(resolve => { releaseCartRead = resolve; }); heldCartReads = 0;
+      await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+      await expect.poll(() => heldCartReads).toBe(1);
+      await browser.waitFor(text('Atualizando carrinho'));
+      expect(await browser.evaluate(`(${reviewButton}).disabled`)).toBe(true);
+      const fields = [
+        ['0000 0000 0000 0000', '4111'], ['NOME COMO NO CARTÃO', 'CLIENTE TESTE'], ['MM/AA', '12/30'], ['123', '123'],
+      ];
+      for (const [placeholder, value] of fields) {
+        const selector = JSON.stringify(`input[placeholder="${placeholder}"]`);
+        expect(await browser.evaluate(`document.querySelector(${selector}).matches(':disabled')`)).toBe(false);
+        const point = await browser.evaluate(`(() => { const e=document.querySelector(${selector});
+          e.scrollIntoView({block:'center',behavior:'instant'}); const r=e.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`) as { x: number; y: number };
+        await browser.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
+        await browser.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 });
+        expect(await browser.evaluate(`document.activeElement === document.querySelector(${selector})`)).toBe(true);
+        await browser.send('Input.insertText', { text: value });
+        expect(await browser.evaluate(`document.querySelector(${selector}).value`)).toBe(value);
+      }
+      // No timer or successful network response was needed for any of the inputs.
+      expect(await browser.evaluate(`(${reviewButton}).disabled`)).toBe(true);
+      cartReadHold = null; releaseCartRead();
+      await browser.waitFor('!' + text('Atualizando carrinho'));
+      await browser.waitFor(`!(${reviewButton}).disabled`);
+      for (const [placeholder, value] of fields) {
+        expect(await browser.evaluate(`document.querySelector(${JSON.stringify(`input[placeholder="${placeholder}"]`)}).value`)).toBe(value);
+      }
+    } finally { cartReadHold = null; releaseCartRead(); cardEntryFixture = false; }
+  }, 120000);
   it('keeps the draft on refresh, buys without storage, preserves a new cart and observes refund after PAID', async () => {
     await browser.navigate('/checkout'); await customer();
     await browser.click('Retornar para a etapa anterior');
+    cartReadHold = new Promise<void>(resolve => { releaseCartRead = resolve; }); heldCartReads = 0;
     await browser.evaluate('window.dispatchEvent(new Event("focus"))');
-    await browser.waitFor('!!document.querySelector(\'input[name="name"]\') && !document.querySelector("fieldset").disabled');
+    await expect.poll(() => heldCartReads).toBe(1);
+    await browser.waitFor(text('Atualizando carrinho'));
+    cartReadHold = null; releaseCartRead();
+    await browser.waitFor('!' + text('Atualizando carrinho'));
     expect(await browser.evaluate('document.querySelector(\'input[name="name"]\').value')).toBe('Cliente preenchido');
     cartUnavailable = true; await browser.evaluate('window.dispatchEvent(new Event("focus"))');
     await browser.waitFor(text('Não foi possível carregar o carrinho. Tente novamente.'));
     expect(await browser.evaluate('document.querySelector(\'input[name="name"]\').value')).toBe('Cliente preenchido');
     expect(await browser.evaluate('document.querySelector("fieldset").disabled')).toBe(true);
     cartUnavailable = false; await browser.click('Tentar atualizar o carrinho');
-    await browser.waitFor('!!document.querySelector("fieldset") && !document.querySelector("fieldset").disabled');
+    await browser.waitFor('!!document.querySelector("fieldset") && !document.querySelector("fieldset").disabled && !' + text('Atualizando carrinho'));
     await browser.click('Avançar para Entrega'); await browser.click('Retirar na Loja'); await browser.click('Avançar para Pagamento');
     await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta")&&!e.disabled)');
     await browser.click('Revisar proposta de compra'); await browser.waitFor(text('Revise a proposta antes de confirmar'), 45000);
@@ -203,9 +257,11 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     expect(freightRequests.at(-1)).toMatchObject({ destinationCep: '02002000', items: [{ productId: productID, variantId: variantID, quantity: 2 }] });
     expect(JSON.stringify(freightRequests.at(-1))).not.toContain('price');
     await browser.input('address.number', '1');
-    await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Avançar para Pagamento")&&!e.disabled)');
-    await browser.click('Avançar para Pagamento');
-    await browser.waitFor(text('Por favor, selecione uma modalidade de frete.'));
+    await browser.waitFor(text('Não foi possível autorizar esta cotação de frete.'));
+    expect(await browser.evaluate('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Avançar para Pagamento")&&e.disabled)')).toBe(true);
+    expect(await browser.evaluate(text('Subtotal sem frete'))).toBe(true);
+    expect(await browser.evaluate(text('A calcular'))).toBe(true);
+    expect(await browser.evaluate('[...document.querySelectorAll("span")].some(e=>e.textContent.trim()==="Grátis")')).toBe(false);
     expect(await browser.evaluate(text('Etapa 02/03'))).toBe(true);
   }, 120000);
   it('selects a real persisted signed freight quote and completes DELIVERY through the canonical HTTP checkout', async () => {
@@ -215,6 +271,7 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     await browser.input('address.number', '42');
     await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Entrega Local (Cidade B)"))');
     await browser.click('Entrega Local (Cidade B)'); await browser.click('Avançar para Pagamento');
+    expect(await browser.evaluate(text('Subtotal sem frete'))).toBe(false);
     await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta")&&!e.disabled)');
     await browser.click('Revisar proposta'); await browser.waitFor(text('Revise a proposta antes de confirmar'));
     expect(await browser.evaluate(text('Entrega: Rua B, 42'))).toBe(true);

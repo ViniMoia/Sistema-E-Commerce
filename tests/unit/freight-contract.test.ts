@@ -13,8 +13,8 @@ describe('WF-11: signed v2 contract and destination boundary', () => {
     expect(verifyFreightQuote(token)).toEqual({ ...data, version: 2 });
     for (const invalid of [token + '.extra', token + '.', token.slice(0, -5) + 'wrong', 'a'.repeat(2049), 'legacy.signature']) expect(() => verifyFreightQuote(invalid)).toThrow();
   });
-  it('production cannot use the development secret as a fallback', () => {
-    vi.stubEnv('NODE_ENV', 'production'); vi.stubEnv('FREIGHT_QUOTE_SECRET', '');
+  it.each(['', 'too-short'])('production rejects missing or short signing secrets: %j', key => {
+    vi.stubEnv('NODE_ENV', 'production'); vi.stubEnv('FREIGHT_QUOTE_SECRET', key);
     expect(() => signFreightQuote(payload())).toThrow('FREIGHT_QUOTE_SECRET_MISSING');
   });
   it('resolves exact CEP/city/UF/IBGE from the server response with timeout/no-store', async () => {

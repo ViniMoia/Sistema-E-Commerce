@@ -171,6 +171,8 @@ export default function CheckoutPage() {
             <CheckoutForm
               key={loja.id + ':' + (context?.userID ?? 'guest') + ':' + cart?.id}
               sourcePending={isLoading || loadState !== 'ready'}
+              sourceUnavailable={loadState === 'error' || !cart || !context?.userID ||
+                cart.lojaID !== loja.id || cart.lojaID !== context.lojaID || cart.userID !== context.userID}
         cartID={cart?.id}
         cartVersion={cart?.version}
               lojaID={loja.id}
