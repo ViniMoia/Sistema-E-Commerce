@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Trabalho liberado para Vanderlei em 14/10:** catálogo, filtros, Admin/variantes, frete, regressões do checkout e revisão das evidências financeiras já podem avançar. Preparação e ensaios isolados de infraestrutura também podem continuar. Ordem de execução, entregáveis e dependências na [seção 26](#26-trabalho-que-vanderlei-já-pode-executar--14102026). Isso não libera produção nem encerra a implementação de débito.
+
 **Carga de catálogo em 14/10, 16:58 UTC:** homologação agora possui 519 produtos, 520 variantes, 18 marcas e 10 categorias; produto e vínculos dos ensaios preservados. Quatro produtos da origem permanecem fora da carga por divergência de estoque. Ver [seção 25](#25-carga-do-catálogo-para-desbloquear-vanderlei--14102026). Main somente leitura; estoque de teste não representa abertura de produção.
 
 **Regra de continuidade em 14/10:** antes de solicitar decisões/configurações, consultar a main e reaproveitar o que já existe. Auditoria inicial das prioridades para Vanderlei e alinhamento efetivo do frete na [seção 24](#24-reaproveitamento-da-main-antes-de-novas-decisões--14102026). A main e seu banco permanecem somente leitura.
@@ -782,3 +784,32 @@ Essas quatro pendências não impedem o uso dos 518 produtos consistentes. Não 
 - Consulta independente posterior retornou `NO_NEW_RECORDS`, com os mesmos quatro produtos separados. Esse código informa ausência de novas inserções, não certifica futuras alterações de estoque ou edição comercial.
 
 Evidência compartilhável: [resultado da carga](../../../../../../trabalho_em_dupla/evidencias/L-CATALOGO-HOMOLOGACAO-2026-10-14.json). Snapshot, backup e hashes completos das tabelas protegidas ficam em `artifacts/main-hml-catalog/`, fora do Git. Para reproduzir o teste descartável, disponibilizar o snapshot por canal privado autorizado; não apontar o teste para main ou homologação. Não é necessário reaplicar a importação no Preview.
+
+## 26. Trabalho que Vanderlei já pode executar — 14/10/2026
+
+**Vanderlei está liberado para continuar as frentes abaixo.** A falta do catálogo deixou de ser bloqueio geral: a carga da seção 25 já foi aplicada ao banco de homologação. O código e as evidências dessa entrega foram publicados na `homologacao_teste` em `7b26b14db1d4f746d34fb4432657954ab53d17a7`; o alinhamento de frete da seção 24 foi publicado em `31f2d78`. Esta atualização é documental: não registra novos testes, não atesta CI/deploy dessas revisões e não altera bancos ou a main.
+
+### 26.1 Ordem sugerida e resultado esperado
+
+Primeiro, atualizar a cópia de `homologacao_teste`, conferir o commit efetivamente usado pelo Preview e o destino de homologação. Conferir a CI correspondente antes de usar seus resultados como aceite. Não reaplicar as cargas já concluídas. As conexões locais `.env`/`.env.local` identificadas na auditoria apontam para a origem; não usá-las implicitamente em testes que escrevem dados.
+
+| Prioridade / frente | O que pode fazer agora | Entrega esperada |
+|---|---|---|
+| **1 — V-01/V-05: catálogo e navegação** | Validar listagem, busca, filtros por marca/categoria, detalhes, imagens e navegação com os 519 produtos, 520 variantes, 18 marcas e 10 categorias disponíveis. | Registrar cenários, revisão testada, resultado e defeitos encontrados; a carga não equivale a aceite da interface. |
+| **2 — V-05: Admin e variantes** | Validar cadastro/edição, seleção de variantes, estoque e preservação de IDs/vínculos. Exercitar alterações em dados próprios de teste na homologação ou em banco descartável, preservando o produto e os registros dos ensaios #4/#5. | Evidências das regressões de Admin, incluindo produto sem variação, dimensões distintas e variante sem estoque; corrigir falhas na branch de homologação. |
+| **3 — V-04: frete** | Gerar novas cotações com pesos/medidas do catálogo e conferir seleção de serviço, preço/prazo e consistência entre proposta e checkout. Reutilizar CEP de origem `67140615`, matriz J&T e um dia adicional de preparação. Verificar retorno real de PAC/SEDEX e apresentação de indisponibilidade; habilitação dos Correios não comprova resposta válida da API. | Relatório por serviço/destino, com resultado ou erro observado. No destino do #5, conferir a composição atual de três dias para J&T; preservar o prazo histórico de dois dias do pedido. |
+| **4 — V-02/V-05/V-08: checkout e revisão financeira** | Retestar navegação, tradução do carrinho, foco/digitação nos campos e integração visual dos métodos já implementados. Revisar as evidências de compra #4/#5, e-mail e estorno integral #5, confrontando pontos, estoque, frete e efeitos únicos. | Parecer de revisão com cenários aceitos e lacunas. Usar testes isolados para regressão; não repetir compra, estorno ou processamento dos casos encerrados apenas para revisar a entrega. |
+| **5 — V-03/V-06/V-07/V-08: segurança e infraestrutura** | Continuar testes isolados de container, duas instâncias, consumidor, recuperação, logs e segurança. Reaproveitar os runbooks da main e conferir recursos/configurações externos existentes antes de propor novos valores. Preparar ajustes dos manifestos e procedimentos para o destino identificado. | Relatório técnico e configuração preparada para revisão, separando recursos comprovados de exemplos e pendências. Ativação do executor real, carga de produção e abertura comercial dependem dos itens abaixo. |
+
+As quatro divergências de estoque da seção 25 não impedem essas atividades com os produtos já importados. Não precisam ser decididas novamente para começar a validação do restante do catálogo. A main e seu banco continuam estritamente somente leitura; correções e dados de ensaio ficam nos ambientes autorizados de homologação/teste.
+
+### 26.2 Dependências que continuam com Leno ou com ambos
+
+| Dependência | Responsável / próximo resultado necessário | O que ainda depende dela |
+|---|---|---|
+| **Débito** | Leno: confirmar suporte do provedor/conta e entregar contrato, capacidades, estados, recuperação e testes. Não foi encontrada implementação na main. | Integração e homologação de débito por Vanderlei em V-02. Não bloqueia os métodos existentes nem as frentes da seção 26.1. |
+| **Banco e carga de produção** | Leno, com revisão de Vanderlei: identificar destino separado, inventário físico aprovado e procedimento de carga/migrations/backup/restore. Consultar recursos já existentes antes de pedir novas decisões. | Configuração definitiva de dados e abertura comercial. Estoque importado para homologação não é inventário de produção aprovado. |
+| **Operação permanente do consumidor** | Ambos: fechar limites, cadência, conexões, retomada, alertas e contenção de novas compras, preservando obrigações existentes. | Ativação e aceite do executor no destino real. Os ensaios isolados e a preparação de manifestos podem continuar. |
+| **Aceite financeiro e comercial restante** | Leno executa/consolida; Vanderlei revisa. Permanecem boleto, débito, revisão do PIX/#3, estorno parcelado e demais cenários ainda abertos no plano. | Encerramento dos gates e autorização de produção; o sucesso do #5 cobre somente o cenário documentado. |
+
+**Próxima entrega de Vanderlei:** devolver um parecer por frente da seção 26.1, indicando commit/ambiente, cenários executados, evidências, falhas e dependências concretas. Não é necessário aguardar débito ou a conciliação dos quatro produtos para iniciar esse trabalho. **WF-18/WF-19 continuam abertos e WF-20 não está comprovado; não há liberação de produção.**
