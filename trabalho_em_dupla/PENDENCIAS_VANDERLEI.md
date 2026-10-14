@@ -12,6 +12,8 @@ A base local já foi implementada e validada. O trabalho restante concentra-se n
 
 ## 1. Informações que Vanderlei precisa confirmar
 
+**Catálogo disponível em 14/10, 16:58 UTC:** a carga controlada de Leno adicionou 518 produtos/variantes, 18 marcas, 10 categorias e 471 vínculos. Total de homologação: **519 produtos e 520 variantes**, incluindo o produto dos ensaios preservado. Quatro produtos da origem ficaram separados por divergência de estoque, sem alteração na main. Ver seção 25 do replanejamento e [resultado da carga](evidencias/L-CATALOGO-HOMOLOGACAO-2026-10-14.json). Vanderlei já pode conferir catálogo, filtros, Admin e apresentação do frete com essa base; estoque importado é de teste, não abertura de produção. A anotação anterior de catálogo ainda não carregado é histórica.
+
 Estas definições permitem avançar na infraestrutura e nas integrações sem esperar a conclusão de todos os testes financeiros.
 
 - [ ] **Google Cloud:** projeto e número do projeto, região, responsáveis por IAM/billing e limite de custo. Não assumir que o projeto atualmente selecionado no CLI é o destino da loja.

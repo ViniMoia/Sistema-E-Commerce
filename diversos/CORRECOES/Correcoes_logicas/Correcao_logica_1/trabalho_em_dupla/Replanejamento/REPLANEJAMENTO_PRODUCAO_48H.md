@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Carga de catálogo em 14/10, 16:58 UTC:** homologação agora possui 519 produtos, 520 variantes, 18 marcas e 10 categorias; produto e vínculos dos ensaios preservados. Quatro produtos da origem permanecem fora da carga por divergência de estoque. Ver [seção 25](#25-carga-do-catálogo-para-desbloquear-vanderlei--14102026). Main somente leitura; estoque de teste não representa abertura de produção.
+
 **Regra de continuidade em 14/10:** antes de solicitar decisões/configurações, consultar a main e reaproveitar o que já existe. Auditoria inicial das prioridades para Vanderlei e alinhamento efetivo do frete na [seção 24](#24-reaproveitamento-da-main-antes-de-novas-decisões--14102026). A main e seu banco permanecem somente leitura.
 
 **Consolidação em 14/10/2026:** entregas de Leno e Vanderlei atualizadas na [seção 23](#23-consolidação-das-entregas-de-leno-e-vanderlei--14102026). Homologação conferida em `9d07510795f88420db1f654e4f6f07f590c8ecfd`, incluindo o pacote de Vanderlei `6f4fa75`. CI remota e status de deployment Vercel aprovados para ambas as revisões. Compra #4 em 12x, compra #5 em 1x com pontos/entrega e estorno integral do #5 concluídos nos recortes descritos. **Produção continua sem aceite.** Registros anteriores de publicação/CI/revisão pendentes são históricos quando superados pela seção 23; os demais critérios continuam exigidos. O prazo original não foi reiniciado.
@@ -740,3 +742,43 @@ Verificação em PostgreSQL descartável (`scripts/verify-main-hml-settings.mjs`
 4. **Débito — Leno:** a busca no contrato/adapter e na documentação de main não recuperou implementação. A lacuna é real; confirmar suporte do provedor e construir o contrato para Vanderlei integrar V-02. Não anunciar essa tarefa como configuração esquecida ou funcionalidade já herdada.
 
 Esta etapa reaproveita o que foi comprovado e delimita o que ainda precisa de trabalho técnico/consulta externa. Não solicita novas decisões comerciais, não aprova gates e não declara concluída a carga de catálogo nem a infraestrutura final.
+
+## 25. Carga do catálogo para desbloquear Vanderlei — 14/10/2026
+
+Em continuidade à autorização de reaproveitar a origem na homologação, executada carga **somente no banco de homologação**, encerrada às **16:58:14 UTC / 13:58:14 de Brasília**. A branch main e seu banco foram usados exclusivamente para consulta; nenhuma migration, atualização ou saneamento foi aplicado na origem.
+
+### Resultado e uso imediato
+
+| Registro | Adicionado | Total após carga |
+|---|---:|---:|
+| Produtos | 518 | 519 |
+| Variantes | 518 | 520 |
+| Marcas | 18 | 18 |
+| Categorias | 10 | 10 |
+| Vínculos produto/categoria | 471 | 471 |
+
+O aspirador automotivo dos ensaios (`a26fdbc1-d8c3-4173-b114-f759654b9ca4`) e suas duas variantes foram preservados integralmente: IDs, atributos, estoque, versões e vínculos. Os registros novos mantêm IDs e atributos comerciais da origem, com loja/autor remapeados para a loja e o administrador já existentes na homologação; não foram copiados usuários da origem. Variantes neutras foram normalizadas pelo helper `lib/product-variants.ts` para Único/Padrão. Não houve importação de pedidos, clientes, carteiras ou movimentos financeiros.
+
+**Vanderlei pode prosseguir com V-01/V-04/V-05:** conferir catálogo, marcas/categorias/filtros, edição no Admin, variantes e cotação por peso/medidas dos produtos. Recarregar a interface para obter a base atual. Os preços/estoques são a base de testes herdada, não uma contagem física aprovada para venda real. Débito, infraestrutura externa e os demais gates continuam separados.
+
+### Produtos separados para conciliação
+
+| Produto na origem | Estoque geral | Soma das variantes | Tratamento |
+|---|---:|---:|---|
+| Camisa Branca | 16 | 30 | Não importado; saldo não foi inferido. |
+| Calça Jeans | 13 | 30 | Não importado; saldo não foi inferido. |
+| Aspirador de Pó | 1 | 10 | Não importado; é distinto do aspirador automotivo dos ensaios. |
+| Camisa Preta | 8 | 30 | Não importado; saldo não foi inferido. |
+
+Essas quatro pendências não impedem o uso dos 518 produtos consistentes. Não ajustar main, substituir o estoque geral pela soma ou distribuir a diferença arbitrariamente. Qualquer conciliação posterior terá seu próprio diagnóstico e auditoria. A carga integral dos 522 produtos da origem não está declarada concluída.
+
+### Garantias e validação
+
+- `scripts/import-main-hml-catalog.mjs`: somente leitura por padrão; leitura da origem em transação `READ ONLY`/`REPEATABLE READ`, com identidade confirmada. Destino fixado por host/loja, conta Sandbox e administrador local; sem carregar `.env` implicitamente.
+- Aplicação exige `--apply` e `CATALOG_SOURCE_SHA256` igual ao hash da prévia revisada: `2df9de4b044f267d1923dbbb9da1925a746fce9ce15b5d610532ea6998dc5f72`. Não executa migrations nem processamento financeiro.
+- Transação serializável com bloqueio do catálogo e linhas de produtos antes da leitura/reconciliação; backup privado obrigatório antes da primeira escrita. Somente inserções: registros existentes nunca são sobrescritos. Auditoria única `MAIN_CATALOG_IMPORT`, com origem, hash, quantidades e exclusões.
+- Conferidos contagens, campos comerciais/variantes, vínculos e igualdade dos registros preexistentes antes do commit. Comparação externa antes/depois das **16 tabelas** de pedidos/histórico, pagamentos/operações/fatos/filas, fidelidade/lotes/alocações, reservas e carrinhos retornou **zero diferenças**.
+- `scripts/verify-main-hml-catalog.mjs <snapshot-privado>` passou em PostgreSQL descartável: combinações duplicadas recusadas, prévia sem escrita, backup obrigatório/falho, rollback integral após falha de auditoria, remapeamento do autor, preservação de produto/variante/carrinho existente, exclusão das divergências, escopo incorreto recusado e reaplicação sem duplicidade. Sintaxe dos scripts também validada.
+- Consulta independente posterior retornou `NO_NEW_RECORDS`, com os mesmos quatro produtos separados. Esse código informa ausência de novas inserções, não certifica futuras alterações de estoque ou edição comercial.
+
+Evidência compartilhável: [resultado da carga](../../../../../../trabalho_em_dupla/evidencias/L-CATALOGO-HOMOLOGACAO-2026-10-14.json). Snapshot, backup e hashes completos das tabelas protegidas ficam em `artifacts/main-hml-catalog/`, fora do Git. Para reproduzir o teste descartável, disponibilizar o snapshot por canal privado autorizado; não apontar o teste para main ou homologação. Não é necessário reaplicar a importação no Preview.

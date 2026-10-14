@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-14T16:58:14.336Z",
+  "scope": "homologacao_teste",
+  "sourceMainReadOnly": true,
+  "code": "IMPORTED_AND_VERIFIED",
+  "changed": true,
+  "sourceHash": "2df9de4b044f267d1923dbbb9da1925a746fce9ce15b5d610532ea6998dc5f72",
+  "products": 518,
+  "variants": 518,
+  "brands": 18,
+  "categories": 10,
+  "categoryLinks": 471,
+  "preservedExistingProducts": 1,
+  "deferred": [
+    {
+      "id": "6178ba96-b383-4e50-be1d-93a506912011",
+      "name": "Camisa Branca ",
+      "stock": 16,
+      "variantSum": 30
+    },
+    {
+      "id": "622731a7-0158-486c-9626-0a739b3ddb91",
+      "name": "Calça Jeans",
+      "stock": 13,
+      "variantSum": 30
+    },
+    {
+      "id": "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+      "name": "Aspirador de Pó",
+      "stock": 1,
+      "variantSum": 10
+    },
+    {
+      "id": "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13",
+      "name": "Camisa Preta",
+      "stock": 8,
+      "variantSum": 30
+    }
+  ],
+  "totalProducts": 519,
+  "totalVariants": 520,
+  "protectedTableCount": 16,
+  "protectedTablesChanged": [],
+  "subsequentRead": "NO_NEW_RECORDS",
+  "tests": "Disposable PostgreSQL verification passed",
+  "privateArtifacts": "artifacts/main-hml-catalog/",
+  "productionOpeningStockApproved": false
+}
