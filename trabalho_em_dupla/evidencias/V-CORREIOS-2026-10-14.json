@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-14T18:50:23.903Z",
+  "scope": "direct-public-provider-probe",
+  "origin": "67140615",
+  "syntheticPackage": true,
+  "credentialsProvided": false,
+  "previewOrCheckoutValidated": false,
+  "results": [
+    {
+      "destination": "66010000",
+      "servicesRequested": [
+        "04014",
+        "04510"
+      ],
+      "transport": [
+        {
+          "code": "AbortError",
+          "durationMs": 3504
+        }
+      ],
+      "options": [],
+      "error": "CORREIOS_UNAVAILABLE"
+    },
+    {
+      "destination": "01001000",
+      "servicesRequested": [
+        "04014",
+        "04510"
+      ],
+      "transport": [
+        {
+          "code": "AbortError",
+          "durationMs": 3501
+        }
+      ],
+      "options": [],
+      "error": "CORREIOS_UNAVAILABLE"
+    }
+  ]
+}

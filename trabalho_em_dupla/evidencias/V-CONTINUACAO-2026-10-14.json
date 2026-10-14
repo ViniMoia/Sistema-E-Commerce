@@ -1,0 +1,221 @@
+{
+  "generatedAt": "2026-10-14T18:57:08.162Z",
+  "baseline": "576ad893527a38d947f3cbbc2db0d0126fd72e5c",
+  "scope": "Vanderlei local continuation",
+  "files": [
+    {
+      "file": "components/catalog/ProductFreightCalculator.tsx",
+      "sha256": "5a909cb1267fb15eba9b43ef41ea4378d6bbfa67077294b93edb5485a2fa5d78"
+    },
+    {
+      "file": "components/home/HomeClient.tsx",
+      "sha256": "a9b6f6f5830ab3081945712402b0e356fb1a993ab0ec71b1f870752746893bbc"
+    },
+    {
+      "file": "hooks/useProductFilters.ts",
+      "sha256": "cf3f0b743c66a5af8ac79728bb141c02d37a240452fa0b3e85bb05bbe017cf9c"
+    },
+    {
+      "file": "scripts/import-main-hml-catalog.mjs",
+      "sha256": "77195ae94b9ad21300cb9b647c371e563da22b321834653d45ca9cd2a79ba426"
+    },
+    {
+      "file": "scripts/lib/homologation-suites.mjs",
+      "sha256": "e2118f3a340115eface654190151d34de863a086935f4957f0130ec709b94680"
+    },
+    {
+      "file": "scripts/review-leno-order5-evidence.mjs",
+      "sha256": "c5ac7e5055b192b2f2564f3bd43a6dafe0667daae79149e4d2744344e0a72fd6"
+    },
+    {
+      "file": "tests/integration/catalog-navigation-browser.test.ts",
+      "sha256": "17ddc6e11c533a56aa6e208bcf0adaa2a4affd1ff4f953ecf564d99833d4ad9e"
+    }
+  ],
+  "checks": {
+    "unit": {
+      "passed": 739,
+      "files": 84
+    },
+    "operations": {
+      "passed": 15
+    },
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "warnings": 17
+    },
+    "integration": {
+      "passed": 53,
+      "files": 8,
+      "note": "initial targeted batch; catalog expanded from 4 to 5 afterwards"
+    },
+    "catalogFinal": {
+      "passed": 5,
+      "files": 1
+    },
+    "standalone": {
+      "passed": 72,
+      "files": 11
+    }
+  },
+  "runtime": {
+    "startedAt": "2026-10-14T18:51:56.721Z",
+    "finishedAt": "2026-10-14T18:56:36.720Z",
+    "runId": "083a483f1ca4b06f1be8e8ac008fbb27",
+    "database": "ecommerce_test_083a483f1ca4b06f1be8e8ac008fbb27",
+    "node": "v22.23.3",
+    "sourceSHA256": "f622d02ae6ccc7b7fa8b0c3e853bcb6b30a1825ab50e70599f147e25c69e8db1",
+    "testsSHA256": "835167a2c6aada0bcaa8a93eaf37b2fbab76913e0b76194d334b87ce9568f375",
+    "scriptsSHA256": "8577624c739ec2e5287758438f1311778ffeb27d2cda267f3facd620deac38c5",
+    "buildId": "_fVCl5zYbNqoJcqwB3P4M",
+    "runtime": "standalone/server.js",
+    "packageManifest": {
+      "sha256": "e8d71f2833539a539c6489cb66ed1b90cdcd50887810c3b8bf11f6df64d4c37f",
+      "files": 2445,
+      "bytes": 74460238,
+      "buildId": "_fVCl5zYbNqoJcqwB3P4M"
+    },
+    "platform": "win32",
+    "architecture": "x64",
+    "instances": 2,
+    "postgres": 16,
+    "files": [
+      "tests/integration/catalog-navigation-browser.test.ts",
+      "tests/integration/storefront-readiness-browser.test.ts",
+      "tests/integration/checkout-browser-state.test.ts",
+      "tests/integration/inventory-admin-browser.test.ts",
+      "tests/integration/order-fulfillment-browser.test.ts",
+      "tests/integration/customer-financial-metrics-browser.test.ts",
+      "tests/integration/freight-authority.test.ts",
+      "tests/integration/purchase-tenant-scope.test.ts",
+      "tests/integration/auth-eligibility-atomicity.test.ts",
+      "tests/production"
+    ],
+    "capacity": false,
+    "externalProviders": false,
+    "productionReady": false
+  },
+  "metrics": [
+    {
+      "device": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 900,
+        "mobile": false
+      },
+      "browser": {
+        "executable": "chrome.exe",
+        "product": "Chrome/155.0.8059.40",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      },
+      "metrics": {
+        "home": {
+          "firstMs": 341.4994999999999,
+          "warmP95Ms": 173.79149999999981,
+          "samples": 5
+        },
+        "product": {
+          "firstMs": 13.589599999999791,
+          "warmP95Ms": 22.36710000000039,
+          "samples": 5
+        },
+        "cart": {
+          "firstMs": 142.00289999999995,
+          "warmP95Ms": 127.76090000000022,
+          "samples": 5
+        },
+        "checkout": {
+          "firstMs": 178.14679999999998,
+          "warmP95Ms": 178.2815999999998,
+          "samples": 5
+        }
+      },
+      "network": "loopback",
+      "externalMedia": "blocked",
+      "runtime": "production",
+      "coldScope": "fresh browser cache, not Cloud Run cold start",
+      "productionReady": false
+    },
+    {
+      "device": {
+        "name": "mobile",
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "browser": {
+        "executable": "chrome.exe",
+        "product": "Chrome/155.0.8059.40",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+      },
+      "metrics": {
+        "home": {
+          "firstMs": 367.1714000000002,
+          "warmP95Ms": 80.99549999999999,
+          "samples": 5
+        },
+        "product": {
+          "firstMs": 19.551900000000387,
+          "warmP95Ms": 44.517900000000736,
+          "samples": 5
+        },
+        "cart": {
+          "firstMs": 159.95700000000033,
+          "warmP95Ms": 130.3797999999997,
+          "samples": 5
+        },
+        "checkout": {
+          "firstMs": 273.1103000000003,
+          "warmP95Ms": 170.17039999999997,
+          "samples": 5
+        }
+      },
+      "network": "loopback",
+      "externalMedia": "blocked",
+      "runtime": "production",
+      "coldScope": "fresh browser cache, not Cloud Run cold start",
+      "productionReady": false
+    }
+  ],
+  "externalPreview": {
+    "status": "blocked",
+    "reason": "VERCEL_SSO_302"
+  },
+  "cloud": {
+    "status": "target not identified",
+    "provisioned": false
+  },
+  "productionReady": false,
+  "container": {
+    "startedAt": "2026-10-14T18:58:40.202Z",
+    "finishedAt": "2026-10-14T18:58:46.986Z",
+    "imageId": "sha256:1baafff6fcff9d359164ca018f9fed9c2a435e8e983d91b8174df48a6f484d09",
+    "runId": "e836a213551cc64aea028596cbdf250d",
+    "results": [
+      {
+        "sentinel": true,
+        "home": true,
+        "assets": true,
+        "cronAuth": true,
+        "uid": 1000,
+        "buildId": "gPHY8OVDXu53z1qAg1t3X",
+        "launchToReadyMs": 1607.4126999999999
+      },
+      {
+        "sentinel": true,
+        "home": true,
+        "assets": true,
+        "cronAuth": true,
+        "uid": 1000,
+        "buildId": "gPHY8OVDXu53z1qAg1t3X",
+        "launchToReadyMs": 1498.8813
+      }
+    ],
+    "instances": 2,
+    "restart": true,
+    "consumerAuthenticated": true,
+    "externalProviders": false,
+    "productionReady": false
+  }
+}

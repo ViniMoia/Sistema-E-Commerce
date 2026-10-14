@@ -26,6 +26,7 @@ import { getVariantOptions, matchesVariantTerm, resolveCatalogVariant } from "@/
  * "sidebar" -> Design Anterior: Barra lateral fixa à esquerda + Grid deslocado
  */
 export const CATALOG_LAYOUT_MODE: "drawer" | "sidebar" = "drawer";
+const catalogCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export type Product = FilterableProduct;
 
@@ -345,7 +346,7 @@ export default function HomeClient({
 
               <div className="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-catalog-gold/30 pb-8">
                 <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-catalog-text drop-shadow-md whitespace-nowrap">
-                  R$ {selectedProduct.price.toFixed(2)}
+                  {catalogCurrency.format(selectedProduct.price)}
                 </span>
                 <div className="flex items-center gap-2 text-catalog-gold">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
@@ -468,7 +469,7 @@ export default function HomeClient({
                             </h4>
                             
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
+                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">{catalogCurrency.format(prod.price)}</span>
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -568,7 +569,7 @@ export default function HomeClient({
                             </h4>
                             
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">R$ {prod.price.toFixed(2)}</span>
+                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">{catalogCurrency.format(prod.price)}</span>
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();

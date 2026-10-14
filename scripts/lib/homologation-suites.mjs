@@ -8,7 +8,7 @@ export const homologationSuites = [
   'checkout-client-boundaries', 'checkout-browser-state', 'order-fulfillment-atomicity',
   'order-fulfillment-browser', 'customer-financial-metrics',
   'customer-financial-metrics-browser', 'legacy-commerce-compatibility',
-  'cart-drawer-browser', 'registration-browser', 'storefront-readiness-browser',
+  'cart-drawer-browser', 'registration-browser', 'storefront-readiness-browser', 'catalog-navigation-browser',
   'payment-process-recovery', 'payment-lifecycle-homologation',
 ].map(name => `tests/integration/${name}.test.ts`);
 

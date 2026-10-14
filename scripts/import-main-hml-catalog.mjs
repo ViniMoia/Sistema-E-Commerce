@@ -10,10 +10,10 @@ import { sourceUrl, SOURCE_ID } from './sync-main-hml-freight-settings.mjs';
 import { targetUrl, STORE_ID } from './import-jt-homologation.mjs';
 
 // Use the domain normalizer, rather than maintaining another variant policy.
-const module = { exports: {} };
+const variantModule = { exports: {} };
 new Function('exports', 'module', ts.transpileModule(fs.readFileSync(new URL('../lib/product-variants.ts', import.meta.url), 'utf8'),
-  { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(module.exports, module);
-const { canonicalizeVariant, getVariantCombinationKey } = module.exports;
+  { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(variantModule.exports, variantModule);
+const { canonicalizeVariant, getVariantCombinationKey } = variantModule.exports;
 const seedId = 'a26fdbc1-d8c3-4173-b114-f759654b9ca4';
 const productFields = ['id', 'name', 'description', 'price', 'imageUrl', 'galleryUrls', 'stock', 'sku', 'nuvemshopProductId',
   'stockBuffer', 'weightInGrams', 'lengthCm', 'widthCm', 'heightCm', 'freeShipping', 'brandID', 'tagsSearchCache'];

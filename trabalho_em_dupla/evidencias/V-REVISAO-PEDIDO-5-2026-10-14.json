@@ -1,0 +1,29 @@
+{
+  "reviewedAt": "2026-10-14T18:52:23.160Z",
+  "scope": "offline-order-5-sandbox-evidence",
+  "inputs": {
+    "pedido-5-antes-estorno-cartao.json": "afdf9a2cff16660c79431393b6f4380707f898d9af77e751a74e4baf26dcb0e8",
+    "pedido-5-estorno-terceiro-lote.json": "e6f4e2cdf21f5c07e273f39f703f30f49472ac85e6315cfee952345faa8c7424",
+    "pedido-5-estorno-apos-webhook.json": "7d919e1cc2f5af5bd00454e81272a102b41da8bdcae5330e848cae54b5076d9d",
+    "pedido-5-estorno-confirmacao-remota.json": "e9dff6f2938f7f82bc5c9004bbe6b550a41b445d88a9e469b81e88d3fe752744"
+  },
+  "checks": [
+    "same-order-and-provider-reference",
+    "one-installment-with-points-and-freight",
+    "remote-refund-is-final-and-full",
+    "single-completed-refund-operation-and-fact",
+    "order-cancelled-once-and-historical-freight-preserved",
+    "reservation-returned-with-identical-variant-and-unit",
+    "points-compensated-once-and-lots-conserved",
+    "later-webhook-did-not-repeat-business-effects",
+    "order-queues-completed"
+  ],
+  "passed": true,
+  "remoteOperationsExecuted": false,
+  "productionApproved": false,
+  "limits": [
+    "credit 1x, full refund, product not shipped",
+    "no current remote state attested",
+    "does not approve PIX, installments refund, boleto, debit or physical returns"
+  ]
+}

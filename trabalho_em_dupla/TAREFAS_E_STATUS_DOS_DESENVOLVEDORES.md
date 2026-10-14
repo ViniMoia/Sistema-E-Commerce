@@ -1,5 +1,7 @@
 # Tarefas e status dos desenvolvedores — Vanderlei e Leno
 
+> **Atualização posterior em 14/10:** consultar [execução atual de Vanderlei](EXECUCAO_VANDERLEI_2026-10-14.md) e [pendências atualizadas](PENDENCIAS_VANDERLEI.md). O pacote `6f4fa75` foi publicado e teve CI aprovada; a revisão posterior `576ad89` falhou no lint, com causa corrigida nesta continuação. Leno entregou o catálogo de homologação e o estorno integral de crédito 1x do #5, com pontos e produto não enviado. As tabelas abaixo preservam o checkpoint anterior e não negam essas entregas posteriores. Nenhum desses resultados encerra os gates de produção.
+
 **Atualização documental:** 14/10/2026. **Última rodada de validação registrada:** 13/10/2026.
 
 **Projeto:** Sistema-E-Commerce. **Branch de trabalho:** `homologacao_teste`.

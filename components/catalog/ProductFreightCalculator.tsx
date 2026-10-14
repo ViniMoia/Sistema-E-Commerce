@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Truck, MapPin, Store, Clock, ChevronRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { FreightOption } from '@/types/freight';
 
@@ -30,6 +30,18 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
   const [options, setOptions] = useState<FreightOption[]>([]);
   const [location, setLocation] = useState<LocationInfo | null>(null);
   const [hasCalculated, setHasCalculated] = useState<boolean>(false);
+  const cepRef = useRef('');
+  const requestRef = useRef<{ version: number; controller?: AbortController }>({ version: 0 });
+
+  const invalidateQuote = useCallback(() => {
+    requestRef.current.controller?.abort();
+    requestRef.current = { version: requestRef.current.version + 1 };
+    setOptions([]);
+    setLocation(null);
+    setError(null);
+    setHasCalculated(false);
+    setIsLoading(false);
+  }, []);
 
   // Formata o CEP com máscara: 00000-000
   const formatCep = (value: string): string => {
@@ -41,11 +53,12 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
   };
 
   // Busca detalhes da localidade via ViaCEP
-  const fetchLocation = async (cleanCep: string) => {
+  const fetchLocation = useCallback(async (cleanCep: string, version: number, signal: AbortSignal) => {
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, { signal });
       if (res.ok) {
         const data = await res.json();
+        if (version !== requestRef.current.version || signal.aborted) return;
         if (!data.erro) {
           setLocation({
             city: data.localidade,
@@ -58,14 +71,15 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
     } catch {
       // Falha silenciosa para não travar o cálculo de frete
     }
-    setLocation(null);
-  };
+    if (version === requestRef.current.version && !signal.aborted) setLocation(null);
+  }, []);
 
   // Executa o cálculo de frete
   const handleCalculate = useCallback(
     async (targetCep?: string) => {
-      const rawCep = targetCep ?? cep;
+      const rawCep = targetCep ?? cepRef.current;
       const cleanCep = rawCep.replace(/\D/g, '');
+      invalidateQuote();
 
       if (cleanCep.length !== 8) {
         setError('Digite um CEP válido com 8 dígitos.');
@@ -73,14 +87,18 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
       }
 
       setIsLoading(true);
-      setError(null);
+      const controller = new AbortController();
+      const version = requestRef.current.version;
+      requestRef.current.controller = controller;
+      const isCurrent = () => version === requestRef.current.version && !controller.signal.aborted;
 
       try {
         // Dispara busca paralela de cidade/UF
-        fetchLocation(cleanCep);
+        void fetchLocation(cleanCep, version, controller.signal);
 
         const response = await fetch('/api/freight/calculate', {
           method: 'POST',
+          signal: controller.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             lojaID,
@@ -96,6 +114,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         });
 
         const data = await response.json();
+        if (!isCurrent()) return;
 
         if (!response.ok || !data.success) {
           throw new Error(data.error || 'Não foi possível calcular o frete para este CEP.');
@@ -114,22 +133,25 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
           }
         }
       } catch (err: any) {
+        if (!isCurrent()) return;
         setError(err.message || 'Erro ao consultar opções de entrega.');
         setOptions([]);
       } finally {
-        setIsLoading(false);
+        if (isCurrent()) setIsLoading(false);
       }
     },
-    [cep, productId, variantId, lojaID]
+    [productId, variantId, lojaID, invalidateQuote, fetchLocation]
   );
 
   // Carrega CEP salvo do localStorage na inicialização e calcula automaticamente se já houver CEP
   useEffect(() => {
+    invalidateQuote();
     if (typeof window !== 'undefined') {
       try {
         const savedCep = localStorage.getItem('continental_freight_cep');
         if (savedCep) {
           const formatted = formatCep(savedCep);
+          cepRef.current = formatted;
           setCep(formatted);
           if (formatted.replace(/\D/g, '').length === 8) {
             handleCalculate(formatted);
@@ -139,12 +161,17 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         // ignore
       }
     }
-  }, [productId]); // Recalcula se o produto mudar
+    return () => {
+      requestRef.current.controller?.abort();
+      requestRef.current = { version: requestRef.current.version + 1 };
+    };
+  }, [handleCalculate, invalidateQuote]); // Produto, variante e loja invalidam a consulta anterior.
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCep(e.target.value);
+    cepRef.current = formatted;
     setCep(formatted);
-    if (error) setError(null);
+    invalidateQuote();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

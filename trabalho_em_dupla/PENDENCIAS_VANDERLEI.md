@@ -4,6 +4,23 @@
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
 
+## Atualização da execução de Vanderlei — revisão 576ad89 + correções locais
+
+Esta seção prevalece sobre as listas históricas abaixo. Relatório: [execução e parecer por frente](EXECUCAO_VANDERLEI_2026-10-14.md).
+
+- [x] Consultar `origin/main` e reutilizar as decisões já registradas, sem alterar a origem ou reaplicar cargas.
+- [x] Conferir a CI da revisão atual: `576ad89` falhou no lint do importador; a variável reservada foi renomeada sem mudar a lógica de dados. A aprovação histórica de `6f4fa75` não aprova essa revisão.
+- [x] Reproduzir e corrigir filtros que ignoravam marca/categoria persistidas e a perda de página no reload/histórico.
+- [x] Testar catálogo sintético de 519 produtos, 18 marcas e 10 categorias em desktop/mobile emulado, mantendo a validação da base real separada.
+- [x] Corrigir resposta de frete atrasada após mudança de CEP e limpar cotações antigas; padronizar preços da vitrine/detalhe em reais.
+- [x] Revisar as evidências do estorno integral #5: nove verificações independentes aprovadas, sem nova operação financeira.
+- [x] Consultar diretamente PAC/SEDEX pelo provider existente: dois destinos encerraram por timeout de 3,5 s, sem cotação válida. Isso registra a falha observada, não aprova Correios.
+- [ ] Validar o catálogo efetivo do Preview e cotações com seus produtos: a URL está protegida pelo login Vercel; acesso autorizado/URL acessível solicitado.
+- [ ] Identificar o destino Cloud Run: os projetos visíveis na conta não identificam por si só o e-commerce; confirmação solicitada, sem provisionamento.
+- [ ] Obter aprovação da CI para a revisão que incorpora estas correções e concluir os critérios externos do candidato.
+
+Permanecem com Leno o contrato de débito, demais cenários financeiros, dados de abertura e procedimentos finais. O #5 já comprova devolução integral de crédito 1x, pontos e produto não enviado; não listar mais “nenhuma devolução concluída” como situação atual. PIX/#3, estorno parcelado e devolução física continuam separados.
+
 **Precedência em 14/10 — consultar main antes de decidir novamente:** a [seção 24 do replanejamento](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md#24-reaproveitamento-da-main-antes-de-novas-decisões--14102026) registra a comparação de `origin/main` com código e bancos efetivos. Reaproveitar origem `67140615`, Correios habilitados, um dia adicional, políticas de fidelidade, regras de parcelamento/boleto, matriz J&T e runbooks existentes. Correios/dia adicional foram alinhados no banco de homologação, configuração v5. Projeto Cloud Run, agenda efetiva e débito não foram encontrados implementados na main; não tratar exemplos como configuração real. Catálogo de origem identificado (522 produtos/18 marcas/10 categorias); carga completa ainda não executada, com quatro diferenças de saldo geral/variantes para reconciliar. Publicação/CI do pacote de Vanderlei já concluídas conforme seção 23. As listas históricas abaixo não exigem rediscutir decisões já recuperadas.
 
 **Referência:** quadro consolidado atualizado em 14/10 e evidências locais de 13/10/2026. Esta atualização é documental; não houve nova execução de testes ou consulta aos ambientes externos.

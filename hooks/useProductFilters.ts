@@ -303,6 +303,7 @@ export function useProductFilters({
 
   // ─── 4. Handlers de Ação de Filtros ─────────────────────────────────────────
   const handleToggleTag = useCallback((slug: string) => {
+    setCurrentPage(1);
     setSelectedTags((prev) =>
       prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug]
     );
@@ -316,24 +317,29 @@ export function useProductFilters({
     setCurrentPage(1);
   }, []);
 
-  // ─── 5. Reset Automático da Página ao Alterar Filtros (SRP) ──────────────────
-  const isFilterMountRef = useRef(true);
-  useEffect(() => {
-    if (isFilterMountRef.current) {
-      isFilterMountRef.current = false;
-      return;
-    }
+  // Only an explicit filter edit starts at page one. Restoring a URL (mount,
+  // reload or popstate) restores its filter AND page together.
+  const changeSearchQuery = useCallback((value: string) => {
+    setSearchQuery(value);
     setCurrentPage(1);
-  }, [searchQuery, selectedBrand, selectedTags, selectedPriceRange]);
+  }, []);
+  const changeSelectedBrand = useCallback((value: string | null) => {
+    setSelectedBrand(value);
+    setCurrentPage(1);
+  }, []);
+  const changeSelectedPriceRange = useCallback((value: string | null) => {
+    setSelectedPriceRange(value);
+    setCurrentPage(1);
+  }, []);
 
   // ─── 5. Contagem dinâmica e em tempo real por marca para o Flyout ────────────
   const brandsWithCounts = useMemo(() => {
     return initialBrands.map((b) => {
       const count = initialProducts.filter((p) => {
         const text = `${p.name} ${p.description || ""}`;
-        return p.brandSlug === b.slug || BRAND_REGEX[b.slug]?.test(text);
+        return p.brandSlug ? p.brandSlug === b.slug : BRAND_REGEX[b.slug]?.test(text);
       }).length;
-      return { ...b, productCount: count > 0 ? count : b.productCount };
+      return { ...b, productCount: count };
     });
   }, [initialBrands, initialProducts]);
 
@@ -353,17 +359,18 @@ export function useProductFilters({
 
       // 2. Filtro de Marca
       if (selectedBrand) {
-        const hasDbBrand = prod.brandSlug === selectedBrand;
-        const hasRegexBrand = BRAND_REGEX[selectedBrand]?.test(text);
-        if (!hasDbBrand && !hasRegexBrand) return false;
+        const matchesBrand = prod.brandSlug
+          ? prod.brandSlug === selectedBrand
+          : BRAND_REGEX[selectedBrand]?.test(text);
+        if (!matchesBrand) return false;
       }
 
       // 3. Filtro de Tags (Cumulativo / Inclusivo)
       if (selectedTags.length > 0) {
         const matchesAnyTag = selectedTags.some((tagSlug) => {
-          const hasDbTag = prod.tags?.includes(tagSlug);
-          const hasRegexTag = TAG_REGEX[tagSlug]?.test(text);
-          return hasDbTag || hasRegexTag;
+          return prod.tags?.length
+            ? prod.tags.includes(tagSlug)
+            : TAG_REGEX[tagSlug]?.test(text);
         });
         if (!matchesAnyTag) return false;
       }
@@ -411,13 +418,13 @@ export function useProductFilters({
 
   return {
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: changeSearchQuery,
     selectedBrand,
-    setSelectedBrand,
+    setSelectedBrand: changeSelectedBrand,
     selectedTags,
     handleToggleTag,
     selectedPriceRange,
-    setSelectedPriceRange,
+    setSelectedPriceRange: changeSelectedPriceRange,
     handleClearAllFilters,
     brandsWithCounts,
     filteredProducts,
