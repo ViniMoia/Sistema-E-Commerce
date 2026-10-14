@@ -10,6 +10,17 @@ async function setup(transport = vi.fn<typeof fetch>()) {
   transport.mockResolvedValueOnce(json(cart(1, [item]))); await store.getState().fetchCart(); return { store, transport };
 }
 describe('WF-15 cart client uses identity, command and authoritative revision', () => {
+  it('keeps an unchanged read stable but adopts real changes even at the same cart version', async () => {
+    const { store, transport } = await setup(); const initial = store.getState().cart;
+    transport.mockResolvedValueOnce(json(cart(1, [item]))); await store.getState().fetchCart();
+    expect(store.getState().cart).toBe(initial);
+    expect(store.getState().loadState).toBe('ready');
+    transport.mockResolvedValueOnce(json(cart(1, [{ ...item, price: 101 }]))); await store.getState().fetchCart();
+    expect(store.getState().cart).not.toBe(initial);
+    expect(store.getState().cart?.items[0].price).toBe(101);
+    transport.mockResolvedValueOnce(json(cart(2, [{ ...item, price: 101 }]))); await store.getState().fetchCart();
+    expect(store.getState().cart?.version).toBe(2);
+  });
   it('joins concurrent refreshes without queuing repeated GETs', async () => {
     const { store, transport } = await setup(); const waiting = deferred<Response>(); transport.mockReturnValueOnce(waiting.promise);
     const reads = [store.getState().fetchCart(), store.getState().fetchCart(), store.getState().fetchCart()];

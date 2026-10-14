@@ -58,7 +58,12 @@ export function createCartStore(transport: typeof fetch = (input, init) => fetch
         reset(null); set({ loadState: 'error', error: 'Identidade alterada; atualize a página para continuar.' }); return;
       }
       if (get().cart?.id === cart.id && get().cart!.version > cart.version) return;
-      set({ cart, loadState: 'ready', error: null });
+      // A focus read is not an edit. Keep the checkout draft/proposal stable
+      // when the complete validated snapshot is identical. Version alone is
+      // insufficient: catalog price/attributes can change independently.
+      const previous = get().cart;
+      set({ cart: previous && JSON.stringify(previous) === JSON.stringify(cart) ? previous : cart,
+        loadState: 'ready', error: null });
     };
     const mutate = (method: 'POST' | 'PATCH' | 'DELETE', parameters: object) => {
       // A read requested after a write must observe the write's result.

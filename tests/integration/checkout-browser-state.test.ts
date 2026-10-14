@@ -107,6 +107,34 @@ async function customer() {
   await browser.click('Avançar para Entrega');
 }
 describe('WF-15: real Next/React browser, persisted source, financial recovery and delayed transport', () => {
+  it('preserves the reviewed purchase when focus refreshes the route after the intent URL changes', async () => {
+    await browser.navigate('/checkout'); await customer();
+    await browser.click('Retirar na Loja'); await browser.click('Avançar para Pagamento');
+    await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta")&&!e.disabled)');
+    await browser.click('Revisar proposta de compra'); await browser.waitFor(text('Revise a proposta antes de confirmar'), 45000);
+    const intentID = await browser.evaluate('new URL(location.href).searchParams.get("intent")');
+    expect(intentID).toBeTruthy();
+    cartReadHold = new Promise<void>(resolve => { releaseCartRead = resolve; }); heldCartReads = 0;
+    try {
+      await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+      await expect.poll(() => heldCartReads).toBeGreaterThan(0);
+      cartReadHold = null; releaseCartRead();
+      await browser.waitFor('!' + text('Atualizando carrinho'));
+      await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Confirmar proposta e concluir compra")&&!e.disabled)', 15000);
+      expect(await browser.evaluate(text('Cliente preenchido'))).toBe(true);
+      expect(await browser.evaluate('new URL(location.href).searchParams.get("intent")')).toBe(intentID);
+      // A real revision must still invalidate review, without losing identity
+      // fields or making any purchase while merely returning to the tab.
+      const activeCart = await prisma.cart.findFirstOrThrow({ where: { lojaID, userID, status: 'ACTIVE' } });
+      await prisma.cart.update({ where: { id: activeCart.id }, data: { version: { increment: 1 } } });
+      await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+      await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta de compra")&&!e.disabled)');
+      expect(await browser.evaluate(text('Revise a proposta antes de confirmar'))).toBe(false);
+      await browser.click('Retornar para a etapa anterior'); await browser.click('Retornar para a etapa anterior');
+      expect(await browser.evaluate('document.querySelector(\'input[name="name"]\').value')).toBe('Cliente preenchido');
+      expect(await prisma.order.count({ where: { checkoutIntentID: intentID as string } })).toBe(0);
+    } finally { cartReadHold = null; releaseCartRead(); }
+  }, 120000);
   it('accepts the first card click and typing while a focus refresh waits for the cart, but blocks purchase review', async () => {
     cardEntryFixture = true;
     try {
@@ -164,6 +192,11 @@ describe('WF-15: real Next/React browser, persisted source, financial recovery a
     await browser.click('Avançar para Entrega'); await browser.click('Retirar na Loja'); await browser.click('Avançar para Pagamento');
     await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Revisar proposta")&&!e.disabled)');
     await browser.click('Revisar proposta de compra'); await browser.waitFor(text('Revise a proposta antes de confirmar'), 45000);
+    cartReadHold = new Promise<void>(resolve => { releaseCartRead = resolve; }); heldCartReads = 0;
+    await browser.evaluate('window.dispatchEvent(new Event("focus"))');
+    await expect.poll(() => heldCartReads).toBeGreaterThan(0);
+    cartReadHold = null; releaseCartRead();
+    await browser.waitFor('!![...document.querySelectorAll("button")].find(e=>e.textContent.includes("Confirmar proposta e concluir compra")&&!e.disabled)');
     await browser.click('Confirmar proposta e concluir compra');
     await browser.waitFor('location.pathname === "/checkout/confirmation" && ' + text('Aguardando pagamento'), 45000);
     expect(await browser.evaluate(text('PIX com conferência manual'))).toBe(true);

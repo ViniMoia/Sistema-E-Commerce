@@ -22,7 +22,14 @@ export function CartProvider({ children, lojaID, userID }: { children: React.Rea
   useLayoutEffect(() => { useCartStore.getState().setContext({ lojaID, userID }); }, [lojaID, userID]);
   useEffect(() => {
     const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('commerce-cart-v1') : null;
-    const refresh = () => { void useCartStore.getState().fetchCart().catch(() => {}); router.refresh(); };
+    const refresh = () => {
+      void useCartStore.getState().fetchCart().catch(() => {});
+      // Checkout adds its recovery intent to the URL while the draft is open.
+      // Refreshing the route after that URL change can remount the page and
+      // discard its transient fields. The cart read still checks identity and
+      // revisions; checkout revalidates the purchase on the server at submit.
+      if (window.location.pathname !== '/checkout') router.refresh();
+    };
     const publish = () => channel?.postMessage({ type: 'invalidate' });
     const focus = () => { if (!document.hidden) refresh(); };
     if (channel) channel.onmessage = refresh;
