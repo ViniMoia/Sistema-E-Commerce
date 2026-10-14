@@ -165,7 +165,7 @@ async function runProfile(users: number, checkoutsPerMinute: number, targetMs: n
         await browser.evaluate('document.querySelector(\'button[aria-label^="Carrinho de compras"]\').click()');
         await browser.waitFor('(() => { const d = document.querySelector("[role=dialog][data-state=open]"); return !!d && d.innerText.includes("CERA CARGA") && !d.querySelector(".animate-spin"); })()');
         pages.push({ page: 'cart-drawer', readyMs: performance.now() - actionStart, loadMs: 0, lcpMs: null, externalMediaExcluded: true });
-        await browser.click('Continue Shopping');
+        await browser.click('Continuar comprando');
         await browser.waitFor('!document.querySelector("[role=dialog][data-state=open]")');
       }
       await pause(1000);

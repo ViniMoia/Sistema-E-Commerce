@@ -12,7 +12,7 @@ let releaseRead: (() => void) | undefined;
 let heldReads = 0;
 let readUnavailable = false;
 const checkoutButton = '[...document.querySelectorAll("[role=dialog][data-state=open] button")].find(e => e.textContent.includes("Finalizar Compra"))';
-const continueButton = '[...document.querySelectorAll("[role=dialog][data-state=open] button")].find(e => e.textContent.includes("Continue Shopping"))';
+const continueButton = '[...document.querySelectorAll("[role=dialog][data-state=open] button")].find(e => e.textContent.includes("Continuar comprando"))';
 const drawerOpen = '!!document.querySelector("[role=dialog][data-state=open]")';
 
 function holdReads() {
@@ -98,7 +98,7 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.waitFor(`!!(${checkoutButton}) && !document.querySelector("[role=dialog][data-state=open] .animate-spin")`);
     const ready = await footerState();
     expect(ready).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
-    await browser.click('Continue Shopping');
+    await browser.click('Continuar comprando');
     await browser.waitFor('!' + drawerOpen);
 
     holdReads();
@@ -116,7 +116,7 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.evaluate('window.dispatchEvent(new Event("focus"))');
     await expect.poll(() => heldReads).toBeGreaterThan(0);
     expect(await footerState()).toMatchObject({ visible: true, checkoutDisabled: false, continueDisabled: false });
-    await browser.click('Continue Shopping');
+    await browser.click('Continuar comprando');
     await browser.waitFor('!' + drawerOpen);
     resumeReads();
     await openCart();
@@ -130,7 +130,7 @@ describe('Cart drawer: stable actions during real HTTP revalidation', () => {
     await browser.click('Tentar novamente');
     await browser.waitFor('!document.querySelector("[role=dialog][data-state=open] .animate-spin") && !document.querySelector("[role=alert]")');
     expect(await prisma.order.count({ where: { lojaID } })).toBe(0);
-    await browser.click('Continue Shopping');
+    await browser.click('Continuar comprando');
     await browser.waitFor('!' + drawerOpen);
     holdReads();
     await openCart();

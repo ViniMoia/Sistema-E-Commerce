@@ -40,11 +40,11 @@ export function CartDrawer() {
         <SheetHeader className="shrink-0 p-6 border-b border-white/10 flex flex-row justify-between items-center space-y-0">
           <SheetTitle className="text-white flex items-center gap-2 text-xl font-medium tracking-tight">
             <ShoppingCart className="w-5 h-5" />
-            Your Cart
+            Seu carrinho
           </SheetTitle>
           <span className="text-xs uppercase tracking-[0.25em] font-mono text-neutral-400 flex items-center gap-2">
             {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-            {itemCount} {itemCount === 1 ? 'Item' : 'Items'}
+            {itemCount} {itemCount === 1 ? 'item' : 'itens'}
           </span>
         </SheetHeader>
 
@@ -54,12 +54,12 @@ export function CartDrawer() {
           : (loadState === 'idle' || loadState === 'loading') && !cart ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-70 mt-32">
               <Loader2 className="w-10 h-10 animate-spin text-neutral-500" />
-              <p className="text-neutral-400 font-light">Loading cart...</p>
+              <p className="text-neutral-400 font-light">Carregando carrinho...</p>
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-70 mt-32">
               <ShoppingCart className="w-16 h-16 text-neutral-500" />
-              <p className="text-neutral-400 font-light">Your cart is empty</p>
+              <p className="text-neutral-400 font-light">Seu carrinho está vazio</p>
             </div>
           ) : (
             <div className="space-y-6 relative">

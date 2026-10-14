@@ -44,7 +44,7 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
             ) : null}
           </div>
           <p className="font-mono text-white shrink-0">
-            ${(item.price * item.quantity).toFixed(2)}
+            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}
           </p>
         </div>
 
@@ -58,6 +58,7 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
                   onRemove(item.variantID);
                 }
               }}
+              aria-label="Diminuir quantidade"
               disabled={isLoading}
               className="text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
             >
@@ -66,6 +67,7 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
             <span className="text-sm font-mono w-4 text-center">{item.quantity}</span>
             <button
               onClick={() => onUpdateQuantity(item.variantID, item.quantity + 1)}
+              aria-label="Aumentar quantidade"
               disabled={isLoading}
               className="text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
             >
@@ -77,10 +79,10 @@ export function CartItem({ item, onRemove, onUpdateQuantity, isLoading }: CartIt
             onClick={() => onRemove(item.variantID)}
             disabled={isLoading}
             className="text-neutral-500 hover:text-red-400 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest disabled:opacity-50"
-            aria-label="Remove item"
+            aria-label="Remover item"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Remove</span>
+            <span className="hidden sm:inline">Remover</span>
           </button>
         </div>
       </div>
