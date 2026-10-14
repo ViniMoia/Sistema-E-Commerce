@@ -7,7 +7,25 @@ import type { AsaasPaymentResponse } from '@/types/asaas.types';
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const cancelled = { status: 'CANCELLED', value: 49.9 };
 const history = (rows: unknown[]) => parseRefundHistory({ data: rows, hasMore: false });
+const emptyPage = { object: 'list', data: null, hasMore: false, totalCount: 0, offset: 0, limit: 100 };
 describe('refund history evidence and read-only transport', () => {
+  it('recognizes the explicit empty Asaas page only before refund submission', () => {
+    const parsed = parseRefundHistory(emptyPage);
+    expect(parsed).toEqual({ complete: true, records: [] });
+    expect(refundHistoryReview(parsed, 'CONFIRMED', 57.2, false)).toBeNull();
+    expect(refundHistoryReview(parsed, 'CONFIRMED', 57.2, true)).toBe('PAYMENT_REFUND_HISTORY_REVIEW');
+    expect(refundHistoryReview(parsed, 'REFUNDED', 57.2, true)).toBe('PAYMENT_REFUND_HISTORY_REVIEW');
+  });
+  it.each([
+    { data: null, hasMore: false }, { ...emptyPage, totalCount: 1 },
+    { ...emptyPage, totalCount: '0' }, { ...emptyPage, totalCount: undefined },
+    { ...emptyPage, offset: 100 }, { ...emptyPage, offset: undefined },
+    { ...emptyPage, hasMore: true }, { ...emptyPage, object: undefined },
+    { ...emptyPage, limit: 0 }, { ...emptyPage, limit: undefined },
+    { ...emptyPage, data: undefined },
+  ])('rejects null data without complete empty-page metadata %#', raw => {
+    expect(parseRefundHistory(raw)).toEqual({ complete: false, records: [] });
+  });
   it('keeps only financial fields from a complete response', () => {
     expect(history([{ ...cancelled, description: 'private', transactionReceiptUrl: 'private' }]))
       .toEqual({ complete: true, records: [cancelled] });
@@ -64,6 +82,8 @@ describe('refund history evidence and read-only transport', () => {
     const input = { externalReference: 'order_fixture', paymentIds: ['pay_fixture'], method: 'PIX' as const, installments: 1 };
     await adapter.inspectAttempt(input); expect(lookup).not.toHaveBeenCalled();
     expect((await adapter.inspectAttempt({ ...input, refundPaymentIds: ['pay_fixture'] })).charges[0].refundHistory).toEqual(history([cancelled]));
+    lookup.mockResolvedValueOnce(emptyPage);
+    expect((await adapter.inspectAttempt({ ...input, refundPaymentIds: ['pay_fixture'] })).charges[0].refundHistory).toEqual(history([]));
     lookup.mockRejectedValueOnce(new Error('transport/private message'));
     expect((await adapter.inspectAttempt({ ...input, refundPaymentIds: ['pay_fixture'] })).charges[0].refundHistory).toEqual({ complete: false, records: [] });
     lookup.mockClear(); listed.mockResolvedValue([{ ...payment, externalReference: 'wrong' }]);

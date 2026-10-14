@@ -11,7 +11,13 @@ const recordsSchema = z.array(z.object({
 // An incomplete page is never interpreted as an empty or successful history.
 export function parseRefundHistory(raw: unknown): RemoteRefundHistory {
   const wrapper = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
-  const rows = Array.isArray(raw) ? raw : wrapper && wrapper.hasMore === false && Array.isArray(wrapper.data) ? wrapper.data : undefined;
+  // Asaas can return data:null for an explicitly empty first/last page.
+  // Null alone must never be interpreted as proof of an empty history.
+  const emptyPage = wrapper?.object === 'list' && wrapper.data === null &&
+    wrapper.totalCount === 0 && wrapper.offset === 0 && wrapper.hasMore === false &&
+    typeof wrapper.limit === 'number' && Number.isInteger(wrapper.limit) && wrapper.limit > 0;
+  const rows = Array.isArray(raw) ? raw : emptyPage ? [] :
+    wrapper && wrapper.hasMore === false && Array.isArray(wrapper.data) ? wrapper.data : undefined;
   const result = recordsSchema.safeParse(rows);
   return result.success ? { complete: true, records: result.data } : { complete: false, records: [] };
 }
