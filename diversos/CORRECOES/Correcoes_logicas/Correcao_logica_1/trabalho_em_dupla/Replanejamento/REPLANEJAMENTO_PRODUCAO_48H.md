@@ -1,5 +1,9 @@
 # Replanejamento para produção em até 48 horas
 
+**Continuidade enquanto aguardamos o Asaas:** operador informou que encaminhou as perguntas de débito. Preparação do primeiro ensaio de boleto concluída na [seção 28](#28-preparação-do-ensaio-de-boleto--14102026), com baseline somente leitura e roteiro; emissão ainda não realizada.
+
+**Investigação de débito em 14/10:** documentação oficial aponta pagamento pela Fatura Asaas (`invoiceUrl`), sem envio direto dos dados do cartão de débito pela API. Levantamento técnico, limites da evidência e perguntas ao provedor na [seção 27](#27-débito-no-asaas--levantamento-técnico-em-14102026). Fluxo ainda não implementado/homologado; não habilitar como equivalente ao crédito transparente.
+
 **Trabalho liberado para Vanderlei em 14/10:** catálogo, filtros, Admin/variantes, frete, regressões do checkout e revisão das evidências financeiras já podem avançar. Preparação e ensaios isolados de infraestrutura também podem continuar. Ordem de execução, entregáveis e dependências na [seção 26](#26-trabalho-que-vanderlei-já-pode-executar--14102026). Isso não libera produção nem encerra a implementação de débito.
 
 **Carga de catálogo em 14/10, 16:58 UTC:** homologação agora possui 519 produtos, 520 variantes, 18 marcas e 10 categorias; produto e vínculos dos ensaios preservados. Quatro produtos da origem permanecem fora da carga por divergência de estoque. Ver [seção 25](#25-carga-do-catálogo-para-desbloquear-vanderlei--14102026). Main somente leitura; estoque de teste não representa abertura de produção.
@@ -813,3 +817,76 @@ As quatro divergências de estoque da seção 25 não impedem essas atividades c
 | **Aceite financeiro e comercial restante** | Leno executa/consolida; Vanderlei revisa. Permanecem boleto, débito, revisão do PIX/#3, estorno parcelado e demais cenários ainda abertos no plano. | Encerramento dos gates e autorização de produção; o sucesso do #5 cobre somente o cenário documentado. |
 
 **Próxima entrega de Vanderlei:** devolver um parecer por frente da seção 26.1, indicando commit/ambiente, cenários executados, evidências, falhas e dependências concretas. Não é necessário aguardar débito ou a conciliação dos quatro produtos para iniciar esse trabalho. **WF-18/WF-19 continuam abertos e WF-20 não está comprovado; não há liberação de produção.**
+
+## 27. Débito no Asaas — levantamento técnico em 14/10/2026
+
+Iniciada a prioridade de Leno. Consultados os guias/referências oficiais e o código local em `576ad89`, além de `origin/main` em `7f9b26e`. A leitura de `types/payment-gateway.types.ts` da main confirmou novamente ausência de método/contrato próprio para débito. Esta etapa não consultou credenciais ou habilitação da conta, não criou cobranças, não processou filas e não alterou bancos. O resultado é uma especificação preliminar com dependências explícitas, não uma integração pronta.
+
+### 27.1 O que a documentação confirma
+
+| Tema | Evidência oficial consultada | Consequência para este projeto |
+|---|---|---|
+| Pagamento online por débito | O [guia de cartão](https://docs.asaas.com/docs/cobrancas-via-cartao-de-credito), seção Cartão de débito, orienta usar `invoiceUrl` de cobrança criada com `CREDIT_CARD` ou `UNDEFINED`; não permite enviar diretamente os dados do cartão de débito pela API. | Preparar jornada hospedada, sem reaproveitar o formulário de captura do crédito como se processasse débito. A existência dessa jornada documentada não comprova habilitação na conta usada pela loja. |
+| Criação | A referência de [criação de cobrança](https://docs.asaas.com/reference/criar-nova-cobranca) lista `UNDEFINED`, `BOLETO`, `CREDIT_CARD` e `PIX` como entrada de `billingType`. | Não enviar `DEBIT_CARD` arbitrariamente ao POST. Separar método escolhido pelo comprador, tipo enviado ao provedor e método efetivamente pago. |
+| Retorno ao site | O [guia de redirecionamento](https://docs.asaas.com/docs/redirecionamento-apos-o-pagamento) oferece `callback.successUrl`/`autoRedirect` e exige domínio correspondente ao cadastrado na conta. | Conferir domínio do Preview/conta antes de configurar callback; chegada à página de retorno não será autoridade para aprovar o pedido. |
+| Eventos | O [guia de eventos](https://docs.asaas.com/docs/webhook-para-cobrancas) descreve débito com `PAYMENT_CREATED`, `PAYMENT_CONFIRMED` e `PAYMENT_RECEIVED`, podendo incluir vencimento. | Preservar distinção entre aprovação e liquidação. O diagrama não define sozinho todos os campos de uma resposta real de débito; coletar exemplos sanitizados de consulta e webhook. |
+| Devolução | A [central de ajuda sobre devolução de débito](https://central.ajuda.asaas.com/hc/pt-br/articles/31973207592219-Como-devolver-um-pagamento-recebido-por-cart%C3%A3o-de-d%C3%A9bito) descreve solicitação pelo painel e participação do cliente por link/documentos. A referência de [estorno de cobrança](https://docs.asaas.com/reference/estornar-cobranca) descreve crédito e Pix. | Não considerar comprovado o uso do estorno automático de crédito para débito. Confirmar endpoint aplicável, etapas e evidência de conclusão antes de implementar o despacho. |
+
+**Lacunas da consulta:** não foi localizado, nas páginas consultadas, roteiro específico de simulação de débito em Sandbox nem contrato completo de estorno de débito por API. Isso não prova inexistência do recurso. Também não ficou comprovado como restringir a Fatura exclusivamente a débito ou como o método efetivamente pago aparece em cada etapa. Menção a `DEBIT_CARD` nas [estatísticas de cobranças](https://docs.asaas.com/reference/estatisticas-de-cobrancas) não é contrato de criação, consulta ou webhook.
+
+### 27.2 Trabalho técnico identificado e contrato preliminar
+
+| Área / arquivos existentes | Alteração necessária antes de disponibilizar débito |
+|---|---|
+| `types/payment-gateway.types.ts`, `types/asaas.types.ts`, `lib/commerce/contracts.ts` | Distinguir escolha local, jornada hospedada e método remoto observado. Definir contrato versionado de capacidades/resultado sem prometer débito exclusivo onde só há seleção na Fatura. |
+| `services/asaas/asaas.adapter.ts`, `services/payment/checkout-payment.service.ts` | Criar cobrança avulsa sem dados de cartão, obter/persistir instrução de pagamento e recuperar a mesma cobrança em resposta incerta. O despacho atual precisa de ramo explícito: sua alternativa final cria Pix; adicionar somente um enum seria incorreto. |
+| `services/payment/gateway-contract.ts`, `payment-inbox.service.ts`, `payment-worker.service.ts`, `payment-evidence.service.ts` | Tratar explicitamente o mapeamento de método: hoje há enums restritos e comparações exatas entre método da tentativa e `billingType` remoto. Não remover essas guardas globalmente; validar a transição documentada, conta, cobrança, referência, valor e quantidade. |
+| Capacidades, proposta e apresentação | Capacidade própria, inicialmente indisponível. Débito à vista, sem parcelas ou juros de financiamento. Usar mensagem de encaminhamento ao Asaas; não coletar PAN/CVV nesse fluxo. Confirmar restrição de escolha/método efetivo antes de fixar nomenclatura pública. |
+| Retorno, consulta e retomada | Reutilizar `AWAITING_PAYMENT`/`instructions.invoiceUrl` onde compatível, exigindo URL HTTPS de host autorizado do ambiente e validação no servidor. Reabrir o pedido existente após reload/volta; callback apenas conduz à consulta autoritativa. Não disparar nova cobrança por abandono/timeout. |
+| Cancelamento, estorno, pontos e estoque | Definir vencimento/cancelamento remoto da jornada hospedada e prova final de devolução. Manter solicitação pendente até evidência definitiva; devolver pontos/estoque uma única vez. Não reutilizar o despacho de estorno do crédito sem suporte confirmado para débito. |
+
+Os itens acima são requisitos de implementação propostos a partir da análise local, não capacidades já disponíveis. Preservar o crédito transparente existente e o fechamento dos #4/#5. Não há motivo para alterar a main ou recriar os ensaios encerrados.
+
+### 27.3 Confirmação técnica necessária do Asaas
+
+Texto preparado para o responsável pela conta encaminhar ao suporte de integrações, sem credenciais ou dados de compradores. Nenhuma mensagem foi enviada nesta etapa:
+
+> Estamos integrando cartão de débito em um e-commerce próprio. O guia orienta criar cobrança com billingType CREDIT_CARD ou UNDEFINED e encaminhar o pagador à invoiceUrl. Precisamos confirmar:
+>
+> 1. Como verificar/habilitar débito na nossa conta e como testar aprovação, recusa e abandono no Sandbox, usando exclusivamente dados fictícios?
+> 2. A Fatura pode ficar restrita a débito? Qual parâmetro oficial faz isso? Se o comprador escolher crédito ou outro método, como identificar o meio efetivamente pago?
+> 3. Quais valores de billingType/status aparecem na criação, no GET da cobrança e nos webhooks após pagamento por débito? Podem fornecer exemplos sanitizados, incluindo identificação da cobrança e externalReference?
+> 4. Qual é o procedimento/endpoint de estorno integral para débito confirmado e recebido? Há link ou ação do cliente? Quais respostas, eventos e consulta comprovam conclusão, pendência ou recusa?
+> 5. Como cancelar/expirar uma Fatura não paga e confirmar que não poderá receber pagamento tardio? Como configurar o retorno para um Preview com domínio diferente do site principal?
+
+**Critério para avançar à habilitação:** resposta verificável ou ensaio Sandbox controlado que feche essas lacunas; depois implementar o contrato e provar criação única, retomada, recusa/abandono, callbacks não autoritativos, eventos duplicados/fora de ordem, pagamento tardio e estorno com efeitos únicos. Simulações locais poderão validar as guardas, mas não serão apresentadas como prova de aceitação do provedor.
+
+**Passagem para Vanderlei:** já pode preparar a jornada visual de encaminhamento/retorno a partir destes requisitos, sem expor o método aos compradores. A integração funcional de débito permanece dependente do contrato final de Leno e das confirmações acima. As tarefas liberadas na seção 26 continuam disponíveis. Débito permanece obrigatório no escopo; esta investigação não o remove nem libera produção.
+
+## 28. Preparação do ensaio de boleto — 14/10/2026
+
+O operador informou ter enviado as perguntas da seção 27 ao suporte Asaas e autorizou seguir com a preparação de boleto enquanto aguarda a resposta. Reutilizados os defaults da main (D+1 e piso R$ 5); não houve nova decisão comercial nem alteração na origem. Overrides do deployment ainda precisam ser confrontados com a emissão; o algoritmo herdado pula fins de semana, sem calendário de feriados, usando fuso do processo.
+
+Consulta READ ONLY/REPEATABLE READ ao banco fixado de homologação às **18:46:15 UTC** confirmou `enableBoleto=true`, retirada habilitada, configuração v5, produto/variante dos ensaios com estoque **94/44**, versões **11/8**, preço **R$ 49,90**, carteira/lotes **286**, dívida/pendente zero e lifetimeEarn **785**. Nenhum boleto anterior do cliente do #5; pedido #5 continua CANCELLED v2. Contas observadas nas tentativas da loja: apenas sandbox-hml. Isso não substitui validação do deployment/conta remota.
+
+Preparados [roteiro de boleto](../../../../../../PACOTE_REVISAO_VANDERLEI/L-04-ROTEIRO_BOLETO.md), [SQL de baseline](../../../../../../PACOTE_REVISAO_VANDERLEI/L-04-PREPARAR_BOLETO.sql) e [diagnóstico após emissão](../../../../../../PACOTE_REVISAO_VANDERLEI/L-04-DIAGNOSTICAR_BOLETO.sql). O último exige ID/número reais, mantendo loja/método fixos; não presume número #6. Artefato do baseline em `artifacts/boleto-hml/baseline.json`, fora do Git.
+
+**Andamento atualizado:** operador conferiu proposta de uma unidade do aspirador automotivo Pequeno/Vermelho, retirada na loja, boleto, sem resgate, total R$ 49,90 e ganho previsto de 24 pontos. Relatou retorno à identificação ao confirmar. A leitura das 19:25 UTC não encontrou pedido BOLETO desse cliente e mostrou a intenção mais recente OPEN; investigação e correção local descritas na seção 29. Retomar após publicação/conferência da correção e nova revisão válida, verificando antes se existe pedido da tentativa anterior. Depois da emissão, conferir cobrança/vencimento no Sandbox e diagnóstico antes de simular pagamento.
+
+Sem outras movimentações, emissão deve reservar uma unidade (estoques 93/43), sem ganho antecipado; pagamento autoritativo deve manter esses estoques, comprometer a reserva e creditar 24 pontos uma única vez (saldo/lotes 310, lifetimeEarn 809). O estorno de boleto está bloqueado no comando atual e exige fluxo próprio; não reutilizar o estorno de crédito. Vencimento, atraso, cancelamento, estorno e fuso/feriados continuam cenários separados.
+
+Validação: baseline executado; diagnóstico executado com parâmetros vazios e identidade de crédito para conferir recusa de escopo; **60 testes unitários em quatro arquivos aprovados** (recuperação do adapter, autoridade do plano, contratos do cliente e e-mail). Não houve teste remoto de emissão/pagamento, escrita em banco ou processamento de filas. Não há novo aceite de produção.
+
+## 29. Checkout perde revisão ao atualizar em segundo plano — 14/10/2026
+
+O operador relatou retorno à identificação após confirmar boleto e ocorrência anterior no crédito. Consulta somente leitura às **19:25:11 UTC (16:25 BRT)** encontrou a intenção mais recente OPEN, revisão 1, criada às 19:19:29 UTC; nenhum pedido BOLETO do cliente do #5, carteira 286 e estoques 94/44. Essa leitura não é comprovação remota de ausência de cobrança no provedor nem resultado posterior a esse horário.
+
+Encontradas duas causas no fluxo compartilhado: `CartProvider` executava consulta do carrinho e `router.refresh()` ao receber foco/visibilidade/BroadcastChannel; o store substituía o carrinho e seus itens por novos objetos mesmo quando toda a resposta era idêntica. A alteração da referência dos itens invalidava a proposta revisada. A atualização da rota também era desnecessária durante o checkout, que acrescenta `intent` à URL e mantém os campos em memória.
+
+**Limite da reprodução:** teste de navegador com o código anterior reproduziu perda da revisão ao voltar à aba, permanecendo na etapa de pagamento com os campos preenchidos. O retorno completo à identificação observado pelo operador ainda não foi reproduzido; não tratá-lo como causa única comprovada. A correção elimina a atualização automática da rota em `/checkout`, mantendo a consulta do carrinho, e preserva o objeto anterior somente quando o snapshot validado inteiro é idêntico. Alteração real, inclusive preço na mesma versão, continua sendo adotada; revisão e identidade continuam protegidas. Dados de cartão não foram persistidos.
+
+**Validação local:** regressão falhou antes da correção; 49 testes unitários em três arquivos passaram depois, além de TypeScript e ESLint. Os **7 testes de navegador passaram em build de produção**, duas instâncias `next start`, PostgreSQL descartável e sem provedores externos (run `9141497bf19d509e08fe64f2d32af18d`, build `4EZEsih60A1waF-yRZEBL`). Cobertos foco com carrinho idêntico, revisão invalidada por mudança real sem apagar identificação, confirmação após foco, digitação de cartão, frete, troca de identidade e recuperação. Isso não substitui o reteste no Preview.
+
+Correção preparada localmente, **ainda não publicada nesta etapa**. Main e seu banco não foram alterados; nenhuma compra, confirmação de pagamento ou execução de filas foi disparada em homologação durante a investigação.
+
+**Preparação da publicação autorizada pelo operador:** incorporados os commits remotos de Vanderlei `f89e68e` e `bfaf1a1`, preservando as duas atualizações no documento de pendências. Correção em `d55d635`. Após a integração, passaram 54 testes unitários (incluindo o protocolo de navegador), ESLint e os 7 testes de navegador no build de produção com duas instâncias (run `4d9fda258ea3e53a723f8f14bcea294f`, build `vGIQjAVOHpM6eaACMPoPH`). O build também aprovou a checagem TypeScript. Pacote destinado exclusivamente a `homologacao_teste`; aprovação do deploy Vercel e reteste manual do boleto são verificações posteriores, separadas destes resultados locais.
