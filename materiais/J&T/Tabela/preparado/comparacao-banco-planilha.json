@@ -1,0 +1,29 @@
+{
+  "sourceReadOnly": "on",
+  "sourceStore": "continental-prototipo",
+  "sourceSnapshotSha256": "92dfdd216d47d950d526168b62db4834502a965ef3b8c30bbaf838ce1f08e6b5",
+  "rateCount": 5181,
+  "workbookRateCount": 5181,
+  "duplicateSourceKeys": 0,
+  "differences": [],
+  "extraSourceKeys": [],
+  "zoneCount": 58,
+  "overlappingZonePairs": [],
+  "zoneCodesWithoutRates": [],
+  "destinationMatches": [
+    {
+      "id": "cmtrfmv8x03zxl7vdxp0jrx3z",
+      "state": "PA",
+      "cityPattern": null,
+      "cepStart": "66000000",
+      "cepEnd": "67999999",
+      "geocomCode": "PA-CAP",
+      "deliveryDays": 2,
+      "isRiskZone": false,
+      "createdAt": "2026-09-07T16:05:45.777Z",
+      "updatedAt": "2026-09-07T16:05:45.777Z"
+    }
+  ],
+  "allZonesMarkedNonRisk": true,
+  "databaseChanged": false
+}

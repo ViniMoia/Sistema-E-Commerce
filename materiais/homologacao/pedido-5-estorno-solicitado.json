@@ -1,0 +1,257 @@
+{
+  "at": "2026-10-14T16:03:32.449814+00:00",
+  "code": "INTERNAL_STATE_READ",
+  "audit": [
+    {
+      "at": "2026-10-14T13:45:24.317",
+      "id": "e81683c1-956f-4671-8551-b71d1824ec85",
+      "action": "CHECKOUT_COMMITTED",
+      "actorType": "USER",
+      "effectKey": "checkout:c32e968d-9f2c-4213-889b-6a9299115de1"
+    },
+    {
+      "at": "2026-10-14T13:45:35.033",
+      "id": "e7338d21-60ac-4133-84c1-9270053c95e6",
+      "action": "ORDER_STATUS_UPDATED",
+      "actorType": "SYSTEM",
+      "effectKey": "order:bb3f722b-8392-4a23-863b-d2d428444faa:version:1"
+    },
+    {
+      "at": "2026-10-14T16:03:05.822",
+      "id": "4f07dbfd-fd1c-48df-8d3c-79be037045f3",
+      "action": "PAYMENT_OPERATION_REQUESTED",
+      "actorType": "USER",
+      "effectKey": "payment-operation:0d64b51b92f109ec6c2544010c45e1c1019fcd3932e07d4c0eb89f8a7219e07f"
+    }
+  ],
+  "phase": "card_order_5_refund_diagnostic_read",
+  "orders": [
+    {
+      "id": "bb3f722b-8392-4a23-863b-d2d428444faa",
+      "total": 57.2,
+      "lojaID": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "paidAt": "2026-10-14T13:45:29.357",
+      "status": "PAID",
+      "version": 1,
+      "subtotal": 49.9,
+      "orderNumber": 5,
+      "deliveryType": "DELIVERY",
+      "installments": 1,
+      "shippingCost": 12.3,
+      "paymentMethod": "CREDIT_CARD",
+      "asaasPaymentId": "pay_806g4snct6ky0smq",
+      "financialTotal": 57.2,
+      "freightQuoteId": "3a060535-640e-4a47-bc7e-b0351f212422",
+      "pointsCredited": 22,
+      "pointsRedeemed": 100,
+      "financingCharge": 0,
+      "installmentValue": 57.2,
+      "shippingProvider": "JT_EXPRESS",
+      "asaasPaymentStatus": "CONFIRMED",
+      "pointsDiscountValue": 5,
+      "shippingServiceName": "J&T Express Standard",
+      "shippingEstimatedDays": 2
+    }
+  ],
+  "wallet": {
+    "debt": 0,
+    "balance": 208,
+    "pending": 0,
+    "lifetimeEarn": 807,
+    "accountingReady": true
+  },
+  "charges": [
+    {
+      "id": "b6da2a01-bf54-4484-a571-e257c1699cf1",
+      "amount": 57.2,
+      "ordinal": 1,
+      "provider": "ASAAS",
+      "attemptId": "9255971c-e963-43f5-888c-3bec74ae1ab3",
+      "settledAt": null,
+      "providerStatus": "CONFIRMED",
+      "providerAccount": "sandbox-hml",
+      "providerPaymentId": "pay_806g4snct6ky0smq"
+    }
+  ],
+  "history": [
+    {
+      "id": "cmv85x4bh000psq5b3ej61lsu",
+      "status": "PAID",
+      "orderVersion": 1,
+      "previousStatus": "PENDING"
+    }
+  ],
+  "attempts": [
+    {
+      "id": "9255971c-e963-43f5-888c-3bec74ae1ab3",
+      "method": "CREDIT_CARD",
+      "number": 1,
+      "status": "REFUND_PENDING",
+      "orderId": "bb3f722b-8392-4a23-863b-d2d428444faa",
+      "version": 3,
+      "provider": "ASAAS",
+      "createdAt": "2026-10-14T13:45:23.623",
+      "updatedAt": "2026-10-14T16:03:05.574",
+      "failureCode": null,
+      "reviewAfter": "2026-10-15T16:03:05.516",
+      "installments": 1,
+      "financialTotal": 57.2,
+      "leaseExpiresAt": null,
+      "reconcileAfter": "2026-10-14T16:03:05.516",
+      "providerAccount": "sandbox-hml",
+      "countedAsOverdue": false,
+      "externalReference": "bb3f722b-8392-4a23-863b-d2d428444faa",
+      "reconcileAttempts": 0,
+      "countedAsUncertain": false,
+      "providerContractId": null,
+      "expectedAccountMatches": true
+    }
+  ],
+  "earnedLots": [
+    {
+      "id": "2113b12d-464a-4c8a-b324-da1452dfa03a",
+      "credited": 22,
+      "remaining": 22,
+      "sourceKey": "credit",
+      "sourceTransactionId": "caeab2bf-d9e0-46ea-96e8-c757cf5f96f8"
+    }
+  ],
+  "operations": [
+    {
+      "id": "79a50d2d-6ff7-4e32-929f-05d677d645eb",
+      "kind": "REFUND",
+      "status": "READY",
+      "chargeId": "b6da2a01-bf54-4484-a571-e257c1699cf1",
+      "attemptId": "9255971c-e963-43f5-888c-3bec74ae1ab3",
+      "createdAt": "2026-10-14T16:03:05.084",
+      "commandKey": "0d64b51b92f109ec6c2544010c45e1c1019fcd3932e07d4c0eb89f8a7219e07f",
+      "completedAt": null,
+      "submittedAt": null,
+      "lastErrorCode": null
+    }
+  ],
+  "orderCount": 1,
+  "chargeCount": 1,
+  "freightQuote": {
+    "id": "3a060535-640e-4a47-bc7e-b0351f212422",
+    "amount": 12.3,
+    "provider": "JT_EXPRESS",
+    "serviceCode": "JT_STANDARD",
+    "matchesOrder": true,
+    "estimatedDays": 2
+  },
+  "itemsAndStock": [
+    {
+      "size": "Pequeno",
+      "color": "Vermelho",
+      "itemId": "9984f9e2-bdaf-4a9f-8c25-01a7610aa27d",
+      "quantity": 1,
+      "productId": "a26fdbc1-d8c3-4173-b114-f759654b9ca4",
+      "variantId": "c9422a68-9be8-4fdc-bc5f-5ee7689401d2",
+      "productStock": 93,
+      "variantStock": 43,
+      "reservationId": "67df065e-3818-45c8-b8a7-2505e386ce55",
+      "reservationStatus": "COMMITTED",
+      "reservationVersion": 1,
+      "reservationQuantity": 1,
+      "reservationReleasedAt": null,
+      "reservationMatchesItem": true,
+      "productInventoryVersion": 10,
+      "productUnavailableStock": 0,
+      "variantInventoryVersion": 7,
+      "variantUnavailableStock": 0
+    }
+  ],
+  "financialFacts": [
+    {
+      "id": "ba3d5122-3f10-4b2f-a2b8-d114c7aecc14",
+      "type": "AUTHORIZED",
+      "amount": 57.2,
+      "factKey": "charge:b6da2a01-bf54-4484-a571-e257c1699cf1:AUTHORIZED",
+      "chargeId": "b6da2a01-bf54-4484-a571-e257c1699cf1",
+      "attemptId": "9255971c-e963-43f5-888c-3bec74ae1ab3",
+      "providerAccount": "sandbox-hml"
+    }
+  ],
+  "outboxForOrder": [
+    {
+      "id": "55ad84b1-fba9-41bc-a1fc-788a2e415063",
+      "status": "COMPLETED",
+      "attempts": 1,
+      "commandType": "CHECKOUT_COMMITTED",
+      "lastErrorCode": null
+    },
+    {
+      "id": "79dc9b16-ab98-46c6-846a-4433d3269058",
+      "status": "COMPLETED",
+      "attempts": 1,
+      "commandType": "ORDER_STATUS_CHANGED",
+      "lastErrorCode": null
+    },
+    {
+      "id": "84dbdac1-ab35-4d68-8ada-2bb2dec04e9b",
+      "status": "COMPLETED",
+      "attempts": 1,
+      "commandType": "PAYMENT_CONFIRMATION_EMAIL",
+      "lastErrorCode": null
+    }
+  ],
+  "chargeAmountSum": 57.2,
+  "inboxForPayment": [
+    {
+      "id": "df766b6d-97a0-43ff-9cbd-282482b83e57",
+      "status": "COMPLETED",
+      "attempts": 1,
+      "provider": "ASAAS:sandbox-hml",
+      "eventType": "PAYMENT_CONFIRMED",
+      "receivedAt": "2026-10-14T13:45:30.744",
+      "completedAt": "2026-10-14T13:51:33.12",
+      "lastErrorCode": null,
+      "nextAttemptAt": "2026-10-14T13:45:30.744",
+      "providerPaymentId": "pay_806g4snct6ky0smq",
+      "eventPaymentStatus": "CONFIRMED"
+    }
+  ],
+  "refundFactCount": 0,
+  "refundFactAmount": 0,
+  "loyaltyAllocations": [
+    {
+      "id": "0d1af9fc-ad8a-4d99-aa91-47fc817b4942",
+      "lotId": "301ceb64-5591-4950-b053-2d6f4a441b92",
+      "points": 12,
+      "transactionId": "8a3b8edb-7204-48a9-8477-86414dd8cf04"
+    },
+    {
+      "id": "86a93296-90ba-4064-a5fc-af97acf191d5",
+      "lotId": "751057a0-b4e0-4b3c-8fd0-3d2b7a976fa7",
+      "points": 24,
+      "transactionId": "8a3b8edb-7204-48a9-8477-86414dd8cf04"
+    },
+    {
+      "id": "a2f5e3a6-782a-45c3-b528-ecedf199487c",
+      "lotId": "80dfc51e-4c80-4d19-a915-dfd27bc09de4",
+      "points": 64,
+      "transactionId": "8a3b8edb-7204-48a9-8477-86414dd8cf04"
+    }
+  ],
+  "walletLotRemaining": 208,
+  "processingAttempted": false,
+  "expectedAccountScope": "sandbox-hml",
+  "refundOperationCount": 1,
+  "orderLoyaltyMovements": [
+    {
+      "id": "8a3b8edb-7204-48a9-8477-86414dd8cf04",
+      "type": "REDEEM",
+      "points": -100,
+      "effectKey": "loyalty:redeem:eedd28fdee040cbc4a3750e43de104cb9166df02e6a274eddf46223736ee7b69",
+      "balanceAfter": 186
+    },
+    {
+      "id": "caeab2bf-d9e0-46ea-96e8-c757cf5f96f8",
+      "type": "EARN",
+      "points": 22,
+      "effectKey": "loyalty:earn:eedd28fdee040cbc4a3750e43de104cb9166df02e6a274eddf46223736ee7b69",
+      "balanceAfter": 208
+    }
+  ]
+}

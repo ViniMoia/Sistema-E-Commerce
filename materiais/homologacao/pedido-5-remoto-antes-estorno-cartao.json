@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-14T15:13:49.479Z",
+  "environment": "sandbox",
+  "phase": "card_order_5_remote_refund_precheck",
+  "processingAttempted": false,
+  "refundRequested": false,
+  "paymentId": "pay_806g4snct6ky0smq",
+  "externalReference": "bb3f722b-8392-4a23-863b-d2d428444faa",
+  "value": 57.2,
+  "billingType": "CREDIT_CARD",
+  "status": "CONFIRMED",
+  "deleted": false,
+  "historyComplete": false,
+  "historyResponse": {
+    "http": 200,
+    "object": "list",
+    "hasMore": false,
+    "totalCount": 0,
+    "limit": 100,
+    "offset": 0,
+    "dataIsNull": true
+  },
+  "checkedAt": "2026-10-14T15:14:25.039Z"
+}

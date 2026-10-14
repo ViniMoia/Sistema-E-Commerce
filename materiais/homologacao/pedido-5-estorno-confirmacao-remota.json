@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-14T16:09:16.902Z",
+  "environment": "sandbox",
+  "paymentId": "pay_806g4snct6ky0smq",
+  "externalReference": "bb3f722b-8392-4a23-863b-d2d428444faa",
+  "value": 57.2,
+  "billingType": "CREDIT_CARD",
+  "status": "REFUNDED",
+  "deleted": false,
+  "historyComplete": true,
+  "refunds": [
+    {
+      "status": "DONE",
+      "value": 57.2,
+      "dateCreated": "2026-10-14 13:08:06"
+    }
+  ],
+  "processingAttempted": false
+}

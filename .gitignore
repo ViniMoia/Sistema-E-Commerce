@@ -63,6 +63,24 @@ scratch/
 material/
 auditoria/
 
+# Reviewed Sandbox evidence only; commercial sources and raw exports stay local.
+/materiais/*
+!/materiais/homologacao/
+/materiais/homologacao/*
+!/materiais/homologacao/pedido-5-*.json
+!/materiais/J&T/
+/materiais/J&T/*
+!/materiais/J&T/Tabela/
+/materiais/J&T/Tabela/*
+!/materiais/J&T/Tabela/preparado/
+/materiais/J&T/Tabela/preparado/*
+!/materiais/J&T/Tabela/preparado/comparacao-banco-planilha.json
+!/materiais/J&T/Tabela/preparado/cotacao-hml-apos-importacao.json
+!/materiais/J&T/Tabela/preparado/resultado-importacao-hml-*.json
+
+__pycache__/
+*.pyc
+
 # Non-production design assets and cloned templates
 midia/
 /templates/

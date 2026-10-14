@@ -1,0 +1,15 @@
+{
+  "code": "READY_TO_IMPORT",
+  "changed": false,
+  "store": {
+    "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "slug": "continental-homologacao",
+    "originCep": null,
+    "configurationVersion": 3,
+    "additionalDays": 0,
+    "enableCorreios": false
+  },
+  "rates": 5181,
+  "zones": 58,
+  "tariffRevision": 0
+}

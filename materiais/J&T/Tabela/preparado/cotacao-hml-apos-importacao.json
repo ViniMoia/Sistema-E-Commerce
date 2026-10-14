@@ -1,0 +1,26 @@
+{
+  "phase": "hml_jt_quote_after_import",
+  "at": "2026-10-13T22:12:19.992Z",
+  "status": 200,
+  "success": true,
+  "serverTime": "2026-10-13T22:12:19.173Z",
+  "merchandiseSubtotal": "49.90",
+  "packageDetails": {
+    "weightInGrams": 300,
+    "dimensions": "16x11x4 cm"
+  },
+  "options": [
+    {
+      "providerId": "JT_EXPRESS",
+      "serviceCode": "JT_STANDARD",
+      "serviceName": "J&T Express Standard",
+      "price": 12.3,
+      "deliveryTimeInDays": 2,
+      "freightQuoteId": "0f321319-1045-4edf-a027-86ce2a2a6f96",
+      "expiresAt": "2026-10-13T22:42:16.417Z",
+      "hasSignedToken": true
+    }
+  ],
+  "orderCreated": false,
+  "paymentSubmitted": false
+}

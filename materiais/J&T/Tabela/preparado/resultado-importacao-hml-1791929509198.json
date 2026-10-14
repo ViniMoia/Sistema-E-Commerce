@@ -1,0 +1,26 @@
+{
+  "code": "IMPORTED_AND_VERIFIED",
+  "changed": true,
+  "at": "2026-10-13T22:11:48.942Z",
+  "storeId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+  "originCep": "67140615",
+  "rates": 5181,
+  "zones": 58,
+  "tariffRevision": 12,
+  "configurationVersion": 4,
+  "sourceSnapshotSha256": "92dfdd216d47d950d526168b62db4834502a965ef3b8c30bbaf838ce1f08e6b5",
+  "destination": [
+    {
+      "id": "cmtrfmv8x03zxl7vdxp0jrx3z",
+      "state": "PA",
+      "cityPattern": null,
+      "cepStart": "66000000",
+      "cepEnd": "67999999",
+      "geocomCode": "PA-CAP",
+      "deliveryDays": 2,
+      "isRiskZone": false,
+      "createdAt": "2026-10-13T22:11:47.832Z",
+      "updatedAt": "2026-10-13T22:11:47.832Z"
+    }
+  ]
+}
