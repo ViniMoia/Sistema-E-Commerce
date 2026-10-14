@@ -2,13 +2,38 @@ import { describe, it, expect } from 'vitest';
 import { AsyncRevision } from '@/lib/commerce/async-revision';
 import { checkoutAddresses } from '@/lib/commerce/checkout-address';
 import { freightClientRequestSchema, freightClientResponseSchema } from '@/lib/commerce/freight-contract';
-import { purchaseClientSchema, purchaseView } from '@/lib/commerce/purchase-client';
+import { formatBoletoDueDate, purchaseClientSchema, purchaseView } from '@/lib/commerce/purchase-client';
 const address = { state: 'SP', city: 'São Paulo', neighborhood: 'Centro', street: 'Rua', number: '1', cep: '01001-000' };
 const order = () => purchaseClientSchema.parse({ id: 'o', checkoutIntentID: 'i', orderNumber: 1, status: 'PENDING', version: 0,
   paymentState: 'ISSUED', financialState: 'PENDING', allowedActions: ['PAY_PIX'], serverTime: '2026-10-05T12:00:00Z', paymentExpiresAt: '2026-10-05T12:30:00Z',
   paymentMethod: 'PIX', customer: { name: 'Cliente', phone: '' }, items: [], deliveryType: 'PICKUP', total: 100, financialTotal: 100, freightValue: null,
   pixPayload: 'copy', pixQrCode: 'qr', pixKey: null });
 describe('WF-15 client contracts and boundaries', () => {
+  it.each([
+    ['2026-10-16T03:00:00.000Z', '15/10/2026'],
+    ['2026-10-16T00:00:00-03:00', '15/10/2026'],
+    ['2026-10-16T12:00:00+09:00', '15/10/2026'],
+    ['2027-01-01T03:00:00Z', '31/12/2026'],
+    ['2028-03-01T03:00:00Z', '29/02/2028'],
+  ])('shows the printed boleto due day for the exclusive deadline %s', (deadline, printed) => {
+    expect(formatBoletoDueDate(deadline)).toBe(printed);
+  });
+  it('does not invent a boleto due date from absent, invalid or timezone-less data', () => {
+    for (const value of [null, undefined, '', 'invalidZ', '2026-10-16', '2026-10-16T03:00:00']) {
+      expect(formatBoletoDueDate(value)).toBeNull();
+    }
+  });
+  it('displaying the boleto due day does not shorten or extend payment authorization', () => {
+    const p = order();
+    Object.assign(p, { paymentMethod: 'BOLETO', allowedActions: ['PAY_BOLETO'],
+      asaasBankSlipUrl: 'https://example.invalid/boleto', asaasDigitableLine: 'fixture',
+      asaasDueDate: '2026-10-16T03:00:00Z', paymentExpiresAt: '2026-10-16T03:00:00Z',
+      serverTime: '2026-10-16T02:59:59Z' });
+    expect(formatBoletoDueDate(p.asaasDueDate)).toBe('15/10/2026');
+    expect(purchaseView(p, 999).canPayBoleto).toBe(true);
+    expect(purchaseView(p, 1000)).toMatchObject({ kind: 'expired', canPayBoleto: false });
+    expect(p.paymentExpiresAt).toBe('2026-10-16T03:00:00Z');
+  });
   it('invalidates a response even when transport ignores abort', () => { const gate = new AsyncRevision(), a = gate.begin(); const b = gate.begin(); expect(a.signal.aborted).toBe(true); expect(a.current()).toBe(false); expect(b.current()).toBe(true); gate.invalidate(); expect(b.current()).toBe(false); });
   it('freight request contains only identifiers/quantities and destination', () => { const request = freightClientRequestSchema.parse({ lojaID: 'l', deliveryType: 'DELIVERY', destinationCep: '01001000', items: [{ productId: 'p', variantId: 'v', quantity: 1, price: 0, weightInGrams: 1 }] }); expect(request.items[0]).toEqual({ productId: 'p', variantId: 'v', quantity: 1 }); });
   it('wrong quote envelope or unsigned option cannot authorize delivery', () => { expect(freightClientResponseSchema.safeParse({ success: true, options: [] }).success).toBe(false); expect(freightClientResponseSchema.safeParse({ success: true, data: { merchandiseSubtotal: '100.00', options: [{ price: 0 }] } }).success).toBe(false); });

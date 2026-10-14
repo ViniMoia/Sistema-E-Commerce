@@ -1,6 +1,14 @@
 # L-04 — Boleto: emissão e confirmação no Sandbox
 
-Preparação em 14/10/2026. Não há pedido de boleto criado por este roteiro. Main e banco de origem permanecem somente leitura. As etapas de emissão e confirmação abaixo são ações futuras do operador, após a conferência da proposta.
+Preparação em 14/10/2026. Pedido **#6 emitido pelo operador** e conferido às 20:20 UTC, ainda pendente; ver registro abaixo. Main e banco de origem permanecem somente leitura. A confirmação de pagamento ainda não foi simulada nesta etapa.
+
+## Emissão observada do pedido #6
+
+- Identidade: `0f0a05ff-2a24-4e6f-93ef-be13451388c9`, cobrança `pay_blfexx8zkousw431`, conta registrada `sandbox-hml`. Diagnóstico já parametrizado para essa identidade; não emitir outro pedido para corrigir a apresentação.
+- Leitura somente leitura de 14/10/2026 às 20:20:49 UTC: pedido PENDING v0, tentativa PENDING, uma cobrança de R$ 49,90, artefatos de boleto presentes e `paidAt` nulo. Sem fatos financeiros, movimentos de fidelidade ou operações de estorno/cancelamento.
+- Uma unidade RESERVED, vinculada corretamente ao item; estoque 93/43, carteira/lotes 286 e lifetimeEarn 785. Outbox CHECKOUT_COMMITTED READY; nenhum processamento executado nesta conferência.
+- PDF Sandbox enviado pelo operador vence em **15/10/2026**. A tela mostrava **16/10/2026** porque apresentava o limite exclusivo `2026-10-16T03:00:00Z` como data impressa. Correção de apresentação incluída no pacote autorizado para homologação, sem alterar cobrança, expiração ou reserva. Reteste após o deploy ainda pendente. Ver seção 30 do replanejamento.
+- Próximo passo: conferir a data corrigida no Preview após publicação; depois realizar a simulação Sandbox da seção 3 na mesma cobrança e verificar os efeitos. Não pagar o boleto de teste em banco.
 
 ## Ambiente e decisões reaproveitadas
 

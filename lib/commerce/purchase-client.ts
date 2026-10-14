@@ -19,6 +19,21 @@ export const purchaseClientSchema = z.object({
   installments: z.number().int().positive().nullable().optional(), installmentValue: z.number().nullable().optional(),
 });
 export type PurchaseClient = z.infer<typeof purchaseClientSchema>;
+
+/** The canonical boleto projection stores the exclusive end of its due day,
+ * not a date-only bank due date. Show the last included day in the same UTC-03
+ * convention used by creation/reconciliation, independently of the browser TZ.
+ * Never use this presentation value for expiry or reservation calculations. */
+export function formatBoletoDueDate(exclusiveDeadline: string | null | undefined): string | null {
+  if (!exclusiveDeadline || !/(Z|[+-]\d{2}:\d{2})$/.test(exclusiveDeadline)) return null;
+  const deadline = new Date(exclusiveDeadline).getTime();
+  if (!Number.isFinite(deadline)) return null;
+  const date = new Date(deadline - 3 * 60 * 60 * 1000 - 1);
+  if (!Number.isFinite(date.getTime())) return null;
+  const [year, month, day] = date.toISOString().slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+}
+
 export function purchaseView(order: PurchaseClient, elapsed = 0) {
   const expires = order.paymentExpiresAt ? new Date(order.paymentExpiresAt).getTime() : Infinity;
   const expired = expires <= new Date(order.serverTime).getTime() + Math.max(0, elapsed);

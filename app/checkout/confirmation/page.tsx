@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { purchaseClientSchema, purchaseView, type PurchaseClient } from '@/lib/commerce/purchase-client'
+import { formatBoletoDueDate, purchaseClientSchema, purchaseView, type PurchaseClient } from '@/lib/commerce/purchase-client'
 import { useCartStore } from '@/store/cart.store'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
@@ -163,9 +163,7 @@ export default function CheckoutConfirmationPage() {
       : `data:image/png;base64,${order.pixQrCode}`
     : null
 
-  const formattedDueDate = order.asaasDueDate
-    ? new Date(order.asaasDueDate).toLocaleDateString('pt-BR')
-    : 'Próximo dia útil'
+  const formattedDueDate = formatBoletoDueDate(order.asaasDueDate) ?? 'Não informado'
 
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text selection:bg-catalog-gold/30 relative flex flex-col justify-between py-10 px-4 sm:px-6 lg:px-8">

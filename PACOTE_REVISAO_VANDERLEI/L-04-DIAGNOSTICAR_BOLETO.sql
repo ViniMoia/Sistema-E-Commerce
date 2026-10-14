@@ -1,9 +1,9 @@
 -- Somente leitura no banco efetivo do Preview; nao processa filas.
--- Depois da emissao, preencher order_id e order_number com os valores reais.
+-- Pedido #6 identificado por leitura de 14/10/2026 20:20 UTC.
 -- Nunca usar "ultimo pedido" ou presumir numero #6. Manter loja e metodo fixos.
 -- Nao retorna URL/linha digitavel nem dados pessoais. Nao consulta o Asaas.
 WITH params AS (
-  SELECT ''::text AS order_id, NULL::integer AS order_number
+  SELECT '0f0a05ff-2a24-4e6f-93ef-be13451388c9'::text AS order_id, 6::integer AS order_number
 ), target AS (
   SELECT o.* FROM public."Order" o CROSS JOIN params p
   WHERE o."id" = p.order_id AND o."orderNumber" = p.order_number
