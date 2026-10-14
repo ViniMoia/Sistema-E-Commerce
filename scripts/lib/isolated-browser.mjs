@@ -5,6 +5,7 @@ import path from 'node:path';
 import { createServer, request as httpRequest } from 'node:http';
 import { testServerConfig } from '../../lib/testing/database-policy.ts';
 import { browserExecutable } from './browser-executable.mjs';
+import { browserProtocol } from './browser-protocol.mjs';
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 /** Fixture-only browser/proxy. Never attaches to a user's browser/profile or
@@ -60,9 +61,9 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
     '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost', 'about:blank'], { shell: false, windowsHide: true, stdio: 'ignore' });
   let spawnError;
   child.on('error', error => { spawnError = error; });
-  let socket;
+  let socket, send;
   const close = async () => {
-    if (socket?.readyState === 1) { try { await send('Browser.close'); } catch {} socket.close(); }
+    if (socket?.readyState === 1) { try { await send('Browser.close', {}, undefined, 3000); } catch {} socket.close(); }
     for (let i=0; child.exitCode === null && i<30; i++) await pause(100);
     if (child.exitCode === null) {
       if (process.platform === 'win32') await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore', shell: false }); kill.on('exit', resolve); kill.on('error', resolve); });
@@ -74,12 +75,7 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
     if (path.dirname(absolute) !== base || !path.basename(absolute).startsWith('commerce-browser-')) throw new Error('BROWSER_CLEANUP_SCOPE_INVALID');
     await rm(absolute, { recursive: true, force: true }).catch(() => {});
   };
-  let serial = 0; const pending = new Map(); const events = new Map(); const diagnostics = [];
-  const send = (method, params = {}, sessionId = undefined) => new Promise((resolve, reject) => {
-    const id = ++serial;
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error('BROWSER_PROTOCOL_TIMEOUT: ' + method)); }, 45000);
-    pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
-  });
+  const events = new Map(); const diagnostics = [];
   try {
     let port;
     for (let i=0; i<100; i++) { if (spawnError) throw spawnError; try { port = Number((await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); if (port) break; } catch {} await pause(100); }
@@ -88,10 +84,10 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
     const page = tabs.find(tab => tab.type === 'page'); if (!page) throw new Error('BROWSER_PAGE_MISSING');
     socket = new WebSocket(page.webSocketDebuggerUrl);
     await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+    send = browserProtocol(socket);
     socket.addEventListener('message', event => {
       const message = JSON.parse(event.data);
-      if (message.id) { const item = pending.get(message.id); if (!item) return; clearTimeout(item.timer); pending.delete(message.id); message.error ? item.reject(new Error(message.error.message)) : item.resolve(message.result); }
-      else {
+      if (!message.id) {
         if (message.method === 'Runtime.exceptionThrown') diagnostics.push(JSON.stringify(message.params.exceptionDetails));
         if (message.method === 'Network.requestWillBeSent') diagnostics.push('HTTP ' + new URL(message.params.request.url).pathname);
         if (message.method === 'Network.loadingFailed') diagnostics.push(message.params.errorText);

@@ -76,9 +76,13 @@ describe('WF-07: catalog, inventory and order share protected PostgreSQL writes'
     expect(await read(product.id)).toMatchObject({ catalogVersion: 2 });
     await expect(updateProduct(product.id, { expectedCatalogVersion: 1, variants: [product.productVariants[1]] }, lojaID, adminID)).rejects.toThrow('CATALOG_VERSION_CONFLICT');
   });
-  it('retired combination cannot be recreated under a new ID', async () => {
-    const product = await makeProduct(); await edit(product, [product.productVariants[1]]);
-    await expect(updateProduct(product.id, { expectedCatalogVersion: 1, variants: [product.productVariants[1], { size: ' m ', color: 'AZUL', stock: 10 }] }, lojaID, adminID)).rejects.toThrow('VARIANT_COMBINATION_RETIRED');
+  it.each(['M', 'G'])('retired %s combination cannot be recreated under a new ID', async retiredSize => {
+    const product = await makeProduct();
+    const retired = product.productVariants.find(variant => variant.size === retiredSize)!;
+    const active = product.productVariants.find(variant => variant.id !== retired.id)!;
+    await edit(product, [active]);
+    expect(await prisma.productVariants.findUniqueOrThrow({ where: { id: retired.id } })).toMatchObject({ retiredAt: expect.any(Date) });
+    await expect(updateProduct(product.id, { expectedCatalogVersion: 1, variants: [active, { size: ` ${retiredSize.toLowerCase()} `, color: 'AZUL', stock: 10 }] }, lojaID, adminID)).rejects.toThrow('VARIANT_COMBINATION_RETIRED');
     expect((await read(product.id)).productVariants).toHaveLength(2);
   });
   it('an old retired duplicate does not prevent editing its existing active combination', async () => {

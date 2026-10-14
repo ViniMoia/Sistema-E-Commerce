@@ -9,6 +9,7 @@ Base: `576ad893527a38d947f3cbbc2db0d0126fd72e5c`, branch `homologacao_teste`. Ma
 3. **V-01/V-05 / navegação:** abrir/recarregar uma URL com marca e página 2 restaurava os filtros e depois voltava à página 1. O reset agora ocorre nas ações de edição de filtro, preservando a página restaurada pela URL e pelo histórico.
 4. **V-02/V-04 / frete no produto:** resposta atrasada podia exibir a cotação do CEP anterior depois de o cliente editar o campo. Consultas antigas são abortadas e suas respostas ignoradas; CEP/produto/variante/loja invalidam opções e localidade anteriores. O checkout continua usando seu contrato autoritativo, sem alteração financeira.
 5. **V-01/V-05 / moeda:** vitrine e detalhe exibiam `R$ 25.00`; agora usam formatação brasileira `R$ 25,00`, coerente com o carrinho.
+6. **V-00/V-08 / estabilidade do harness:** a primeira CI desta rodada (`f89e68e`) passou na integração, mas a etapa de produção encontrou um teste que presumiu a ordem de variantes retornadas pelo banco e um timeout no encerramento do navegador. O teste agora seleciona pela dimensão e cobre a retirada de M e G. O protocolo de navegador rejeita comandos pendentes ao desconectar e limita `Browser.close` a três segundos, sem elevar o timeout dos testes ou alterar o estoque/financeiro da aplicação.
 
 A nova suíte `catalog-navigation-browser` entrou na seleção compartilhada do harness e da CI. Usa 519 produtos **sintéticos**, 18 marcas e 10 categorias; não importa snapshot privado nem acessa bancos remotos.
 
@@ -55,6 +56,12 @@ Resultado com hashes dos quatro arquivos: [revisão do pedido #5](evidencias/V-R
 - Recursos descartáveis removidos ao encerrar; nenhum contêiner com label `logic-audit.run-id` permaneceu. O PostgreSQL preexistente foi preservado.
 
 [Evidência estruturada desta continuação](evidencias/V-CONTINUACAO-2026-10-14.json). Aprovações históricas de outras revisões não são transferidas automaticamente. A publicação desta correção dispara uma nova CI; sua conclusão deve ser conferida pelo SHA, sem reutilizar a aprovação de `31f2d78`.
+
+### Correção após a primeira CI
+
+A [execução de `f89e68e`](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/38619918108) aprovou tipos, lint, unitários, isolamento e integração. A regressão de produção terminou com 352 testes aprovados, um teste de variante reprovado e um hook de encerramento reprovado; as etapas seguintes foram puladas. Essa execução não constitui aprovação do candidato.
+
+Foram adicionados cinco testes de protocolo (desconexão, erro, respostas fora de ordem, ausência de resposta e falha no envio), todos aprovados. TypeScript e lint dos arquivos alterados também passaram. A repetição dirigida do build otimizado com duas instâncias aprovou **29 testes em cinco suítes**, incluindo integridade/Admin, navegação e runtime/assets. [Evidência da correção do harness](evidencias/V-CI-CORRECAO-HARNESS-2026-10-14.json). A nova publicação deve obter sua própria CI completa.
 
 ## Trabalho restante
 

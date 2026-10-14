@@ -13,6 +13,7 @@ Esta seção prevalece sobre as listas históricas abaixo. Relatório: [execuç�
 - [x] Reproduzir e corrigir filtros que ignoravam marca/categoria persistidas e a perda de página no reload/histórico.
 - [x] Testar catálogo sintético de 519 produtos, 18 marcas e 10 categorias em desktop/mobile emulado, mantendo a validação da base real separada.
 - [x] Corrigir resposta de frete atrasada após mudança de CEP e limpar cotações antigas; padronizar preços da vitrine/detalhe em reais.
+- [x] Corrigir fragilidades expostas pela CI de `f89e68e`: seleção de variante no teste sem depender da ordem do banco e descarte de comandos pendentes ao desconectar o navegador. A CI completa da correção continua sendo um critério de aceite separado.
 - [x] Revisar as evidências do estorno integral #5: nove verificações independentes aprovadas, sem nova operação financeira.
 - [x] Consultar diretamente PAC/SEDEX pelo provider existente: dois destinos encerraram por timeout de 3,5 s, sem cotação válida. Isso registra a falha observada, não aprova Correios.
 - [ ] Validar o catálogo efetivo do Preview e cotações com seus produtos: a URL está protegida pelo login Vercel; acesso autorizado/URL acessível solicitado.

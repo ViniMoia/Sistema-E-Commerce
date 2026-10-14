@@ -1,0 +1,53 @@
+{
+  "previousRevision": "f89e68ebcbde0eb41a2160a730bb62d5bb2cb715",
+  "previousCI": {
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/38619918108",
+    "conclusion": "failure",
+    "productionTestsPassed": 352,
+    "failedTests": 1,
+    "failedTeardowns": 1
+  },
+  "fixes": [
+    "Select retired variants by dimension rather than database row order",
+    "Reject outstanding browser commands on disconnect and bound Browser.close"
+  ],
+  "validation": {
+    "browserProtocolUnitTestsPassed": 5,
+    "typecheck": "passed",
+    "changedFilesLint": "passed",
+    "optimizedRuntimeTestsPassed": 29,
+    "optimizedRuntimeSuitesPassed": 5,
+    "evidence": {
+      "startedAt": "2026-10-14T19:16:13.870Z",
+      "finishedAt": "2026-10-14T19:17:25.485Z",
+      "runId": "df6678ac50f8dfa1142c568e901df366",
+      "database": "ecommerce_test_df6678ac50f8dfa1142c568e901df366",
+      "node": "v22.23.3",
+      "sourceSHA256": "f622d02ae6ccc7b7fa8b0c3e853bcb6b30a1825ab50e70599f147e25c69e8db1",
+      "testsSHA256": "42c4f1ad9993cd1afd28149364bc18f60eae6754fff338c1e28c805740dbd037",
+      "scriptsSHA256": "4fab06014fd914fe2a9b40f1534f85017fb299d0cef9542f434175b2c44209af",
+      "buildId": "GzhUt5XXVhPaLzR1R4ltG",
+      "runtime": "next start",
+      "platform": "win32",
+      "architecture": "x64",
+      "instances": 2,
+      "postgres": 16,
+      "files": [
+        "tests/integration/inventory-admin-integrity.test.ts",
+        "tests/integration/inventory-admin-browser.test.ts",
+        "tests/integration/catalog-navigation-browser.test.ts",
+        "tests/production"
+      ],
+      "capacity": false,
+      "externalProviders": false,
+      "productionReady": false
+    }
+  },
+  "changedHarnessFiles": {
+    "scripts/lib/browser-protocol.mjs": "efc1f8ffa760450096d97efa8b802cd80130c80fd13a1d7a1c2f8e0c4b25653f",
+    "scripts/lib/isolated-browser.mjs": "b0413dfe3190d7d1ac6ec62c35bab95440715f87f77a4b70afd837425b2a1453",
+    "tests/unit/browser-protocol.test.ts": "9f25920998b973fd40464338b2e3f103027b98eae13ff308b33709cd4b6c0016",
+    "tests/integration/inventory-admin-integrity.test.ts": "5a4f9e05f09f384fb2bd0530c5543b83787bf0b858f5e738d3cc011cd941079c"
+  },
+  "productionReady": false
+}
