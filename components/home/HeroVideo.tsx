@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
 
 const DESKTOP_VIDEO_URL =
   "https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790881130/Porsche_911_product_film_lighting_20261001155806_s4mbls.mp4";
@@ -10,141 +9,33 @@ const MOBILE_VIDEO_URL =
 
 export default function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const headingRef = useRef<HTMLHeadingElement | null>(null);
-  const descRef = useRef<HTMLParagraphElement | null>(null);
-  const ctaRef = useRef<HTMLDivElement | null>(null);
+  const [videoSrc, setVideoSrc] = useState<string>();
 
-  const hasTriggeredAnimation = useRef(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Detecta e monitora o breakpoint mobile (768px / md do Tailwind)
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const mql = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mql.matches);
-
-    const handleMediaChange = (e: MediaQueryListEvent) => {
-      setIsMobile(e.matches);
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setVideoSrc(reducedMotion.matches ? undefined : mobile.matches ? MOBILE_VIDEO_URL : DESKTOP_VIDEO_URL);
+    update();
+    mobile.addEventListener("change", update);
+    reducedMotion.addEventListener("change", update);
+    return () => {
+      mobile.removeEventListener("change", update);
+      reducedMotion.removeEventListener("change", update);
     };
-
-    mql.addEventListener("change", handleMediaChange);
-    return () => mql.removeEventListener("change", handleMediaChange);
   }, []);
-
-  const videoSrc = isMobile ? MOBILE_VIDEO_URL : DESKTOP_VIDEO_URL;
-
-  // Trigger natural GSAP emergence animation
-  const triggerReveal = () => {
-    if (hasTriggeredAnimation.current) return;
-    hasTriggeredAnimation.current = true;
-
-    // Dispatch event to smoothly illuminate the Header
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hero-car-illuminated"));
-    }
-
-    if (!containerRef.current) return;
-
-    // Natural, cinematic GSAP timeline
-    const tl = gsap.timeline({
-      defaults: {
-        ease: "power3.out",
-      },
-    });
-
-    // Make container visible
-    gsap.set(containerRef.current, { visibility: "visible", opacity: 1 });
-
-    // 1. Heading lines reveal with mask
-    if (headingRef.current) {
-      const lines = headingRef.current.querySelectorAll(".text-reveal-content");
-      if (lines.length > 0) {
-        tl.fromTo(
-          lines,
-          { y: "110%", opacity: 0 },
-          { y: "0%", opacity: 1, duration: 1.4, stagger: 0.18 }
-        );
-      }
-    }
-
-    // 3. Auxiliary description text
-    if (descRef.current) {
-      tl.fromTo(
-        descRef.current,
-        { opacity: 0, y: 20, filter: "blur(4px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.2 },
-        "-=0.9"
-      );
-    }
-
-    // 4. CTA buttons
-    if (ctaRef.current) {
-      tl.fromTo(
-        ctaRef.current,
-        { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 1.0 },
-        "-=0.8"
-      );
-    }
-  };
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
-    video.muted = true;
-
-    // Time update listener: studio light illuminates vehicle at ~2.8 seconds
-    const handleTimeUpdate = () => {
-      if (video.currentTime >= 2.8 && !hasTriggeredAnimation.current) {
-        triggerReveal();
-      }
-    };
-
-    // When reaching the end, pause on the final frame (no loop)
-    const handleEnded = () => {
-      video.pause();
-      if (!hasTriggeredAnimation.current) {
-        triggerReveal();
-      }
-    };
-
-    // When video starts playing
-    const handleCanPlay = () => {
-      setVideoLoaded(true);
-      video.play().catch(() => {
-        // Autoplay policy fallback
-      });
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    video.addEventListener("ended", handleEnded);
-    video.addEventListener("canplay", handleCanPlay);
-
-    // Safety fallback: if video is blocked or takes too long, reveal naturally after 3.8s
-    const fallbackTimer = setTimeout(() => {
-      if (!hasTriggeredAnimation.current) {
-        triggerReveal();
-      }
-    }, 3800);
-
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-      video.removeEventListener("ended", handleEnded);
-      video.removeEventListener("canplay", handleCanPlay);
-      clearTimeout(fallbackTimer);
-    };
+    if (videoSrc) void video.play().catch(() => { /* The poster and content remain available. */ });
+    else { video.pause(); video.load(); }
   }, [videoSrc]);
 
-  const scrollToCatalog = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const catalogElement = document.getElementById("catalogo");
-    if (catalogElement) {
-      catalogElement.scrollIntoView({ behavior: "smooth" });
-    }
+  const scrollToCatalog = (event: React.MouseEvent) => {
+    const catalog = document.getElementById("catalogo");
+    if (!catalog) return;
+    event.preventDefault();
+    catalog.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   };
 
   return (
@@ -152,13 +43,14 @@ export default function HeroVideo() {
       {/* Background Video (Desktop ou Mobile de acordo com o breakpoint) */}
       <video
         ref={videoRef}
-        key={videoSrc}
         src={videoSrc}
         poster="/videos/hero-poster.jpg"
         autoPlay
         muted
         playsInline
-        preload="auto"
+        preload="none"
+        aria-hidden="true"
+        tabIndex={-1}
         className="absolute inset-0 w-full h-full object-cover object-center z-0 pointer-events-none"
       />
 
@@ -176,13 +68,10 @@ export default function HeroVideo() {
 
       {/* Hero Components: Centered on Y axis, Aligned Left on X axis with comfortable margin */}
       <div
-        ref={containerRef}
-        style={{ visibility: "hidden", opacity: 0 }}
         className="relative z-20 w-full max-w-xl lg:max-w-2xl px-6 sm:px-12 md:pl-16 lg:pl-24 xl:pl-28 flex flex-col items-start justify-center"
       >
         {/* Hero Title (H1) with text-reveal-wrapper lines */}
         <h1
-          ref={headingRef}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold tracking-tight text-white leading-[1.08] mb-6"
         >
           <span className="text-reveal-wrapper block">
@@ -200,14 +89,13 @@ export default function HeroVideo() {
 
         {/* Auxiliary Text */}
         <p
-          ref={descRef}
           className="text-sm sm:text-base md:text-lg text-slate-300/90 font-light leading-relaxed max-w-lg mb-8"
         >
           Formulação de alto padrão desenvolvida para proteção prolongada, brilho profundo e acabamento impecável em cada superfície do seu veículo.
         </p>
 
         {/* Action CTAs */}
-        <div ref={ctaRef} className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <a
             href="#catalogo"
             onClick={scrollToCatalog}

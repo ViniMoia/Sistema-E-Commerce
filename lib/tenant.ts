@@ -24,14 +24,12 @@ export interface TenantContext {
  */
 export function normalizeHost(rawHost: string): string {
   if (!rawHost) return "";
-  // Remover porta se presente
-  let clean = rawHost.split(":")[0].trim().toLowerCase();
-  // Remover ponto final se presente (trailing dot)
-  if (clean.endsWith(".")) {
-    clean = clean.slice(0, -1);
-  }
-  // Sanitizar mantendo apenas caracteres alfanuméricos, pontos e hífens
-  clean = clean.replace(/[^a-z0-9.-]/g, "");
+  // Reject malformed authorities instead of turning attacker input into a tenant.
+  const match = /^([a-z0-9.-]+)(?::([0-9]{1,5}))?$/i.exec(rawHost.trim());
+  if (!match || (match[2] && (Number(match[2]) < 1 || Number(match[2]) > 65535))) return "";
+  const clean = match[1].toLowerCase().replace(/\.$/, "");
+  if (clean.length > 253 || !clean.split('.').every(label =>
+    label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label))) return "";
   return clean;
 }
 
@@ -208,7 +206,8 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
     }
 
     // 3. Domínio Vercel de preview, staging ou deployment (ex: loja1.vercel.app ou projeto-git-*.vercel.app)
-    if (cleanHost.endsWith(".vercel.app")) {
+    if (process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'preview'
+      && cleanHost.endsWith(".vercel.app")) {
       const slug = cleanHost.replace(".vercel.app", "");
       let loja = await getCachedLojaBySlug(slug);
       if (loja) return loja as TenantContext | null;

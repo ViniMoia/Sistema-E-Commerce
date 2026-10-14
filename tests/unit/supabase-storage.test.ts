@@ -106,6 +106,14 @@ describe("Módulo de Armazenamento Supabase Storage (ACT-P2-02)", () => {
   });
 
   describe("3. Rota de API (/api/upload)", () => {
+    it('recusa buckets arbitrários antes de chamar o cliente privilegiado', async () => {
+      vi.mocked(getCurrentUser).mockResolvedValueOnce({ id: 'cust-1', role: 'CUSTOMER', lojaID: 'loja-1' } as any);
+      const data = new FormData();
+      data.append('bucket', 'private-documents'); data.append('file', new File(['fixture'], 'x.png', { type: 'image/png' }));
+      const response = await POST(new Request('http://localhost/api/upload', { method: 'POST', body: data }));
+      expect(response.status).toBe(400); expect((await response.json()).code).toBe('INVALID_BUCKET');
+      expect(mockUpload).not.toHaveBeenCalled();
+    });
     it("deve retornar 401 se usuário não estiver autenticado", async () => {
       vi.mocked(getCurrentUser).mockResolvedValueOnce(null);
 

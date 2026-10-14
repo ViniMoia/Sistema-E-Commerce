@@ -61,7 +61,10 @@ export async function provisionPostgres({ majorVersion = 16 } = {}) {
     `, capture: true });
     const port = (await command('docker', ['port', name, '5432/tcp'], { capture: true })).split(':').at(-1);
     if (!/^\d+$/.test(port)) throw new Error('Porta descartável inválida.');
-    const url = `postgresql://ecommerce_test:${password}@127.0.0.1:${port}/${database}?schema=public`;
+    // Bound every fixture/client pool independently of the host CPU count.
+    // Next dev compiles multiple route modules; Prisma's CPU-derived default
+    // can exhaust PostgreSQL before the audited suites finish on larger hosts.
+    const url = `postgresql://ecommerce_test:${password}@127.0.0.1:${port}/${database}?schema=public&connection_limit=4`;
     // Values are in memory only. No production .env is passed to a test client.
     const env = { ...process.env, TEST_RUN_ID: runId, TEST_DATABASE_URL: url,
       DATABASE_URL: url, DIRECT_URL: url, TEST_HTTP_TOKEN: randomBytes(32).toString('hex'),

@@ -1,0 +1,88 @@
+# O que falta para Vanderlei
+
+**Atualizado em:** 14/10/2026.
+
+**Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
+
+**Referência:** quadro consolidado atualizado em 14/10 e evidências locais de 13/10/2026. Esta atualização é documental; não houve nova execução de testes ou consulta aos ambientes externos.
+
+A base local já foi implementada e validada. O trabalho restante concentra-se na integração do débito após a entrega de Leno, na configuração e homologação do ambiente externo, na publicação do candidato e na implantação após os aceites. As pendências abaixo não significam que seja necessário refazer as implementações locais aprovadas.
+
+## 1. Informações que Vanderlei precisa confirmar
+
+Estas definições permitem avançar na infraestrutura e nas integrações sem esperar a conclusão de todos os testes financeiros.
+
+- [ ] **Google Cloud:** projeto e número do projeto, região, responsáveis por IAM/billing e limite de custo. Não assumir que o projeto atualmente selecionado no CLI é o destino da loja.
+- [ ] **Domínio:** endereço da loja e da homologação, responsável pelo DNS e configuração de TLS.
+- [ ] **Frete:** transportadora, contrato/conta, origem, cobertura, tarifas e pesos/dimensões do catálogo aprovados pela loja.
+- [ ] **E-mail:** domínio, remetente e recursos separados para homologação e produção.
+- [ ] **Arquivos:** serviço/buckets, permissões e separação entre os ambientes.
+- [ ] **Alertas:** canais de recebimento, responsáveis pelo atendimento e limites de atraso/falha.
+- [ ] **Operação com Leno:** cadência do consumidor, limites de execução/conexões, orçamento Neon e procedimento de contenção.
+
+Registrar identificadores e referências de configuração; manter valores secretos fora deste documento.
+
+## 2. Pendências por pacote
+
+| Pacote | O que Vanderlei ainda precisa fazer | Dependência | Evidência para concluir |
+|---|---|---|---|
+| **V-00 — Ambiente** | Manter o harness isolado nas próximas execuções e completar o mapa de configuração do destino em V-06/V-07. Não há nova instalação local identificada como pendente. | Definição dos ambientes. | Configuração documentada por ambiente, sem credenciais expostas. A validação local já está registrada. |
+| **V-01 — Home** | Medir home, produto, carrinho e checkout em rede/dispositivos e no ambiente final, incluindo primeira carga. Corrigir eventuais regressões demonstradas. | Ambiente externo disponível. | Condições, amostras e percentis registrados; referência de p95 quente até 3 s e primeira carga até 5 s. |
+| **V-02 — Compra no navegador** | Integrar a apresentação do débito ao contrato entregue por Leno. Conferir seleção, valores, estados e confirmação de PIX, crédito até 12x, boleto e débito; repetir cenários de abas/reload/identidade afetados pelas integrações. | Contrato e capacidades de débito; homologação financeira coordenada por Leno. | Fluxo de compra e mensagens coerentes com o estado autoritativo de cada método, sem tratar resposta incerta como sucesso. |
+| **V-03 — Segurança e acesso** | Validar tenant/ownership, proxy, cookies, sessões e reset no domínio real; conferir recuperação administrativa, IAM/MFA e evidências das rotações necessárias. | Domínio, e-mail, permissões e configuração do destino; confirmação de acessos/rotação com Leno. | Tentativas indevidas recusadas, reset entregue e consumido corretamente, acesso administrativo recuperável e segredos protegidos. |
+| **V-04 — Frete** | Homologar cotação e cobertura da transportadora escolhida, validade, indisponibilidade e assinatura entre instâncias; conferir origem, tarifas, pesos e medidas. | Contrato e dados reais aprovados pela loja. | Cotação externa válida e aceita no checkout; expiração/erros sem frete fictício; mesma regra entre instâncias. |
+| **V-05 — Admin e operação comercial** | Conferir catálogo e ajustes de estoque no candidato/Preview correspondente; validar expedição, rastreio, retirada e métricas com fatos financeiros aprovados. | Carga de abertura e contratos/fatos de devolução, pontos e financeiro de Leno. | IDs e rascunhos preservados, alterações persistidas/auditadas e indicadores conciliados com os fatos. |
+| **V-06 — Infraestrutura Cloud Run** | Aplicar a configuração declarativa no destino definido, conferir IAM/billing/secrets, domínio e banco isolado, e ensaiar a imagem/configuração implantadas. | Projeto/região/domínio confirmados; contrato de dados e migration de Leno; etapa externa autorizada. | Revisão identificada, runtime funcional, permissões adequadas e configuração de homologação/produção separada. |
+| **V-07 — Executor, alertas, custo e e-mail** | Configurar Job/Scheduler autenticados e observar progresso/retomada; testar alertas recebidos; validar remetente, entrega de e-mail e Storage; medir backlog, conexões, sobreposição e custo. | Infraestrutura disponível e limites/contratos operacionais acordados com Leno. | Trabalho durável processado sem navegador, falhas detectadas, retomada demonstrada e limites sustentáveis. |
+| **V-08 — Candidato e CI** | Revisar as alterações locais, publicar na branch existente e obter CI remota; identificar SHA, digest e configuração; concluir regressão/capacidade no destino e revisão recíproca. | Revisão de Leno; infraestrutura e integrações disponíveis; aceite financeiro/dados L-08 para fechamento. | Evidências associadas ao mesmo candidato/configuração e parecer conjunto dos critérios aplicáveis. |
+| **V-09 — Implantação** | Coordenar janela e decisão de liberação, executar procedimentos ensaiados e deploy, conferir integrações e observar a operação técnica após a abertura. | Gates anteriores aceitos e procedimentos de dados/financeiro L-09 entregues. | Implantação e recuperação verificadas, runtime acompanhado e ciclos de negócio conciliados com Leno. |
+
+**Frete:** a implementação existente dos Correios usa CalcPrecoPrazo; não há evidência de homologação CWS/Mini Envios. Confirmar a compatibilidade do contrato escolhido antes de declarar a integração pronta.
+
+## 3. O que depende de Leno
+
+Vanderlei acompanha, revisa e integra estas entregas. Sua implementação financeira e de dados permanece com Leno.
+
+| Entrega necessária de Leno | Trabalho de Vanderlei que depende dela |
+|---|---|
+| Confirmar suporte do provedor/conta e implementar débito ponta a ponta. | Integrar UI, capacidades e estados de débito em V-02. |
+| Homologar PIX, crédito até 12x e boleto, com devolução efetivamente concluída e tratamento de incerteza/recusa/expiração. | Validar a experiência dos métodos, confirmação e operação comercial; fechar V-02/V-05/V-08. |
+| Entregar regras/fatos de pontos e devolução física/financeira. | Conferir indicadores, mensagens e operação comercial em V-05. |
+| Aprovar carga e estoque inicial do banco separado; fornecer migrations, backup/restore e recuperação ensaiados. | Preparar infraestrutura do destino e executar os procedimentos combinados de V-06/V-09. |
+| Definir contenção de novas compras preservando obrigações abertas e confirmar isolamento banco/conta. | Validar operação do consumidor e contingência em V-07/V-09. |
+| Emitir aceite L-08, procedimentos L-09 e revisão da entrega de Vanderlei. | Fechar o candidato e realizar a implantação. |
+
+O caso histórico de estorno #3 cancelado/em revisão não comprova devolução concluída. A existência de crédito não comprova débito. Boleto e débito são requisitos do lançamento na atualização de 13/10 e não podem ser considerados adiados pelo plano anterior.
+
+## 4. Ordem sugerida de execução
+
+1. **Confirmar entradas externas:** projeto/região/domínio, transportadora, e-mail, Storage e canais de alerta.
+2. **Preparar a publicação do trabalho local:** revisar arquivos e configuração, manter `homologacao_teste` e obter a CI remota. Não é necessário criar outra branch ou reinstalar Docker como tarefa inicial.
+3. **Configurar e ensaiar homologação no destino:** aplicar o pacote de infraestrutura e validar segurança, frete, e-mail, Storage, consumidor e alertas em etapa autorizada.
+4. **Integrar as entregas financeiras de Leno:** débito, demais métodos, estados, devolução e indicadores. As atividades independentes de infraestrutura podem continuar enquanto esses contratos são concluídos.
+5. **Fechar o candidato:** mesma revisão/artefato/configuração, regressão pertinente, capacidade no destino e revisão cruzada. Medir 30–80 usuários e 2–5 checkouts/minuto somente em ambiente isolado e com provedores controlados.
+6. **Implantar após os aceites:** combinar janela, executar V-09 e acompanhar a operação técnica com a conciliação financeira de Leno.
+
+## 5. Checklist para considerar a parte de Vanderlei encerrada
+
+- [ ] UI de todos os métodos obrigatórios integrada e validada com os contratos aprovados.
+- [ ] Segurança, recuperação de acesso e operação administrativa comprovadas no ambiente final.
+- [ ] Frete, e-mail e arquivos homologados com os recursos reais escolhidos.
+- [ ] Infraestrutura, execução recorrente, retomada e alertas funcionando no destino.
+- [ ] Capacidade e custo medidos nas condições acordadas com Leno.
+- [ ] CI remota aprovada e evidências vinculadas ao SHA, artefato e configuração do candidato.
+- [ ] Revisão recíproca e aceites de dados/financeiro recebidos; critérios de liberação atendidos.
+- [ ] Implantação, contingência e observação operacional executadas e registradas.
+
+Os testes locais já aprovados continuam sendo evidência da rodada registrada: Docker/harness, home/carrinho, segurança/frete, Admin, build otimizado, standalone, duas instâncias Linux e piloto de carga. Reexecutar os testes pertinentes quando houver alterações ou dúvidas materiais; a aprovação local não substitui os itens externos acima.
+
+## 6. Referências
+
+- [Quadro completo de Vanderlei e Leno](TAREFAS_E_STATUS_DOS_DESENVOLVEDORES.md).
+- [Fechamento local de Vanderlei e resultados](FECHAMENTO_LOCAL_VANDERLEI.md).
+- [Evidência estruturada do candidato local](evidencias/candidato-local.json).
+- [Parecer sobre a entrega de Leno](evidencias/V-REVISAO-LENO.md).
+- [Procedimentos Cloud Run, implantação e recuperação](../infra/cloudrun/README.md).
+- [Replanejamento atualizado, incluindo boleto e débito](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md).
+
+Atualizar cada pendência com data e evidência ao concluí-la. Este arquivo registra o trabalho restante; sua criação não executa publicação, provisionamento, operação financeira ou deploy.

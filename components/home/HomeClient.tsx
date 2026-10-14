@@ -386,9 +386,9 @@ export default function HomeClient({
   // --- HOMEPAGE VIEW ---
 
   return (
-    <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30 fade-in">
+    <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30">
       
-      {/* Hero Video Section with GSAP */}
+      {/* Hero: content remains independent of media */}
       <HeroVideo />
 
       {/* Product List Showcase */}
@@ -464,7 +464,7 @@ export default function HomeClient({
                               Produto
                             </span>
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
-                              {formatProductTitle(prod.name)}
+                              <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
                             
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
@@ -564,7 +564,7 @@ export default function HomeClient({
                               Produto
                             </span>
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
-                              {formatProductTitle(prod.name)}
+                              <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
                             
                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">

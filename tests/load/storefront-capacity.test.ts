@@ -153,7 +153,22 @@ async function runProfile(users: number, checkoutsPerMinute: number, targetMs: n
         loadMs: performance.getEntriesByType('navigation')[0].loadEventEnd,
         lcpMs: window.__capacity.lcpMs, externalMediaExcluded: location.pathname === '/' })`) as PageMetric;
       expect(measured.page).toBe(page); expect(measured.readyMs).toBeGreaterThan(0); expect(measured.loadMs).toBeGreaterThan(0);
-      pages.push(measured); await pause(1000);
+      pages.push(measured);
+      if (page === '/') {
+        await browser.waitFor(`(() => { const b = document.querySelector('#catalogo h4 button');
+          return !!b && Object.keys(b).some(k => k.startsWith('__reactProps')); })()`);
+        let actionStart = performance.now();
+        await browser.evaluate('document.querySelector("#catalogo h4 button").click()');
+        await browser.waitFor('document.querySelector(\'button[aria-label="Comprar Agora"]\')?.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})');
+        pages.push({ page: 'product-view', readyMs: performance.now() - actionStart, loadMs: 0, lcpMs: null, externalMediaExcluded: true });
+        actionStart = performance.now();
+        await browser.evaluate('document.querySelector(\'button[aria-label^="Carrinho de compras"]\').click()');
+        await browser.waitFor('(() => { const d = document.querySelector("[role=dialog][data-state=open]"); return !!d && d.innerText.includes("CERA CARGA") && !d.querySelector(".animate-spin"); })()');
+        pages.push({ page: 'cart-drawer', readyMs: performance.now() - actionStart, loadMs: 0, lcpMs: null, externalMediaExcluded: true });
+        await browser.click('Continue Shopping');
+        await browser.waitFor('!document.querySelector("[role=dialog][data-state=open]")');
+      }
+      await pause(1000);
     }
   }
   // All tasks finish before fixture cleanup, including in the failure case.
@@ -172,7 +187,7 @@ async function runProfile(users: number, checkoutsPerMinute: number, targetMs: n
   expect(await prisma.commerceOutbox.count({ where: { aggregateId: { in: [...expectedOrderIds] }, commandType: 'CHECKOUT_COMMITTED' } })).toBe(count);
   expect((await prisma.product.findUniqueOrThrow({ where: { id: productID } })).stock).toBe(stock - count);
   expect((await prisma.productVariants.findUniqueOrThrow({ where: { id: variantID } })).stock).toBe(stock - count);
-  const pageStats = ['/', '/checkout'].map(page => ({ page, readiness: summarize(pages.filter(p => p.page === page).map(p => p.readyMs)),
+  const pageStats = ['/', '/checkout', 'product-view', 'cart-drawer'].map(page => ({ page, readiness: summarize(pages.filter(p => p.page === page).map(p => p.readyMs)),
     loadEvent: summarize(pages.filter(p => p.page === page).map(p => p.loadMs)) }));
   console.log('[capacity] ' + JSON.stringify({ users, checkoutsPerMinute, durationMs, thinkTimeMs, measuredDurationMs: performance.now() - start,
     model: 'paced-http-users-plus-one-browser', warmupExcluded: true, browserCacheDisabled: true,
@@ -185,15 +200,16 @@ async function runProfile(users: number, checkoutsPerMinute: number, targetMs: n
     invariantsChecked: true, fullPageCertified: false, externalProviders: false, productionReady: false }));
   expect(errors).toHaveLength(0); expect(failures).toBe(0); expect(flowMs).toHaveLength(durationMs / 60_000 * checkoutsPerMinute);
   expect(pageStats.every(p => (p.readiness?.count ?? 0) >= 3)).toBe(true);
+  expect(pageStats.every(p => (p.readiness?.p95Ms ?? Infinity) <= targetMs)).toBe(true);
   await browser.close(); browsers = browsers.filter(b => b !== browser);
 }
 
 // Do not inject a four-minute production-only profile into legacy load/dev runs.
 describe.skipIf(process.env.TEST_CAPACITY_RUN !== 'true')('WF-19: bounded capacity pilot with user-supplied estimates', () => {
   it('30 HTTP users and two manual checkouts per minute; real browser readiness', async () => {
-    await runProfile(30, 2, 1000);
+    await runProfile(30, 2, 3000);
   }, 210_000);
   it('80 HTTP users and five manual checkouts per minute; real browser readiness', async () => {
-    await runProfile(80, 5, 1500);
+    await runProfile(80, 5, 3000);
   }, 210_000);
 });

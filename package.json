@@ -23,6 +23,9 @@
     "test:legacy:isolated": "node scripts/run-isolated-tests.mjs tests/integration/legacy-commerce-compatibility.test.ts",
     "build:isolated": "node scripts/verify-isolated-build.mjs",
     "test:isolation:negative": "node scripts/verify-test-isolation.mjs",
+    "test:operations": "node --test tests/scripts/cloudrun-consumer.test.mjs tests/scripts/cloudrun-manifests.test.mjs tests/scripts/homologation-harness.test.mjs",
+    "test:container:isolated": "node scripts/verify-container-runtime.mjs",
+    "infra:render": "node scripts/render-cloudrun.mjs",
     "test:all": "vitest run",
     "test:watch": "vitest"
   },

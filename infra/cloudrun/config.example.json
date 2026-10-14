@@ -1,0 +1,12 @@
+{
+  "project": "example-continental",
+  "projectNumber": "123456789012",
+  "region": "southamerica-east1",
+  "service": "continental-hml",
+  "environment": "SANDBOX",
+  "accountScope": "sandbox-hml",
+  "origin": "https://hml.example.invalid",
+  "image": "southamerica-east1-docker.pkg.dev/example-continental/releases/store@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "secretVersion": "1",
+  "notificationChannels": ["projects/example-continental/notificationChannels/123456789"]
+}

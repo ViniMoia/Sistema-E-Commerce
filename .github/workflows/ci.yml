@@ -2,14 +2,21 @@ name: CI/CD Quality Gates & Security Pipeline
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, homologacao_teste]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, homologacao_teste]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   validate-and-test:
     name: Validation, Security & Quality Gates
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ecommerce_test?schema=public"
@@ -23,11 +30,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Prepare Local Evidence Directory
+        run: mkdir -p artifacts/validation
 
       - name: Validate Prisma Schema
         run: npx prisma validate
@@ -35,8 +45,14 @@ jobs:
       - name: TypeScript Typecheck
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run Unit Tests
         run: npm test
+
+      - name: Validate Consumer and Deployment Manifests
+        run: npm run test:operations
 
       - name: Rebuild and Verify Runtime Migration History
         run: npm run test:migrations:isolated
@@ -45,10 +61,28 @@ jobs:
         run: npm run test:isolation:negative
 
       - name: Verify Isolated Database and HTTP Server
-        run: npm run test:integration:isolated -- tests/integration/test-environment-isolation.test.ts tests/integration/loja-credentials.test.ts tests/integration/commerce-model.test.ts tests/integration/loyalty-simulation-identity.test.ts tests/integration/purchase-tenant-scope.test.ts tests/integration/guest-buyer-identity.test.ts tests/integration/order-transition-atomicity.test.ts tests/integration/inventory-admin-integrity.test.ts tests/integration/cart-mutation-atomicity.test.ts tests/integration/loyalty-lot-accounting.test.ts tests/integration/auth-eligibility-atomicity.test.ts tests/integration/freight-authority.test.ts tests/integration/payment-plan-authority.test.ts tests/integration/checkout-intent-authority.test.ts tests/integration/payment-durable-execution.test.ts tests/integration/checkout-client-boundaries.test.ts tests/integration/checkout-browser-state.test.ts tests/integration/order-fulfillment-atomicity.test.ts tests/integration/order-fulfillment-browser.test.ts tests/integration/customer-financial-metrics.test.ts tests/integration/customer-financial-metrics-browser.test.ts tests/integration/legacy-commerce-compatibility.test.ts
+        run: npm run test:integration:isolated -- --homologation 2>&1 | tee artifacts/validation/integration.log
 
       - name: Production Build and Two-Instance Runtime Regression
-        run: npm run test:production:isolated
+        run: npm run test:production:isolated 2>&1 | tee artifacts/validation/production.log
 
       - name: Relocated Standalone Package and Runtime Regression
-        run: npm run test:standalone:isolated
+        run: npm run test:standalone:isolated 2>&1 | tee artifacts/validation/standalone.log
+
+      - name: Bounded Capacity Pilot with Disposable Providers
+        run: npm run test:capacity:isolated 2>&1 | tee artifacts/validation/capacity.log
+
+      - name: Build Cloud Run Image
+        run: docker build --build-arg RELEASE_SHA=${{ github.sha }} -t continental-vanderlei:ci .
+
+      - name: Validate Linux Container, Assets, Restart and Consumer
+        run: npm run test:container:isolated -- continental-vanderlei:ci 2>&1 | tee artifacts/validation/container.log
+
+      - name: Retain Evidence for This Revision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-validation-${{ github.sha }}
+          path: artifacts/validation/*.log
+          if-no-files-found: ignore
+          retention-days: 14

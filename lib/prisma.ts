@@ -47,17 +47,34 @@ const prismaClientSingleton = () => {
 declare global {
   // eslint-disable-next-line no-var
   var prismaGlobal: ReturnType<typeof prismaClientSingleton> | undefined
+  var prismaDevelopmentTest: { url: string; client: ReturnType<typeof prismaClientSingleton> } | undefined
 }
 
-// Test runs never reuse a client created against a different datasource.
-const prisma = (!isTestRun && globalThis.prismaGlobal) || prismaClientSingleton()
+// Next dev recompiles route modules. Reuse only the exact disposable datasource
+// within that server; fixture/worker processes keep independent clients. The URL
+// policy above still runs on every import, before this cache is consulted.
+function developmentTestClient() {
+  const cached = globalThis.prismaDevelopmentTest
+  if (cached) {
+    if (cached.url !== testConfig!.url) throw new Error('Test datasource changed; restart the isolated development server.')
+    return cached.client
+  }
+  const client = prismaClientSingleton()
+  globalThis.prismaDevelopmentTest = { url: testConfig!.url, client }
+  process.once('beforeExit', () => { void client.$disconnect().catch(() => {}) })
+  return client
+}
+
+const prisma = testConfig && process.env.NODE_ENV === 'development'
+  ? developmentTestClient()
+  : (!isTestRun && globalThis.prismaGlobal) || prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production' && !isTestRun) {
   globalThis.prismaGlobal = prisma
 }
 
 // Hook de encerramento seguro de conexões em processos Node.js locais
-if (typeof process !== 'undefined') {
+if (typeof process !== 'undefined' && !isTestRun) {
   const cleanDisconnect = async () => {
     if (globalThis.prismaGlobal) {
       await globalThis.prismaGlobal.$disconnect().catch(() => {})

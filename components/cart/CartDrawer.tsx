@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCartStore } from "@/store/cart.store";
@@ -11,7 +10,6 @@ import { CartItem } from "./CartItem";
 import { CartSummary } from "./CartSummary";
 
 export function CartDrawer() {
-  const router = useRouter();
   const { isOpen, setIsOpen } = useCart();
   const { 
     cart, 
@@ -86,7 +84,10 @@ export function CartDrawer() {
               total={total} 
               onCheckout={() => {
                 setIsOpen(false);
-                router.push("/checkout");
+                // Checkout starts from the persisted cart/session. A document
+                // navigation also avoids racing an in-flight storefront RSC
+                // refresh that can leave client navigation on the product view.
+                window.location.assign("/checkout");
               }}
               onContinueShopping={() => setIsOpen(false)}
             />

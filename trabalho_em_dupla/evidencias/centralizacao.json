@@ -1,0 +1,186 @@
+{
+  "generatedAt": "2026-10-13T18:26:33.729Z",
+  "directory": "Sistema-E-Commerce",
+  "branch": "homologacao_teste",
+  "baseline": "a6ab64293ca78b9fa378af9c19cf5eec4028bbf0",
+  "upstream": "origin/homologacao_teste",
+  "transferredFiles": 38,
+  "transferHashVerified": true,
+  "auxiliaryWorktreeRemoved": true,
+  "temporaryLocalBranchRemoved": true,
+  "remoteBranchCreated": false,
+  "pushed": false,
+  "committed": false,
+  "privateEnv": {
+    "file": "env.example",
+    "preserved": true,
+    "gitIgnored": true,
+    "loaded": false,
+    "placeholderValuesRemain": true
+  },
+  "checks": {
+    "unit": {
+      "passed": 715,
+      "files": 83
+    },
+    "operations": {
+      "passed": 12
+    },
+    "typecheck": {
+      "passed": true
+    },
+    "integration": {
+      "passed": 6,
+      "files": 2,
+      "suites": [
+        "inventory-admin-browser",
+        "test-environment-isolation"
+      ]
+    }
+  },
+  "upstreamFilesPreserved": [
+    "components/admin/InventoryPanel.tsx",
+    "components/admin/ProductForm.tsx",
+    "diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md",
+    "tests/integration/inventory-admin-browser.test.ts",
+    "tests/unit/product-form-variants.test.ts"
+  ],
+  "inputFiles": [
+    {
+      "file": ".dockerignore",
+      "sha256": "d2767548354e8c0d3066aa6151437b4a16e9720809a571391d5366cfffdd1c25"
+    },
+    {
+      "file": ".env.example",
+      "sha256": "be7ceea405ce94a477ec0d4e3f5134092beb18c5850c261c17af5c839c7e6367"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "ee7e1ffe49de0a367e51d79042c5eb2ae48690ee2f3496a888da70ebe5769fd0"
+    },
+    {
+      "file": ".gitignore",
+      "sha256": "66b0ce507ca91f0050e993c5f28beaef3889041e95c1daf85fac531252caa42f"
+    },
+    {
+      "file": ".nvmrc",
+      "sha256": "6d07ac247e81cd42c2c20abf8dfe504413d6b2422e4aba9b2c975a776f155921"
+    },
+    {
+      "file": "Dockerfile",
+      "sha256": "d620a305fa7312f5fe9882cd1fef31b309ce5ee01a755d9071f0b26256202fd6"
+    },
+    {
+      "file": "app/api/upload/route.ts",
+      "sha256": "7c7496a6180008e7a6ec16b05316c28f21aadffdf530b0ed281e217997972709"
+    },
+    {
+      "file": "app/globals.css",
+      "sha256": "fdea475e08c1a893988b71cf61cf93cbc6303d3ca1460a39098af4a3bb322b03"
+    },
+    {
+      "file": "components/home/HeroVideo.tsx",
+      "sha256": "ce7dc7caa2b7fe04baf9c80737aaf91181456c5a703e09a232490c64b42dc7f8"
+    },
+    {
+      "file": "components/home/HomeClient.tsx",
+      "sha256": "6a96fba7bdfdafb3d75156faacf11cafb128ea1783748b2350a0ccb2d0f8efdf"
+    },
+    {
+      "file": "infra/cloudrun/README.md",
+      "sha256": "58f2b93ee551e871b1ae4a0cf013e42b4b1f55f499795e845ff522cd48d94ea0"
+    },
+    {
+      "file": "infra/cloudrun/config.example.json",
+      "sha256": "b1a5b3b1289ca43ff35150e3ee81a5cf566245d4c29625bb193a759d4042996b"
+    },
+    {
+      "file": "lib/logger.ts",
+      "sha256": "c27e3673e48e7dc6beb5efe5b12bb60d70e550318d1b5f77af02de96500a03b8"
+    },
+    {
+      "file": "lib/supabase/storage.ts",
+      "sha256": "837ef4016876021a4240bbfbc728d226e4c4daad40e056aeddf078e5c40c19c9"
+    },
+    {
+      "file": "lib/tenant.ts",
+      "sha256": "f0658c87b4b073468a3522745e6c8fec7d283b01438e1ed942e2b00122443a2c"
+    },
+    {
+      "file": "package.json",
+      "sha256": "d7572cc7afaa0994f48e5170ca1e9ff7aa58d79cba8d6a3309fa5d46a3a9e444"
+    },
+    {
+      "file": "scripts/cloudrun-consumer.mjs",
+      "sha256": "824ae908c264711e9ea3affe361fc5d22e2cb538cf573f7ddd67a0b8d6d64b03"
+    },
+    {
+      "file": "scripts/lib/homologation-suites.mjs",
+      "sha256": "b5f11a1b4b093efc61395569ab9bc69d4fa9a184f195a7f1ac69900a841e72d9"
+    },
+    {
+      "file": "scripts/render-cloudrun.mjs",
+      "sha256": "ccab0e017028a98f31e903e069e0cd608d5dfb54a7518ce0e74807813b4af18a"
+    },
+    {
+      "file": "scripts/run-isolated-tests.mjs",
+      "sha256": "251666ef8f5ac3d58d1d6c577e4c9be3de41aa2876bd96a2a4b35774e26df554"
+    },
+    {
+      "file": "scripts/run-production-tests.mjs",
+      "sha256": "0eaebc9f24824c4364cff064b06b722d5ee21a92b928d6e5943f25315c7c89a4"
+    },
+    {
+      "file": "scripts/verify-container-runtime.mjs",
+      "sha256": "4cf24093686a01cf933929add4a2475315179688693e3eeab9569f611d398d1a"
+    },
+    {
+      "file": "services/freight/providers/correios.provider.ts",
+      "sha256": "fb8f0648cb4ba1e5b63ada8271f3295ed2851ca16df4076a87486afd4207966e"
+    },
+    {
+      "file": "services/freight/providers/jt-express.provider.ts",
+      "sha256": "4e2b6edd58e0ce80d06264399cdb98117fdc238c43483745366879d80000e027"
+    },
+    {
+      "file": "tests/integration/storefront-readiness-browser.test.ts",
+      "sha256": "f306a9d64956d707b66415d18b8432401dd21a6a7e00822ea9fe3e252b09d6ab"
+    },
+    {
+      "file": "tests/load/storefront-capacity.test.ts",
+      "sha256": "1ad9d7beb794678c8030ace3c9986832450c46cde6d7289aaf52258d3f7f69f1"
+    },
+    {
+      "file": "tests/scripts/cloudrun-consumer.test.mjs",
+      "sha256": "79d6fba7936897e33ea075600f1a17b87793422a39ff84ae4109fd00f1b92f45"
+    },
+    {
+      "file": "tests/scripts/cloudrun-manifests.test.mjs",
+      "sha256": "fd5bcff7a5e406cad984aeacc7273caf3c509315ff83a103038e7c45acc75db7"
+    },
+    {
+      "file": "tests/unit/freight-contract.test.ts",
+      "sha256": "ce961408f214c51ab01b1eefbbab3f0524f276238d5daaa9ad8fee967f99a3cc"
+    },
+    {
+      "file": "tests/unit/jt-freight-boundaries.test.ts",
+      "sha256": "5b779a8673b000edec5e51b72faae9b284f99528ccb552fde4bb928423cd5ee6"
+    },
+    {
+      "file": "tests/unit/supabase-storage.test.ts",
+      "sha256": "af35c975192501051414b2da758058c19cf848de7b3329060ea1d5ca85e8bb3d"
+    },
+    {
+      "file": "tests/unit/tenant-resolver.test.ts",
+      "sha256": "d9d3feb1a4c0191532aae67f3d23901dddc38d5764edfbeba0d11ec6f41dbf87"
+    },
+    {
+      "file": "tests/unit/vanderlei-security.test.ts",
+      "sha256": "73fe28b3d32dfbc5984c4c6eb157dd14f0859563f41daca3684a1f06f9379bbf"
+    }
+  ],
+  "inputManifestSHA256": "fc89fc403d0624e39464f067a7b2bad1db8ce6bdbbad9f4a93ff06daa9e6366a",
+  "previousFullValidation": "validacao-local.json",
+  "fullRegressionRepeated": false,
+  "productionReady": false
+}

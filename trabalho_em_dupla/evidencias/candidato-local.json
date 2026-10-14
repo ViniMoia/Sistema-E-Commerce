@@ -1,0 +1,3507 @@
+{
+  "generatedAt": "2026-10-13T19:40:00.078Z",
+  "branch": "homologacao_teste",
+  "baseline": "a6ab64293ca78b9fa378af9c19cf5eec4028bbf0",
+  "committed": false,
+  "pushed": false,
+  "inputManifestSHA256": "f029d625701708cca84b3a0b6a7da2da9ecce12494999a0f7d7fe13ed59890dd",
+  "inputFiles": [
+    {
+      "file": ".dockerignore",
+      "sha256": "d2767548354e8c0d3066aa6151437b4a16e9720809a571391d5366cfffdd1c25"
+    },
+    {
+      "file": ".env.example",
+      "sha256": "be7ceea405ce94a477ec0d4e3f5134092beb18c5850c261c17af5c839c7e6367"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "7bd3cf0377e3c3e7d85f710f96bb723cceee492ff7c78420f7f1e672bee95f11"
+    },
+    {
+      "file": ".gitignore",
+      "sha256": "66b0ce507ca91f0050e993c5f28beaef3889041e95c1daf85fac531252caa42f"
+    },
+    {
+      "file": ".nvmrc",
+      "sha256": "6d07ac247e81cd42c2c20abf8dfe504413d6b2422e4aba9b2c975a776f155921"
+    },
+    {
+      "file": "Dockerfile",
+      "sha256": "d620a305fa7312f5fe9882cd1fef31b309ce5ee01a755d9071f0b26256202fd6"
+    },
+    {
+      "file": "app/api/upload/route.ts",
+      "sha256": "7c7496a6180008e7a6ec16b05316c28f21aadffdf530b0ed281e217997972709"
+    },
+    {
+      "file": "app/globals.css",
+      "sha256": "fdea475e08c1a893988b71cf61cf93cbc6303d3ca1460a39098af4a3bb322b03"
+    },
+    {
+      "file": "components/cart/CartDrawer.tsx",
+      "sha256": "f3a6ba6baef688ce7b165dd2bf4a52cc7dafac3fac2007978f7ae4e9228ac85c"
+    },
+    {
+      "file": "components/home/HeroVideo.tsx",
+      "sha256": "ce7dc7caa2b7fe04baf9c80737aaf91181456c5a703e09a232490c64b42dc7f8"
+    },
+    {
+      "file": "components/home/HomeClient.tsx",
+      "sha256": "9590c186f107f798d7ae48ac58e9f5968b29c6262dbedf75eeba0baae875d011"
+    },
+    {
+      "file": "infra/cloudrun/config.example.json",
+      "sha256": "b1a5b3b1289ca43ff35150e3ee81a5cf566245d4c29625bb193a759d4042996b"
+    },
+    {
+      "file": "lib/logger.ts",
+      "sha256": "c27e3673e48e7dc6beb5efe5b12bb60d70e550318d1b5f77af02de96500a03b8"
+    },
+    {
+      "file": "lib/prisma.ts",
+      "sha256": "108883b6813e0d7850f2cecc9a5779b5a1f26d354dddf45c1974ec7c8f429a2d"
+    },
+    {
+      "file": "lib/supabase/storage.ts",
+      "sha256": "837ef4016876021a4240bbfbc728d226e4c4daad40e056aeddf078e5c40c19c9"
+    },
+    {
+      "file": "lib/tenant.ts",
+      "sha256": "f0658c87b4b073468a3522745e6c8fec7d283b01438e1ed942e2b00122443a2c"
+    },
+    {
+      "file": "package.json",
+      "sha256": "9e9deb606d303cfde5758be6610e28824c369f9a7a6f4d6b638a5102cb3c3c4b"
+    },
+    {
+      "file": "scripts/cloudrun-consumer.mjs",
+      "sha256": "824ae908c264711e9ea3affe361fc5d22e2cb538cf573f7ddd67a0b8d6d64b03"
+    },
+    {
+      "file": "scripts/lib/browser-executable.mjs",
+      "sha256": "848e7cb52d9fc253a0ba988dffabd0314127522188e7596d49fc9265d9b4cb9d"
+    },
+    {
+      "file": "scripts/lib/disposable-postgres.mjs",
+      "sha256": "4c35344f41b6b68e36388bede49f0bdcb13a5d574633d31e4f879b2cc385b622"
+    },
+    {
+      "file": "scripts/lib/homologation-suites.mjs",
+      "sha256": "6cb27e06efb647ffb9b1e57763ab3ebbaef18e6b61ba551552b52bc6f154769d"
+    },
+    {
+      "file": "scripts/lib/isolated-browser.mjs",
+      "sha256": "6e44c23184a4d428ae6988b0bf95d4fbcae8ee1cbbc45814e5ca3653ffdc73e8"
+    },
+    {
+      "file": "scripts/render-cloudrun.mjs",
+      "sha256": "ccab0e017028a98f31e903e069e0cd608d5dfb54a7518ce0e74807813b4af18a"
+    },
+    {
+      "file": "scripts/run-isolated-tests.mjs",
+      "sha256": "34dcc6dea43145474c01dc0527bb92d3fbb7f382d5f1d2178738882f72385fe9"
+    },
+    {
+      "file": "scripts/run-production-tests.mjs",
+      "sha256": "0eaebc9f24824c4364cff064b06b722d5ee21a92b928d6e5943f25315c7c89a4"
+    },
+    {
+      "file": "scripts/verify-container-runtime.mjs",
+      "sha256": "4cf24093686a01cf933929add4a2475315179688693e3eeab9569f611d398d1a"
+    },
+    {
+      "file": "services/freight/providers/correios.provider.ts",
+      "sha256": "fb8f0648cb4ba1e5b63ada8271f3295ed2851ca16df4076a87486afd4207966e"
+    },
+    {
+      "file": "services/freight/providers/jt-express.provider.ts",
+      "sha256": "4e2b6edd58e0ce80d06264399cdb98117fdc238c43483745366879d80000e027"
+    },
+    {
+      "file": "tests/integration/storefront-readiness-browser.test.ts",
+      "sha256": "fb3a33f05fc6f8d87a62b3c44e6b148feec0b49aa070f73cf6d03ea6edf7a7cc"
+    },
+    {
+      "file": "tests/load/storefront-capacity.test.ts",
+      "sha256": "1ad9d7beb794678c8030ace3c9986832450c46cde6d7289aaf52258d3f7f69f1"
+    },
+    {
+      "file": "tests/scripts/cloudrun-consumer.test.mjs",
+      "sha256": "79d6fba7936897e33ea075600f1a17b87793422a39ff84ae4109fd00f1b92f45"
+    },
+    {
+      "file": "tests/scripts/cloudrun-manifests.test.mjs",
+      "sha256": "fd5bcff7a5e406cad984aeacc7273caf3c509315ff83a103038e7c45acc75db7"
+    },
+    {
+      "file": "tests/scripts/homologation-harness.test.mjs",
+      "sha256": "befb6c5867bfb1f797239da585fc51a4af56ee199337ce0201d387a1e55d52b0"
+    },
+    {
+      "file": "tests/unit/freight-contract.test.ts",
+      "sha256": "ce961408f214c51ab01b1eefbbab3f0524f276238d5daaa9ad8fee967f99a3cc"
+    },
+    {
+      "file": "tests/unit/jt-freight-boundaries.test.ts",
+      "sha256": "5b779a8673b000edec5e51b72faae9b284f99528ccb552fde4bb928423cd5ee6"
+    },
+    {
+      "file": "tests/unit/prisma-development-isolation.test.ts",
+      "sha256": "ef06e46771a0df1d8d24e3a91300af49b200a46ae6202a80f8684135636c6e75"
+    },
+    {
+      "file": "tests/unit/supabase-storage.test.ts",
+      "sha256": "af35c975192501051414b2da758058c19cf848de7b3329060ea1d5ca85e8bb3d"
+    },
+    {
+      "file": "tests/unit/tenant-resolver.test.ts",
+      "sha256": "d9d3feb1a4c0191532aae67f3d23901dddc38d5764edfbeba0d11ec6f41dbf87"
+    },
+    {
+      "file": "tests/unit/vanderlei-security.test.ts",
+      "sha256": "73fe28b3d32dfbc5984c4c6eb157dd14f0859563f41daca3684a1f06f9379bbf"
+    }
+  ],
+  "releaseLabel": "a6ab642-local-f029d625701708cca84b3a0b6a7da2da9ecce12494999a0f7d7fe13ed59890dd",
+  "documentationExcludedFromCodeManifest": true,
+  "checks": {
+    "unit": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-unit.log",
+        "sha256": "839627f0c3f349ed2941f35f0867e0d10c8be399a8cf1a2b4f6d1c8eb8d7f130",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 84,
+          "tests": 719
+        }
+      ]
+    },
+    "operations": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-operations.log",
+        "sha256": "dd6ebd70465dc785dd8e86a6b749f79baacf79a41d8a2635a35f3ea0317550e9",
+        "encoding": "utf16le"
+      },
+      "tests": 15
+    },
+    "lint": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-lint.log",
+        "sha256": "01e6bf444ebde233615e169fd64ebba9366f15adb60e22a551574d11d8f51bc9",
+        "encoding": "utf16le"
+      },
+      "errors": 0,
+      "warnings": 18
+    },
+    "isolation": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-negative-v3.log",
+        "sha256": "d0ce7ca7c511c4ac756e32de4ee665418fb4943eca71e3d6715cfa02d75c2599",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 1,
+          "tests": 1
+        },
+        {
+          "files": 1,
+          "tests": 1
+        }
+      ]
+    },
+    "migrations": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-migrations-v2.log",
+        "sha256": "734685054a15975513a91ce171393602d24aac02131762c16faef55204768f8d",
+        "encoding": "utf16le"
+      }
+    },
+    "integration": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-integration-v3.log",
+        "sha256": "477baa319d41b6a285bd755ac3cde75dad1edfef90ac603d1b66fcee0f774a22",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 28,
+          "tests": 338
+        }
+      ],
+      "readiness": [
+        {
+          "device": {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "mobile": false
+          },
+          "browser": {
+            "executable": "chrome.exe",
+            "product": "Chrome/155.0.8059.40",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 658.3433000000005,
+              "warmP95Ms": 2073.1592,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 133.96209999999974,
+              "warmP95Ms": 30.65859999999884,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 1621.252699999999,
+              "warmP95Ms": 327.08470000000125,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 2487.9902,
+              "warmP95Ms": 1568.7619999999988,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "development",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        },
+        {
+          "device": {
+            "name": "mobile",
+            "width": 390,
+            "height": 844,
+            "mobile": true
+          },
+          "browser": {
+            "executable": "chrome.exe",
+            "product": "Chrome/155.0.8059.40",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 824.8413,
+              "warmP95Ms": 918.1549999999988,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 159.02089999999953,
+              "warmP95Ms": 143.81359999999768,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 327.66820000000007,
+              "warmP95Ms": 234.5818999999974,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 1083.7976999999992,
+              "warmP95Ms": 1133.467300000004,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "development",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        }
+      ]
+    },
+    "production": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-production-v3.log",
+        "sha256": "81e001b9a66276d33d7ce09c5871b3d65131bf22efeb1a30a0803cb8d9f202a0",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 30,
+          "tests": 347
+        }
+      ],
+      "runtime": {
+        "startedAt": "2026-10-13T19:21:57.288Z",
+        "finishedAt": "2026-10-13T19:31:14.001Z",
+        "runId": "c890148ee38fef52987eaf577422199f",
+        "database": "ecommerce_test_c890148ee38fef52987eaf577422199f",
+        "node": "v22.23.3",
+        "sourceSHA256": "41a7e66aacc8c9b24156f4a5221c9e05df2c9a7c30f1111255e4950850fb863b",
+        "testsSHA256": "55b488669cc22d7615bb8def912e89ba67e14cbb6c6cad893a4a68cfab7175fb",
+        "scriptsSHA256": "283c4a573d2a2f30175b9595bd7c62caca57915f9d4489cbf66c5fcd0dfd6021",
+        "buildId": "8SO1GJPxub52uaYL_7I6N",
+        "runtime": "next start",
+        "platform": "win32",
+        "architecture": "x64",
+        "instances": 2,
+        "postgres": 16,
+        "files": [
+          "tests/integration/test-environment-isolation.test.ts",
+          "tests/integration/loja-credentials.test.ts",
+          "tests/integration/commerce-model.test.ts",
+          "tests/integration/loyalty-simulation-identity.test.ts",
+          "tests/integration/purchase-tenant-scope.test.ts",
+          "tests/integration/guest-buyer-identity.test.ts",
+          "tests/integration/order-transition-atomicity.test.ts",
+          "tests/integration/inventory-admin-integrity.test.ts",
+          "tests/integration/inventory-admin-browser.test.ts",
+          "tests/integration/cart-mutation-atomicity.test.ts",
+          "tests/integration/loyalty-lot-accounting.test.ts",
+          "tests/integration/auth-eligibility-atomicity.test.ts",
+          "tests/integration/freight-authority.test.ts",
+          "tests/integration/payment-plan-authority.test.ts",
+          "tests/integration/checkout-intent-authority.test.ts",
+          "tests/integration/payment-durable-execution.test.ts",
+          "tests/integration/checkout-client-boundaries.test.ts",
+          "tests/integration/checkout-browser-state.test.ts",
+          "tests/integration/order-fulfillment-atomicity.test.ts",
+          "tests/integration/order-fulfillment-browser.test.ts",
+          "tests/integration/customer-financial-metrics.test.ts",
+          "tests/integration/customer-financial-metrics-browser.test.ts",
+          "tests/integration/legacy-commerce-compatibility.test.ts",
+          "tests/integration/cart-drawer-browser.test.ts",
+          "tests/integration/registration-browser.test.ts",
+          "tests/integration/storefront-readiness-browser.test.ts",
+          "tests/integration/payment-process-recovery.test.ts",
+          "tests/integration/payment-lifecycle-homologation.test.ts",
+          "tests/production"
+        ],
+        "capacity": false,
+        "externalProviders": false,
+        "productionReady": false
+      },
+      "readiness": [
+        {
+          "device": {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "mobile": false
+          },
+          "browser": {
+            "executable": "chrome.exe",
+            "product": "Chrome/155.0.8059.40",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 355.7109999999998,
+              "warmP95Ms": 95.48239999999987,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 18.33939999999984,
+              "warmP95Ms": 37.002700000000004,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 146.29700000000003,
+              "warmP95Ms": 137.77179999999953,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 335.73590000000013,
+              "warmP95Ms": 269.7512999999999,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "production",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        },
+        {
+          "device": {
+            "name": "mobile",
+            "width": 390,
+            "height": 844,
+            "mobile": true
+          },
+          "browser": {
+            "executable": "chrome.exe",
+            "product": "Chrome/155.0.8059.40",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 425.40900000000056,
+              "warmP95Ms": 179.33820000000014,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 11.758300000000418,
+              "warmP95Ms": 46.889000000000124,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 175.66740000000027,
+              "warmP95Ms": 130.6178,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 320.89280000000053,
+              "warmP95Ms": 192.8208999999997,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "production",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        }
+      ]
+    },
+    "standaloneEdge": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-standalone-edge-v3.log",
+        "sha256": "4b2548e0da759978105e94cf7c45a3fd1320844c6302313c3675ff5686bc7ca9",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 30,
+          "tests": 347
+        }
+      ],
+      "runtime": {
+        "startedAt": "2026-10-13T19:21:57.329Z",
+        "finishedAt": "2026-10-13T19:33:05.692Z",
+        "runId": "01205ff65171849117442d2ebefd890e",
+        "database": "ecommerce_test_01205ff65171849117442d2ebefd890e",
+        "node": "v22.23.3",
+        "sourceSHA256": "41a7e66aacc8c9b24156f4a5221c9e05df2c9a7c30f1111255e4950850fb863b",
+        "testsSHA256": "55b488669cc22d7615bb8def912e89ba67e14cbb6c6cad893a4a68cfab7175fb",
+        "scriptsSHA256": "283c4a573d2a2f30175b9595bd7c62caca57915f9d4489cbf66c5fcd0dfd6021",
+        "buildId": "Gw3fjAIpyh8DIeNGpylRT",
+        "runtime": "standalone/server.js",
+        "packageManifest": {
+          "sha256": "1dfa82e78192e8a1434984057cde5c042c4a9ebd245459243c7e2637ccc2eeff",
+          "files": 2445,
+          "bytes": 74455560,
+          "buildId": "Gw3fjAIpyh8DIeNGpylRT"
+        },
+        "platform": "win32",
+        "architecture": "x64",
+        "instances": 2,
+        "postgres": 16,
+        "files": [
+          "tests/integration/test-environment-isolation.test.ts",
+          "tests/integration/loja-credentials.test.ts",
+          "tests/integration/commerce-model.test.ts",
+          "tests/integration/loyalty-simulation-identity.test.ts",
+          "tests/integration/purchase-tenant-scope.test.ts",
+          "tests/integration/guest-buyer-identity.test.ts",
+          "tests/integration/order-transition-atomicity.test.ts",
+          "tests/integration/inventory-admin-integrity.test.ts",
+          "tests/integration/inventory-admin-browser.test.ts",
+          "tests/integration/cart-mutation-atomicity.test.ts",
+          "tests/integration/loyalty-lot-accounting.test.ts",
+          "tests/integration/auth-eligibility-atomicity.test.ts",
+          "tests/integration/freight-authority.test.ts",
+          "tests/integration/payment-plan-authority.test.ts",
+          "tests/integration/checkout-intent-authority.test.ts",
+          "tests/integration/payment-durable-execution.test.ts",
+          "tests/integration/checkout-client-boundaries.test.ts",
+          "tests/integration/checkout-browser-state.test.ts",
+          "tests/integration/order-fulfillment-atomicity.test.ts",
+          "tests/integration/order-fulfillment-browser.test.ts",
+          "tests/integration/customer-financial-metrics.test.ts",
+          "tests/integration/customer-financial-metrics-browser.test.ts",
+          "tests/integration/legacy-commerce-compatibility.test.ts",
+          "tests/integration/cart-drawer-browser.test.ts",
+          "tests/integration/registration-browser.test.ts",
+          "tests/integration/storefront-readiness-browser.test.ts",
+          "tests/integration/payment-process-recovery.test.ts",
+          "tests/integration/payment-lifecycle-homologation.test.ts",
+          "tests/production"
+        ],
+        "capacity": false,
+        "externalProviders": false,
+        "productionReady": false
+      },
+      "readiness": [
+        {
+          "device": {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "mobile": false
+          },
+          "browser": {
+            "executable": "msedge.exe",
+            "product": "Edg/155.0.4283.45",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 348.7291,
+              "warmP95Ms": 169.35479999999916,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 38.72580000000016,
+              "warmP95Ms": 30.22569999999996,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 157.95250000000033,
+              "warmP95Ms": 146.72869999999966,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 309.08219999999983,
+              "warmP95Ms": 435.03980000000047,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "production",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        },
+        {
+          "device": {
+            "name": "mobile",
+            "width": 390,
+            "height": 844,
+            "mobile": true
+          },
+          "browser": {
+            "executable": "msedge.exe",
+            "product": "Edg/155.0.4283.45",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+          },
+          "metrics": {
+            "home": {
+              "firstMs": 357.77070000000003,
+              "warmP95Ms": 110.46149999999943,
+              "samples": 5
+            },
+            "product": {
+              "firstMs": 24.383600000000115,
+              "warmP95Ms": 54.411699999999655,
+              "samples": 5
+            },
+            "cart": {
+              "firstMs": 154.6815999999999,
+              "warmP95Ms": 146.20110000000022,
+              "samples": 5
+            },
+            "checkout": {
+              "firstMs": 320.7019,
+              "warmP95Ms": 226.9405999999999,
+              "samples": 5
+            }
+          },
+          "network": "loopback",
+          "externalMedia": "blocked",
+          "runtime": "production",
+          "coldScope": "fresh browser cache, not Cloud Run cold start",
+          "productionReady": false
+        }
+      ]
+    },
+    "capacity": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-capacity.log",
+        "sha256": "b554f914104283a93e32a4c92de3e8b01a8881e6a5831486bee18df7601f60cf",
+        "encoding": "utf16le"
+      },
+      "summaries": [
+        {
+          "files": 3,
+          "tests": 11
+        }
+      ],
+      "runtime": {
+        "startedAt": "2026-10-13T19:33:39.975Z",
+        "finishedAt": "2026-10-13T19:38:46.548Z",
+        "runId": "c59c1f109c47709acbea56e1ebf1b8de",
+        "database": "ecommerce_test_c59c1f109c47709acbea56e1ebf1b8de",
+        "node": "v22.23.3",
+        "sourceSHA256": "41a7e66aacc8c9b24156f4a5221c9e05df2c9a7c30f1111255e4950850fb863b",
+        "testsSHA256": "55b488669cc22d7615bb8def912e89ba67e14cbb6c6cad893a4a68cfab7175fb",
+        "scriptsSHA256": "283c4a573d2a2f30175b9595bd7c62caca57915f9d4489cbf66c5fcd0dfd6021",
+        "buildId": "s1kQrdWKfszcT7MJZWdIq",
+        "runtime": "next start",
+        "platform": "win32",
+        "architecture": "x64",
+        "instances": 2,
+        "postgres": 16,
+        "files": [
+          "tests/load/storefront-capacity.test.ts",
+          "tests/production"
+        ],
+        "capacity": true,
+        "externalProviders": false,
+        "productionReady": false
+      },
+      "profiles": [
+        {
+          "users": 30,
+          "checkoutsPerMinute": 2,
+          "durationMs": 120000,
+          "thinkTimeMs": 5000,
+          "measuredDurationMs": 120104.5246,
+          "model": "paced-http-users-plus-one-browser",
+          "warmupExcluded": true,
+          "browserCacheDisabled": true,
+          "maxInFlight": 3,
+          "failures": 0,
+          "requestLatency": {
+            "count": 736,
+            "p50Ms": 17.030299999998533,
+            "p95Ms": 40.077399999998306,
+            "maxMs": 295.33320000000003
+          },
+          "launchLag": {
+            "count": 720,
+            "p50Ms": 0.2547999999951571,
+            "p95Ms": 1.6321666666626697,
+            "maxMs": 3.7132666666657315
+          },
+          "routes": [
+            {
+              "route": "/",
+              "timing": {
+                "count": 240,
+                "p50Ms": 16.353799999997136,
+                "p95Ms": 30.962100000004284,
+                "maxMs": 199.4996000000001
+              }
+            },
+            {
+              "route": "/api/products?limit=100",
+              "timing": {
+                "count": 240,
+                "p50Ms": 11.270700000008219,
+                "p95Ms": 17.436700000005658,
+                "maxMs": 98.67560000000003
+              }
+            },
+            {
+              "route": "/api/cart",
+              "timing": {
+                "count": 244,
+                "p50Ms": 26.419800000003306,
+                "p95Ms": 48.37210000000778,
+                "maxMs": 295.33320000000003
+              }
+            },
+            {
+              "route": "/api/checkout/intents",
+              "timing": {
+                "count": 4,
+                "p50Ms": 67.36449999999968,
+                "p95Ms": 137.20580000000018,
+                "maxMs": 137.20580000000018
+              }
+            },
+            {
+              "route": "/api/checkout",
+              "timing": {
+                "count": 8,
+                "p50Ms": 125.66999999999825,
+                "p95Ms": 229.2135999999996,
+                "maxMs": 229.2135999999996
+              }
+            }
+          ],
+          "manualCheckoutFlow": {
+            "count": 4,
+            "p50Ms": 307.2401000000027,
+            "p95Ms": 742.5392999999999,
+            "maxMs": 742.5392999999999
+          },
+          "pageStats": [
+            {
+              "page": "/",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 115.20000000298023,
+                "p95Ms": 150.3999999910593,
+                "maxMs": 454.09999999403954
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 111.5,
+                "p95Ms": 140.90000000596046,
+                "maxMs": 447.59999999403954
+              }
+            },
+            {
+              "page": "/checkout",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 159.20000000298023,
+                "p95Ms": 177,
+                "maxMs": 284.80000001192093
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 110.90000000596046,
+                "p95Ms": 130.5,
+                "maxMs": 184.40000000596046
+              }
+            },
+            {
+              "page": "product-view",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 221.79180000000633,
+                "p95Ms": 316.6530000000057,
+                "maxMs": 317.7358999999997
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 0,
+                "p95Ms": 0,
+                "maxMs": 0
+              }
+            },
+            {
+              "page": "cart-drawer",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 123.0048999999999,
+                "p95Ms": 129.30950000000303,
+                "maxMs": 150.2808
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 0,
+                "p95Ms": 0,
+                "maxMs": 0
+              }
+            }
+          ],
+          "pageSamples": [
+            {
+              "page": "/",
+              "readyMs": 454.09999999403954,
+              "loadMs": 447.59999999403954,
+              "lcpMs": 388,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 242.4417000000003,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 150.2808,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 284.80000001192093,
+              "loadMs": 184.40000000596046,
+              "lcpMs": 88,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 115.20000000298023,
+              "loadMs": 113.70000000298023,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.0742999999993,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.58529999999973,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 152.5,
+              "loadMs": 107,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.29999999701977,
+              "loadMs": 98.29999999701977,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 311.0717000000004,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.17699999999968,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 172.40000000596046,
+              "loadMs": 127.90000000596046,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 96.09999999403954,
+              "loadMs": 94.69999998807907,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 212.6190999999999,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.29430000000139,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 149,
+              "loadMs": 90.5,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.5,
+              "loadMs": 111.6000000089407,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 317.15399999999863,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.64649999999892,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 140.19999998807907,
+              "loadMs": 105,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 99.5,
+              "loadMs": 97.90000000596046,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 310.4462999999996,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 119.17359999999826,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 131.70000000298023,
+              "loadMs": 92.40000000596046,
+              "lcpMs": 48,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 111.79999999701977,
+              "loadMs": 110.5,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 314.25510000000213,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.60009999999966,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 164.40000000596046,
+              "loadMs": 106.09999999403954,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 142.5,
+              "loadMs": 140.90000000596046,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.1886999999988,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 127.6836000000003,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 144,
+              "loadMs": 103.29999999701977,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 144.20000000298023,
+              "loadMs": 123.20000000298023,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 217.732600000003,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.14329999999973,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 148.80000001192093,
+              "loadMs": 110.90000000596046,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 97,
+              "loadMs": 95.40000000596046,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 312.35329999999885,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 118.67339999999967,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 140.70000000298023,
+              "loadMs": 92.90000000596046,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 131.80000001192093,
+              "loadMs": 114.5,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.70960000000196,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.5222999999969,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 156.19999998807907,
+              "loadMs": 121.29999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 115.3999999910593,
+              "loadMs": 114.09999999403954,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.3652000000002,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 120.66889999999694,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 144.3999999910593,
+              "loadMs": 100.29999999701977,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 102.29999999701977,
+              "loadMs": 100.8999999910593,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.79929999999877,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.14510000000155,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 148.40000000596046,
+              "loadMs": 109.5,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.09999999403954,
+              "loadMs": 111.8999999910593,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.54699999999866,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.60399999999936,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 153.6000000089407,
+              "loadMs": 106,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 108.30000001192093,
+              "loadMs": 101.20000000298023,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 313.4820000000036,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.88010000000213,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 157.8999999910593,
+              "loadMs": 115.29999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 127.19999998807907,
+              "loadMs": 125.8999999910593,
+              "lcpMs": 112,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 212.5373999999938,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 120.9409999999989,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 168.09999999403954,
+              "loadMs": 113.40000000596046,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 110.90000000596046,
+              "loadMs": 109.6000000089407,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.65060000000085,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.931700000001,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 177,
+              "loadMs": 89.79999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 117,
+              "loadMs": 115.29999999701977,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 224.4314000000013,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.27090000000317,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 166.5,
+              "loadMs": 129.29999999701977,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 125.69999998807907,
+              "loadMs": 109.19999998807907,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 217.2806999999957,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.97899999999936,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 171.09999999403954,
+              "loadMs": 121.59999999403954,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 143.70000000298023,
+              "loadMs": 119.90000000596046,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.92389999999432,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.57229999999981,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 171.8999999910593,
+              "loadMs": 121.3999999910593,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 115.5,
+              "loadMs": 114,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.219600000004,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.65159999999742,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 164.8999999910593,
+              "loadMs": 106.3999999910593,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 124.29999999701977,
+              "loadMs": 122.5,
+              "lcpMs": 108,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.9233000000022,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 129.30950000000303,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 195.79999999701977,
+              "loadMs": 133,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 134.5,
+              "loadMs": 113.69999998807907,
+              "lcpMs": 108,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.87019999999757,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.22570000000269,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 169.20000000298023,
+              "loadMs": 114.80000001192093,
+              "lcpMs": 72,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 130.70000000298023,
+              "loadMs": 110.70000000298023,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 217.2149000000063,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.9146999999939,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 172.29999999701977,
+              "loadMs": 129.20000000298023,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 118.6000000089407,
+              "loadMs": 117.1000000089407,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 211.79550000000745,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.76520000000892,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 159.20000000298023,
+              "loadMs": 118.1000000089407,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 112.40000000596046,
+              "loadMs": 111.1000000089407,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 314.9889000000112,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.89459999999963,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 149.5,
+              "loadMs": 108.79999999701977,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 223.80000001192093,
+              "loadMs": 204.70000000298023,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.62159999999858,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 131.65479999998934,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 172.19999998807907,
+              "loadMs": 121.69999998807907,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 110.5,
+              "loadMs": 108.6000000089407,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.72789999999804,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.73520000001008,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 160.5,
+              "loadMs": 108.40000000596046,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.59999999403954,
+              "loadMs": 111.90000000596046,
+              "lcpMs": 112,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 221.79180000000633,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.47400000000198,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 157.59999999403954,
+              "loadMs": 109.8999999910593,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 144.30000001192093,
+              "loadMs": 126.20000000298023,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 313.65290000000095,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.56990000000224,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 162,
+              "loadMs": 120.90000000596046,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 111.40000000596046,
+              "loadMs": 109.79999999701977,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.64420000000973,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.8640000000014,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 140.90000000596046,
+              "loadMs": 90.79999999701977,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.80000001192093,
+              "loadMs": 111.5,
+              "lcpMs": 108,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 217.13640000000305,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.49169999999867,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 140.5,
+              "loadMs": 94.09999999403954,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 121.5,
+              "loadMs": 102,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 311.994200000001,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.21940000000177,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 174.70000000298023,
+              "loadMs": 117,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 105.40000000596046,
+              "loadMs": 103.40000000596046,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 313.7479000000021,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.81669999999576,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 155.09999999403954,
+              "loadMs": 105.69999998807907,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 108.5,
+              "loadMs": 107.1000000089407,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.75070000000414,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.0048999999999,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 158.79999999701977,
+              "loadMs": 114.79999999701977,
+              "lcpMs": 88,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 105.6000000089407,
+              "loadMs": 104.1000000089407,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 311.454899999997,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.27579999998852,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 161.29999999701977,
+              "loadMs": 117.29999999701977,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 128.5,
+              "loadMs": 108.5,
+              "lcpMs": 84,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.6530000000057,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.15679999999702,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 154.69999998807907,
+              "loadMs": 113.79999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 114.90000000596046,
+              "loadMs": 113.5,
+              "lcpMs": 80,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.1455999999889,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.91089999998803,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 151.09999999403954,
+              "loadMs": 100.8999999910593,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 109.59999999403954,
+              "loadMs": 108.09999999403954,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.33150000000023,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.69090000000142,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 160.5,
+              "loadMs": 112.30000001192093,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 150.3999999910593,
+              "loadMs": 129.5,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 317.7358999999997,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.90019999998913,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 176.80000001192093,
+              "loadMs": 119.6000000089407,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 140.69999998807907,
+              "loadMs": 118.19999998807907,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.65709999999672,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 129.21549999999115,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 177,
+              "loadMs": 130.5,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 108.40000000596046,
+              "loadMs": 107.1000000089407,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.61659999999392,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.69049999999697,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 141.5,
+              "loadMs": 99.1000000089407,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 115.5,
+              "loadMs": 99.40000000596046,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.51729999999225,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.03549999999814,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 172.6000000089407,
+              "loadMs": 99,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            }
+          ],
+          "targetMs": 3000,
+          "localReadinessWithinTarget": true,
+          "notes": [
+            "identity-handshake-added-to-load-but-excluded-from-request-timing",
+            "remote-media-blocked",
+            "single-desktop-browser",
+            "synthetic-36-product-catalog",
+            "manual-payment-only",
+            "not-vercel-neon-resources"
+          ],
+          "invariantsChecked": true,
+          "fullPageCertified": false,
+          "externalProviders": false,
+          "productionReady": false
+        },
+        {
+          "users": 80,
+          "checkoutsPerMinute": 5,
+          "durationMs": 120000,
+          "thinkTimeMs": 5000,
+          "measuredDurationMs": 120456.1219,
+          "model": "paced-http-users-plus-one-browser",
+          "warmupExcluded": true,
+          "browserCacheDisabled": true,
+          "maxInFlight": 2,
+          "failures": 0,
+          "requestLatency": {
+            "count": 1960,
+            "p50Ms": 15.857499999983702,
+            "p95Ms": 37.6307000000088,
+            "maxMs": 218.20740000001388
+          },
+          "launchLag": {
+            "count": 1920,
+            "p50Ms": 0.24280000000726432,
+            "p95Ms": 1.8571999999985565,
+            "maxMs": 3.8447999999916647
+          },
+          "routes": [
+            {
+              "route": "/",
+              "timing": {
+                "count": 640,
+                "p50Ms": 15.513399999996182,
+                "p95Ms": 24.90340000001015,
+                "maxMs": 40.95790000000852
+              }
+            },
+            {
+              "route": "/api/products?limit=100",
+              "timing": {
+                "count": 640,
+                "p50Ms": 10.845499999995809,
+                "p95Ms": 15.609700000000885,
+                "maxMs": 30.865499999999884
+              }
+            },
+            {
+              "route": "/api/cart",
+              "timing": {
+                "count": 650,
+                "p50Ms": 25.61850000001141,
+                "p95Ms": 45.00479999999516,
+                "maxMs": 135.53369999999995
+              }
+            },
+            {
+              "route": "/api/checkout/intents",
+              "timing": {
+                "count": 10,
+                "p50Ms": 52.293800000014016,
+                "p95Ms": 69.0911999999953,
+                "maxMs": 69.0911999999953
+              }
+            },
+            {
+              "route": "/api/checkout",
+              "timing": {
+                "count": 20,
+                "p50Ms": 119.97599999999511,
+                "p95Ms": 211.152700000006,
+                "maxMs": 218.20740000001388
+              }
+            }
+          ],
+          "manualCheckoutFlow": {
+            "count": 10,
+            "p50Ms": 317.3603000000003,
+            "p95Ms": 435.8500000000058,
+            "maxMs": 435.8500000000058
+          },
+          "pageStats": [
+            {
+              "page": "/",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 129.70000000298023,
+                "p95Ms": 151.59999999403954,
+                "maxMs": 421.6000000089407
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 113.1000000089407,
+                "p95Ms": 134.80000001192093,
+                "maxMs": 349.6000000089407
+              }
+            },
+            {
+              "page": "/checkout",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 166.3999999910593,
+                "p95Ms": 190.20000000298023,
+                "maxMs": 203.5
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 108.40000000596046,
+                "p95Ms": 137.6000000089407,
+                "maxMs": 142.29999999701977
+              }
+            },
+            {
+              "page": "product-view",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 221.26269999999204,
+                "p95Ms": 316.84500000000116,
+                "maxMs": 321.7014999999956
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 0,
+                "p95Ms": 0,
+                "maxMs": 0
+              }
+            },
+            {
+              "page": "cart-drawer",
+              "readiness": {
+                "count": 43,
+                "p50Ms": 124.59810000000289,
+                "p95Ms": 128.45550000001094,
+                "maxMs": 148.65140000000247
+              },
+              "loadEvent": {
+                "count": 43,
+                "p50Ms": 0,
+                "p95Ms": 0,
+                "maxMs": 0
+              }
+            }
+          ],
+          "pageSamples": [
+            {
+              "page": "/",
+              "readyMs": 421.6000000089407,
+              "loadMs": 349.6000000089407,
+              "lcpMs": 396,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 321.7014999999956,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 148.65140000000247,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 184.29999999701977,
+              "loadMs": 100.90000000596046,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 144.80000001192093,
+              "loadMs": 120.70000000298023,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 217.92230000000563,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.72299999999814,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 159.8999999910593,
+              "loadMs": 114.70000000298023,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 158.29999999701977,
+              "loadMs": 135.09999999403954,
+              "lcpMs": 124,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 221.26269999999204,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.30910000001313,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 187.3999999910593,
+              "loadMs": 90,
+              "lcpMs": 72,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 143.30000001192093,
+              "loadMs": 121.5,
+              "lcpMs": 116,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.76070000001346,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.27049999998417,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 174.5,
+              "loadMs": 132.6000000089407,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 106.29999999701977,
+              "loadMs": 104.90000000596046,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 219.75849999999627,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.93699999997625,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 166.3999999910593,
+              "loadMs": 110.29999999701977,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 130.40000000596046,
+              "loadMs": 111.40000000596046,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.84500000000116,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.23769999999786,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 151.3999999910593,
+              "loadMs": 101,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 113.79999999701977,
+              "loadMs": 112,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 221.68419999998878,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 131.19000000000233,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 169.29999999701977,
+              "loadMs": 114.8999999910593,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 105.40000000596046,
+              "loadMs": 103.79999999701977,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.1466000000073,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.93920000002254,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 181.6000000089407,
+              "loadMs": 87.80000001192093,
+              "lcpMs": 48,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 134.69999998807907,
+              "loadMs": 113.19999998807907,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.84379999997327,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.12289999998757,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 156.79999999701977,
+              "loadMs": 87,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 124.5,
+              "loadMs": 123,
+              "lcpMs": 124,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 220.57790000000386,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 128.15119999999297,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 149.20000000298023,
+              "loadMs": 112.40000000596046,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 135.69999998807907,
+              "loadMs": 113.69999998807907,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.863400000002,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.06500000000233,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 174.5,
+              "loadMs": 95.69999998807907,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 132.90000000596046,
+              "loadMs": 113.30000001192093,
+              "lcpMs": 72,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.45850000000792,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.44819999998435,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 156.20000000298023,
+              "loadMs": 114.59999999403954,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 112.70000000298023,
+              "loadMs": 110.90000000596046,
+              "lcpMs": 108,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.54759999999078,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.01659999997355,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 156.8999999910593,
+              "loadMs": 78.29999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 126.3999999910593,
+              "loadMs": 107.19999998807907,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.01319999998668,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.79850000000442,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 154.70000000298023,
+              "loadMs": 108.40000000596046,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 111.40000000596046,
+              "loadMs": 108.79999999701977,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.14999999999418,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.55229999998119,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 152.70000000298023,
+              "loadMs": 104.20000000298023,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 129.70000000298023,
+              "loadMs": 106.8999999910593,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 221.02449999999953,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.59810000000289,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 156.5,
+              "loadMs": 81.79999999701977,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 117.20000000298023,
+              "loadMs": 99.6000000089407,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.49989999999525,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.9369000000006,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 173.69999998807907,
+              "loadMs": 129.59999999403954,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 135.90000000596046,
+              "loadMs": 113.1000000089407,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.5905999999959,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.13550000000396,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 154.3999999910593,
+              "loadMs": 87,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 144.40000000596046,
+              "loadMs": 120.70000000298023,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.46199999999953,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 120.92860000001383,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 177.80000001192093,
+              "loadMs": 137.6000000089407,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 140.30000001192093,
+              "loadMs": 119.20000000298023,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 219.22019999998156,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 127.21189999999478,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 166.79999999701977,
+              "loadMs": 92.5,
+              "lcpMs": 68,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 111.70000000298023,
+              "loadMs": 110.29999999701977,
+              "lcpMs": 108,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 314.1349999999802,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.4831000000122,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 203.5,
+              "loadMs": 142.29999999701977,
+              "lcpMs": 76,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 93.59999999403954,
+              "loadMs": 91.8999999910593,
+              "lcpMs": 80,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.48579999999492,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.20680000001448,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 176.80000001192093,
+              "loadMs": 114.6000000089407,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 111.59999999403954,
+              "loadMs": 110.20000000298023,
+              "lcpMs": 84,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 314.22179999999935,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 123.67810000001919,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 180.70000000298023,
+              "loadMs": 116.80000001192093,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 134.8999999910593,
+              "loadMs": 133.19999998807907,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.112999999983,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.10229999999865,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 145.40000000596046,
+              "loadMs": 110.20000000298023,
+              "lcpMs": 48,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 120.90000000596046,
+              "loadMs": 102.1000000089407,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 313.88140000001295,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.49799999999232,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 144.30000001192093,
+              "loadMs": 93.1000000089407,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 134.20000000298023,
+              "loadMs": 116.20000000298023,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.7322999999742,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 128.28719999999157,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 143,
+              "loadMs": 107.8999999910593,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 106.6000000089407,
+              "loadMs": 105.1000000089407,
+              "lcpMs": 88,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 312.86980000001495,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 127.36960000000545,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 194.5,
+              "loadMs": 101.20000000298023,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 127.90000000596046,
+              "loadMs": 108.5,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 313.18599999998696,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 120.55270000000019,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 168.70000000298023,
+              "loadMs": 117.30000001192093,
+              "lcpMs": 52,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 118.3999999910593,
+              "loadMs": 116.59999999403954,
+              "lcpMs": 68,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 223.8123000000196,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.8064000000013,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 154.90000000596046,
+              "loadMs": 113.79999999701977,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 115.59999999403954,
+              "loadMs": 114.19999998807907,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.1410999999789,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.5795999999973,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 162.70000000298023,
+              "loadMs": 119.09999999403954,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 136.6000000089407,
+              "loadMs": 134.80000001192093,
+              "lcpMs": 120,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 228.08169999998063,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 127.31089999998221,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 163.40000000596046,
+              "loadMs": 119.29999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 110.80000001192093,
+              "loadMs": 102.70000000298023,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 317.6260000000184,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.1583999999857,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 188.6000000089407,
+              "loadMs": 142,
+              "lcpMs": 68,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 140.40000000596046,
+              "loadMs": 116.79999999701977,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.8514000000141,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.15260000000126,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 168.80000001192093,
+              "loadMs": 112,
+              "lcpMs": 64,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 139.6000000089407,
+              "loadMs": 116.40000000596046,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 215.0687999999791,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 125.60819999998785,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 170.09999999403954,
+              "loadMs": 89.29999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 141.40000000596046,
+              "loadMs": 119.79999999701977,
+              "lcpMs": 112,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 214.70820000002277,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.3635999999824,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 150.69999998807907,
+              "loadMs": 78.8999999910593,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 126,
+              "loadMs": 100.5,
+              "lcpMs": 96,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 311.903100000025,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 124.42530000000261,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 163.20000000298023,
+              "loadMs": 117.70000000298023,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 151.59999999403954,
+              "loadMs": 127.29999999701977,
+              "lcpMs": 112,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 216.0169000000169,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.48960000000079,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 162.20000000298023,
+              "loadMs": 108.40000000596046,
+              "lcpMs": 72,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 106.29999999701977,
+              "loadMs": 104.90000000596046,
+              "lcpMs": 84,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 212.9194000000134,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 122.60060000000522,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 167.20000000298023,
+              "loadMs": 107.5,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 151,
+              "loadMs": 127,
+              "lcpMs": 120,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 221.36160000000382,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 128.45550000001094,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 190.20000000298023,
+              "loadMs": 107.79999999701977,
+              "lcpMs": 76,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 114.3999999910593,
+              "loadMs": 113.09999999403954,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.07039999999688,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.98000000001048,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 146.70000000298023,
+              "loadMs": 96.70000000298023,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 135.80000001192093,
+              "loadMs": 114.30000001192093,
+              "lcpMs": 104,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 213.86799999998766,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 121.62320000000182,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 174.79999999701977,
+              "loadMs": 123.79999999701977,
+              "lcpMs": 60,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 122.5,
+              "loadMs": 104.59999999403954,
+              "lcpMs": 92,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 316.1180999999924,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 120.73479999997653,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 170.40000000596046,
+              "loadMs": 90.5,
+              "lcpMs": 72,
+              "externalMediaExcluded": false
+            },
+            {
+              "page": "/",
+              "readyMs": 131.5,
+              "loadMs": 110.09999999403954,
+              "lcpMs": 100,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "product-view",
+              "readyMs": 315.2327000000223,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "cart-drawer",
+              "readyMs": 126.55840000000899,
+              "loadMs": 0,
+              "lcpMs": null,
+              "externalMediaExcluded": true
+            },
+            {
+              "page": "/checkout",
+              "readyMs": 165.1000000089407,
+              "loadMs": 109.1000000089407,
+              "lcpMs": 56,
+              "externalMediaExcluded": false
+            }
+          ],
+          "targetMs": 3000,
+          "localReadinessWithinTarget": true,
+          "notes": [
+            "identity-handshake-added-to-load-but-excluded-from-request-timing",
+            "remote-media-blocked",
+            "single-desktop-browser",
+            "synthetic-36-product-catalog",
+            "manual-payment-only",
+            "not-vercel-neon-resources"
+          ],
+          "invariantsChecked": true,
+          "fullPageCertified": false,
+          "externalProviders": false,
+          "productionReady": false
+        }
+      ]
+    },
+    "container": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-container-v3.log",
+        "sha256": "b2aef227a2f3a39431b0a2284ec4895050bb2c40e33ed5635e976752bb9ec070",
+        "encoding": "utf16le"
+      },
+      "runtime": {
+        "startedAt": "2026-10-13T19:25:31.069Z",
+        "finishedAt": "2026-10-13T19:25:41.376Z",
+        "imageId": "sha256:4903b948363c20de794c9d8c48b6844349fc8e5d35fa83b6be2bd06dc89646e0",
+        "runId": "af471f8f61e59848b175daa62c7c0f4c",
+        "results": [
+          {
+            "sentinel": true,
+            "home": true,
+            "assets": true,
+            "cronAuth": true,
+            "uid": 1000,
+            "buildId": "r50WkXnVwPCxKHXFkKsab",
+            "launchToReadyMs": 2695.1546000000008
+          },
+          {
+            "sentinel": true,
+            "home": true,
+            "assets": true,
+            "cronAuth": true,
+            "uid": 1000,
+            "buildId": "r50WkXnVwPCxKHXFkKsab",
+            "launchToReadyMs": 2298.3976999999995
+          }
+        ],
+        "instances": 2,
+        "restart": true,
+        "consumerAuthenticated": true,
+        "externalProviders": false,
+        "productionReady": false
+      }
+    },
+    "dockerBuild": {
+      "exitCode": 0,
+      "log": {
+        "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-docker-build-v3.log",
+        "sha256": "e7240bacafe65391801af912b01efef1fbbb845b3e8012697fff4a433af2627c",
+        "encoding": "utf16le"
+      }
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "command": "npx tsc --noEmit",
+      "node": "v22.23.3"
+    }
+  },
+  "capacityHost": {
+    "startedAt": "2026-10-13T19:33:36.717Z",
+    "platform": "win32",
+    "arch": "x64",
+    "node": "v22.23.3",
+    "logicalCpus": 12,
+    "memoryGiB": 31.924789428710938,
+    "freeGiB": 4.308845520019531,
+    "otherHarnessRuns": false,
+    "network": "loopback",
+    "externalProviders": false
+  },
+  "historicalDiagnostics": [
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-production.log",
+      "sha256": "d85d1ce9344c45b2b6e5d7fea515240c78c40c1f2934c49ff2f3e84dc74222ab",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-integration.log",
+      "sha256": "bbbea1c3b1335783fe226270641e919a7ef4f47889a4bf5e8865eb96aca862db",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-standalone-edge.log",
+      "sha256": "ca347f7f97e3f5d3ccc86a1690abfa65875cf17da863b423d073db9ba35a1bdc",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-heading-diagnostic.log",
+      "sha256": "875d1ac9b90293c91451a9d9c3e23f846f7101d6c3e410965596c99546ba5a1b",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-navigation-edge.log",
+      "sha256": "88ac6358d2ac47bb6b3543bb62e5d10f8d641d2edb7b5d28d60c1b8d6730a0fc",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-navigation-fixed-edge.log",
+      "sha256": "2988e17742473e71fb72f03d2772d907ec943efa801bc0f681dd8ea3fb593ef4",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-integration-pool.log",
+      "sha256": "d76b988cc9a64f2f2a44c12ce9f9e31e81699b9cf5000a016a2e054b639f86a2",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-integration-v2.log",
+      "sha256": "a9184fe11075b6d3359efc848a76d9ce178ca7edd1128a1854e2b80afb071eb6",
+      "encoding": "utf16le"
+    },
+    {
+      "file": "artifacts/validation/vanderlei-f029d6257017/continental-final-standalone-edge-v2.log",
+      "sha256": "32121b28d4ae8ec414b1679253cf4a35b33996af2b6b4b5b935766227dcfdd48",
+      "encoding": "utf16le"
+    }
+  ],
+  "cleanup": {
+    "disposableContainersRemaining": 0
+  },
+  "remoteProvidersUsed": false,
+  "privateEnvLoaded": false,
+  "cloudProvisioned": false,
+  "deployed": false,
+  "githubCIRun": false,
+  "productionReady": false,
+  "pending": [
+    "approved-cloud-project-domain-and-alert-targets",
+    "real-carrier-email-storage-and-iam-validation",
+    "Leno-financial-data-acceptance-and-debit-contract",
+    "remote-CI-and-release-publication",
+    "production-capacity-and-observation"
+  ]
+}

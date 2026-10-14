@@ -71,6 +71,10 @@ export class JtExpressProvider implements IFreightProvider {
             weightMax: 'desc',
           },
         });
+        // A gap below the maximum is not a published tariff. Above the maximum,
+        // shipping is available only when an explicit positive excess rate exists.
+        if (!rate || taxableWeightKg <= Number(rate.weightMax)
+          || !Number.isFinite(Number(rate.additionalKgPrice)) || Number(rate.additionalKgPrice) <= 0) return [];
       }
 
       if (!rate) {
@@ -79,6 +83,7 @@ export class JtExpressProvider implements IFreightProvider {
 
       let basePrice = Number(rate.basePrice);
       const maxWeight = Number(rate.weightMax);
+      if (!Number.isFinite(basePrice) || basePrice <= 0 || !Number.isFinite(maxWeight)) return [];
 
       if (taxableWeightKg > maxWeight && rate.additionalKgPrice) {
         const excessKg = Math.ceil(taxableWeightKg - maxWeight);

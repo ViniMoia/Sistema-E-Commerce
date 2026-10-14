@@ -51,6 +51,8 @@ export class CorreiosProvider implements IFreightProvider {
 
       const response = await fetch(url.toString(), {
         signal: controller.signal,
+        redirect: 'error',
+        cache: 'no-store',
         headers: { 'User-Agent': 'E-Commerce-Freight-Service/1.0' },
       });
 
@@ -110,13 +112,15 @@ export class CorreiosProvider implements IFreightProvider {
       const erroMatch = servicoXml.match(/<Erro>(.*?)<\/Erro>/i);
 
       const codigo = codigoMatch ? codigoMatch[1].trim() : '';
-      const rawValor = valorMatch ? valorMatch[1].replace(',', '.') : '0';
-      const valor = parseFloat(rawValor) || 0;
-      const prazoEntrega = prazoMatch ? parseInt(prazoMatch[1], 10) || 5 : 5;
-      const erro = erroMatch ? erroMatch[1].trim() : '0';
+      const rawValor = valorMatch?.[1].trim() ?? '';
+      const rawPrazo = prazoMatch?.[1].trim() ?? '';
+      if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{2}$/.test(rawValor) || !/^\d+$/.test(rawPrazo)) continue;
+      const valor = Number(rawValor.replaceAll('.', '').replace(',', '.'));
+      const prazoEntrega = Number(rawPrazo);
+      const erro = erroMatch ? erroMatch[1].trim() : '';
 
       // Erro "0" ou "010" (prazo com restrição de entrega) são considerados válidos
-      if (valor > 0 && (erro === '0' || erro === '010' || erro === '')) {
+      if (Number.isFinite(valor) && valor > 0 && Number.isSafeInteger(prazoEntrega) && (erro === '0' || erro === '010')) {
         results.push({ codigo, valor, prazoEntrega, erro });
       }
     }

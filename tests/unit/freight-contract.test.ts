@@ -51,4 +51,13 @@ describe('WF-11: signed v2 contract and destination boundary', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('timeout'); }));
     await expect(new CorreiosProvider().calculateQuotes(carrierRequest)).rejects.toThrow('CORREIOS_UNAVAILABLE');
   });
+  it('preserva milhares e recusa preço/prazo parcial ou ausência de confirmação', async () => {
+    const quote = (price: string, days: string, error = '<Erro>0</Erro>') => `<cServico><Codigo>04014</Codigo><Valor>${price}</Valor><PrazoEntrega>${days}</PrazoEntrega>${error}</cServico>`;
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(quote('1.234,56', '0'))));
+    expect((await new CorreiosProvider().calculateQuotes(carrierRequest))[0]).toMatchObject({ price: 1234.56, deliveryTimeInDays: 0 });
+    for (const xml of [quote('25,00oops', '3'), quote('25,00', ''), quote('25,00', '3dias'), quote('25,00', '3', '')]) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(xml)));
+      await expect(new CorreiosProvider().calculateQuotes(carrierRequest)).rejects.toThrow('CORREIOS_OPTIONS_UNAVAILABLE');
+    }
+  });
 });

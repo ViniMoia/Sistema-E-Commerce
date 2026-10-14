@@ -163,7 +163,7 @@ try {
   // Vitest auto-selects the agent reporter, which hides passing console output.
   // The capacity profile needs its diagnostic measurements even when tests pass.
   await command(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', ...files,
-    ...(capacity ? ['--reporter=default'] : [])], { env: {
+    '--reporter=default'], { env: {
     ...pg.env, NODE_ENV: 'test', TEST_BASE_URL: instances[0].origin, TEST_SECONDARY_BASE_URL: instances[1].origin,
     TEST_PROCESS_CONTROL_URL: `http://127.0.0.1:${controlPort}`, TEST_APP_RUNTIME: 'production',
     PAYMENT_WORKER_ENABLED: 'true', PAYMENT_EXPIRATION_ENABLED: 'false',

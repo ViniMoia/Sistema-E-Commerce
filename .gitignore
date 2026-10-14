@@ -1,4 +1,6 @@
 # Environment variables
+# Private file supplied locally; the versioned template is .env.example.
+/env.example
 .env
 .env.*
 !.env.example
@@ -17,6 +19,7 @@ build/
 dist/
 .turbo/
 tsconfig.tsbuildinfo
+/artifacts/
 *.tsbuildinfo
 
 # Dependencies

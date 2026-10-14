@@ -30,6 +30,10 @@ export async function POST(req: Request) {
     const file = formData.get("file") as File | null;
     const bucket = (formData.get("bucket") as string) || "products";
 
+    if (!['products', 'avatars'].includes(bucket)) {
+      return err('Destino de upload inválido.', 400, 'INVALID_BUCKET');
+    }
+
     if (!file) {
       return err("Nenhum arquivo enviado.", 400, "NO_FILE");
     }
@@ -85,6 +89,6 @@ export async function POST(req: Request) {
       userId: user.id,
       tenantId: user.lojaID,
     });
-    return err(error.message || "Falha ao processar upload da imagem.", 500, "UPLOAD_ERROR");
+    return err("Falha ao processar upload da imagem.", 500, "UPLOAD_ERROR");
   }
 }

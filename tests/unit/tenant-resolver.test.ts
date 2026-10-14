@@ -18,9 +18,9 @@ describe('Tenant Resolver & Host Normalization (TEN-003)', () => {
   })
 
   it('deve sanitizar caracteres perigosos e cabeçalhos forjados', () => {
-    expect(normalizeHost('loja1.com/evil/path')).toBe('loja1.comevilpath')
-    expect(normalizeHost('loja1<script>.com')).toBe('loja1script.com')
-    expect(normalizeHost('loja1.com\r\ninjected')).toBe('loja1.cominjected')
+    expect(normalizeHost('loja1.com/evil/path')).toBe('')
+    expect(normalizeHost('loja1<script>.com')).toBe('')
+    expect(normalizeHost('loja1.com\r\ninjected')).toBe('')
   })
 
   it('deve retornar string vazia para host vazio ou nulo', () => {

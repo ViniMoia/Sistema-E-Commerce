@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer, request as httpRequest } from 'node:http';
 import { testServerConfig } from '../../lib/testing/database-policy.ts';
+import { browserExecutable } from './browser-executable.mjs';
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 /** Fixture-only browser/proxy. Never attaches to a user's browser/profile or
@@ -14,11 +15,7 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
   const identity = await check.json();
   if (!check.ok || identity.runId !== config.runId || identity.database !== config.database) throw new Error('BROWSER_TEST_SERVER_IDENTITY_MISMATCH');
   if (!/^[a-z0-9.-]+$/i.test(host)) throw new Error('BROWSER_FIXTURE_HOST_INVALID');
-  const candidates = [process.env.BROWSER_BIN, 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].filter(Boolean);
-  let executable;
-  for (const candidate of candidates) { if (path.isAbsolute(candidate)) try { await access(candidate); executable = candidate; break; } catch {} }
-  if (!executable) throw new Error('BROWSER_REQUIRED: configure BROWSER_BIN with installed Chrome/Chromium.');
+  const executable = await browserExecutable(process.env.BROWSER_BIN);
   const profile = await mkdtemp(path.join(tmpdir(), 'commerce-browser-'));
   const target = new URL(config.baseUrl);
   const upgradeSockets = new Set();
@@ -103,6 +100,8 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
       }
     });
     await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
+    const version = await send('Browser.getVersion');
+    const browserIdentity = { executable: path.basename(executable), product: version.product, userAgent: version.userAgent };
     await send('Network.setBlockedURLs', { urls: ['https://*', 'http://example.*'] });
     const evaluate = async expression => {
       const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, timeout: 30000 });
@@ -116,7 +115,7 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
       const state = await evaluate('JSON.stringify({ready:document.readyState,scripts:[...document.scripts].map(e=>e.src).filter(Boolean),resources:performance.getEntriesByType("resource").length})').catch(() => 'unavailable');
       throw new Error('BROWSER_EXPECTATION_TIMEOUT: ' + expression + '\nFixture screen: ' + screen + '\nFixture state: ' + state + '\nFixture diagnostics: ' + diagnostics.slice(-12).join('\n'));
     };
-    return { origin, send, evaluate, waitFor, close,
+    return { origin, send, evaluate, waitFor, close, browserIdentity,
       navigate: async pathname => { await send('Page.navigate', { url: origin + pathname }); },
       input: async (name, value) => evaluate('(() => { const e = document.querySelector(' + JSON.stringify('input[name="' + name + '"]') + '); if(!e) throw Error("input missing"); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(e,' + JSON.stringify(value) + '); e.dispatchEvent(new Event("input",{bubbles:true})); })()'),
       click: async text => evaluate('(() => { const e=[...document.querySelectorAll("button")].find(e=>e.textContent.includes(' + JSON.stringify(text) + ')); if(!e||e.disabled) throw Error("button unavailable"); e.click(); })()'),

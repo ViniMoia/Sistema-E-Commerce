@@ -30,6 +30,8 @@ export function maskCpfCnpj(doc: string): string {
 
 export function sanitizeLogText(value: string): string {
   return value
+    .replace(/\b(?:\d[ -]?){12,18}\d\b/g, '[REDACTED]')
+    .replace(/((?:["']?\b(?:cvv|cvc|ccv|security[_-]?code)["']?)\s*[:=]\s*["']?)\d{3,4}\b/gi, '$1[REDACTED]')
     .replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s@]+@/gi, '$1[REDACTED]@')
     .replace(/(bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
     .replace(/((?:[?&]|\b)(?:token|api[_-]?key|secret|password|cookie|session)=)[^&\s;]+/gi, '$1[REDACTED]')
@@ -37,6 +39,11 @@ export function sanitizeLogText(value: string): string {
 }
 
 export function sanitizeLogValue(key: string, value: unknown): unknown {
+  const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Redact before inspecting the value: instruments/secrets can be objects,
+  // arrays or numeric fields, not just strings.
+  if (/(apikey|secret|password|token|auth|cookie|creditcard|cardnumber|cardholder|securitycode)/.test(normalizedKey)
+    || ['pan', 'cvv', 'cvc', 'ccv'].includes(normalizedKey)) return '[REDACTED]';
   if (typeof value === 'string') {
     const lowerKey = key.toLowerCase();
     if (lowerKey.includes('cpf') || lowerKey.includes('cnpj') || lowerKey.includes('document')) {
