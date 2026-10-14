@@ -6,6 +6,15 @@ gcloud não é considerado destino autorizado por este material.
 
 ## Construir e verificar localmente
 
+Antes de pedir parâmetros comerciais novamente, consultar a comparação de main na
+seção 24 do replanejamento. A configuração da origem já define parcelamento até
+12x, mínimo R$ 20, juros repassados de 2,99% a.m., boleto em um dia útil e piso
+Asaas de R$ 5; os defaults atuais preservam essas decisões. Origem de frete,
+prazo adicional, fidelidade e tabelas são dados da loja, não variáveis fictícias
+do manifesto. Não copiar a URL do banco principal para o runtime de homologação.
+O projeto/região/domínio de `config.example.json` continuam exemplos, pois não
+foi encontrado manifesto Cloud Run efetivo na main auditada em 14/10/2026.
+
 Use a versão de Node de `.nvmrc` e Docker Desktop em modo Linux:
 
 ```powershell

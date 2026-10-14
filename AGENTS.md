@@ -16,3 +16,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Atualizações reconciliam por ID pertencente ao produto ou, na ausência de ID, pela combinação normalizada. Não crie duplicatas nem aceite combinações repetidas no payload.
 - Leia e reconcilie dentro da transação, após bloquear a linha do produto. Variantes removidas com carrinhos ou pedidos devem manter seus vínculos e ficar indisponíveis; exclua apenas as sem vínculos.
 - Saneamentos exigem auditoria dos vínculos e backup antes das mutações. scripts/repair-product-variants.mjs executa somente auditoria, salvo quando chamado com --apply.
+
+## Continuidade entre main e homologação
+
+- Antes de pedir decisões ou configurar funcionalidades, consultar `origin/main`, seus documentos e, quando pertinente, a configuração efetiva do banco de origem em transação somente leitura. Reaproveitar decisões existentes e registrar a fonte/revisão; perguntar somente pelas lacunas reais.
+- A branch main e seu banco são estritamente somente leitura. Importações autorizadas destinam-se à homologação, com escopo explícito, comparação, backup e auditoria; preservar correções posteriores de integridade/segurança.
+- Não confundir código herdado com dados de configuração: confirmar ambos. Não copiar credenciais, domínios/identidades de ambiente, vendas, saldos de pontos ou estoque de testes como carga de produção. Uma proposta/documento de exemplo não comprova recurso implantado.

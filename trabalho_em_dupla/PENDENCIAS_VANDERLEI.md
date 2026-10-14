@@ -4,6 +4,8 @@
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
 
+**Precedência em 14/10 — consultar main antes de decidir novamente:** a [seção 24 do replanejamento](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md#24-reaproveitamento-da-main-antes-de-novas-decisões--14102026) registra a comparação de `origin/main` com código e bancos efetivos. Reaproveitar origem `67140615`, Correios habilitados, um dia adicional, políticas de fidelidade, regras de parcelamento/boleto, matriz J&T e runbooks existentes. Correios/dia adicional foram alinhados no banco de homologação, configuração v5. Projeto Cloud Run, agenda efetiva e débito não foram encontrados implementados na main; não tratar exemplos como configuração real. Catálogo de origem identificado (522 produtos/18 marcas/10 categorias); carga completa ainda não executada, com quatro diferenças de saldo geral/variantes para reconciliar. Publicação/CI do pacote de Vanderlei já concluídas conforme seção 23. As listas históricas abaixo não exigem rediscutir decisões já recuperadas.
+
 **Referência:** quadro consolidado atualizado em 14/10 e evidências locais de 13/10/2026. Esta atualização é documental; não houve nova execução de testes ou consulta aos ambientes externos.
 
 A base local já foi implementada e validada. O trabalho restante concentra-se na integração do débito após a entrega de Leno, na configuração e homologação do ambiente externo, na publicação do candidato e na implantação após os aceites. As pendências abaixo não significam que seja necessário refazer as implementações locais aprovadas.

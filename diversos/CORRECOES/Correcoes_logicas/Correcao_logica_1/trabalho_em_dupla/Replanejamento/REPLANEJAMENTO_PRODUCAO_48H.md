@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Regra de continuidade em 14/10:** antes de solicitar decisões/configurações, consultar a main e reaproveitar o que já existe. Auditoria inicial das prioridades para Vanderlei e alinhamento efetivo do frete na [seção 24](#24-reaproveitamento-da-main-antes-de-novas-decisões--14102026). A main e seu banco permanecem somente leitura.
+
 **Consolidação em 14/10/2026:** entregas de Leno e Vanderlei atualizadas na [seção 23](#23-consolidação-das-entregas-de-leno-e-vanderlei--14102026). Homologação conferida em `9d07510795f88420db1f654e4f6f07f590c8ecfd`, incluindo o pacote de Vanderlei `6f4fa75`. CI remota e status de deployment Vercel aprovados para ambas as revisões. Compra #4 em 12x, compra #5 em 1x com pontos/entrega e estorno integral do #5 concluídos nos recortes descritos. **Produção continua sem aceite.** Registros anteriores de publicação/CI/revisão pendentes são históricos quando superados pela seção 23; os demais critérios continuam exigidos. O prazo original não foi reiniciado.
 
 **Atualização de escopo em 13/10/2026:** o usuário tornou **boleto e cartão de débito obrigatórios antes da produção**, além de PIX, crédito até 12x e entrega. Esta decisão substitui as exclusões/adiamentos de boleto nas matrizes e no backlog anteriores deste documento. Débito é uma lacuna de implementação, não uma modalidade já habilitável por flag: os contratos e o adapter atuais não o oferecem. Ver seção 17. Nenhuma publicação ou aprovação de gates decorre desta atualização local.
@@ -692,3 +694,49 @@ O operador autorizou publicar o trabalho pendente na `homologacao_teste`. Esta e
 **Reprodução da carga J&T:** `scripts/prepare-jt-tariffs.py` recebe a planilha privada por caminho; `tests/unit/test_prepare_jt_tariffs.py` pula somente os casos dependentes dela quando ausente. `scripts/import-jt-homologation.mjs` e `scripts/verify-jt-import.mjs` dependem do snapshot privado `materiais/J&T/Tabela/preparado/banco-origem-jt-somente-leitura.json`, com SHA-256 fixado no importador; obtê-lo por canal privado autorizado se for necessário repetir o ensaio em PostgreSQL descartável. O importador está restrito à homologação existente e não constitui procedimento de carga de produção. A importação remota já foi concluída; publicar os scripts não exige executá-la novamente.
 
 **Validação desta publicação:** quatro testes Python aprovados com a planilha local; verificação J&T em PostgreSQL descartável aprovada (isolamento de host, leitura inicial, rollback, importação integral, revisões, reaplicação sem duplicidade, divergência e identidade da loja). Sintaxe dos scripts JavaScript e `git diff --check` aprovados. Nenhum teste desta rodada acessou os bancos principal ou de homologação. Os arquivos privados usados nos testes permanecem locais.
+
+## 24. Reaproveitamento da main antes de novas decisões — 14/10/2026
+
+Diretriz expressa do operador: verificar o código/documentação de main e a configuração existente antes de pedir decisões ou refazer trabalho; trazer definições aplicáveis para homologação. Registrada também em `AGENTS.md`. A origem é somente leitura; alterações ficam na homologação. Não restaurar defeitos corrigidos, trocar identidades/credenciais de ambientes ou promover dados de teste a produção.
+
+### 24.1 Comparação de origem, código e bancos
+
+Fetch de `main` e `homologacao_teste` realizado. Origem auditada: `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`; homologação de partida `b8b7f3bbe9ba93fc651d1eeaa67db22adb4d478d`. `git merge-base --is-ancestor origin/main HEAD` confirmou ancestralidade; contagem main...HEAD: **0 commits exclusivos de main e 29 da homologação**. Portanto não faltam commits da main nesse recorte; diferenças efetivas podem estar em alterações posteriores de código e nos dados/ambientes separados. Não foi feito merge que reverta correções.
+
+Consultas das duas bases usaram transações `READ ONLY`/`REPEATABLE READ`, timeout e seleção explícita de campos; a leitura da origem verificou `transaction_read_only=on`. Credenciais fornecidas apenas em memória. As conexões locais `.env`/`.env.local` apontam para a origem, não para homologação: não usá-las implicitamente para executar migrations/importações.
+
+| Definição | Evidência na main/origem | Aplicação na homologação |
+|---|---|---|
+| Parcelamento | `lib/config/payment.config.ts`: até 12x; mínimo R$ 20; repasse ao comprador, taxa 0,0299 a.m. | Mesmos defaults preservados com validação mais estrita; não requer nova decisão comercial. |
+| Boleto/piso do gateway | Mesmo arquivo: um dia útil de vencimento e piso R$ 5. | Defaults já preservados. Configuração existente não substitui homologação externa do boleto. |
+| Métodos disponíveis | `types/payment-gateway.types.ts`: PIX, CREDIT_CARD, BOLETO, WHATSAPP_PIX; adapter implementa PIX/crédito/boleto. | Débito não está implementado na origem nem no destino. Ocorrências de débito de pontos não são pagamento por cartão de débito. |
+| Origem e opções de entrega | Banco da origem: CEP `67140615`, retirada e a combinar habilitados. | Iguais nas duas bases; nenhum recadastro necessário. |
+| Correios e preparação | Origem: `enableCorreios=true`, `additionalDays=1`; homologação estava false/0. | **Importados nesta etapa**, com backup/auditoria; detalhes na seção 24.2. |
+| Credenciais Correios | Contrato/senha ausentes em ambas as bases; apenas presença foi consultada. | Não há credencial existente a recuperar nessa origem. Habilitar não comprova cotação bem-sucedida. |
+| Tarifas J&T | 5.181 tarifas e 58 faixas. Comparação agregada dos campos comerciais, sem datas/IDs, igual entre bases. | Carga anterior já corresponde à origem; nenhuma nova importação tarifária necessária. Não há tabela local de frete em nenhuma das lojas. |
+| Fidelidade | Ativa; ganho 0,5; ponto R$ 0,05; mínimo 100; teto de desconto 50%; validade 365 dias. | Todos esses campos já coincidem. Saldos/carteiras e obrigações continuam próprios de cada ambiente. |
+| Banco e operação | Origem efetiva Neon e homologação em endpoint distinto; runbooks de deployment e backup/restore já presentes na main. | Reutilizar os procedimentos existentes. Esses dois bancos são de testes; nenhum novo banco comercial de produção foi identificado por esta auditoria. |
+| Consumidor | Main contém endpoints de expiração de pedidos/pontos, lote de pedidos padrão 50, máximo 100. Não contém `vercel.json`, `ops/`, `infra/` ou Dockerfile; auditoria de infraestrutura da própria main marca scheduler externo como não verificado. | Reutilizar endpoints/limites aplicáveis e o consumidor durável posterior. Cadência efetiva externa não foi comprovada. Proposta de minuto/hora do Cloud Run não é decisão recuperada da main. |
+| Expiração antiga | Main usa 60 minutos para Asaas e 24 horas para manual. | Não restaurar cancelamento remoto por idade: homologação usa prazos persistidos/evidência do provedor. Prazo manual e lote já preservados; não confundir validade do pedido com frequência do scheduler. |
+| Catálogo | Origem: **522 produtos, 528 variantes, 18 marcas, 10 categorias**. Homologação: um produto, zero marcas/categorias. | Origem identificada para preparar carga sem solicitar novamente o catálogo. Carga completa ainda não realizada; seção 24.3. |
+
+Os runbooks existentes são `diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md` e `BACKUP-RESTORE-RUNBOOK.md`. São procedimentos revisáveis, não prova de recursos implantados: comandos citados precisam corresponder aos scripts atuais. O `.env.example` da main contém exemplos de pool Supabase, enquanto as conexões locais efetivas são Neon; não copiar placeholders como decisão operacional.
+
+### 24.2 Configurações de frete importadas
+
+Aplicado às **16:46 UTC de 14/10** em `continental-homologacao`, loja `3a82b33c-3646-4272-9a89-80bb1ba327a5`: Correios false → **true**, preparação 0 → **1 dia**. Origem lida novamente antes da escrita. Somente esses dois campos foram enviados ao UPDATE; o trigger elevou `configurationVersion` de **4 para 5**. Registro `AuditLog/MAIN_FREIGHT_SETTINGS_IMPORT` contém anterior/posterior e proveniência. Backup e resultados privados em `artifacts/main-hml-settings/`.
+
+Implementação: `scripts/sync-main-hml-freight-settings.mjs`, somente leitura por padrão, URLs/lojas fixadas e diferentes, origem sempre em transação somente leitura, lista de dois campos permitidos, aborta divergência do baseline, backup antes da escrita e validação da revisão. `--apply` é explícito. Leitura independente posterior retornou `ALREADY_ALIGNED`, sem escrita.
+
+Verificação em PostgreSQL descartável (`scripts/verify-main-hml-settings.mjs`) aprovada: bloqueio de destino incorreto/mistura de lojas, prévia sem escrita, backup obrigatório, rollback após falha de auditoria, preservação dos demais campos, revisão incrementada e reaplicação sem duplicar auditoria. Main não recebeu qualquer escrita. Não foram processados pedidos, filas ou cobranças.
+
+**Efeito nos próximos ensaios:** recotar e gerar nova proposta; cotações anteriores ficam desatualizadas pela revisão. Para o destino J&T de dois dias, a composição passa a prever **três dias** incluindo preparação. O #5 já concluído mantém seu snapshot original de dois dias. Correios habilitados reproduzem a decisão original, mas PAC/SEDEX ainda exigem retorno válido da API; não foi disparada cotação remota nesta etapa.
+
+### 24.3 Prioridades para Vanderlei após consultar a origem
+
+1. **Reutilizar agora:** revisão do #5/seções 23–24, regras financeiras/fidelidade, matriz/origem/prazo de frete e runbooks existentes. Não pedir novamente taxa de juros, quantidade de parcelas, CEP, prazo adicional ou a planilha J&T para esse recorte.
+2. **Carga de catálogo — Leno:** preparar carga a partir da origem identificada, preservando vínculos e saldos dos ensaios da homologação. Auditoria somente leitura com a normalização de `lib/product-variants.ts` encontrou **zero combinações duplicadas, zero produtos sem variantes, zero dimensões inválidas e quatro produtos com estoque geral diferente da soma das variantes**. Essa divergência precisa ser conciliada como dado, sem inventar estoque físico nem substituir silenciosamente o produto usado nos #4/#5. Não houve importação dos 522 produtos ou cópia de usuários, pedidos, carteiras ou saldos nesta etapa.
+3. **Infraestrutura/consumidor — ambos:** aproveitar a base técnica atual e os procedimentos da main; identificar recursos reais externos e sua configuração antes de solicitar novos valores. Projeto Cloud Run, agenda implantada, canais de alerta e banco comercial separado não foram encontrados nos arquivos auditados; sua ausência no Git não prova inexistência nos painéis. O banco de origem conhecido não deve ser reutilizado como produção por conveniência.
+4. **Débito — Leno:** a busca no contrato/adapter e na documentação de main não recuperou implementação. A lacuna é real; confirmar suporte do provedor e construir o contrato para Vanderlei integrar V-02. Não anunciar essa tarefa como configuração esquecida ou funcionalidade já herdada.
+
+Esta etapa reaproveita o que foi comprovado e delimita o que ainda precisa de trabalho técnico/consulta externa. Não solicita novas decisões comerciais, não aprova gates e não declara concluída a carga de catálogo nem a infraestrutura final.
