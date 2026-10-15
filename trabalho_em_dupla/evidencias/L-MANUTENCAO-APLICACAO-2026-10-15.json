@@ -1,0 +1,42 @@
+{
+  "kind": "application_maintenance_preparation",
+  "date": "2026-10-15",
+  "publishedBase": "b90b41dbe2f795f95fdd0f0f78ea648febaa3427",
+  "mainReadOnlyReference": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "changesPublished": false,
+  "sharedDatabaseTouched": false,
+  "remoteMaintenanceActivated": false,
+  "unitTests": { "files": 90, "passed": 817 },
+  "operationsTests": { "passed": 15 },
+  "prismaMaintenanceIntegration": { "passed": 1, "disposableDatabase": true },
+  "checkoutPaymentRegression": {
+    "runId": "11b3d06b7ba4b971ca46700636d73111",
+    "files": 2,
+    "passed": 89,
+    "disposableDatabase": true,
+    "realGateway": false
+  },
+  "runtimeRehearsal": {
+    "kind": "application_maintenance_rehearsal",
+    "startedAt": "2026-10-15T21:05:38.133Z",
+    "finishedAt": "2026-10-15T21:06:32.104Z",
+    "runId": "0e9aa319ded6a023b60f3f8b2f8c9332",
+    "optimizedRuntime": true,
+    "sameArtifactRestarted": true,
+    "apiChecks": 23,
+    "pageChecks": 4,
+    "databasePreserved": true,
+    "resumedWithCheckoutPaused": true,
+    "externalProviders": false,
+    "productionReady": false
+  },
+  "typecheck": "passed_in_optimized_build",
+  "focusedLint": { "errors": 0, "preexistingWarnings": 1 },
+  "limits": [
+    "No proof of shared deployment activation or old revision coverage",
+    "No global SQL write freeze or in-flight transaction drain",
+    "Independent SQL clients and scripts require separate suspension",
+    "Asaas retention and redelivery were not exercised in the real account",
+    "Alternate operator backup restore and actual Cloud Run configuration remain pending"
+  ]
+}

@@ -20,6 +20,7 @@
     "test:load:isolated": "node scripts/run-isolated-tests.mjs tests/load",
     "test:migrations:isolated": "node scripts/verify-runtime-migrations.mjs",
     "test:clone:isolated": "node scripts/verify-restored-clone.mjs",
+    "test:maintenance:isolated": "node scripts/verify-application-maintenance.mjs",
     "test:legacy:isolated": "node scripts/run-isolated-tests.mjs tests/integration/legacy-commerce-compatibility.test.ts",
     "build:isolated": "node scripts/verify-isolated-build.mjs",
     "test:isolation:negative": "node scripts/verify-test-isolation.mjs",

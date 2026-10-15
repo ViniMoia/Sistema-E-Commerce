@@ -190,3 +190,18 @@ writers da main antiga. A imagem standalone não é um job de migration; separar
 o executor com Prisma CLI e dependências da revisão congelada.
 
 WF-20 permanece aberto até implantação e observação reais. Este pacote é preparação.
+
+### Manutenção completa durante o trecho exclusivo do banco
+
+O gerador inclui `APP_MAINTENANCE_MODE=false`. A pausa inicial de checkout permite
+receber/processar obrigações existentes conforme as demais flags. Já
+`APP_MAINTENANCE_MODE=true` retorna 503 em páginas, APIs, Admin, cron e webhook,
+e bloqueia consultas no cliente Prisma da aplicação. Não ativar durante drenagem.
+Valor configurado diferente de `false` também fecha; ausência mantém operação normal.
+
+Antes de usar esse modo, comprovar retenção/reentrega, parar agendas/importadores,
+cobrir revisões antigas e aguardar transações. Ele não controla clientes SQL
+independentes nem congela globalmente o banco. Retomar com manutenção `false` e
+checkout ainda pausado, reconciliar eventos e só então abrir vendas. Procedimento
+e inventário: `diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md`.
+Ensaio local: `npm run test:maintenance:isolated`; ativação no Cloud Run não realizada.

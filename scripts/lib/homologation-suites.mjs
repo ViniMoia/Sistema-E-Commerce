@@ -1,6 +1,6 @@
 // The audited regression suites; legacy suites outside this list are not certified.
 export const homologationSuites = [
-  'test-environment-isolation', 'loja-credentials', 'commerce-model',
+  'test-environment-isolation', 'application-maintenance', 'loja-credentials', 'commerce-model',
   'loyalty-simulation-identity', 'purchase-tenant-scope', 'guest-buyer-identity',
   'order-transition-atomicity', 'inventory-admin-integrity', 'inventory-admin-browser', 'cart-mutation-atomicity',
   'loyalty-lot-accounting', 'auth-eligibility-atomicity', 'freight-authority',

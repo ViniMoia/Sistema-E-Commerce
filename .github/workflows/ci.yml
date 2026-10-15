@@ -66,6 +66,9 @@ jobs:
       - name: Production Build and Two-Instance Runtime Regression
         run: npm run test:production:isolated 2>&1 | tee artifacts/validation/production.log
 
+      - name: Full Maintenance and Recovery in Isolated Production Runtime
+        run: npm run test:maintenance:isolated 2>&1 | tee artifacts/validation/maintenance.log
+
       - name: Relocated Standalone Package and Runtime Regression
         run: npm run test:standalone:isolated 2>&1 | tee artifacts/validation/standalone.log
 

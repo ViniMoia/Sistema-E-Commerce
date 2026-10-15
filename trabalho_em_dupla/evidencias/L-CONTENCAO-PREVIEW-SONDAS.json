@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "source": "operator_pasted_console_result",
+  "independentlyExecutedByAssistant": false,
+  "observedAt": null,
+  "deploymentId": null,
+  "phase": "checkout_pause_probe",
+  "ok": true,
+  "processingAttempted": false,
+  "validPurchaseSubmitted": false,
+  "probes": [
+    { "path": "/api/checkout/intents", "httpStatus": 503, "paused": true, "noStore": true },
+    { "path": "/api/checkout", "httpStatus": 503, "paused": true, "noStore": true },
+    { "path": "/api/orders", "httpStatus": 503, "paused": true, "noStore": true }
+  ],
+  "recovery": { "httpStatus": 200, "verified": true },
+  "code": "INVALID_COMMAND_PROBES_PAUSED",
+  "subsequentVisualEvidence": {
+    "source": "operator_screenshot",
+    "flow": "normal checkout proposal review",
+    "selectedMethod": "PIX",
+    "pauseMessageVisible": true,
+    "proposalEndpointHttpStatus": 503,
+    "reviewButtonStillVisible": true,
+    "proposalNotDisplayed": true,
+    "requestPayloadInspected": false,
+    "databaseEffectsIndependentlyChecked": false
+  },
+  "provesValidProposalBlocked": false,
+  "provesExistingConsentBlocked": false,
+  "provesFinancialContinuity": false,
+  "provesAllRevisionsCovered": false,
+  "provesResume": false,
+  "proposalResumeObserved": true,
+  "resumeVisualEvidence": {
+    "source": "operator_screenshot_after_resume_instructions",
+    "paymentMethod": "PIX",
+    "deliveryType": "PICKUP",
+    "quantity": 1,
+    "total": 49.9,
+    "pointsRedeemed": 0,
+    "expectedPoints": 24,
+    "proposalVisible": true,
+    "confirmationButtonVisible": true,
+    "purchaseCompletionVerified": false,
+    "runtimeConfigurationIndependentlyRead": false
+  },
+  "productionReady": false
+}

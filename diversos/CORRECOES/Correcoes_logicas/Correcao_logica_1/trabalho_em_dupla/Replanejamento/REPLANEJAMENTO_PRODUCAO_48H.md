@@ -1,5 +1,9 @@
 # Replanejamento para produção em até 48 horas
 
+**Retomada da revisão de compra observada no Preview:** após as instruções para retirar a pausa e fazer redeploy, imagem enviada pelo operador mostra proposta PIX/retirada de R$ 49,90 e botão de confirmação. Fechados os checkpoints de sondas bloqueadas, aviso visual, recuperação do #7 e retorno da proposta. Não comprova conclusão/replay de compra, continuidade financeira durante pausa ou congelamento dos demais escritores. Evidências e limites na seção 43.
+
+**Pausa observada no Preview — evidência enviada pelo operador:** três POSTs com contrato vazio retornaram 503/`CHECKOUT_PAUSED`/`no-store`; GET de recuperação do pedido #7 retornou 200 com identidade verificada. Primeiro checkpoint remoto aprovado nesse escopo. Ainda faltam proposta válida, aviso visual, continuidade financeira, cobertura das revisões e reabertura. Registro na seção 43; não equivale a congelamento geral do banco.
+
 **Candidata integrada para publicação em 15/10:** incorporado por fast-forward o trabalho de Vanderlei `515a27d` (clipboard de pagamento e CI da home), preservando as entregas das seções 37–42. Conjunto aprovado em 790 unitários, 19 testes de ferramentas e build de produção isolado; lint sem erros. Publicação autorizada na homologação; ativação/ensaio da pausa no Preview ainda pendentes. Procedimento de conferência na seção 43.
 
 **Contenção de novas compras preparada em 15/10:** adicionada `CHECKOUT_PAUSED`, privada e independente dos consumidores financeiros. Pausa propostas/conclusões de todos os meios, preservando recuperação por GET; não congela banco nem interrompe requisições em voo. Implementação e limites na seção 42; validação no Preview compartilhado ainda pendente. Operador confirmou que projeto/região Google Cloud e local compartilhado de backup ainda não foram definidos.
@@ -1344,3 +1348,56 @@ Não foi encontrado acesso autenticado à administração Vercel nesta máquina;
 5. Após coleta, retornar `CHECKOUT_PAUSED=false` no mesmo Preview e redeploy; confirmar comportamento normal sem duplicação. Não remover outros bloqueios de segurança para facilitar o teste.
 
 O script teve sintaxe validada localmente; ainda não foi executado na sessão remota. Publicar código não ativa a pausa quando a variável está ausente, nem conclui o congelamento geral de escritores/recuperação/produção. Projeto/região Google Cloud e local de backup compartilhado continuam não definidos pelo operador.
+
+### Resultado recebido após a publicação
+
+O commit `b90b41dbe2f795f95fdd0f0f78ea648febaa3427` foi publicado em `homologacao_teste`, com status Vercel `success` conferido via GitHub na etapa anterior. Depois das orientações de ativação/redeploy, o operador enviou a saída de `VALIDAR_PAUSA_CHECKOUT.js`: `ok=true`, `INVALID_COMMAND_PROBES_PAUSED`; `/api/checkout/intents`, `/api/checkout` e `/api/orders` responderam **503**, com `paused=true` e `noStore=true`. A recuperação do pedido #7 respondeu **200**, `verified=true`. Nenhuma proposta válida foi submetida e nenhuma fila foi processada pelo script.
+
+Evidência declarada pelo operador, não uma execução remota independente pelo assistente. O JSON não informa horário ou ID do redeploy posterior; não atribuir a esse redeploy a identidade do deployment inicial por suposição. Arquivo: [L-CONTENCAO-PREVIEW-SONDAS.json](../../../../../../trabalho_em_dupla/evidencias/L-CONTENCAO-PREVIEW-SONDAS.json).
+
+Na sequência, o operador enviou imagem do formulário normal com PIX selecionado: aviso **“As compras estão temporariamente pausadas. Você pode continuar acompanhando os pedidos já realizados.”**, botão **“Revisar proposta de compra”** ainda presente e erro HTTP **503 em `/api/checkout/intents`** no Console. O bloqueio visual da tentativa de revisão foi observado. A imagem não contém o payload da requisição, não comprova sua validade no servidor e não substitui consulta de efeitos no banco. Não foi exibida uma proposta nova na imagem.
+
+O Console também mostra bloqueio CSP do script de feedback `vercel.live` e uma falha de conexão de outro script; não atribuir a eles o bloqueio de compra, que tem resposta 503 e aviso próprios. Nenhuma alteração de CSP foi proposta para este ensaio.
+
+Após a orientação para definir `CHECKOUT_PAUSED=false` no mesmo Preview, fazer redeploy e recarregar, o operador enviou imagem com a proposta novamente exibida: PIX, retirada, uma unidade do aspirador automotivo Pequeno/Vermelho, total R$ 49,90, sem desconto/frete/encargos e ganho previsto de 24 pontos. O botão mudou para **“Confirmar proposta e concluir compra”**. **Retomada da revisão de compra observada**; nenhuma confirmação de pedido ou pagamento foi apresentada nem solicitada neste checkpoint. A configuração efetiva e o ID desse redeploy não foram consultados independentemente.
+
+O ciclo observado fecha sondas bloqueadas, aviso visual, recuperação do #7 e retorno da proposta na sessão mostrada. Não precisa concluir essa compra apenas para fechar a evidência visual. Proposta aceita antes da pausa/conclusão, cliente/visitante, webhook/consumidor e abrangência das revisões continuam pendentes até evidência própria. A próxima frente de preparação é mapear e coordenar a suspensão dos demais escritores na janela do banco, com retenção/reentrega de eventos e recuperação independente; não repetir operações financeiras encerradas nem alterar o boleto #8. Esses registros de observação permanecem locais até nova publicação documental.
+
+## 44. Suspensão dos escritores da aplicação preparada e ensaiada — 15/10/2026
+
+Continuação autorizada após as evidências de pausa e retorno da proposta. Referência somente leitura `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`: não localizado controle equivalente nas entradas/configurações pesquisadas. Base de homologação publicada `b90b41dbe2f795f95fdd0f0f78ea648febaa3427`; alterações desta seção permanecem locais, sem commit/push/deploy. Nenhuma consulta ou mutação dos bancos compartilhados foi executada nesta rodada.
+
+### Implementação e inventário
+
+Preparado `APP_MAINTENANCE_MODE`: `false` ou ausente preserva operação; demais valores configurados fecham a aplicação. O Proxy bloqueia páginas, APIs, Server Actions, assets, Admin, jobs HTTP e webhook com **503 e no-store**, antes de autenticação/renderização. APIs recebem `APP_MAINTENANCE`; páginas recebem aviso de manutenção. O singleton Prisma também recusa todas as consultas, inclusive raw e operações em transações. Não substitui `CHECKOUT_PAUSED`: durante drenagem, a manutenção completa fica desligada para permitir recepção e processamento existentes.
+
+O inventário encontrou escrita indireta em consultas: remoção de sessão expirada e criação de cesta pelo contexto de checkout. Por isso, filtrar apenas POST/PUT/PATCH/DELETE não seria suficiente. Inventariados também carrinho, Admin/catálogo/estoque/configurações, perfil, fidelidade, webhook, crons, consumers/schedulers e importadores com clientes próprios. Cobertura e sequência estão no [runbook de implantação](../../../../../AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md).
+
+O gerador Cloud Run inclui a flag completa **desligada**, junto à pausa inicial de checkout. Ensaio reproduzível adicionado a `npm run test:maintenance:isolated`, à CI e à seleção de integração pertinente. A adição à CI não representa uma execução publicada desta revisão.
+
+### Verificação executada
+
+- **817 testes unitários em 90 arquivos aprovados**, incluindo 27 casos da nova proteção.
+- **Um teste de integração com Prisma real**: recusa de ORM, SQL raw e operações em transações; retomada com a flag desligada, usando PostgreSQL descartável.
+- **Build otimizado e TypeScript aprovados**, em cópia sem `.env`. O mesmo artefato foi reiniciado aberto/fechado/aberto; 23 chamadas de API e quatro acessos de página/ação receberam a resposta esperada durante manutenção. Hashes de todas as tabelas públicas e sequências permaneceram iguais. Retomada confirmou autenticação e checkout ainda pausado.
+- **89 regressões de checkout/pagamentos aprovadas** em banco e servidor descartáveis, com gateway controlado; nenhuma chamada financeira real.
+- **15 testes de ferramentas e manifestos aprovados**, incluindo o default de manutenção desligada e a seleção das suítes da CI.
+- Lint dos arquivos de código alterados: zero erros e um aviso preexistente de diretiva não utilizada em `lib/prisma.ts`.
+
+Evidência agregada: [L-MANUTENCAO-APLICACAO-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-MANUTENCAO-APLICACAO-2026-10-15.json). Recursos temporários dos ensaios encerrados e descartados. Não há declaração de congelamento do banco real, de reentrega do Asaas ou de prontidão para produção.
+
+### Aplicação operacional ainda pendente
+
+O controle não revoga contas SQL, não alcança revisões antigas/clientes independentes e não desfaz consultas ou efeitos externos em voo. Para a janela: pausar novas compras, drenar, parar agendas/importadores, comprovar retenção/reentrega e cobrir todas as revisões; então ativar manutenção completa, aguardar trabalhos e conferir sessões/leases antes do backup/cutoff e DDL pelo operador autorizado. A main e seu banco continuam somente leitura para o assistente.
+
+O webhook também responderá 503, sem confirmar evento não persistido. A documentação do Asaas prevê interrupção da fila após falhas consecutivas e retenção limitada; não presumir reentrega automática indefinida. Fontes e procedimento de recuperação estão no runbook. Essa continuidade precisa ser comprovada na conta antes de interromper seu recebimento; a flag completa **não foi ativada no Preview**.
+
+Retomar primeiro com `APP_MAINTENANCE_MODE=false` e `CHECKOUT_PAUSED=true`, conferir eventos e consumidores; somente depois reabrir novas compras. Permanecem pendentes recuperação por operador alternativo, local de backup compartilhado, projeto/região/serviço reais e coordenação da janela. Boleto #8 e operações financeiras já encerradas foram preservados.
+
+## 45. Encaminhamento da manutenção para homologação — 15/10/2026
+
+O operador autorizou publicar a preparação da seção 44 e conferir deployment/CI, sem aguardar retorno de Vanderlei. O fetch prévio confirmou `origin/homologacao_teste` em `b90b41dbe2f795f95fdd0f0f78ea648febaa3427`, sem mudanças concorrentes a integrar, e `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`.
+
+Escopo da candidata: manutenção completa, testes/CI, defaults de exemplo, runbooks e evidências agregadas das seções 43–44. Nenhum segredo, dump privado ou configuração real integra o commit. Os resultados locais da seção 44 continuam válidos para este código; esta etapa não os apresenta como CI remota. O JSON de evidência registra o estado no momento do ensaio, quando as alterações ainda não estavam publicadas.
+
+A publicação não ativa `APP_MAINTENANCE_MODE`: ausente/`false` mantém funcionamento normal. Não alterar flags remotas, main, bancos compartilhados ou comandos financeiros. Conferir os resultados de Vercel/GitHub vinculados ao SHA publicado; status de build não comprova navegação autenticada ou reentrega de eventos. A ativação remota do modo completo continua dependente da coordenação descrita na seção 44.

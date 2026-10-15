@@ -4,7 +4,7 @@ Revisão em 15/10/2026. Procedimento preparado na homologação, **não executad
 
 ## Base comprovada e responsáveis
 
-Origem: `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Aplicação candidata: `8632514f03bded8ca0143f0ac053fa8ceadade30`, mais ferramentas/documentação locais ainda não publicadas. Não há SHA final de release desse conjunto local.
+Origem: `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Base publicada em homologação: `b90b41dbe2f795f95fdd0f0f78ea648febaa3427`, mais manutenção completa e documentação locais ainda não publicadas. Não há SHA final de release desse conjunto local.
 
 As 13 migrations passaram no clone PostgreSQL 18, com diff vazio, preservação de dados/sequências e segundo deploy sem trabalho novo. Quatro produtos/dez variantes de teste ficaram indisponíveis no clone, mantendo 518 produtos comerciais. Duas carteiras foram abertas com saldo zero, ajustes e auditoria; 24 pedidos/33 itens e movimentos antigos foram preservados. Compra nova, replay, estoque e pontos foram exercitados com pagamento manual controlado. Evidências: `trabalho_em_dupla/evidencias/L-BANCO-*.json` e seções 36–40 do replanejamento.
 
@@ -47,11 +47,33 @@ Durante a drenagem, manter recepção durável e processamento compatível de ob
 
 Depois de bloquear novas compras e registrar trabalhos/leases em voo, suspender coordenadamente os escritores durante o trecho exclusivo. Webhook também escreve na inbox; mantê-lo no mesmo banco não equivale a congelamento de escrita.
 
+Preparado `APP_MAINTENANCE_MODE`, separado de `CHECKOUT_PAUSED`. Ausente ou `false` mantém funcionamento normal; `true` e qualquer outro valor configurado bloqueiam. O Proxy responde 503/`APP_MAINTENANCE` nas APIs e página de manutenção nos demais acessos, com `private, no-store`, antes de autenticação/renderização. Inclui GET, Server Actions, Admin, assets, cron e webhook. O cliente Prisma compartilhado da aplicação também recusa consultas ORM/raw dentro ou fora de transações. Não é um modo de leitura: consultas podem disparar gravações indiretas.
+
+| Escritor identificado | Entrada/fonte | Contenção necessária |
+|---|---|---|
+| Compras e contexto de cesta | `services/checkout.service.ts`, rotas checkout/orders; GET/PATCH de contexto podem criar cesta | Pausa de checkout durante drenagem; manutenção completa no trecho exclusivo. |
+| Sessões e perfil | `lib/session.ts` remove sessão expirada durante leitura; auth e `app/profile/actions.ts` | Bloquear também GET/renderização/Server Actions, antes de autenticação. |
+| Carrinho, catálogo, estoque, configurações e administração | APIs cart/products/loja/admin, fidelidade e transições de pedidos | Proxy global e cliente Prisma da aplicação; não depender de esconder botões. |
+| Inbox e efeitos financeiros | `/api/webhooks/asaas`, cron payments/orders-timeout/loyalty-expiration | Drenar antes; suspender consumidores e recepção coordenadamente, com reentrega comprovada. |
+| Agendadores externos | `scripts/cloudrun-consumer.mjs`, `scripts/homologation/payment-scheduler.worker.mjs` | Inventariar instâncias realmente implantadas, desativar agendas e aguardar execuções; presença do arquivo não prova implantação. |
+| Importadores/reparadores e acesso direto | `repair-product-variants.mjs`, `import-main-hml-catalog.mjs`, `import-jt-homologation.mjs`, `sync-main-hml-freight-settings.mjs` e outros clientes SQL/Prisma próprios | Parar processos e coordenar acesso dos operadores; não usam necessariamente o singleton protegido. |
+| Versões antigas e trabalhos em voo | main antiga, URLs anteriores, conexões/transações e efeitos já enviados | Retirar alcance dos writers antigos, aguardar encerramento e conferir sessões/leases. A flag nova não retroage. |
+
+O modo completo **não congela globalmente o PostgreSQL**, não revoga contas e não cancela SQL já enviado. Transações podem abrir antes da primeira consulta protegida. Não cobre clientes independentes nem efeitos externos já iniciados. Antes de DDL, o operador deve identificar contas/processos com acesso, comprovar encerramento das execuções e conferir sessões/transações/locks em leitura, incluindo tarefas fora do HTTP. Registrar tratamento das conexões residuais e separação entre conta de runtime e conta de migration; ausência de tráfego no alias não basta. Nenhuma revogação/terminação de sessão do banco principal foi executada nesta preparação.
+
 Antes dessa suspensão, comprovar recepção em destino durável compatível ou a política efetiva de reentrega do provedor, janela e reconciliação posterior. Não presumir duração de retry nem responder 2xx sem persistência. Se essa continuidade não estiver comprovada, não iniciar o trecho exclusivo. Registrar último evento/posição e trabalhos abertos; não apagar filas, forçar COMPLETED ou rearmar comandos.
+
+A documentação Asaas informa que respostas diferentes de 200 geram tentativas, com interrupção após 15 falhas consecutivas e retenção limitada a 14 dias. Portanto, retornar 503 não garante recuperação automática indefinida. Conferir a fila real, corrigir o recebimento e verificar a necessidade de reativação e conciliação, sem disparar novas operações financeiras. Fontes consultadas em 15/10/2026: [fila pausada](https://docs.asaas.com/docs/fila-pausada) e [reativação da fila](https://docs.asaas.com/docs/como-reativar-fila-interrompida). Isso é documentação do provedor, não prova de reentrega na conta do projeto.
+
+Ordem: manter `APP_MAINTENANCE_MODE=false` enquanto `CHECKOUT_PAUSED=true` permite drenagem; parar agendas/scripts e aguardar trabalhos; somente com continuidade de eventos comprovada ativar manutenção completa em todas as revisões alcançáveis. Conferir 503 também no webhook (sem enviar evento financeiro novo), verificar ausência de escritores em voo e registrar backup/cutoff. A manutenção completa permanece **não ativada nos ambientes compartilhados** nesta rodada.
 
 ### Retomar obrigações antes de abrir vendas
 
 Após schema e dados validados, retomar recepção e consumidores na versão compatível. Conferir conta/ambiente, progresso, leases e reentregas antes de abrir novas compras. A pendência temporal do teste de expiração do boleto foi aceita pelo operador; permanece pendente, sem ser apresentada como aprovação.
+
+Retirar primeiro `APP_MAINTENANCE_MODE` (`false`), mantendo `CHECKOUT_PAUSED=true`. Conferir recepção/reentrega, leituras autorizadas e progresso de consumidores. Só depois definir `CHECKOUT_PAUSED=false`. Não reaplicar o manifesto inicial para alterar apenas essas flags: ele contém outros defaults financeiros.
+
+Ensaio local reproduzível: `npm run test:maintenance:isolated`. Cria PostgreSQL descartável, aplica migrations, verifica o guard Prisma, compila uma cópia sem `.env` e reinicia o mesmo artefato otimizado com manutenção desligada/ligada/desligada. Confere 23 acessos de API, quatro acessos de página/ação, hashes de todas as tabelas públicas/sequências e retomada mantendo checkout pausado. Não usa gateway real nem comprova drenagem/reentrega remota. Incluído como etapa de CI; resultado de CI publicado ainda não existe para as alterações locais.
 
 ## Sequência de aplicação futura
 

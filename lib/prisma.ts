@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { assertTestDatabaseIdentity, testDatabaseConfig, type TestDatabaseIdentity } from './testing/database-policy'
+import { assertApplicationDatabaseAvailable } from './application-maintenance'
 
 const isTestRun = process.env.NODE_ENV === 'test' || Boolean(process.env.TEST_RUN_ID)
 const testConfig = isTestRun ? testDatabaseConfig() : undefined
@@ -18,6 +19,12 @@ const prismaClientSingleton = () => {
       process.env.NODE_ENV === 'development'
         ? ['warn', 'error']
         : ['error'],
+  })
+  // Reject all queries, including raw SQL and reads with possible side effects.
+  // Not a SQL parser, transaction drain or database-level access revocation.
+  client.$use(async (params, next) => {
+    assertApplicationDatabaseAvailable()
+    return next(params)
   })
   if (testConfig) {
     // The metadata query uses this very client. No fixture/model/raw write can
