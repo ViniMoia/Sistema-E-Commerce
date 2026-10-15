@@ -1,8 +1,53 @@
-# L-04 — Preparação do estorno integral parcelado #4
+# L-04 — Estorno integral parcelado #4: cenário concluído
 
-Estado em 15/10/2026: preparação, sem solicitação remota. Ensaio fictício no Asaas Sandbox/homologação. Operador confirmou que as seis unidades continuam na loja, sem entrega/retirada. Não repetir o estorno de crédito 1x do #5, já encerrado.
+Estado atual em 15/10/2026: **cenário de estorno integral do cartão em 12 parcelas concluído no Sandbox**, incluindo histórico remoto, compensações e processamento dos 12 webhooks sem duplicação. Operador confirmou que as seis unidades continuam na loja, sem entrega/retirada. Não repetir a solicitação do #4 nem o estorno de crédito 1x do #5. As pendências deste cenário descritas abaixo são registros históricos superados pelo fechamento.
+
+## Fechamento — 15/10/2026 às 16:31:45 UTC (13:31:45 BRT)
+
+Após o último lote informado (inbox 2/2 concluído, sem revisão/retry), leitura READ ONLY/REPEATABLE READ confirmou **12 PAYMENT_REFUNDED COMPLETED, nenhum restante**, e quatro tarefas de outbox do pedido concluídas. Pedido CANCELLED v2 e tentativa REFUNDED sem failureCode; as mesmas 12 operações COMPLETED sem erro e todas as cobranças REFUNDED. Mantidos 12 fatos REFUNDED totalizando R$ 360,72 e apenas uma transição PAID → CANCELLED.
+
+Reserva RETURNED de seis unidades; estoque produto/variante **98/48**, versões **16/13**, preservados após todos os eventos. Carteira e soma dos lotes **161**, pendente/déficit zero, lifetimeEarn **660**. Mesmo movimento único REFUND_EARN `9915ac6f-f730-4963-a32f-3b5ce2737ead`, **−149 pontos**, sem repetição. #8 continua PENDING v0 com sua reserva RESERVED de uma unidade.
+
+Aceite deste cenário: estorno integral de **12 × R$ 30,06 = R$ 360,72**, prova remota fornecida às 15:50:33 UTC com um DONE por parcela, compensação única e estabilidade após os 12 eventos naturais. Nenhuma nova rodada é necessária para o #4. Não houve replay financeiro deliberado, compra real, prova em produção ou ensaio de devolução física; os demais gates do projeto continuam próprios. Registro de fechamento atualizado localmente; nenhuma nova publicação ou operação financeira foi executada pelo assistente nesta conferência.
+
+## Histórico remoto final comprovado — 15:50:33 UTC (12:50:33 BRT)
+
+**Segundo lote de webhooks conferido às 16:29:34 UTC (13:29:34 BRT):** confirmados **10 COMPLETED e 2 READY** do #4. Pedido CANCELLED v2, reserva RETURNED de seis, estoque 98/48 e versões 16/13, carteira 161/déficit 0/lifetimeEarn 660, 12 fatos REFUNDED totalizando R$ 360,72 e o mesmo REFUND_EARN único de −149 preservados. #8 PENDING v0/reserva RESERVED intacto. Nenhuma duplicação observada após dez eventos. Orientada uma rodada com `-Limit 2` para os dois restantes e conferência final; não repetir a solicitação REFUND.
+
+**Primeiro lote de webhooks conferido às 16:26:11 UTC (13:26:11 BRT):** operador informou inbox 5/5 concluído, reconciliação 1 concluída e nenhuma revisão/retry. Consulta somente leitura confirmou **5 PAYMENT_REFUNDED COMPLETED e 7 READY** do #4. Pedido CANCELLED v2, reserva RETURNED de seis, estoque 98/48 e versões 16/13 preservados. Carteira 161, déficit 0, lifetimeEarn 660, mesmos 12 fatos REFUNDED totalizando R$ 360,72 e mesmo REFUND_EARN único `9915ac6f-f730-4963-a32f-3b5ce2737ead` de −149. #8 PENDING v0/reserva RESERVED preservado. Sem duplicação observada após estes cinco eventos. Próxima ação: mais uma rodada única com `-Limit 5` e conferência dos restantes; ensaio ainda aguarda sete eventos.
+
+JSON fornecido pelo operador: HTTP 200, identidades/lista completa conferidas, 12 parcelas REFUNDED, nenhuma excluída; 12 históricos DATA_ARRAY completos, cada um com exatamente um registro DONE de R$ 30,06. Total devolvido comprovado: **R$ 360,72**. O código `INSTALLMENT_REFUND_RECORDS_FOUND` isoladamente não bastaria; a conclusão decorre dos status/valores de todos os registros.
+
+Leitura local às **15:51:20 UTC** confirmou estabilidade: pedido CANCELLED v2, estoque 98/48 e versões 16/13, carteira 161, déficit 0, lifetimeEarn 660; mesmos 12 fatos REFUNDED (R$ 360,72) e um único REFUND_EARN. Os 12 PAYMENT_REFUNDED permanecem READY.
+
+Acrescentado `-Limit` (1..5, padrão 1) ao script local de processamento, respeitando o limite já implantado na API. Cinco simulações validaram padrão, lote cinco, StatusOnly sem POST, escopo divergente sem POST e limite inválido; sem rede. Não requer redeploy. Próxima ação: **uma** execução de `.\scripts\homologation\process-payments-once.ps1 -Limit 5` e conferência. O limite vale para cada etapa global, não exclusivamente para #4; não executar laço automático. Depois ajustar as rodadas ao número efetivo de eventos restantes e comprovar ausência de efeitos duplicados. Não há novo estorno a solicitar.
+
+## Estorno conciliado — leitura de 15/10 às 15:48:54 UTC (12:48:54 BRT)
+
+Após rodada com reconciliação 1/outbox 1 concluídos, a consulta READ ONLY/REPEATABLE READ confirmou:
+
+- #4 CANCELLED v2, `asaasPaymentStatus=REFUNDED`, tentativa REFUNDED v20 sem failureCode.
+- As mesmas 12 operações COMPLETED, com submissão conjunta às 15:47:39.718 UTC e conclusão registrada às 15:47:52.502 UTC; 12 cobranças REFUNDED e 12 fatos REFUNDED somando R$ 360,72. O timestamp de conclusão é capturado pela transação antes do commit; o histórico comercial foi gravado às 15:48:08.769 UTC.
+- Uma reserva RETURNED de seis unidades; estoque produto/variante **98/48**, versões **16/13**, aumento único de seis sobre 92/42.
+- Um movimento `REFUND_EARN` de **−149** (`9915ac6f-f730-4963-a32f-3b5ce2737ead`), carteira **161**, déficit/pendente zero, lifetimeEarn **660**. O campo histórico `pointsCredited=149` permanece no pedido; a reversão está no ledger.
+- Uma nova tarefa ORDER_STATUS_CHANGED (`ee24f3eb-5fdd-4a2d-af0f-c9d83a4704d2`) COMPLETED em uma tentativa. Nenhuma tarefa de e-mail de estorno foi identificada; não presumir envio de comunicação não registrada.
+- Boleto #8 PENDING v0, reserva de uma unidade RESERVED, preservado.
+
+Chegaram **12 PAYMENT_REFUNDED READY** entre 15:47:47 e 15:47:56 UTC. A reconciliação já aplicou os efeitos; o consumo posterior deve preservá-los, sem novo estorno/estoque/pontos. Não encerrar o ensaio completo antes dessa prova. Próxima conferência pontual: `L-04-CONFERIR_PARCELAMENTO_PEDIDO_4.ps1 -RefundHistory`, somente leitura, esperando 12 REFUNDED e histórico DONE correspondente ao total. Depois consumir os webhooks de forma controlada e comparar os mesmos fatos, movimento e saldos. Não executar novamente o script de solicitação.
+
+## Solicitação aceita e conferida — 15/10/2026
+
+Publicado `c210f286ba5c9d306e5a3b6f979525cd215888d5` em `homologacao_teste`; status da integração Vercel confirmou sucesso às 15:33:14 UTC (12:33:14 BRT). Operador executou o comando específico e recebeu HTTP 202, `REFUND_REQUEST_ACCEPTED`, `replay=false`, com 12 operações READY.
+
+Consulta READ ONLY/REPEATABLE READ às **15:35:29 UTC (12:35:29 BRT)** confirmou os 12 IDs de operação retornados, uma única identidade de comando, todos READY com `submittedAt=null` e sem erros. Tentativa `41ede05c-40fd-4542-800c-311af6b25cb8` REFUND_PENDING v18, conta sandbox-hml e contrato esperado. Pedido PAID v1, parcelas CONFIRMED, 12 fatos AUTHORIZED, nenhum REFUNDED. Reserva COMMITTED de seis unidades; estoque 92/42, versões 15/12. Carteira 310, déficit/pendente zero e lifetimeEarn 809 preservados. #8 PENDING v0 com sua reserva RESERVED de uma unidade.
+
+Próximo passo: uma rodada de `.\scripts\homologation\process-payments-once.ps1`, que já verifica escopo sandbox-hml antes de processar. O lote é global e pode selecionar outro pedido; enviar o JSON e conferir o estado do #4 antes de repetir. Não reenviar o comando REFUND. Os 12 registros acompanham as parcelas de **uma única solicitação remota do contrato**, não 12 chamadas de estorno. Nesta conferência o assistente fez somente leitura; processamento ainda não executado.
+
+**Primeira rodada informada:** reconciliação 1 concluída e outbox 1 concluído, sem erros/revisões. Leitura às 15:40:24 UTC confirmou #4 ainda PAID v1, tentativa REFUND_PENDING v18, todas as 12 operações READY/submittedAt nulo, sem fatos de estorno. Estoque 92/42 e carteira 310 intactos. A tentativa do #8 foi atualizada às 15:38:02 UTC e continua PENDING; isso é compatível com a rodada ter conciliado o boleto, não o #4. A identidade da tarefa de outbox não foi determinada pelo contador global. Fila consultada depois mostrou #3 (revisão histórica de PIX) antes do #4 por reconcileAfter. Orientada outra rodada única e nova conferência, sem repetir o comando REFUND; eventual review do #3 não deve ser atribuída ao #4 sem leitura específica.
 
 ## Publicação e solicitação do ensaio
+
+**Segunda rodada — revisão identificada:** operador retornou reconciliação 1 em review, demais etapas sem trabalho. Leitura somente leitura às **15:44:27 UTC (12:44:27 BRT)** confirmou atualização do PIX #3 às 15:43:55 UTC, com `PAYMENT_REFUND_CANCELLED_REVIEW` e próxima consulta às 16:43:53 UTC. O #4 permanece REFUND_PENDING v18, sem failureCode, 12 operações READY/submittedAt nulo, pedido PAID v1, sem fatos REFUNDED. Estoque 92/42, reserva COMMITTED de seis unidades e carteira 310/lifetimeEarn 809 preservados. Entre as tentativas consultadas, #4 agora precede #8 por reconcileAfter; #3 foi reagendado. Orientada mais uma rodada única seguida de conferência. Nenhuma nova solicitação REFUND deve ser criada.
 
 Operador autorizou publicar a correção na homologação e seguir com o teste. Preparado `L-04-SOLICITAR_ESTORNO_PARCELADO_PEDIDO_4.js` para o Console do Admin autenticado no Preview, após confirmação do deployment. Nova leitura somente leitura confirmou #4 PAID v1, tentativa APPROVED, 12 parcelas CONFIRMED e nenhuma operação existente. O script exige a identidade/versão/valores/itens conferidos e valida o retorno das 12 operações. Usa `commandId=l04-card-refund-pedido4-ae14cb17-v1`, que não deve ser alterado em replay planejado.
 

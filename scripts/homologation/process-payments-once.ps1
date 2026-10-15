@@ -1,7 +1,12 @@
-param([switch]$StatusOnly)
+param(
+    [switch]$StatusOnly,
+    [ValidateRange(1, 5)]
+    [int]$Limit = 1
+)
 
 # One processing batch in the fixed homologation Preview. No scheduler or retry.
 # -StatusOnly performs only the authenticated GET; never sends processing POST.
+# -Limit controls each stage's global batch (1..5), not a specific order.
 $pixProcessCron = $null
 $pixProcessBypass = $null
 $pixProcessHeaders = $null
@@ -39,7 +44,7 @@ try {
         return
     }
     $pixProcessPhase = 'processing'
-    Invoke-RestMethod -Uri "$pixProcessBase/api/cron/payments?limit=1" -Method Post `
+    Invoke-RestMethod -Uri "$pixProcessBase/api/cron/payments?limit=$Limit" -Method Post `
         -Headers $pixProcessHeaders -MaximumRedirection 0 -TimeoutSec 330 -ErrorAction Stop |
         ConvertTo-Json -Depth 8
 }

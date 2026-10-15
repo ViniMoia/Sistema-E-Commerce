@@ -1,3 +1,5 @@
+// HISTORICO: solicitacao #4 aceita e estorno conciliado em 15/10/2026. NAO executar novamente.
+// Cenario encerrado: historico remoto, 12 webhooks e compensacoes conferidos; instrucoes abaixo sao historicas.
 // Leno (Brega): execute UMA vez no Console do Admin autenticado do mesmo Preview.
 // #4, 12x R$ 30,06 = R$ 360,72. Exige deploy do estorno por contrato conferido.
 // Exige produto ainda na loja, baseline e cobranca Sandbox sem estorno em curso.
