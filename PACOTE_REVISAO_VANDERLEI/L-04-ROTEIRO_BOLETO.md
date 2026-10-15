@@ -1,14 +1,26 @@
 # L-04 — Boleto: emissão e confirmação no Sandbox
 
-Preparação em 14/10/2026. Pedido **#6 emitido pelo operador** e conferido às 20:20 UTC, ainda pendente; ver registro abaixo. Main e banco de origem permanecem somente leitura. A confirmação de pagamento ainda não foi simulada nesta etapa.
+**Cenário de emissão e pagamento de boleto concluído no Sandbox em 14/10/2026.** Pedido #6 pago, e-mail recebido e conteúdo conferido pela imagem enviada pelo operador: boleto bancário, retirada no balcão, uma unidade Pequeno/Vermelho, total R$ 49,90, confirmação às 17:38 e ganho de 24 pontos. Última leitura do banco às 20:45:36 UTC: carteira/lotes 310, lifetimeEarn 809, estoques 93/43, reserva COMMITTED e efeitos sem duplicação observada. Todas as tarefas do pedido concluídas. Não executar novas rodadas nem confirmar retirada física para este cenário. Main e banco de origem permanecem somente leitura.
+
+Este fechamento cobre emissão, apresentação do vencimento, recebimento simulado, aplicação interna, estoque, fidelidade e e-mail. Não encerra cancelamento, vencimento, pagamento tardio, estorno de boleto ou replay deliberado, nem libera produção. Os registros cronológicos e o procedimento abaixo documentam o ensaio concluído; pendências antigas foram superadas pelo fechamento acima.
+
+**Registro às 20:39:34 UTC:** pagamento simulado pelo operador e aplicado pelo consumidor; pedido #6 PAID v1, tentativa APPROVED sem failureCode, cobrança RECEIVED com fatos AUTHORIZED e SETTLED de R$ 49,90. Um EARN de 24, carteira/lotes 310 e lifetimeEarn 809. Estoques preservados em 93/43, versões 12/9, reserva COMMITTED. E-mail e ORDER_STATUS_CHANGED ainda READY; recebimento de e-mail e leitura posterior de estabilidade pendentes. A linha de preparação acima descreve o momento anterior à simulação.
+
+O evento PAYMENT_RECEIVED foi concluído em uma tentativa; CHECKOUT_COMMITTED também concluído. A revisão registrada na rodada corresponde ao PIX #3 (`PAYMENT_REFUND_CANCELLED_REVIEW`, atualização 20:38:57 UTC), sem failureCode no #6. O campo `PaymentCharge.settledAt` continua nulo nesta leitura; a evidência de liquidação registrada é o fato SETTLED, além do status RECEIVED. Não declarar esse timestamp preenchido.
+
+**Leitura posterior às 20:43:25 UTC:** ORDER_STATUS_CHANGED concluído em uma tentativa. PAYMENT_CONFIRMATION_EMAIL continua READY, attempts=0, sem erro. Pedido PAID v1, tentativa APPROVED v2, mesmos IDs dos dois fatos financeiros e do único EARN de 24; carteira/lotes 310, lifetimeEarn 809, estoque 93/43, versões 12/9 e reserva COMMITTED preservados. Estabilidade observada entre as duas leituras; não equivale a teste de replay financeiro deliberado. Falta consumir e confirmar recebimento do e-mail.
 
 ## Emissão observada do pedido #6
+
+**Última conferência — 20:45:36 UTC:** PAYMENT_CONFIRMATION_EMAIL agora COMPLETED, attempts=1, sem erro. As três tarefas do #6 e o PAYMENT_RECEIVED estão concluídos. Pedido PAID v1, tentativa APPROVED v2, mesmos fatos financeiros e único EARN de 24; carteira/lotes 310, lifetimeEarn 809, estoque 93/43 e reserva COMMITTED mantidos. Não são necessárias novas rodadas para essas tarefas. Falta o operador confirmar o recebimento e conteúdo do e-mail; conclusão do envio na fila não comprova entrega na caixa postal.
 
 - Identidade: `0f0a05ff-2a24-4e6f-93ef-be13451388c9`, cobrança `pay_blfexx8zkousw431`, conta registrada `sandbox-hml`. Diagnóstico já parametrizado para essa identidade; não emitir outro pedido para corrigir a apresentação.
 - Leitura somente leitura de 14/10/2026 às 20:20:49 UTC: pedido PENDING v0, tentativa PENDING, uma cobrança de R$ 49,90, artefatos de boleto presentes e `paidAt` nulo. Sem fatos financeiros, movimentos de fidelidade ou operações de estorno/cancelamento.
 - Uma unidade RESERVED, vinculada corretamente ao item; estoque 93/43, carteira/lotes 286 e lifetimeEarn 785. Outbox CHECKOUT_COMMITTED READY; nenhum processamento executado nesta conferência.
 - PDF Sandbox enviado pelo operador vence em **15/10/2026**. A tela mostrava **16/10/2026** porque apresentava o limite exclusivo `2026-10-16T03:00:00Z` como data impressa. Correção de apresentação incluída no pacote autorizado para homologação, sem alterar cobrança, expiração ou reserva. Reteste após o deploy ainda pendente. Ver seção 30 do replanejamento.
-- Próximo passo: conferir a data corrigida no Preview após publicação; depois realizar a simulação Sandbox da seção 3 na mesma cobrança e verificar os efeitos. Não pagar o boleto de teste em banco.
+- Atualização: correção publicada em `117ec92`, deploy Vercel concluído; operador enviou tela e PDF com 15/10/2026, validando a apresentação. Em seguida utilizou **Ações de Sandbox → Confirmar pagamento** na mesma cobrança e informou status recebido.
+- Leitura somente leitura às **20:36:43 UTC de 14/10/2026**: webhook PAYMENT_RECEIVED `34e43629-d26c-4982-bfd1-4510de37aa5c` chegou e está READY, attempts=0. Pedido/tentativa/cobrança ainda PENDING, `paidAt` nulo, sem fatos financeiros nem EARN; carteira/lotes 286, lifetimeEarn 785, estoque 93/43 e reserva RESERVED. Portanto a simulação remota ainda não foi aplicada internamente nesse instante.
+- Próximo passo: conferir `-StatusOnly` do executor e executar uma rodada controlada conforme seção 3; depois reler o diagnóstico. Não repetir a confirmação Sandbox nem emitir outro boleto. E-mail, crédito único dos 24 pontos e estabilidade posterior permanecem pendentes de evidência.
 
 ## Ambiente e decisões reaproveitadas
 

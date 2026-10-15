@@ -70,6 +70,7 @@ export class AsaasPaymentAdapter implements PaymentGateway {
   }
   async cancelPayment(paymentId: string) { await asaasClient.cancelPayment(paymentId); }
   async refundPayment(paymentId: string, amount: number) { await asaasClient.refundPayment(paymentId, amount); }
+  async refundInstallment(contractId: string) { await asaasClient.refundInstallment(contractId); }
   async capabilities(lojaID: string) {
     const configured = process.env.PAYMENT_REMOTE_ENABLED === 'true' && asaasClient.configurationReady() &&
       (process.env.ASAAS_ENABLED_LOJA_IDS ?? '').split(',').map(id => id.trim()).includes(lojaID);

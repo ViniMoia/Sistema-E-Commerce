@@ -10,6 +10,7 @@ import { webhookEnvelopeSchema } from './payment-inbox.service';
 import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { logger } from '@/lib/logger';
 import { paymentEvidenceTransactionOptions, paymentRetryCode } from './payment-execution-policy';
+import { moneyCents } from './installment.service';
 
 export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter): Promise<PaymentInspection> {
   const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
@@ -135,7 +136,11 @@ async function fenceAttempt(tx: import('@prisma/client').Prisma.TransactionClien
 
 async function dispatchPaymentOperations(attemptId: string, owner: string, gateway: PaymentGateway) {
   const operations = await prisma.paymentOperation.findMany({ where: { attemptId, status: 'READY', lastErrorCode: null }, include: { charge: true } });
-  for (const operation of operations) {
+  const reference = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
+  const contractRefund = reference.method === 'CREDIT_CARD' && reference.installments > 1 && operations.some(op => op.kind === 'REFUND');
+  if (contractRefund) {
+    if (await dispatchInstallmentRefund(attemptId, owner, gateway)) return true;
+  } else for (const operation of operations) {
     const submit = await prisma.$transaction(async tx => {
       const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
       await new CommerceLocks(tx).acquire('order', [attempt.orderId]); await fenceAttempt(tx, attemptId, owner);
@@ -169,6 +174,51 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
       return applyPaymentEvidence(tx, attemptId, inspection);
     }, paymentEvidenceTransactionOptions);
     return result.review;
+  }
+  return false;
+}
+
+async function dispatchInstallmentRefund(attemptId: string, owner: string, gateway: PaymentGateway): Promise<boolean> {
+  const claim = await prisma.$transaction(async tx => {
+    const reference = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
+    await new CommerceLocks(tx).acquire('order', [reference.orderId]);
+    await fenceAttempt(tx, attemptId, owner);
+    const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
+    if (attempt.status !== 'REFUND_PENDING') return { review: false };
+    const refunds = attempt.operations.filter(op => op.kind === 'REFUND');
+    // Never convert a partly dispatched legacy batch into another full refund.
+    // Claim every charge atomically before the single contract POST. A crash or
+    // timeout leaves all of them submitted and recovery only reads evidence.
+    const valid = !!gateway.refundInstallment && !!attempt.providerContractId &&
+      attempt.provider === 'ASAAS' && attempt.providerAccount === paymentAccountScope() &&
+      attempt.charges.length === attempt.installments && refunds.length === attempt.installments &&
+      new Set(refunds.map(op => op.commandKey)).size === 1 && new Set(refunds.map(op => op.requestedById)).size === 1 &&
+      attempt.charges.every(c => ['CONFIRMED', 'RECEIVED'].includes(c.providerStatus) &&
+        c.provider === attempt.provider && c.providerAccount === attempt.providerAccount &&
+        c.ordinal >= 1 && c.ordinal <= attempt.installments && moneyCents(Number(c.amount)) > BigInt(0)) &&
+      new Set(attempt.charges.map(c => c.ordinal)).size === attempt.installments &&
+      attempt.charges.reduce((sum, c) => sum + moneyCents(Number(c.amount)), BigInt(0)) === moneyCents(Number(attempt.financialTotal)) &&
+      attempt.charges.every(c => refunds.filter(op => op.chargeId === c.id).length === 1) &&
+      refunds.every(op => op.status === 'READY' && op.submittedAt === null && op.lastErrorCode === null);
+    if (!valid) {
+      await tx.paymentOperation.updateMany({ where: { attemptId, kind: 'REFUND', status: 'READY' },
+        data: { lastErrorCode: 'PAYMENT_REFUND_CONTRACT_REVIEW' } });
+      await markPaymentReview(tx, attemptId, 'PAYMENT_REFUND_CONTRACT_REVIEW');
+      return { review: true };
+    }
+    const ids = refunds.map(op => op.id);
+    const updated = await tx.paymentOperation.updateMany({ where: { id: { in: ids }, status: 'READY', submittedAt: null, lastErrorCode: null },
+      data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
+    if (updated.count !== ids.length) throw new Error('PAYMENT_OPERATION_CONFLICT');
+    return { review: false, ids, contractId: attempt.providerContractId! };
+  }, paymentEvidenceTransactionOptions);
+  if (claim.review || !claim.ids) return claim.review;
+  try {
+    await gateway.refundInstallment!(claim.contractId);
+    await prisma.paymentOperation.updateMany({ where: { id: { in: claim.ids }, status: 'SUBMITTING' }, data: { status: 'PENDING' } });
+  } catch {
+    await prisma.paymentOperation.updateMany({ where: { id: { in: claim.ids }, status: 'SUBMITTING' },
+      data: { status: 'UNKNOWN', lastErrorCode: 'PAYMENT_OPERATION_UNRESOLVED' } });
   }
   return false;
 }

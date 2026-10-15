@@ -65,9 +65,11 @@ function port() {
     inspectAttempt: vi.fn(async input => ({ complete: true, charges: structuredClone(remote).map(row => ({ ...row,
       ...(input.refundPaymentIds?.includes(row.paymentId) && !row.refundHistory ? { refundHistory: { complete: true,
         records: row.status === 'REFUNDED' ? [{ status: 'DONE' as const, value: row.value }] :
-          vi.mocked(gateway.refundPayment!).mock.calls.some(call => call[0] === row.paymentId) ? [{ status: 'PENDING' as const, value: row.value }] : [] } } : {}) })) })),
+          (vi.mocked(gateway.refundPayment!).mock.calls.some(call => call[0] === row.paymentId) ||
+            vi.mocked(gateway.refundInstallment!).mock.calls.some(call => call[0] === row.contractId)) ? [{ status: 'PENDING' as const, value: row.value }] : [] } } : {}) })) })),
     cancelPayment: vi.fn(async id => { remote.find(r => r.paymentId === id)!.deleted = true; }),
     refundPayment: vi.fn(async id => { remote.find(r => r.paymentId === id)!.status = 'REFUNDED'; }),
+    refundInstallment: vi.fn(async id => { remote.filter(r => r.contractId === id).forEach(r => { r.status = 'REFUNDED'; }); }),
     getPaymentStatus: vi.fn(async () => { throw new Error('unused'); }),
   };
   return { gateway, remote };
@@ -382,16 +384,59 @@ describe('WF-14: real PostgreSQL, controlled remote operations, resumable execut
     const foreign = await purchase();
     await expect(prisma.financialFact.create({ data: { ...fact, id: randomUUID(), factKey: randomUUID(), orderId: foreign.result.order.id } })).rejects.toThrow();
   });
-  it('a partially completed requested card refund resumes remaining operations only once', async () => {
+  it('a partly dispatched legacy card refund is reviewed without a new contract or charge POST', async () => {
     const p = await purchase(port(), 'CREDIT_CARD'); p.remote.forEach(r => { r.status = 'RECEIVED'; }); await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
     await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
     const first = (await prisma.paymentOperation.findMany({ where: { attemptId: p.attempt.id }, include: { charge: true } })).find(o => o.charge.ordinal === 1)!;
     p.remote[0].status = 'REFUNDED';
     await prisma.paymentOperation.update({ where: { id: first.id }, data: { status: 'SUBMITTING', submittedAt: new Date(0) } });
     await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(p.result.order.id)).status).toBe('PAID'); expect(await stock(p)).toBe(4);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].failureCode).toBe('PAYMENT_REFUND_CONTRACT_REVIEW');
+    expect(p.gateway.refundPayment).not.toHaveBeenCalled(); expect(p.gateway.refundInstallment).not.toHaveBeenCalled();
+  });
+  it('claims every installment before one contract refund and compensates only once', async () => {
+    const p = await purchase(port(), 'CREDIT_CARD'); p.remote.forEach(r => { r.status = 'CONFIRMED'; });
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    const command = { orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND' as const, commandId: randomUUID(), expectedVersion: 1 };
+    await requestPaymentOperation(command);
+    vi.mocked(p.gateway.refundInstallment!).mockImplementationOnce(async id => {
+      expect(id).toBe(p.remote[0].contractId);
+      const ops = (await stored(p.result.order.id)).paymentAttempts[0].operations;
+      expect(ops).toHaveLength(3); expect(ops.every(op => op.status === 'SUBMITTING' && op.submittedAt !== null)).toBe(true);
+      p.remote.forEach(r => { r.status = 'REFUNDED'; });
+    });
+    await due(p.attempt.id); await Promise.all([reconcilePaymentAttempts(50, p.gateway), reconcilePaymentAttempts(50, p.gateway)]);
     expect((await stored(p.result.order.id)).status).toBe('CANCELLED'); expect(await stock(p)).toBe(5);
-    expect(p.gateway.refundPayment).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(p.gateway.refundPayment!).mock.calls.map(c => c[0])).not.toContain(p.remote[0].paymentId);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].operations.every(op => op.status === 'COMPLETED')).toBe(true);
+    expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(3);
+    expect((await requestPaymentOperation(command)).replay).toBe(true);
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect(await stock(p)).toBe(5); expect(p.gateway.refundInstallment).toHaveBeenCalledTimes(1); expect(p.gateway.refundPayment).not.toHaveBeenCalled();
+  });
+  it('unknown contract refund does not resubmit any charge and waits for all refund evidence', async () => {
+    const p = await purchase(port(), 'CREDIT_CARD'); p.remote.forEach(r => { r.status = 'RECEIVED'; });
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
+    vi.mocked(p.gateway.refundInstallment!).mockRejectedValueOnce(new Error('lost contract response'));
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].operations.every(op => op.status === 'UNKNOWN')).toBe(true);
+    p.remote[0].status = 'REFUNDED';
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(p.result.order.id)).status).toBe('PAID'); expect(await stock(p)).toBe(4);
+    p.remote.forEach(r => { r.status = 'REFUNDED'; });
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(p.result.order.id)).status).toBe('CANCELLED'); expect(await stock(p)).toBe(5);
+    expect(p.gateway.refundInstallment).toHaveBeenCalledTimes(1); expect(p.gateway.refundPayment).not.toHaveBeenCalled();
+  });
+  it('missing contract-refund capability cannot fall back to per-charge refunds', async () => {
+    const p = await purchase(port(), 'CREDIT_CARD'); p.remote.forEach(r => { r.status = 'CONFIRMED'; });
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    await requestPaymentOperation({ orderId: p.result.order.id, lojaID, userId: adminID, kind: 'REFUND', commandId: randomUUID(), expectedVersion: 1 });
+    const withoutContract = { ...p.gateway, refundInstallment: undefined };
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, withoutContract);
+    expect((await stored(p.result.order.id)).paymentAttempts[0].failureCode).toBe('PAYMENT_REFUND_CONTRACT_REVIEW');
+    expect(await stock(p)).toBe(4); expect(p.gateway.refundPayment).not.toHaveBeenCalled();
   });
   it('unknown refund is not resubmitted and fulfillment is blocked while reversal is pending', async () => {
     const p = await purchase(); p.remote[0].status = 'RECEIVED'; await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);

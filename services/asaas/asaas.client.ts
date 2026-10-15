@@ -107,6 +107,11 @@ export class AsaasClient {
     return response.json();
   }
 
+  async refundInstallment(id: string): Promise<void> {
+    const response = await this.request(this.baseUrl + '/installments/' + encodeURIComponent(id) + '/refund', { method: 'POST', body: '{}' });
+    if (!response.ok) throw new AsaasClientError('PAYMENT_REFUND_UNRESOLVED', response.status);
+  }
+
   async listInstallmentPayments(id: string): Promise<AsaasPaymentResponse[]> {
     const response = await this.request(this.baseUrl + '/installments/' + encodeURIComponent(id) + '/payments?limit=100&offset=0');
     if (!response.ok) throw new AsaasClientError('INSTALLMENT_LOOKUP_UNAVAILABLE', response.status);

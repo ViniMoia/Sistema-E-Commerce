@@ -113,6 +113,8 @@ export interface PaymentGateway {
   inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[] }): Promise<PaymentInspection>;
   cancelPayment?(paymentId: string): Promise<void>;
   refundPayment?(paymentId: string, amount: number): Promise<void>;
+  /** Full installment contract refund; no per-charge amount or automatic retry. */
+  refundInstallment?(contractId: string): Promise<void>;
   capabilities(lojaID: string): Promise<{ configured: boolean; methods: PaymentMethod[]; maximumInstallments: number }>;
   /**
    * Registra cliente e cria cobrança PIX com geração de QR Code dinâmico.
