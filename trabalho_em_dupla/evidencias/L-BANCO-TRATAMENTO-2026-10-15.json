@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "harness": "Local uncommitted clone verification scripts",
+  "sourceCaptureAt": "2026-10-15T18:43:55.572Z",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "productionReady": false,
+  "runId": "59a5f7d954fbdfd2b4e2751e50991291",
+  "startedAt": "2026-10-15T18:59:51.219Z",
+  "finishedAt": "2026-10-15T19:00:41.264Z",
+  "success": true,
+  "legacyTreatment": {
+    "schemaVersion": 1,
+    "asOf": "2026-10-15T19:00:37.720Z",
+    "readOnly": true,
+    "unlinkedItems": 33,
+    "variantCandidates": {
+      "missingProduct": 16,
+      "noCompatibleVariant": 0,
+      "multipleCandidates": 0,
+      "singleCandidateIncompleteDimensions": 1,
+      "singleCandidateWithDimensions": 16
+    },
+    "inventory": [
+      {
+        "name": "Aspirador de Pó",
+        "stock": 1,
+        "variantTotal": 10,
+        "cartItemLinks": 1,
+        "orderItemLinks": 0
+      },
+      {
+        "name": "Calça Jeans",
+        "stock": 13,
+        "variantTotal": 30,
+        "cartItemLinks": 0,
+        "orderItemLinks": 7
+      },
+      {
+        "name": "Camisa Branca ",
+        "stock": 16,
+        "variantTotal": 30,
+        "cartItemLinks": 0,
+        "orderItemLinks": 5
+      },
+      {
+        "name": "Camisa Preta",
+        "stock": 8,
+        "variantTotal": 30,
+        "cartItemLinks": 0,
+        "orderItemLinks": 4
+      }
+    ],
+    "wallets": [
+      {
+        "lots": 0,
+        "balance": 0,
+        "ledgerSum": 0,
+        "movements": 0,
+        "accountingReady": false
+      },
+      {
+        "lots": 0,
+        "balance": 475,
+        "ledgerSum": 475,
+        "movements": 2,
+        "accountingReady": false
+      }
+    ],
+    "automaticRepairs": [],
+    "candidateMatchIsHistoricalProof": false,
+    "productionReady": false
+  },
+  "limits": [
+    "Current variant match is not proof of historical stock movement",
+    "Inventory values are database observations, not physical counts",
+    "Wallet arithmetic equality does not establish lot origin or expiration",
+    "No automatic repair, archival mutation or deletion applied"
+  ]
+}

@@ -4,6 +4,14 @@ Este pacote gera arquivos locais e não provisiona recursos. Produção exige G1
 aceite de dados/financeiro de Leno e janela coordenada. O projeto selecionado no
 gcloud não é considerado destino autorizado por este material.
 
+Atualização de 15/10: o destino de dados é o banco existente da main, conforme
+decisão do operador; separado da homologação, sem criar outra base por padrão.
+Main e seu banco continuam somente leitura para o assistente. Procedimentos
+consolidados: [implantação](../../diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md)
+e [recuperação](../../diversos/AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md).
+Ensaios de dados/compra passaram em clone; isso não provisiona recursos Cloud Run
+nem comprova recuperação do backup por outra pessoa/máquina.
+
 ## Construir e verificar localmente
 
 Antes de pedir parâmetros comerciais novamente, consultar a comparação de main na
@@ -85,7 +93,9 @@ As capacidades financeiras dos manifestos começam desativadas. Após aceite, Le
 conduz configuração de métodos/lojas e Vanderlei aplica a configuração de runtime
 acordada, com conta/escopo corretos e política de juros já definida. A seção 17 do
 replanejamento de 13/10 ampliou os requisitos para PIX, crédito até 12x, boleto e
-débito. Boleto deixou de ser adiamento aceito; débito ainda depende de contrato e
+débito. Em 15/10 o operador aceitou concluir o teste de expiração do boleto depois
+da abertura, se necessário; a pendência permanece explícita, sem aprovação fictícia.
+Débito ainda depende de contrato e
 implementação financeira de Leno. O manifesto não inventa uma capacidade de débito
 nem ativa métodos sem homologação. PIX manual não substitui esses requisitos.
 Manifesto gerado não comprova ativação ou aceite de nenhum método.
@@ -149,7 +159,8 @@ abertos; não contratar plano nem declarar economia automaticamente.
 
 1. Reunir pareceres, SHA, digest, configuração versionada e aceite G1–G8. Leno
    entrega inventário/carga aprovada, backup/restore e procedimento de migrations.
-2. Confirmar projeto/billing/IAM/região, banco de produção separado, domínio/TLS,
+2. Confirmar projeto/billing/IAM/região, banco existente da main como destino de
+   produção (separado da homologação), domínio/TLS,
    contas de integração, storage, segredos e destinatários de alertas.
 3. Aplicar migrations na janela controlada de Leno. Publicar a mesma imagem
    validada, confirmar domínio e testar configuração antes de habilitar métodos.
@@ -163,5 +174,19 @@ abertos; não contratar plano nem declarar economia automaticamente.
 7. Rollback de imagem não reverte transações no gateway. Não restaurar banco nem
    rearmar operações financeiras por conveniência; conciliar com Leno e registrar
    revisão implantada, ação, resultado e critérios de retomada.
+
+O gerador agora prepara o serviço com `CHECKOUT_PAUSED=true`: pausa novas propostas
+e conclusões, incluindo pagamento manual. Antes da janela, comprovar a flag em
+todas as revisões que recebem tráfego e drenar requisições em voo. Não reaplicar o
+manifesto inicial sobre serviço ativo para fazer somente a pausa: ele também traz
+flags financeiras desligadas. Preservar as flags efetivas de webhook/consumidores.
+Recuperação permanece por GET; replay por POST fica bloqueado. Para abrir vendas,
+definir `CHECKOUT_PAUSED=false` após as verificações, sem dispensar outras flags.
+A validação no ingresso real ainda está pendente; mapear também escritores antigos,
+Admin e importadores. Durante o trecho exclusivo de
+DDL, webhook também é writer: coordenar retenção/reentrega comprovada, sem
+responder sucesso a evento não persistido. Não presumir rollback seguro para
+writers da main antiga. A imagem standalone não é um job de migration; separar
+o executor com Prisma CLI e dependências da revisão congelada.
 
 WF-20 permanece aberto até implantação e observação reais. Este pacote é preparação.

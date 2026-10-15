@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "sourceReadOnly": true,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "asOf": "2026-10-15T18:45:06.160293+00:00",
+  "counts": {
+    "carts": 3,
+    "items": 33,
+    "brands": 18,
+    "orders": 24,
+    "wallets": 2,
+    "products": 522,
+    "variants": 528,
+    "cartItems": 1,
+    "movements": 2,
+    "categories": 10
+  },
+  "legacy": {
+    "walletBalance": 475,
+    "missingHistory": 24,
+    "negativeWallets": 0,
+    "otherInvoiceUrls": 0,
+    "sandboxInvoiceUrls": 0,
+    "missingVariantLinks": 33,
+    "remotePaymentReferences": 2
+  },
+  "inventory": {
+    "mismatchedProducts": 4,
+    "productsWithoutVariants": 0
+  },
+  "orderGroups": [
+    {
+      "count": 10,
+      "total": 1209,
+      "status": "PENDING",
+      "paymentMethod": "WHATSAPP_PIX"
+    },
+    {
+      "count": 1,
+      "total": 49.99,
+      "status": "PAID",
+      "paymentMethod": "PIX"
+    },
+    {
+      "count": 3,
+      "total": 1020,
+      "status": "PAID",
+      "paymentMethod": "WHATSAPP_PIX"
+    },
+    {
+      "count": 10,
+      "total": 580,
+      "status": "CANCELLED",
+      "paymentMethod": "WHATSAPP_PIX"
+    }
+  ],
+  "migrationGuards": {
+    "invalidItemOwner": 0,
+    "invalidOrderOwner": 0,
+    "invalidOrderAddress": 0,
+    "duplicateActiveCarts": 0
+  },
+  "history": [
+    {
+      "name": "20260423214204_add_initial_tables",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260423214204_add_initial_tables",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260424231005_edit_address",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260424231005_edit_address",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260427164311_implementacao_status_user",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260427164311_implementacao_status_user",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260427211753_integracao_tabela_session",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260427211753_integracao_tabela_session",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260429214420_db_cart_schema",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260429214420_db_cart_schema",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260511165055_role_enum_add_schema",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260511165055_role_enum_add_schema",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260511213657_add_audit_log_model",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260511213657_add_audit_log_model",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260512193716_add_audit_log_entity_fields",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260512193716_add_audit_log_entity_fields",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260513004039_order_update",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260513004039_order_update",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260513203715_",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260513203715_",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260520192856_add_pix_key_to_loja",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260520192856_add_pix_key_to_loja",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260520201129_add_pixkeyused_to_order",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260520201129_add_pixkeyused_to_order",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260521000000_reconcile_schema_drift",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260521000000_reconcile_schema_drift",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260522000000_monetary_decimal_and_check_constraints",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260522000000_monetary_decimal_and_check_constraints",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260523000000_performance_composite_indexes",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260523000000_performance_composite_indexes",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260524000000_add_order_idempotency_key",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260524000000_add_order_idempotency_key",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260831000000_add_loyalty_engine",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260831000000_add_loyalty_engine",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260916000000_add_asaas_and_delivery_confirmation",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260916000000_add_asaas_and_delivery_confirmation",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260916130000_add_cpf_cnpj_to_user_and_order",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260916130000_add_cpf_cnpj_to_user_and_order",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260917000000_add_order_paid_at",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    },
+    {
+      "name": "20260917000000_add_order_paid_at",
+      "finished": true,
+      "rolledBack": false,
+      "checksumMatches": true
+    }
+  ],
+  "pendingMigrations": [
+    "20261003000000_complete_runtime_schema",
+    "20261004000000_commerce_contracts_expansion",
+    "20261005000000_purchase_tenant_scope",
+    "20261005010000_separate_guest_buyer",
+    "20261005020000_order_command_receipts",
+    "20261005030000_catalog_revision",
+    "20261005040000_cart_active_uniqueness",
+    "20261005050000_loyalty_lot_accounting",
+    "20261005060000_password_reset_lookup",
+    "20261005070000_freight_authority",
+    "20261005080000_payment_plan_authority",
+    "20261005090000_checkout_intent_authority",
+    "20261005100000_durable_payment_execution"
+  ],
+  "productionReady": false
+}

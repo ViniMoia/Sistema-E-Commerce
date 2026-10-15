@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "sourceReadOnly": true,
+  "backup": {
+    "locatorId": "9343e285df85d60fdcfb1ba15daade73",
+    "scope": "public schema only; no roles/ACL/owner, external storage or secrets manager",
+    "encryption": "AES-256-GCM",
+    "keyProtection": "Windows DPAPI current user",
+    "directoryProtection": "Windows ACL current user",
+    "bytes": 305612,
+    "sha256": "51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9"
+  },
+  "captureAndRestore": {
+    "runId": "9343e285df85d60fdcfb1ba15daade73",
+    "startedAt": "2026-10-15T18:43:55.572Z",
+    "finishedAt": "2026-10-15T18:44:53.252Z",
+    "success": true,
+    "stage": "completed",
+    "elapsedMs": 57680,
+    "migrationElapsedMs": 3663,
+    "checks": {
+      "historyVerified": true,
+      "checksPreserved": true,
+      "loyaltyChecksPreserved": true,
+      "freightAuthorityChecks": true,
+      "freightLegacyPreserved": true,
+      "checkoutAuthorityChecks": true,
+      "checkoutLegacyPreserved": true,
+      "durablePaymentChecks": true,
+      "paymentLegacyPreserved": true,
+      "sanitizedRestoreVerified": true,
+      "dataPreserved": true,
+      "sequencesPreserved": true
+    },
+    "schemaDiffEmpty": true
+  },
+  "reuseAndAudit": {
+    "runId": "953902a2457b0d0fbf013392b2dfe20e",
+    "startedAt": "2026-10-15T18:45:20.654Z",
+    "finishedAt": "2026-10-15T18:46:12.907Z",
+    "success": true,
+    "stage": "completed",
+    "elapsedMs": 52253,
+    "migrationElapsedMs": 910,
+    "checks": {
+      "historyVerified": true,
+      "checksPreserved": true,
+      "loyaltyChecksPreserved": true,
+      "freightAuthorityChecks": true,
+      "freightLegacyPreserved": true,
+      "checkoutAuthorityChecks": true,
+      "checkoutLegacyPreserved": true,
+      "durablePaymentChecks": true,
+      "paymentLegacyPreserved": true,
+      "sanitizedRestoreVerified": true,
+      "dataPreserved": true,
+      "sequencesPreserved": true
+    },
+    "schemaDiffEmpty": true,
+    "sourceReconnected": false,
+    "auditReadOnly": true,
+    "summary": {
+      "integrityPassed": true,
+      "requiresReconciliation": true,
+      "productionReady": false,
+      "tenants": [
+        {
+          "tenantTag": "36636606b72285f58857b086",
+          "counts": {
+            "orders": 24,
+            "legacy_orders": 24,
+            "legacy_open_orders": 10,
+            "paid_without_facts": 4,
+            "unreconciled_wallets": 2,
+            "legacy_unkeyed_orders": 24,
+            "missing_variant_links": 33,
+            "invalid_cart_ownership": 0,
+            "invalid_item_ownership": 0,
+            "missing_buyer_snapshot": 24,
+            "orders_without_history": 24,
+            "divergent_ready_wallets": 0,
+            "invalid_order_ownership": 0,
+            "untracked_remote_orders": 2,
+            "legacy_loyalty_movements": 2,
+            "freight_without_geography": 0,
+            "invalid_loyalty_ownership": 0,
+            "active_legacy_reset_tokens": 0,
+            "incomplete_protocol_orders": 0,
+            "legacy_without_reservation": 24,
+            "invalid_cart_item_ownership": 0,
+            "duplicate_active_cart_owners": 0,
+            "invalid_financial_provenance": 0,
+            "invalid_reservation_provenance": 0,
+            "delivery_without_quote_snapshot": 16,
+            "active_products_without_active_variant": 0
+          },
+          "integrityBlockers": 0,
+          "reviewReasons": [
+            "legacy_orders",
+            "legacy_open_orders",
+            "paid_without_facts",
+            "unreconciled_wallets",
+            "legacy_unkeyed_orders",
+            "missing_variant_links",
+            "missing_buyer_snapshot",
+            "orders_without_history",
+            "untracked_remote_orders",
+            "legacy_loyalty_movements",
+            "legacy_without_reservation",
+            "delivery_without_quote_snapshot"
+          ]
+        }
+      ],
+      "duplicateGroups": 0,
+      "contract": {
+        "missingGuards": [],
+        "invalidIndexes": 0,
+        "disabledTriggers": 0,
+        "unvalidatedConstraints": 0
+      }
+    }
+  },
+  "migrationFiles": [
+    {
+      "name": "20261003000000_complete_runtime_schema",
+      "sha256": "3d1bfd6d7ab16eeec1d507d0bdcb21d4cffb062f21cff74633f0f2e1d58c8420"
+    },
+    {
+      "name": "20261004000000_commerce_contracts_expansion",
+      "sha256": "1760aad82ac3da85bb1e6dcc37eff8c27a3dd756b1004d03062877605494568f"
+    },
+    {
+      "name": "20261005000000_purchase_tenant_scope",
+      "sha256": "c5378d9e6b0264c5c8f115db7be248c9b2cd9a8ed6a1165adcffc5c37dbf3dbf"
+    },
+    {
+      "name": "20261005010000_separate_guest_buyer",
+      "sha256": "79fdc9465d61192388aee99dc3aa58047f97aceda0a70005b6e91e5053542227"
+    },
+    {
+      "name": "20261005020000_order_command_receipts",
+      "sha256": "328d6f42e51c62cd99687d6f5df753c7d6d1158f7ce3959f3aab1cfc21f8d82a"
+    },
+    {
+      "name": "20261005030000_catalog_revision",
+      "sha256": "799cd1b63f603a40913a8b659fe9309498afb5d963b0c348782e8b9be6b3027d"
+    },
+    {
+      "name": "20261005040000_cart_active_uniqueness",
+      "sha256": "fc4b408bdf34ed862522624acb0c38e916bc80cb1af676f8cd44b80eb291403c"
+    },
+    {
+      "name": "20261005050000_loyalty_lot_accounting",
+      "sha256": "fe3d61c43bc181c6721d658cd001fa44d916d5d6f2d5e00f2151a6641f19ed63"
+    },
+    {
+      "name": "20261005060000_password_reset_lookup",
+      "sha256": "8d01119f748febfe6934f8f35fdbc8608a1458e3354c61f59e6173f56e59ee11"
+    },
+    {
+      "name": "20261005070000_freight_authority",
+      "sha256": "0eff0cb894e4c30c490caff91a2ebbc670690224e2c12e191f9e01d501cc6bf5"
+    },
+    {
+      "name": "20261005080000_payment_plan_authority",
+      "sha256": "397c32f5815544ff01dd967106f34346788c5fa4611c7a875101da49605cb671"
+    },
+    {
+      "name": "20261005090000_checkout_intent_authority",
+      "sha256": "51e07e1d6235e6503cfa46fb9d1b0e7fef9e21a1b7f2e31ec7e337ab22f2441a"
+    },
+    {
+      "name": "20261005100000_durable_payment_execution",
+      "sha256": "3161d045b896456910ef4735e62c8caa4d7aa1b4bbb321e783b4ce24d9259c61"
+    }
+  ],
+  "regression": {
+    "environment": "Separate disposable PostgreSQL 16 and isolated Next server; synthetic fixtures, not the restored source",
+    "runId": "253964551a91f4740663fd73c50748fa",
+    "suites": [
+      {
+        "name": "legacy-commerce-compatibility",
+        "passed": 6
+      },
+      {
+        "name": "inventory-admin-integrity",
+        "passed": 14
+      },
+      {
+        "name": "loyalty-lot-accounting",
+        "passed": 17
+      }
+    ],
+    "passed": 37,
+    "failed": 0,
+    "durationSeconds": 20.77
+  },
+  "limits": [
+    "No writes to main or its database",
+    "No commercial activation or remote provider calls",
+    "Source role grants and row policies require separate review at deployment",
+    "Clone timings do not establish production downtime or RPO/RTO",
+    "Legacy records preserved; no classification as real or test inferred from status",
+    "No application HTTP smoke against restored source; HTTP regression uses synthetic fixtures"
+  ],
+  "productionReady": false
+}

@@ -530,6 +530,12 @@ export function CheckoutForm({
       onOrderCreated(orderData)
     } catch (err: any) {
       if (!request.current() || !mounted.current) return
+      if (err.message === 'CHECKOUT_PAUSED') {
+        const message = 'As compras estão temporariamente pausadas. Você pode continuar acompanhando os pedidos já realizados.'
+        setError(message)
+        toast.error(message)
+        return
+      }
       setError(err.message || 'Erro inesperado ao registrar o pedido. Tente novamente.')
       toast.error(err.message || 'Erro ao processar checkout.')
     } finally {

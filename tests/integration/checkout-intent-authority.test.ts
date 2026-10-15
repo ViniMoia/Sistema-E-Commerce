@@ -51,6 +51,27 @@ const port = (): PaymentGateway => ({ capabilities: vi.fn(async () => ({ configu
   getPaymentStatus: vi.fn(async () => { throw new Error('WF-14'); }) });
 
 describe('WF-13: durable consent and one canonical purchase command in real PostgreSQL/Next', () => {
+  it.each([false, true])('pause blocks accepted commands, preserves recovery and resumes without duplicates; guest=%s', async guest => {
+    const completed = await accept(await draft(5, guest));
+    const order = await createOrder(completed);
+    const pending = await accept(await draft(5, guest));
+    const before = await snapshot(pending);
+    const intentsBefore = await prisma.checkoutIntent.count({ where: { lojaID } });
+    vi.stubEnv('CHECKOUT_PAUSED', 'true');
+    try {
+      await expect(proposeCheckout(pending)).rejects.toThrow('CHECKOUT_PAUSED');
+      await expect(createOrder(pending)).rejects.toThrow('CHECKOUT_PAUSED');
+      await expect(createOrder(completed)).rejects.toThrow('CHECKOUT_PAUSED');
+      expect(await snapshot(pending)).toEqual(before);
+      expect(await prisma.checkoutIntent.count({ where: { lojaID } })).toBe(intentsBefore);
+      expect((await recoverCheckout(completed, completed.checkoutIntentID!)).result?.order.id).toBe(order.order.id);
+      expect((await recoverCheckout(pending, pending.checkoutIntentID!)).result).toBeNull();
+      await expect(recoverCheckout({ ...completed, lojaID: otherLojaID }, completed.checkoutIntentID!)).rejects.toThrow();
+    } finally { vi.unstubAllEnvs(); }
+    const resumed = await createOrder(pending);
+    expect((await createOrder(pending)).order.id).toBe(resumed.order.id);
+    expect((await snapshot(pending)).stock).toBe(4);
+  });
   it('requires a persisted intent even for trusted internal creation', async () => {
     const p = await draft(); const before = await snapshot(p);
     await expect(createOrder(p)).rejects.toThrow('CHECKOUT_INTENT_REQUIRED'); expect(await snapshot(p)).toEqual(before);

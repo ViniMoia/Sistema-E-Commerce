@@ -25,6 +25,7 @@ export function cloudRunManifests(c) {
       containers: [{ image: c.image, ports: [{ containerPort: 8080 }], resources: { limits: { cpu: '1', memory: '1Gi' } },
         startupProbe: { tcpSocket: { port: 8080 }, periodSeconds: 10, failureThreshold: 24 },
         env: [...common, value('NEXT_PUBLIC_APP_URL', origin.origin), value('TRUSTED_PROXY_PROVIDER', ''),
+          value('CHECKOUT_PAUSED', 'true'),
           value('PAYMENT_REMOTE_ENABLED', 'false'), value('PAYMENT_WORKER_ENABLED', 'false'), value('PAYMENT_EXPIRATION_ENABLED', 'false'),
           value('ASAAS_INSTALLMENTS_APPROVED', 'false'), value('INSTALLMENT_MAX_COUNT', '12'), value('INSTALLMENT_ABSORB_FEES', 'false'),
           value('INSTALLMENT_MONTHLY_RATE', '0.0299'), value('INSTALLMENT_MIN_VALUE', '20'),

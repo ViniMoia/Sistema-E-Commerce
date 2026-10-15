@@ -1,5 +1,21 @@
 # Replanejamento para produção em até 48 horas
 
+**Candidata integrada para publicação em 15/10:** incorporado por fast-forward o trabalho de Vanderlei `515a27d` (clipboard de pagamento e CI da home), preservando as entregas das seções 37–42. Conjunto aprovado em 790 unitários, 19 testes de ferramentas e build de produção isolado; lint sem erros. Publicação autorizada na homologação; ativação/ensaio da pausa no Preview ainda pendentes. Procedimento de conferência na seção 43.
+
+**Contenção de novas compras preparada em 15/10:** adicionada `CHECKOUT_PAUSED`, privada e independente dos consumidores financeiros. Pausa propostas/conclusões de todos os meios, preservando recuperação por GET; não congela banco nem interrompe requisições em voo. Implementação e limites na seção 42; validação no Preview compartilhado ainda pendente. Operador confirmou que projeto/região Google Cloud e local compartilhado de backup ainda não foram definidos.
+
+**Procedimento de implantação/recuperação consolidado em 15/10:** runbooks da main revisados à luz do código atual e dos ensaios das seções 37–40; removidas referências a scripts npm inexistentes e corrigida a premissa de novo banco. Definidas fases de bloqueio de compras, congelamento de writers e retomada de obrigações. Faltam comprovar contenção no ingresso real, recuperação por responsável alternativo e identificadores/configuração do destino. Seção 41. Nenhuma implantação ou escrita na main realizada.
+
+**Abertura dos dados de teste ensaiada em 15/10, 16:29 BRT:** duas carteiras iniciadas com saldo zero no clone, com baixa explícita dos 475 pontos de teste, movimentos antigos preservados e auditoria. Repetição sem duplicar ajuste; 20 comandos inseguros sobre dez pedidos antigos recusados. Compra nova pelo serviço real, com pagamento manual controlado, consumiu estoque e creditou pontos uma única vez. Três testes no clone, quatro testes de proteção, TypeScript e lint aprovados. Seção 40. Tratamento ainda não aplicado aos bancos compartilhados; não equivale a aceite de produção ou teste Asaas.
+
+**Produtos de teste identificados e ensaio aprovado em 15/10, 16:17 BRT:** operador confirmou a indisponibilidade das três roupas e somente do aspirador portátil vermelho. Identidade e imagem conferidas entre main/homologação; nomes e IDs diferem entre ambientes. No clone da main, quatro produtos/dez variantes ficaram indisponíveis, restando 518 produtos no catálogo; três aspiradores comerciais e dois acessórios preservados. Histórico e estoques não foram apagados/recalculados. Seção 39. Nenhuma alteração nos bancos compartilhados.
+
+**Aplicação e legados conferidos em 15/10, até 16:00 BRT:** a aplicação atual consultou por HTTP os 522 produtos, 24 pedidos e duas carteiras do clone restaurado/sanitizado, preservando todas as tabelas. Acesso sem sessão e por loja desconhecida recusados. Os 33 itens antigos foram classificados e as quatro divergências de estoque detalhadas. Tratamento proposto e lacunas reais na seção 38; nenhuma escrita na origem ou no banco compartilhado de homologação. Ainda não é aceite de produção.
+
+**Preparação do banco executada em 15/10:** auditoria da origem somente leitura, backup criptografado, restaurações e aplicação das 13 migrações em cópia descartável aprovados, sem diferenças residuais de schema e com dados/sequências preservados. Mais 37 testes com fixtures isoladas aprovados. **Compatibilidade estrutural ensaiada; dados legados ainda exigem tratamento antes da abertura.** Resultado, limites e sequência operacional na seção 37. Nenhuma alteração aplicada à main ou a seus dados.
+
+**Decisões posteriores de 15/10 — prevalecem sobre premissas históricas abaixo:** o operador definiu como destino de produção o banco já conectado/configurado no projeto da `main`; não há tarefa de criar outro banco por padrão. Main e seu banco permanecem estritamente somente leitura para o assistente. Preparar a compatibilidade da versão de homologação e a classificação dos dados existentes em cópia isolada, sem aplicar migrations, limpeza ou carga no banco principal. O operador também aceitou a entrada em produção com o teste de expiração do boleto pendente, a concluir depois ou antes caso o projeto se prolongue até sua elegibilidade. Essa pendência não será contabilizada como teste aprovado. Detalhes e evidência somente leitura na seção 36.
+
 **Situação em 15/10:** boleto #6 com emissão/pagamento concluídos; #7 com cancelamento sem pagamento concluído; #8 emitido para acompanhar vencimento em 16/10 e elegibilidade à expiração em 20/10, após tolerância de 72 horas. Operador informou habilitação da expiração no Preview e redeploy. Perguntas sobre débito enviadas ao Asaas, sem resposta registrada nesta conversa. Prioridades que podem avançar durante a espera na seção 34. A emissão pendente descrita em registros anteriores é histórica.
 
 **Estorno parcelado concluído em 15/10 às 13:31 BRT:** pedido #4, 12 × R$ 30,06 = R$ 360,72, comprovado no Asaas Sandbox e conciliado. Seis unidades devolvidas ao estoque, 149 pontos revertidos uma única vez; todos os 12 webhooks e tarefas do pedido concluídos, sem duplicação. Fechamento na seção 35. Não repetir este ensaio nem o estorno 1x do #5; demais cenários e gates continuam pendentes conforme seus registros.
@@ -152,11 +168,11 @@ Não é necessário esperar o crédito aparecer na fatura real do titular para v
 
 ## 6. Dados e produto: reduzir migração, não integridade
 
-Em 12/10 o usuário confirmou que o banco atual contém somente dados de teste. Preparar **banco de produção separado**, com migrations e carga aprovada de catálogo/configuração/estoque; preservar a origem de homologação. Destino, inventário de carga e estoque físico de abertura ainda precisam ser verificados. Não copiar pedidos #1/#2/#3, carteiras fictícias, referências Asaas Sandbox ou credenciais para produção. Essa decisão evita reconstruir todo o histórico de teste como obrigação comercial; não autoriza apagar a origem.
+Em 12/10 o usuário informou dados de teste; em 15/10 esclareceu que **o destino comercial será o banco já configurado na main**, distinto da homologação. A proposta anterior de provisionar outra base foi superada. Reaproveitar catálogo/configuração existentes e preparar auditoria de dados, compatibilidade de schema, backup/restauração e estoque de abertura. Ensaios de escrita devem ocorrer em cópia isolada; a origem permanece somente leitura. A indicação do destino não autoriza apagar registros, aplicar migrations ou promover pedidos/pontos fictícios a obrigações comerciais. Ver seção 36.
 
 | Situação comprovada | Caminho mais curto aceitável |
 |---|---|
-| Dados exclusivamente de teste, sem obrigação comercial | Banco de produção separado, migrations ensaiadas, carga aprovada apenas de catálogo/configuração/estoque inicial. Não excluir origem ou copiar segredos/contas Sandbox. |
+| Dados exclusivamente de teste, sem obrigação comercial | Destino existente da main indicado pelo operador em 15/10; classificar registros e ensaiar atualização em cópia isolada. Não excluir dados da origem nem tratar saldos/contas Sandbox como abertura comercial. |
 | Existem clientes, pontos, estoque ou pagamentos reais | Inventário atual, backup restaurável e conciliação das obrigações ativas; preservar IDs e histórico. Não reiniciar saldos nem abandonar clientes. |
 | Histórico incompleto sem efeito ativo | Preservar leitura autorizada e cobertura parcial; bloquear escritores perigosos, documentar exceções, responsável e prazo. Reconstrução histórica pode ser posterior. |
 | Saldo/estoque ativo ou titularidade sem prova | Bloqueador da entidade/fluxo afetado. Se o isolamento não impedir prejuízo ou impedir operação essencial, bloqueador do lançamento. |
@@ -313,7 +329,7 @@ D+N significa dias corridos após abertura efetiva. Não habilitar uma capacidad
 |---|---|
 | Início coordenado / limite de 48 h | Plano datado de 10/10; retomada efetiva nesta sessão em 12/10/2026. Horário inicial não registrado; sem extensão automática de prazo. |
 | Escopo comercial final | PIX, cartão à vista/até 12x e entrega obrigatórios. Juros e modalidades encontrados no projeto, detalhados na seção 15; validar implantação efetiva. |
-| Banco de lançamento / obrigações legadas | Usuário confirmou apenas testes em 12/10. Preparar base de produção separada; destino/carga/estoque inicial ainda pendentes. |
+| Banco de lançamento / obrigações legadas | Destino definido em 15/10: banco já configurado na main. Classificação dos dados, compatibilidade, recuperação e estoque de abertura continuam pendentes; origem somente leitura. Seção 36. |
 | Conta/cartão, domínio/email, Google Cloud e executor | Titular e estado a registrar em H+2. |
 | Candidato congelado | Commit + imagem/hash + migrations + versões de configuração, sem valores secretos. |
 | G1–G8 | Por gate: pendente/aprovado/reprovado, prova e revisor; não preencher por inferência. |
@@ -970,7 +986,7 @@ Consulta à branch remota nesta revisão: `origin/homologacao_teste` em `2c9d75f
 | 1 — Concluído em 15/10 às 13:31 BRT | Leno: reversão integral de crédito parcelado | #4 aprovado no Sandbox: 12 parcelas/R$ 360,72, seis unidades devolvidas e 149 pontos revertidos uma vez; 12 webhooks concluídos sem duplicação. Evidências na seção 35. Não repetir o comando. |
 | 2 — Primeiro dia | Leno: expiração, pagamento tardio e efeitos únicos em ambiente isolado | Reutilizar suítes existentes com banco descartável e transporte simulado; conferir cobertura de boleto dentro/fora da tolerância, pagamento concorrente, eventos duplicados/fora de ordem e não duplicação de estoque/pontos. Corrigir lacunas reais e registrar limites, sem reexecutar indiscriminadamente testes aprovados do mesmo código. |
 | 3 — Primeiro dia, dependências externas em paralelo | Leno: débito e devolução de boleto pago | Consolidar resposta Asaas quando disponível e especificar o contrato de implementação/recuperação. Nenhuma implementação de débito na main; REFUND de boleto bloqueado no comando atual. Não liberar métodos sem contrato/prova. Preparação de interface pode avançar, com capacidade bloqueada. |
-| 4 — Primeiro dia | Leno + revisão de Vanderlei: dados de produção | Identificar destino separado e fontes já existentes, preparar inventário de carga, conferência do estoque físico e procedimento de migrations/backup/restore. Ensaiar em banco descartável; não carregar vendas, pontos ou estoque fictício como produção. |
+| 4 — Primeiro dia | Leno + revisão de Vanderlei: dados de produção | Destino informado: banco já configurado na main. Auditar compatibilidade e registros existentes, conferir estoque físico e preparar migrations/backup/restore em cópia isolada. Não escrever na origem nem carregar vendas, pontos ou estoque fictício como produção. Seção 36. |
 | 5 — Primeiro dia, em paralelo | Vanderlei + revisão de Leno: destino e executor | Concluir as evidências ainda abertas de Cloud Run, domínio/TLS, secrets, e-mail/Storage, cadência, recuperação e alertas. Manifestos preparados não equivalem a recursos ativos. Comprovar progresso sem Console/PowerShell manual e preservar o #8. |
 | 6 — Segundo dia | Ambos: candidato e aceites | Consolidar commit/schema/configuração, revisar entregas, executar somente a regressão afetada e smoke integrado, conferir Admin/variantes/frete/expedição/mobile no candidato, consolidar resultados e bloqueios. Publicação final e abertura dependem de gates comprovados. |
 
@@ -1011,3 +1027,320 @@ Validação: 55 testes de integração em PostgreSQL descartável e transporte s
 **Segundo lote — 16:29:34 UTC:** 10 PAYMENT_REFUNDED COMPLETED e 2 READY do #4. Pedido/estoque/versões/carteira/fatos e o mesmo REFUND_EARN único permanecem estáveis; #8 preservado. Orientada uma rodada `-Limit 2` e conferência final. Estorno remoto comprovado; encerramento do ensaio aguarda esses dois eventos.
 
 **Fechamento do cenário — 16:31:45 UTC (13:31:45 BRT):** após inbox 2/2 concluído, leitura somente leitura confirmou os 12 PAYMENT_REFUNDED COMPLETED, nenhuma pendência de inbox do estorno, quatro tarefas de outbox do pedido COMPLETED e 12 operações concluídas sem erro. #4 CANCELLED v2, tentativa/cobranças REFUNDED, 12 fatos/R$ 360,72 e uma transição de cancelamento. Estoque 98/48 (versões 16/13), reserva RETURNED de seis, carteira/lotes 161, déficit/pendente zero, lifetimeEarn 660 e mesmo REFUND_EARN único de −149 preservados. #8 intacto. **Estorno integral parcelado aprovado no Sandbox, com estabilidade após todos os eventos naturais.** Não exige novas rodadas para #4. Isso não representa replay financeiro deliberado, aceite de produção ou fechamento dos demais gates. Registro local posterior à publicação `c210f28`.
+
+
+## 36. Destino existente de produção e pendência temporal aceita — 15/10/2026
+
+O operador esclareceu que o banco de produção já está conectado/configurado no projeto da main. Essa definição substitui a proposta anterior de criar outra base e as pendências históricas de escolha do banco. Preservar a separação em relação à homologação. **Main e seu banco continuam somente leitura; não houve autorização de escrita na origem.**
+
+Conferência realizada às **18:35:25 UTC (15:35:25 BRT)**, referência origin/main `7f9b26e062ec2654420fecffb6dd78ad3ba1e017` e homologação `8632514`:
+
+- Schema da main utiliza DATABASE_URL/DIRECT_URL. A configuração local .env corresponde ao endpoint de origem já fixado nos scripts de auditoria; .env.local corresponde ao endpoint distinto de homologação. Valores de conexão não foram publicados. Isso verifica as conexões locais e a origem conhecida; não representa consulta das variáveis efetivas de um deployment externo.
+- Transação READ ONLY/REPEATABLE READ, com verificação de transaction_read_only=on, host/base e identidade da loja. Encontrados **522 produtos e 24 pedidos** da loja de origem. Contagem não classifica esses pedidos como reais ou fictícios.
+- **13 migrações presentes na homologação não estão registradas como aplicadas** na origem. A consulta do schema também confirmou ausência de Product.inventoryVersion e das tabelas PaymentAttempt, PaymentOperation e InventoryReservation. Banco configurado para a versão antiga não equivale a compatibilidade com a versão nova.
+- Nenhuma migration, importação, alteração de estoque, limpeza, cobrança ou processamento foi executado. Não foram consultados dados pessoais dos pedidos nem exibidas credenciais.
+
+**Próxima frente de Leno:** inventariar dependências das 13 migrações e classificar vínculos/obrigações existentes por consulta somente leitura; preparar uma cópia isolada e o ensaio de atualização/restauração, com comparação antes/depois. Reutilizar catálogo e configurações comprovados, sem recarga indiscriminada. O levantamento deve determinar o tratamento necessário dos dados e o estoque comercial de abertura. A execução futura na origem exige autorização específica e não decorre desta definição do destino.
+
+**Decisão sobre o boleto:** o operador aceita publicar produção mesmo que o teste de expiração ainda não tenha terminado; será concluído após a abertura, ou antes se o projeto se prolongar até lá. O #8 continua com elegibilidade em **20/10/2026 às 00:00 BRT**, sem antecipar relógio/prazos ou cancelar manualmente. A exigência histórica de aguardar essa prova para abrir foi alterada; conservar o cenário como **pendente, com conclusão posterior aceita pelo operador**, nunca aprovado por inferência. A alteração se refere ao teste de expiração em discussão; não comprova implementação de débito, devolução de boleto pago ou encerramento dos demais critérios financeiros/operacionais.
+
+Registro documental local na homologação. Nenhuma publicação de produção, alteração da main ou nova operação financeira ocorreu nesta conferência.
+
+## 37. Preparação da atualização do banco existente — ensaio de 15/10/2026
+
+### Escopo e fontes reaproveitadas
+
+Operador autorizou iniciar a preparação descrita: auditoria somente leitura e ensaio isolado, preservando a restrição de escrita na main. Base principal `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`, candidato de homologação `8632514f03bded8ca0143f0ac053fa8ceadade30`. Nenhuma migration foi criada ou modificada nesta rodada.
+
+Reutilizados o `BACKUP-RESTORE-RUNBOOK.md` de origin/main, `scripts/verify-restored-clone.mjs`, `scripts/lib/legacy-commerce-audit.mjs`, o provisionador PostgreSQL descartável e as suítes de integração existentes. O executor original carrega variáveis Next; nesta execução a conexão de origem foi lida explicitamente de `.env`, conferida contra host/base conhecidos e fixada em memória antes da importação do executor. **Não executar `--capture-source` com resolução implícita de ambiente:** `.env.local` aponta para homologação. Não há autorização para migrations remotas ou limpeza da origem.
+
+Evidências compartilháveis, com agregados e sem credenciais/dados pessoais:
+
+- [Auditoria somente leitura da origem](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-PREPARACAO-2026-10-15.json), às 18:45:06 UTC.
+- [Resultado do backup, restauração, upgrade e regressões](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-ENSAIO-2026-10-15.json).
+
+### Resultado da auditoria e tratamento necessário
+
+| Recorte | Evidência atual | Consequência para a abertura |
+|---|---|---|
+| Catálogo | 522 produtos, 528 variantes, 18 marcas, 10 categorias; zero produtos sem variante e zero grupos de combinações normalizadas duplicadas no clone. | Reutilizar a base; não recarregar indiscriminadamente nem substituir IDs. |
+| Estoque | Quatro produtos com saldo geral diferente da soma das variantes. | Conciliar com estoque físico e vínculos; não escolher automaticamente um dos saldos. |
+| Pedidos antigos | 24: dez PENDING, quatro PAID, dez CANCELLED; 33 itens sem vínculo de variante e 24 pedidos sem histórico. | Preservar os registros. Identificar quais são testes e se existe obrigação comercial antes de decidir tratamento; a declaração histórica de dados de teste não autoriza exclusão. |
+| Pagamentos antigos | Duas referências remotas; quatro pedidos pagos sem fatos financeiros no novo modelo; nenhum protocolo/reserva histórica fabricado pelo upgrade. | Consultar procedência/ambiente das referências quando necessário; não disparar cobranças, estornos ou fabricar fatos retroativos. URLs de fatura não identificaram ambiente nesta auditoria. |
+| Fidelidade antiga | Duas carteiras, dois movimentos, saldo agregado 475, nenhum saldo negativo. | Saldo preservado, mas `accountingReady=false`; ganho/resgate dessas carteiras exige conciliação. Não zerar ou ativar só para liberar compra. |
+| Entrega antiga | Dezesseis pedidos de entrega sem snapshot autoritativo de frete. | Preservar leitura histórica; não inventar uma cotação retroativa. |
+| Carrinhos e vínculos | Três carrinhos, um item; zero duplicatas ACTIVE por proprietário e zero violações de ownership/proveniência nos recortes auditados. | Backfill de loja derivado dos vínculos reais passou no clone, sem transferir propriedade. |
+| Histórico de migrations | Vinte nomes anteriores, com dois registros concluídos por nome; checksums compatíveis e nenhum rollback registrado. Treze nomes novos pendentes. | Duplicidade histórica preservada. Não reescrever `_prisma_migrations`; o deploy no clone reconheceu as anteriores e aplicou somente as pendentes. |
+
+As contagens de lacunas se sobrepõem; não somá-las como entidades distintas. `integrityPassed=true` no classificador confirma as verificações estruturais/proveniência codificadas, mas `requiresReconciliation=true` e `productionReady=false` permanecem. Não representa prova de estoque físico, titularidade comercial dos saldos ou liberação do catálogo inteiro.
+
+### Revisão das 13 migrações, na ordem versionada
+
+| Migração | Alteração principal e cuidado de implantação |
+|---|---|
+| `20261003000000_complete_runtime_schema` | Completa objetos de catálogo/logística, índices e FKs. Conversão monetária recusa precisão incompatível; usa locks exclusivos. Não arredonda silenciosamente histórico. |
+| `20261004000000_commerce_contracts_expansion` | Cria estruturas de intenção, tentativa, cobrança, fatos, reserva, lotes, inbox/outbox e versões de estoque. Estruturas novas não reconstroem fatos antigos. |
+| `20261005000000_purchase_tenant_scope` | Preenche loja de carrinho/item pelos vínculos de usuário e carrinho; recusa ownership inconsistente antes da alteração e fortalece FKs. |
+| `20261005010000_separate_guest_buyer` | Permite comprador convidado, exigindo usuário ou comprador identificado no pedido; não inventa compradores históricos. |
+| `20261005020000_order_command_receipts` | Adiciona hash/versão ao histórico de comandos e unicidade por versão; registros antigos permanecem sem recibos fabricados. |
+| `20261005030000_catalog_revision` | Adiciona versão de catálogo com restrição não negativa. |
+| `20261005040000_cart_active_uniqueness` | Recusa múltiplos carrinhos ativos do mesmo proprietário; não mescla/apaga carrinhos. Lock exclusivo e índice parcial. |
+| `20261005050000_loyalty_lot_accounting` | Acrescenta origem/efeitos e proteção de expiração. Carteiras antigas ficam não conciliadas; não infere lotes, validade ou dívida. |
+| `20261005060000_password_reset_lookup` | Índice de recuperação por loja/token; não transforma tokens antigos em novos links válidos. |
+| `20261005070000_freight_authority` | Revisões, triggers e snapshots de frete; inicializa apenas a revisão tarifária. Geografia/cotações antigas não são presumidas. |
+| `20261005080000_payment_plan_authority` | Planos financeiros e política versionada; novos controles de métodos nas lojas começam desabilitados. Habilitação real é configuração posterior, não parte automática do upgrade. |
+| `20261005090000_checkout_intent_authority` | Carrinho convidado, fonte de intenção e triggers de completude/imutabilidade/proveniência; não cria reservas para vendas antigas. |
+| `20261005100000_durable_payment_execution` | Leases, escopo de conta, operações e proteção contra reenvio/fatos inconsistentes. Não cria acompanhamento financeiro para referências legadas. |
+
+Há alterações com locks e migrações sem bloco transacional próprio explícito; o sucesso no clone não elimina risco de concorrência ou falha durante a aplicação real. Não executar junto a escritores antigos, nem resolver falhas marcando migrações aplicadas sem auditoria.
+
+### Backup, restauração e preservação comprovados
+
+Captura/ensaio `9343e285df85d60fdcfb1ba15daade73`, **18:43:55–18:44:53 UTC**, cerca de **57,7 s** no ambiente local. Conexão de captura usou `default_transaction_read_only=on`, timeout e catálogo/versionamento conferidos. Backup do schema public em formato restaurável, criptografia AES-256-GCM, chave DPAPI do usuário Windows e diretório com ACL restrita. Localizador privado: `%LOCALAPPDATA%\logic-audit-backups\9343e285df85d60fdcfb1ba15daade73`; arquivos brutos e diagnósticos privados não entram no Git.
+
+- Duas restaurações independentes do backup persistido, conferindo fingerprints e sequências, aprovadas.
+- Dados pessoais, sessões, credenciais e referências de integrações sanitizados **somente no clone**; comparação das demais colunas confirmou preservação. Novo backup sanitizado restaurado e conferido.
+- Checksums do histórico conferidos contra os artefatos versionados; 13 migrações aplicadas na cópia em aproximadamente **3,7 s**. Segunda chamada de deploy sem novas migrações.
+- Diff final vazio em relação ao schema atual, constraints/triggers verificados, valores/vínculos/IDs e sequências preservados. Nenhuma carteira legada ativada, plano/reserva/fato financeiro histórico fabricado ou método habilitado.
+- Segunda execução `953902a2457b0d0fbf013392b2dfe20e`, **18:45:20–18:46:12 UTC**, reutilizou o mesmo backup sem nova conexão com a origem; inventário de legados somente leitura aprovado e pendências classificadas. Essa segunda duração não é medição independente de captura remota.
+- Containers do ensaio foram descartados pelos próprios executores após verificar a identidade; backup protegido retido. Nenhum envio de e-mail, chamada Asaas ou processamento externo foi iniciado.
+
+Limites: backup cobre schema public, não roles/grants/ACL do provedor, Storage, DNS ou secrets externos. DPAPI comprova recuperação nesta conta Windows, não recuperação em outra máquina ou acesso de Vanderlei; ainda é necessário definir cópia de recuperação e acesso operacional adequados. Tempos locais não equivalem a janela de indisponibilidade, RTO/RPO ou execução sob carga no banco principal. Não houve teste HTTP da aplicação sobre o clone restaurado nesta rodada.
+
+### Regressão da aplicação executada separadamente
+
+Servidor Next isolado e PostgreSQL 16 descartável com fixtures sintéticas, identidade/sentinela conferidas, run `253964551a91f4740663fd73c50748fa`. **37 testes aprovados em três suítes:** `legacy-commerce-compatibility` (6), `inventory-admin-integrity` (14), `loyalty-lot-accounting` (17), duração Vitest 20,77 s. Não confundir essa base sintética com o clone restaurado PostgreSQL 18.
+
+Comprovados nos casos das suítes: leitura autorizada de pedido legado, recusa de aprovação/cancelamento inseguro, expiração sem prazo não inferida, vínculos/estoque preservados, concorrência e rollback de ajuste, lotes/déficit/expiração e efeitos únicos. Erros de constraints exibidos durante os casos negativos eram esperados; três suítes encerraram aprovadas. Limpeza do servidor/containers concluída, sem containers com label de ensaio remanescentes na conferência final.
+
+### Procedimento preparado e próximo trabalho
+
+1. **Agora, sem escrita na origem:** revisar a classificação dos 24 pedidos, duas referências e duas carteiras; preparar a resolução das quatro divergências de estoque com inventário físico. Usar os registros existentes e a declaração do operador, sem inventar obrigações ou apagar testes automaticamente.
+2. **Ainda em ambiente isolado:** definir e ensaiar o tratamento aprovado dos legados, validar a aplicação com o clone sanitizado e conferir comportamento das integrações com transporte controlado. A atualização estrutural já foi ensaiada; não precisa recomeçar do zero sem mudança relevante.
+3. **Preparação de Vanderlei:** revisar o procedimento, permissões/roles e política de recuperação externa, identificar artefato/configuração e como suspender novas compras/escritores antigos preservando recebimentos e obrigações. Não usar `PAYMENT_WORKER_ENABLED=false` como contenção geral.
+4. **Somente em futura etapa de implantação autorizada:** reauditar origem, comparar schema/checksums/dados ao baseline, conferir recursos de recuperação e janela, bloquear escritores concorrentes conforme procedimento aprovado e aplicar o conjunto revisado. Interromper em divergência, timeout ou migration falha; não resetar, limpar tabelas ou marcar histórico por conveniência.
+5. **Antes de abrir vendas:** conferir schema, contagens, estoque/pontos, legados e métodos efetivamente habilitados; testar a versão/configuração final, webhooks e executor no destino. A ativação dos métodos não é fornecida pelo default das migrações.
+6. **Recuperação:** restauração foi comprovada em destinos vazios isolados. Se houver falha real, preservar os registros e inspecionar a etapa atingida; recuperação/troca de conexão depende do procedimento aprovado e da conciliação de eventos externos. Não restaurar cegamente um snapshot antigo depois de novas vendas.
+
+**Resultado desta etapa:** preparação estrutural e recuperação local comprovadas; tratamento dos dados, recuperação operacional externa e aceite comercial continuam abertos. Main, seu banco e o banco de homologação não receberam escrita. Documentação e evidências atualizadas localmente, sem commit/push nesta rodada.
+
+## 38. Aplicação no clone e proposta de tratamento dos legados — 15/10/2026
+
+Continuação autorizada pelo operador. Reutilizado exclusivamente o backup protegido capturado às **18:43:55 UTC**, referente à origem auditada com `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Código da aplicação em `8632514f03bded8ca0143f0ac053fa8ceadade30`, mais ferramentas locais de ensaio. **Não houve nova conexão à origem nesta continuação**, nem escrita em main ou no banco compartilhado de homologação. Os resultados representam o snapshot, não uma nova observação do banco vivo.
+
+### Compatibilidade de leitura comprovada
+
+Ensaio `d59ddc9146f41a8239891d04d902019b`: servidor Next real, iniciado em projeto isolado sem arquivos `.env` da origem; PostgreSQL 18 restaurado, sanitizado e atualizado. Verificações HTTP entre **18:57:20 e 18:57:43 UTC**:
+
+- Identidade do servidor/banco descartável conferida antes das consultas.
+- Catálogo paginado: **522 produtos distintos**, com loja, variantes e versão de estoque presentes.
+- Leitura autenticada dos **24 pedidos antigos**, conferindo identidade, status, total e quantidade de itens.
+- Pedido sem sessão recusado com HTTP 401; domínio de loja inexistente recusado com HTTP 404.
+- **Duas carteiras** consultadas, saldos preservados e `accountingReady=false`.
+- Lista de métodos disponíveis vazia, conforme isolamento configurado; isso não comprova configuração comercial final.
+- Comparação de todas as tabelas da aplicação antes/depois aprovada. Sessões temporárias de ensaio inseridas somente no clone e removidas antes da comparação; conexão da aplicação com transações somente leitura por padrão.
+
+Esta prova complementa os 37 testes sintéticos da seção 37 e supera sua pendência específica de leitura HTTP sobre o clone restaurado. Não cobre compra com escrita, integração externa, navegação visual ou carga de produção. Evidência: [L-BANCO-APLICACAO-CLONE-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-APLICACAO-CLONE-2026-10-15.json).
+
+### Classificação e tratamento proposto
+
+Segunda execução `59a5f7d954fbdfd2b4e2751e50991291`, **18:59:51–19:00:41 UTC**, restaurou novamente o mesmo backup e auditou os legados em transação somente leitura. A classificação utiliza a normalização de `lib/product-variants.ts`; dimensão histórica ausente permanece desconhecida. Variantes sem estoque ou retiradas podem ser candidatas históricas, sem serem liberadas para compra.
+
+| Recorte confirmado | Tratamento proposto para preparar a abertura |
+|---|---|
+| 16 dos 33 itens não têm produto vinculado. | Preservar os snapshots existentes. Não recriar produto nem localizar por nome como se isso comprovasse a identidade original. |
+| 16 itens têm dimensões preenchidas e uma única variante atual compatível. | Manter como candidatos para revisão. Não preencher automaticamente o vínculo nem gerar reserva/devolução: correspondência atual não comprova movimento histórico. |
+| Um item tem dimensões incompletas e apenas uma candidata atual. | Preservar a ausência; uma variante atual única não prova a escolha antiga. |
+| 24 pedidos antigos; dez pendentes, quatro pagos e dez cancelados. | Reaproveitar a declaração do operador de 12/10 de que a base contém dados de teste. Proposta: preservar como histórico legado, sem transformá-los em vendas novas, cancelá-los remotamente ou executar compensações. Arquivamento/exclusão não foi aplicado nem implementado por este ensaio. |
+| Duas referências remotas antigas. | Manter fora da automação financeira nova. Não converter a referência em cobrança de produção sem prova de ambiente/procedência; nenhum contato com o provedor ocorreu nesta etapa. |
+| Carteira vazia: saldo 0, zero movimentos e zero lotes. | Candidata a inicialização controlada, após revisão das regras de abertura; não foi ativada nesta etapa. |
+| Outra carteira: saldo 475, soma de dois movimentos 475, zero lotes. | Aritmética confere, mas faltam origem/validade dos lotes. Não carregar pontos de teste como saldo comercial nem fabricar lotes. Preparar separação do histórico de teste e abertura sem transportar esse saldo, com escopo explícito e ensaio prévio. Nenhum saldo foi zerado. |
+
+As categorias de itens somam 33; não houve candidatos múltiplos nem produto preenchido sem variante compatível. As lacunas de pedidos, pagamentos e fidelidade se sobrepõem. A concordância numérica dos pontos não equivale à conciliação contábil do novo modelo.
+
+### Estoque: quatro casos que exigem definição de abertura
+
+| Produto existente | Saldo do produto | Soma das variantes | Itens de pedido vinculados ao produto | Itens de carrinho vinculados |
+|---|---:|---:|---:|---:|
+| Aspirador de Pó | 1 | 10 | 0 | 1 |
+| Calça Jeans | 13 | 30 | 7 | 0 |
+| Camisa Branca | 16 | 30 | 5 | 0 |
+| Camisa Preta | 8 | 30 | 4 | 0 |
+
+Esses valores são observações da base de origem restaurada, **não contagens físicas**. O Aspirador de Pó desta tabela tem ID diferente do Aspirador de Pó automotivo usado nas compras de homologação. **Conferência posterior identificou a mesma imagem vermelha nos dois cadastros, ambos abrangidos pela identificação de produto de teste do operador; ver seção 39.** Preservar a separação entre seus IDs e vínculos. Não substituir o saldo geral pela soma das variantes, escolher o menor valor ou importar estoque dos testes para resolver a diferença.
+
+Para cada produto que realmente será vendido, falta informar o estoque de abertura por variante. **Decisão posterior do operador: esses quatro produtos são testes e devem ficar indisponíveis; ensaio isolado e identificação exata na seção 39.** Os demais 518 produtos não apresentaram essa divergência aritmética, o que por si só também não comprova estoque físico de abertura.
+
+Evidência agregada, sem compradores ou credenciais: [L-BANCO-TRATAMENTO-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-TRATAMENTO-2026-10-15.json).
+
+### Próxima execução e limites
+
+1. Definir o catálogo/estoque real de abertura, começando pelos quatro casos acima. A informação pendente é o saldo real ou a retirada do catálogo comercial; não é necessário perguntar novamente se as compras anteriores eram testes.
+2. Concretizar em clone a separação do histórico e dos saldos de teste, com comparação antes/depois e preservação de vínculos. Não existe aprovação implícita para limpar a origem, inicializar carteiras antigas ou excluir pedidos.
+3. Ensaiar uma compra nova e seus efeitos no clone tratado com integrações controladas; a rodada atual comprovou leitura, não esse fluxo de escrita.
+4. Vanderlei pode avançar no acesso ao backup de recuperação fora desta conta Windows, roles/permissões, configuração final e suspensão coordenada de escritores antigos. A recuperação local já foi demonstrada; a operação no destino ainda precisa ser preparada.
+
+Ferramentas adicionadas ao executor: `--backup-dir <diretório privado> --smoke-app` (inclui auditoria) e classificação detalhada em `--audit-legacy`. Ambas reutilizam backup e exigem clone; não habilitam aplicação na origem. Dois testes das proteções de destino/classificação aprovados. Containers dos ensaios descartados; backup protegido retido. Estado final: **compatibilidade estrutural e leitura da aplicação aprovadas no clone; tratamento comercial dos dados e implantação permanecem pendentes**. Documentação e ferramentas locais, sem commit/push nesta continuação.
+
+## 39. Identificação dos produtos de teste e indisponibilidade para abertura — 15/10/2026
+
+O operador confirmou que Calça Jeans, Camisa Branca, Camisa Preta e **somente o aspirador automotivo de imagem vermelha** são produtos de teste e devem ficar indisponíveis. Os demais aspiradores são comerciais e devem ser preservados. Essa decisão resolve a pergunta de estoque dos quatro produtos de teste da seção 38; não autoriza indisponibilizar todos os produtos com a palavra “aspirador”.
+
+### Identidade conferida nos dois ambientes
+
+Consultas explícitas em transações somente leitura, às **19:12:22–19:12:23 UTC**, nos bancos de main e homologação, conferindo destino antes da conexão. Nenhum segredo reproduzido. O cadastro da origem usa o nome **Aspirador de Pó**, ID `6a6e98eb-98c3-4ba2-aede-a357d43893cf`; o de homologação usa **Aspirador de Pó automotivo**, ID `a26fdbc1-d8c3-4173-b114-f759654b9ca4`. Ambos apontam para a mesma imagem `images__teste_aspirador_1_geqkhm.jpg`, inspecionada visualmente: aspirador portátil vermelho/preto com tomada automotiva. A diferença de nome/ID não indica outro modelo comercial neste caso, mas os registros e seus vínculos continuam distintos.
+
+| Alvo exato no clone da main | ID preservado |
+|---|---|
+| Aspirador de Pó, imagem vermelha confirmada | `6a6e98eb-98c3-4ba2-aede-a357d43893cf` |
+| Calça Jeans | `622731a7-0158-486c-9626-0a739b3ddb91` |
+| Camisa Branca, com espaço final no cadastro | `6178ba96-b383-4e50-be1d-93a506912011` |
+| Camisa Preta | `fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13` |
+
+Preservar expressamente os três equipamentos comerciais: **ASPIRADOR KARCHER 3 EM 1WDL 1S 1700W** (`c6b3097f-6174-44f1-86c9-e06aba7c9733`), **ASPIRADOR PÓ E AGUA ECOCLEAN LITE 1200W IPC** (`0486f861-4e39-426a-81ce-8b39f60a177f`) e **LAVADORA EXTRATORA E ASPIRADOR LAVA PRO LITE 1200W IPC** (`5e86739a-6114-4df1-a15a-df88b7a349c3`). Os acessórios BICO FLEXIVEL (`7fd834af-d2be-4ea5-8d30-9790bd48a79e`) e BOCAL BICO EXTRATORA (`bc076f2d-740c-45f3-84c5-9d0fb8657d84`) também permanecem intactos.
+
+### Tratamento delimitado ao clone
+
+Preparado `--backup-dir <diretório privado> --rehearse-test-products` em `scripts/verify-restored-clone.mjs`. Exige restauração/sanitização/upgrade prévios e identidade de container local com label aleatória. A seleção de escrita usa exclusivamente os quatro UUIDs acima, valida loja, nome exato, imagem do aspirador e número de variantes; não usa busca por nome para alterar registros e recusa o ID parecido da homologação.
+
+O ensaio bloqueia linhas de produtos/variantes e marca `retiredAt`, incrementando versões e atualizando timestamps. Preserva os valores de estoque como histórico, sem reconciliá-los artificialmente, apagar variantes, remover itens de carrinho/pedido ou efetuar movimentos financeiros. São quatro produtos e dez variantes. Fingerprints de todas as tabelas excluem da comparação somente os campos deliberadamente alterados desses IDs; todo o restante precisa permanecer idêntico. O servidor isolado deve demonstrar catálogo sem esses quatro produtos e com os três aspiradores comerciais e dois acessórios presentes, mantendo a leitura dos 24 pedidos antigos.
+
+O produto de teste da homologação permanece intacto para os ensaios de pagamento em andamento, inclusive boleto #8; seu estoque não será carga de produção. Main e seu banco continuam estritamente somente leitura. O executor é um **ensaio descartável**, não um comando para aplicar alterações ao destino real. A decisão de indisponibilidade está registrada para a futura implantação, respeitando esse limite vigente.
+
+### Resultado do ensaio
+
+Execução `a5c12771c4fc46f375e960f18d22b304`, **19:15:35–19:17:12 UTC**, aprovada. Quatro produtos e dez variantes indisponíveis no clone; **518 produtos ativos consultados por HTTP**. Ausência dos quatro IDs de teste e presença dos cinco IDs comerciais protegidos conferidas explicitamente. Leitura dos 24 pedidos e duas carteiras preservada; acessos sem sessão/por loja desconhecida recusados. Comparação confirmou estoques, vínculos e demais dados intactos; leitura HTTP posterior também preservou todas as tabelas. Container descartado ao final, backup protegido retido.
+
+Três testes das proteções de destino/identidade/classificação aprovados, lint dos scripts aprovado. Uma tentativa anterior interrompeu antes das mutações por formato multilinha de JSON do cliente SQL; ajustada serialização para JSONB e ensaio refeito com sucesso. Nenhuma tentativa escreveu nos bancos compartilhados. Evidência agregada: [L-BANCO-PRODUTOS-TESTE-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-PRODUTOS-TESTE-2026-10-15.json).
+
+**Próxima pendência de dados:** preparar no clone o tratamento dos saldos de pontos de teste e dos pedidos legados, seguido de compra nova com integrações controladas. Não é mais necessário pedir inventário físico dessas quatro referências retiradas do catálogo comercial. Estoque real dos produtos comerciais, configuração operacional e demais gates mantêm seus próprios critérios. Esta etapa não publicou código nem aplicou alterações ao destino final.
+
+## 40. Abertura das carteiras e convivência com pedidos de teste — 15/10/2026
+
+Continuação autorizada pelo operador, reaproveitando sua declaração de 12/10 de que a base contém dados de teste. Referência principal consultada: `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`; o modelo antigo já possui `ADMIN_ADJUSTMENT`, carteira única por loja/usuário e histórico de movimentos. A versão candidata `8632514f03bded8ca0143f0ac053fa8ceadade30` acrescenta controle por lotes e recusa operações inseguras sobre pedidos sem protocolo de checkout. Nenhuma dessas estruturas permite tratar uma simples mudança de flag como prova de origem dos 475 pontos antigos.
+
+Preparado `--backup-dir <diretório privado> --rehearse-opening`. Reutiliza o backup auditado de 15/10 às 18:43:55 UTC, sem nova conexão à origem; restaura, sanitiza, aplica migrations, ensaia a indisponibilidade dos quatro produtos e executa a abertura **exclusivamente no clone descartável**. Não adiciona uma migration que limpe dados automaticamente e não aceita execução desse tratamento na main ou em banco compartilhado.
+
+### Tratamento dos pontos de teste
+
+- Bloqueia as carteiras e relê o estado dentro da transação. Exige exatamente duas carteiras com saldos 0/475, dois movimentos antigos cuja soma fecha por titular, zero pendências, zero déficit, ausência de lotes, leases e atividade moderna.
+- Preserva os dois movimentos antigos integralmente. Acrescenta dois registros `ADMIN_ADJUSTMENT` identificados: um de **−475** para encerrar o saldo de teste e outro de **0** para registrar a abertura da carteira vazia. Não atribui os ajustes a compra, cancelamento, expiração ou estorno remoto.
+- Os ajustes pertencem explicitamente ao segmento histórico de teste, com campos de delta do modelo novo nulos. Não se inventam lotes nem deltas modernos negativos sem origem. O segmento moderno inicia com soma zero, saldo zero, déficit zero e nenhum lote.
+- Ambas as carteiras ficam com saldo/pendência/déficit/acumulado de teste zerados e `accountingReady=true` **no clone**. IDs, titularidade e data de criação são mantidos; versões avançam. Valores anteriores completos ficam no registro de política do ajuste e em dois registros de auditoria com identidade de operação.
+- A repetição imediata reconhece os registros existentes, sem novo ajuste ou incremento de versão. Estado divergente, novos lotes ou atividade incompatível causam recusa; o procedimento não serve para zerar uma carteira comercial em uso.
+- Compara os movimentos originais e todas as demais tabelas durante a transação. Nenhum pedido, item, estoque, configuração de loja ou fato financeiro é alterado pelo tratamento das carteiras.
+
+Esse encerramento usa a classificação explícita de dados de teste; não é regra geral para migrar carteiras de clientes reais. Os identificadores pessoais e os snapshots completos permanecem nos dados/diagnósticos privados do clone e do backup protegido, sem publicação nos relatórios agregados.
+
+### Tratamento dos pedidos antigos
+
+Os **24 pedidos e 33 itens permanecem como histórico**, com IDs, status, valores e vínculos preservados. Não são apagados, marcados como pagos/cancelados, convertidos em checkout moderno ou associados a reservas/fatos financeiros inventados. As duas referências remotas antigas não são transformadas em operações do executor novo.
+
+O teste exercita a recusa de aprovação e cancelamento dos dez pedidos PENDING pelos serviços reais: **20 comandos devem retornar `LEGACY_ORDER_RECONCILIATION_REQUIRED`**, sem reserva, fato financeiro ou tarefa de outbox. A leitura histórica continua disponível. Isso verifica a proteção existente; **não implementa uma tela de arquivo nem retira automaticamente esses pedidos de todas as contagens administrativas**. O classificador continua apontando as lacunas históricas, sem transformar esse histórico em reconciliação financeira aprovada.
+
+### Compra nova e limites do ensaio
+
+A suíte exclusiva `tests/clone/restored-opening.test.ts`, habilitada somente pelo executor do clone, verifica:
+
+1. Conservação das duas carteiras abertas: saldo, lotes e soma dos deltas modernos iguais a zero. Crédito novo de 100 pontos em conta antiga, repetido com a mesma identidade, deve gerar somente 100; a transação de prova é revertida integralmente.
+2. Recusa dos 20 comandos sobre pedidos antigos descritos acima.
+3. Criação de um cliente sintético e compra nova de um produto comercial existente, pelo serviço real de proposta/checkout. Repetir a compra deve conservar o mesmo pedido e uma única reserva, reduzindo produto e variante uma vez. Confirmação manual controlada repetida deve gerar apenas um crédito de ganho, sustentado por lote e movimento do modelo novo.
+
+A terceira verificação habilita retirada, pagamento manual e ganho de 0,5 ponto por real **somente como configuração de fixture no clone**, com chave/contato fictícios. Não define os meios de pagamento da produção. Chamadas externas são recusadas pelo transporte do teste, nenhum worker de outbox é executado e o container inteiro é descartado ao final. A suíte compara os pedidos/itens antigos e os movimentos anteriores após as operações novas.
+
+Esta compra exercita serviços e banco reais em cópia sanitizada; não é teste de interface do checkout, cobrança Asaas, PIX dinâmico, cartão ou boleto. O teste HTTP separado continua verificando catálogo, pedidos, carteiras e controles de acesso, sem habilitar meios remotos.
+
+### Evidência final e próxima etapa
+
+Execução **`8850982a30036f5a68a846142318151b`**, de **19:28:20 a 19:29:57 UTC**, aprovada: abertura e replay, leitura HTTP de 518 produtos/24 pedidos/duas carteiras, preservação dos produtos comerciais e **três testes de abertura/legados/compra nova aprovados**. Na conta antiga, a prova de crédito/replay de 100 pontos foi revertida; a compra persistida no clone usou cliente sintético novo e gerou somente os próprios pontos. Contagens finais dessa compra são dados do ensaio, não carga de produção.
+
+Quatro testes unitários das proteções de destino, identidade, classificação e baseline aprovados. `tsc --noEmit --incremental false`, lint dos arquivos alterados e `git diff --check` aprovados. A primeira rodada detectou chamada incorreta da função de inspeção no teste (objeto de carteira inteiro em vez do par loja/usuário); corrigida a chamada, sem alterar a regra de negócio, e repetido o ensaio completo. Containers descartados e backup protegido mantido. Nenhuma conexão à origem ou escrita em main/homologação compartilhada nesta continuação; nenhum commit/push.
+
+Evidência agregada: [L-BANCO-ABERTURA-CLONE-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-ABERTURA-CLONE-2026-10-15.json). Os relatórios anteriores continuam representando seus snapshots pré-tratamento; não substituir os saldos/contagens antigos para aparentar que a origem foi modificada.
+
+**Concluído no recorte:** procedimento de tratamento dos produtos e pontos de teste ensaiado, preservação dos pedidos antigos e compatibilidade com compra nova demonstradas no clone. **Ainda necessário para implantação:** recuperação operacional acessível fora desta conta Windows, revisão do escopo final e apresentação do histórico nos indicadores, configuração efetiva do destino e coordenação da janela/escritores. Antes de qualquer aplicação real, reauditar o destino contra o snapshot e interromper diante de atividade nova ou divergência; o executor desta seção permanece restrito a clones. Main e seu banco continuam somente leitura para o assistente.
+
+## 41. Procedimento de implantação e recuperação consolidado — 15/10/2026
+
+Continuação autorizada para preparar a implantação; mantém a restrição explícita de escrita na main e no banco de origem. Consultados os runbooks presentes em `origin/main` `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`, o pacote Cloud Run de Vanderlei, package.json, Dockerfile, controles de checkout/webhook/cron e executor de backup. Esta rodada não consultou nem alterou banco remoto e não provisionou recursos.
+
+### Entregas concretas
+
+- [Runbook de implantação e recuperação](../../../../../AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md): ficha da release, responsáveis, sequência antes/durante/depois da janela, verificações de migrations/dados, critérios de interrupção e matriz de recuperação.
+- [Runbook de backup e restauração](../../../../../AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md): cobertura efetiva do dump, limites de DPAPI, prova por responsável alternativo, cutoff, conciliação de eventos e registro de recuperação.
+- [Pacote Cloud Run atualizado](../../../../../../infra/cloudrun/README.md): destino existente da main, aceite da pendência temporal do boleto, vínculo com os procedimentos e separação entre runtime e executor de migration.
+
+Os links acima apontam a documentos do repositório; não foram enviadas mensagens a Vanderlei nem aplicadas configurações externas.
+
+### Achados que alteraram o procedimento
+
+| Achado no código/material atual | Consequência operacional |
+|---|---|
+| `validate:env`, `migrate:status`, `migrate:deploy` e `smoke:deployment` não constam do package.json. | Substituídas orientações fictícias por comandos da CLI Prisma instalada, cuja ajuda foi conferida sem conexão ao banco. Nenhum comando de deploy foi executado. |
+| Não há modo geral de manutenção comprovado. Criação entra por POST `/api/checkout/intents`, `/api/checkout` e `/api/orders`. | É necessário materializar/ensaiar contenção no ingresso real ou na aplicação; esconder UI não basta. Preservar recuperação por GET e mapear outros writers da versão antiga/Admin/importadores. |
+| Webhook retorna 503 quando `PAYMENT_WORKER_ENABLED` não é true; cron de pagamentos executa várias etapas juntas. | Não usar a flag como contenção universal nem supor pausa seletiva. Durante drenagem manter obrigações; no trecho exclusivo coordenar todos os writers e a reentrega/retenção efetiva de eventos. |
+| Backup restaurável está criptografado com chave protegida pela conta Windows atual. | Recuperação local aprovada; capacidade de Vanderlei/outra máquina ainda não demonstrada. Copiar arquivos não prova acesso à chave nem restore. |
+| Cloud Run usa configuração de exemplo; a imagem standalone não é um executor de migration garantido. | Confirmar projeto/região/serviço/digest/segredos reais e preparar job/checkout de migration separado. Não presumir recursos ativos ou instalar configurações usando placeholders. |
+| Readiness geral e compatibilidade dos writers antigos com o schema novo não foram comprovadas. | Não usar probe TCP como aceite completo nem reverter para main antiga com escrita por pressuposição. Preferir diagnóstico/correção para frente e recuperação isolada quando necessária. |
+
+### Ordem operacional definida
+
+1. Congelar revisão/artefato e reauditar o banco existente contra o baseline, sem copiar dados de homologação.
+2. Comprovar recuperação independente, revisar o tratamento final dos dados e ensaiar a contenção.
+3. Impedir novas compras, drenar trabalhos, registrar cutoff/backup fresco e suspender os escritores no trecho exclusivo com continuidade de eventos comprovada.
+4. Aplicar migrations pelo operador autorizado; verificar histórico/schema/guards. Aplicar tratamento de dados separadamente, com escopo revisado e auditoria. Os executores de clone permanecem restritos e não devem ser redirecionados para o destino real.
+5. Validar aplicação/dados/configuração; retomar eventos/consumidores e observar progresso antes de abrir novas compras.
+6. Em falha, manter contenção, preservar o estado e escolher ação conforme a etapa realmente alcançada. Restore não desfaz efeitos do provedor nem autoriza reenvio financeiro.
+
+### Pendências externas e de execução
+
+Solicitada ao operador a informação já definida por Vanderlei sobre **projeto/região do Google Cloud e local de backup acessível por ambos**, sem credenciais. O operador respondeu **“Ainda não”**: permanecem por definir, sem nova solicitação das mesmas informações. Não foi localizado manifesto efetivo que resolva essas lacunas; os exemplos não foram promovidos a configuração real. RPO/RTO, retenção, responsáveis alternativos, janela, mecanismo de contenção e critérios quantitativos de observação ainda precisam de registro/prova operacional. A implementação local de contenção avançou depois, conforme seção 42.
+
+**Situação:** roteiro consolidado e revisável; preparação documental concluída nesta rodada. Aplicação no destino, controle de contenção, recuperação independente e observação real continuam pendentes. Os ensaios das seções anteriores não foram repetidos apenas por edição de documentos. Main/homologação compartilhada intactas; sem commit, push, deploy ou nova operação financeira.
+
+Verificação documental: sete links relativos dos procedimentos/seção conferidos, comandos confrontados com package.json e ajuda da CLI instalada, `git diff --check` aprovado. Registro: [L-BANCO-IMPLANTACAO-PREPARACAO-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-BANCO-IMPLANTACAO-PREPARACAO-2026-10-15.json). Essa conferência não executou status/deploy contra banco remoto nem valida recursos externos.
+
+## 42. Pausa de novas compras implementada e testada localmente — 15/10/2026
+
+Continuação autorizada pelo operador após a preparação da seção 41. Consultado `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`: não foi encontrado controle equivalente nos serviços/rotas/configuração de exemplo. A nova variável é exclusivamente de runtime; não altera configuração comercial no banco. Código desenvolvido na homologação local, sem conexão aos bancos compartilhados e sem publicar deployment.
+
+### Comportamento entregue
+
+- `CHECKOUT_PAUSED=true` bloqueia proposta e conclusão de compras PIX, boleto, crédito e manual; valor ausente ou `false` preserva o comportamento anterior. Valor configurado vazio/desconhecido bloqueia por segurança.
+- Proteção nos serviços `proposeCheckout` e `createOrder`, antes da transação, e nas entradas HTTP. As três rotas de criação respondem 503 com `CHECKOUT_PAUSED` e `private, no-store`; a rota legada `/api/orders` mantém a exigência de autenticação. Rate limit continua podendo responder 429 antes da pausa.
+- O formulário apresenta mensagem de pausa e mantém o acompanhamento dos pedidos já realizados. Não repete submissão automaticamente.
+- GET de recuperação mantém verificação de identidade/loja. Replay por POST também fica bloqueado durante a pausa; consultar o resultado por GET. Pedidos, propostas, estoque, pontos e instruções existentes não são apagados. Reabertura mantém validação de prazo/revisão/consentimento e idempotência.
+- Webhook e executor financeiro não dependem dessa flag. Seus próprios controles de autenticação e ativação continuam valendo; não desligar `PAYMENT_WORKER_ENABLED` para pausar compras.
+- Manifestos iniciais Cloud Run passam a incluir `CHECKOUT_PAUSED=true`, para não abrir compras manuais por acidente antes das verificações. Não reaplicar o manifesto inicial sobre serviço ativo apenas para pausar: seus outros defaults desligam consumidores.
+
+### Evidências e limites
+
+Executados **16 testes unitários**, **89 de integração em PostgreSQL/Next descartáveis** e **3 de manifesto**, todos aprovados. TypeScript sem emissão aprovado; lint dos arquivos alterados sem erros, com um aviso preexistente de `<img>` no formulário. Regressões financeiras incluem falhas intencionais de constraints, tratadas pelos testes; nenhum erro final de suíte.
+
+Os casos novos demonstram bloqueio antes da transação nos quatro meios, 503 nas três entradas, autenticação de webhook/cron preservada, recuperação de compras de cliente e visitante durante pausa, recusa de outra loja e retomada sem duplicar estoque/pedido. Uma cobrança de fixture já emitida recebeu evento durável, foi conciliada/aprovada durante a pausa e produziu histórico/notificação uma única vez. Gateway controlado, sem chamadas Asaas reais.
+
+Run descartável: `1e1ab54fb93bed2d5e6b2cfec0de700d`; 56 casos financeiros e 33 de checkout concluídos às 17:00 BRT, executor encerrado com código 0 e recursos descartados. Nas suítes de integração, a pausa foi aplicada aos serviços no processo de teste; as três rotas pausadas foram exercitadas diretamente pelos testes unitários. **Não equivale a ensaio HTTP da flag em um Preview publicado nem a teste visual do aviso no navegador.** Registro: [L-CONTENCAO-CHECKOUT-2026-10-15.json](../../../../../../trabalho_em_dupla/evidencias/L-CONTENCAO-CHECKOUT-2026-10-15.json).
+
+### Próxima comprovação operacional
+
+Publicar a candidata em homologação e executar o roteiro do [runbook](../../../../../AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md): ativar pausa no Preview, conferir propostas anteriores, cliente/visitante, recuperação, webhook/consumidor e reabertura sem duplicação. Preservar o boleto #8 e os comandos de estorno já concluídos; não usá-los para gerar novos efeitos de teste. Não há publicação ou ativação remota nesta rodada.
+
+Aplicar a variável em todas as instâncias/revisões acessíveis, drenar requisições em voo e tratar URLs antigas. A pausa não é instantânea entre deployments e **não congela todos os writers**: carrinho, contexto GET/PATCH (que pode criar cesta), Admin, autenticação, importadores e tarefas continuam ativos. Congelamento para DDL, retenção/reentrega de eventos, backup independente e configuração real do Google Cloud permanecem frentes separadas. Main e seu banco seguem somente leitura.
+
+## 43. Candidata integrada e roteiro de conferência no Preview — 15/10/2026
+
+Operador autorizou dar seguimento à publicação/validação. O fetch encontrou a homologação remota em `515a27d44a9897e8deecbeed082af9fd4c7b353a`; incorporada por fast-forward, sem conflitos ou perda das mudanças locais. Essa revisão de Vanderlei corrige clipboard e mocks da home. Main continua sem alterações. Incluídos na candidata os scripts de ensaio em clones, evidências agregadas, procedimentos e pausa de checkout preparados nas etapas anteriores; nenhum backup privado ou arquivo de ambiente real integra a publicação.
+
+Verificação do conjunto integrado: 790 unitários em 89 arquivos, 19 testes de ferramentas/manifestos/proteções de clone, lint completo com zero erros e 17 avisos preexistentes, build otimizado Next/TypeScript aprovado em cópia sem `.env` e PostgreSQL descartável. Os 89 testes de integração de checkout/pagamentos da seção 42 foram executados antes deste fast-forward; não representam nova CI da revisão integrada. A nova publicação exige seu próprio resultado de CI/deployment.
+
+### Conferência assistida da pausa
+
+Não foi encontrado acesso autenticado à administração Vercel nesta máquina; não foi alterada variável remota. A integração GitHub permite consultar o status de deployment, mas não concede a sessão do Preview ou a edição de seu ambiente.
+
+1. Conferir que o deployment publicado da branch `homologacao_teste` está Ready. Na Vercel, definir **somente para o Preview desta branch** `CHECKOUT_PAUSED=true` e fazer redeploy. Preservar as flags financeiras existentes.
+2. No Preview autenticado como Admin, executar [VALIDAR_PAUSA_CHECKOUT.js](../../../../../../PACOTE_REVISAO_VANDERLEI/VALIDAR_PAUSA_CHECKOUT.js). O script verifica origem e identidade do pedido #7 já cancelado; envia apenas `{}` às três entradas, contrato que não cria compra mesmo com a pausa desligada. Não processa filas nem solicita pagamento/cancelamento/estorno. Saída sem dados pessoais/credenciais.
+3. As três sondas devem retornar 503/`CHECKOUT_PAUSED` e `no-store`. A consulta de recuperação do #7 só passa se a sessão também for a compradora; uma recusa de identidade não deve ser contornada. Nesse caso, conferir acompanhamento na sessão compradora.
+4. Essas sondas verificam apenas comandos incompletos. Ainda conferir proposta válida anterior à pausa, cliente/visitante, aviso visual, recepção/processamento Sandbox já planejados, cobertura das revisões acessíveis e reabertura conforme runbook. Não usar o #8 nem repetir os estornos encerrados para produzir atividade.
+5. Após coleta, retornar `CHECKOUT_PAUSED=false` no mesmo Preview e redeploy; confirmar comportamento normal sem duplicação. Não remover outros bloqueios de segurança para facilitar o teste.
+
+O script teve sintaxe validada localmente; ainda não foi executado na sessão remota. Publicar código não ativa a pausa quando a variável está ausente, nem conclui o congelamento geral de escritores/recuperação/produção. Projeto/região Google Cloud e local de backup compartilhado continuam não definidos pelo operador.

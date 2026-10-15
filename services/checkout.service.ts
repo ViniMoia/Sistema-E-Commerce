@@ -12,6 +12,7 @@ import { creditCardSchema } from '@/lib/validators/checkout.validators';
 import type { PaymentGateway, PaymentMethod, CreditCardData } from '@/types/payment-gateway.types';
 import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { checkoutAddresses } from '@/lib/commerce/checkout-address';
+import { assertCheckoutOpen } from '@/lib/commerce/checkout-availability';
 
 export interface CheckoutCartItem {
   productId?: string
@@ -139,6 +140,7 @@ export interface CreateOrderResult {
 /** Sole public purchase command. The source, proposal and accepted revision are
  * mandatory; no transport key or client total substitutes for consent. */
 export async function createOrder(params: CreateOrderParams): Promise<CreateOrderResult> {
+  assertCheckoutOpen();
   if (!params.checkoutIntentID || !Number.isInteger(params.acceptedRevision) || !params.acceptedContentHash) throw new Error('CHECKOUT_INTENT_REQUIRED');
   const outcome = await withCheckoutOwner(params, async (tx, ownerKey, locks) => {
     const intent = await lockOwnedIntent(tx, locks, params, ownerKey, params.checkoutIntentID!);

@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "harness": "Local uncommitted opening rehearsal and dedicated tests",
+  "sourceCaptureAt": "2026-10-15T18:43:55.572Z",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "runId": "8850982a30036f5a68a846142318151b",
+  "startedAt": "2026-10-15T19:28:20.023Z",
+  "finishedAt": "2026-10-15T19:29:57.133Z",
+  "success": true,
+  "productRetirement": {
+    "at": "2026-10-15T19:29:28.622Z",
+    "cloneOnly": true,
+    "backupPreviouslyRestored": true,
+    "productIds": [
+      "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+      "622731a7-0158-486c-9626-0a739b3ddb91",
+      "6178ba96-b383-4e50-be1d-93a506912011",
+      "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13"
+    ],
+    "protectedProductIds": [
+      "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+      "0486f861-4e39-426a-81ce-8b39f60a177f",
+      "5e86739a-6114-4df1-a15a-df88b7a349c3",
+      "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+      "bc076f2d-740c-45f3-84c5-9d0fb8657d84"
+    ],
+    "retiredProducts": 4,
+    "retiredVariants": 10,
+    "activeProducts": 518,
+    "stockValuesPreserved": true,
+    "allOtherDataPreserved": true,
+    "sharedDatabaseWritten": false,
+    "strategy": "retiredAt with version increments; no deletion, stock reconciliation or financial effects",
+    "productionReady": false
+  },
+  "legacyOpening": {
+    "replay": false,
+    "wallets": 2,
+    "removedTestPoints": 475,
+    "balance": 0,
+    "adjustments": 2,
+    "auditRecords": 2,
+    "originalTransactionsPreserved": 2,
+    "legacyOrdersPreserved": 24,
+    "otherTablesPreserved": true,
+    "lotsFabricated": 0,
+    "remoteCalls": 0,
+    "cloneOnly": true,
+    "productionReady": false
+  },
+  "replay": {
+    "replay": true,
+    "wallets": 2,
+    "balance": 0,
+    "adjustments": 2
+  },
+  "httpReadSmoke": {
+    "startedAt": "2026-10-15T19:29:34.630Z",
+    "cloneRunId": "62d0cfb1a94f1790a3a68c26aeabac7a",
+    "cases": [
+      {
+        "name": "server_database_identity",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "catalog_read",
+        "count": 518,
+        "passed": true
+      },
+      {
+        "name": "test_products_absent_from_catalog",
+        "count": 4,
+        "passed": true
+      },
+      {
+        "name": "commercial_vacuums_and_accessories_preserved",
+        "count": 5,
+        "passed": true
+      },
+      {
+        "name": "legacy_admin_order_read",
+        "count": 24,
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_order_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "unknown_tenant_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "opening_wallet_read",
+        "count": 2,
+        "passed": true
+      },
+      {
+        "name": "methods_remain_disabled",
+        "count": 1,
+        "passed": true
+      }
+    ],
+    "productionReady": false,
+    "allApplicationTablesPreserved": true,
+    "sessionBootstrapOnly": true,
+    "applicationDatabaseReadOnly": true,
+    "finishedAt": "2026-10-15T19:29:53.858Z"
+  },
+  "purchaseChecks": {
+    "passed": 3,
+    "failed": 0,
+    "legacyOrderCommandsDenied": 20,
+    "newPurchases": 1,
+    "transport": "controlled manual payment; no Asaas calls",
+    "sourceWritten": false
+  },
+  "checks": {
+    "guardUnitTestsPassed": 4,
+    "typescript": "passed",
+    "eslint": "passed"
+  },
+  "productionReady": false,
+  "limits": [
+    "Only disposable restored sanitized clone was changed",
+    "Legacy adjustments offset test points; no historical lot origins fabricated",
+    "Historical orders and original transactions preserved, not deleted or remotely cancelled",
+    "Legacy orders remain visible and are not automatically removed from administrative counts",
+    "New synthetic customer purchase uses real services with controlled manual payment, not Asaas",
+    "Fixture payment and loyalty settings are not production activation",
+    "Backup recovery outside the current Windows account and real deployment still pending"
+  ]
+}

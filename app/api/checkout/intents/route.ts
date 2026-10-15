@@ -3,6 +3,7 @@ import { checkoutDraftSchema } from '@/lib/validators/checkout.validators';
 import { checkoutContext, proposeCheckout } from '@/services/checkout-intent.service';
 import { checkoutHttpScope, checkoutResponse, checkoutFailure } from '@/lib/commerce/checkout-http';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { assertCheckoutOpen } from '@/lib/commerce/checkout-availability';
 
 /** Bootstrap the opaque identity before quote requests, including parallel tabs. */
 export async function GET() {
@@ -12,6 +13,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const limited = checkRateLimit(request, 'checkout_proposal', 30, 60000); if (limited) return limited;
   try {
+    assertCheckoutOpen();
     const scope = await checkoutHttpScope();
     const parsed = checkoutDraftSchema.safeParse(await request.json());
     if (!parsed.success) throw new Error('CHECKOUT_INPUT_INVALID');

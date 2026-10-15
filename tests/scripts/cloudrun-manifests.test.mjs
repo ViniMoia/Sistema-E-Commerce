@@ -19,6 +19,7 @@ test('uses one immutable artifact, bounded instances and explicit disabled remot
   const m = cloudRunManifests(config), spec = m['service.json'].spec.template.spec;
   assert.equal(spec.containers[0].image, config.image);
   assert.equal(spec.containers[0].env.find(x => x.name === 'PAYMENT_REMOTE_ENABLED').value, 'false');
+  assert.equal(spec.containers[0].env.find(x => x.name === 'CHECKOUT_PAUSED').value, 'true');
   assert.equal(m['readiness.json'].productionReady, false);
   assert.equal(m['readiness.json'].schedulesApproved, false);
   assert.ok(m['loyalty-heartbeat-alert.json']);

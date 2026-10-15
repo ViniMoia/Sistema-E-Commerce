@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-15",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateBaseRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "workingTreePublished": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "remoteDatabaseConnected": false,
+  "providerCalls": false,
+  "deploymentValidated": false,
+  "productionReady": false,
+  "control": {
+    "name": "CHECKOUT_PAUSED",
+    "scope": "new proposals and purchase completion, all payment methods",
+    "missingOrFalse": "existing behavior",
+    "trueOrInvalidConfiguredValue": "blocked",
+    "httpStatus": 503,
+    "error": "CHECKOUT_PAUSED",
+    "cacheControl": "private, no-store",
+    "postReplayBlocked": true,
+    "authorizedGetRecoveryPreserved": true,
+    "freezesAllWriters": false,
+    "interruptsInFlightWork": false,
+    "cloudRunInitialManifestPaused": true
+  },
+  "checks": {
+    "unit": { "file": "tests/unit/checkout-pause.test.ts", "passed": 16 },
+    "integration": {
+      "runId": "1e1ab54fb93bed2d5e6b2cfec0de700d",
+      "checkoutPassed": 33,
+      "financialPassed": 56,
+      "exitCode": 0,
+      "isolatedDatabase": true,
+      "controlledPaymentGateway": true,
+      "pauseAppliedInTestProcessServices": true,
+      "pausedRoutesExercisedByUnitHandlers": true,
+      "pausedDeployedHttpNotTested": true
+    },
+    "cloudRunManifestPassed": 3,
+    "typescript": "passed",
+    "eslintErrors": 0,
+    "eslintExistingWarnings": 1
+  },
+  "pending": [
+    "publish candidate and validate pause/resume on the shared Preview",
+    "visual verification of customer pause message",
+    "all serving revisions covered and in-flight requests drained",
+    "coordinated freeze of remaining database writers",
+    "proven webhook retention or redelivery for the exclusive update window",
+    "real Google Cloud project, region and service",
+    "shared protected backup location and alternate-operator restore"
+  ]
+}

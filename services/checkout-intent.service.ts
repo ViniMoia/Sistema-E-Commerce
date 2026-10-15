@@ -7,6 +7,7 @@ import { buyerInputSchema } from '@/lib/commerce/order-buyer';
 import { prepareCheckout } from './checkout-plan.service';
 import type { CreateOrderParams } from './checkout.service';
 import { checkoutAddresses } from '@/lib/commerce/checkout-address';
+import { assertCheckoutOpen } from '@/lib/commerce/checkout-availability';
 
 export interface CheckoutScope { lojaID: string; customer: { userId?: string; email?: string }; freightOwnerKey?: string }
 export async function checkoutNow(tx: Prisma.TransactionClient): Promise<Date> {
@@ -107,6 +108,7 @@ export async function checkoutContext(input: CheckoutScope, previousBasketID?: s
 }
 
 export async function proposeCheckout(params: CreateOrderParams) {
+  assertCheckoutOpen();
   return withCheckoutOwner(params, async (tx, ownerKey, locks) => {
     let existing: CheckoutIntent | null;
     if (params.customer.userId) {

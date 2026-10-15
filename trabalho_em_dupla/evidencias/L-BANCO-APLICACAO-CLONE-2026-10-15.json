@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "harness": "Local uncommitted clone verification scripts",
+  "sourceCaptureAt": "2026-10-15T18:43:55.572Z",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "productionReady": false,
+  "runId": "d59ddc9146f41a8239891d04d902019b",
+  "startedAt": "2026-10-15T18:56:27.306Z",
+  "finishedAt": "2026-10-15T18:57:43.351Z",
+  "success": true,
+  "applicationSmoke": {
+    "startedAt": "2026-10-15T18:57:20.437Z",
+    "cloneRunId": "e513e47860a87e8b886d40b0baffc68b",
+    "cases": [
+      {
+        "name": "server_database_identity",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "catalog_read",
+        "count": 522,
+        "passed": true
+      },
+      {
+        "name": "legacy_admin_order_read",
+        "count": 24,
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_order_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "unknown_tenant_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "legacy_wallet_read_unreconciled",
+        "count": 2,
+        "passed": true
+      },
+      {
+        "name": "methods_remain_disabled",
+        "count": 1,
+        "passed": true
+      }
+    ],
+    "productionReady": false,
+    "allApplicationTablesPreserved": true,
+    "sessionBootstrapOnly": true,
+    "applicationDatabaseReadOnly": true,
+    "finishedAt": "2026-10-15T18:57:43.351Z"
+  },
+  "limits": [
+    "Actual Next HTTP read checks on sanitized restored PostgreSQL 18 clone",
+    "No checkout writes, provider integration, browser rendering or load test",
+    "Temporary authentication sessions only in disposable clone; removed before full table comparison",
+    "Readonly database default; isolated process without source environment files"
+  ]
+}

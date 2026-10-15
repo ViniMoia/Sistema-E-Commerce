@@ -8,13 +8,20 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'node:
 import nextEnv from '@next/env';
 import { command, provisionPostgres } from './lib/disposable-postgres.mjs';
 import { LEGACY_AUDIT_SQL, classifyLegacyAudit } from './lib/legacy-commerce-audit.mjs';
+import { smokeRestoredApplication } from './lib/restored-application-smoke.mjs';
+import { inspectLegacyTreatment } from './lib/restored-legacy-treatment.mjs';
+import { rehearseTestProductRetirement, testProducts, preservedVacuums } from './lib/restored-test-products.mjs';
+import { rehearseLegacyOpening } from './lib/restored-opening.mjs';
 
 if (process.platform !== 'win32') throw new Error('Este executor exige DPAPI/ACL do Windows para proteger o backup.');
 const args = process.argv.slice(2);
-const auditLegacy = args.length === 3 && args[2] === '--audit-legacy';
+const opening = args.length === 3 && args[2] === '--rehearse-opening';
+const retireTests = opening || (args.length === 3 && args[2] === '--rehearse-test-products');
+const smokeApp = retireTests || (args.length === 3 && args[2] === '--smoke-app');
+const auditLegacy = smokeApp || (args.length === 3 && args[2] === '--audit-legacy');
 const reuse = (args.length === 2 || auditLegacy) && args[0] === '--backup-dir';
 if (!(args.length === 1 && args[0] === '--capture-source') && !reuse) {
-  throw new Error('Use --capture-source ou --backup-dir <diretório privado existente> [--audit-legacy].');
+  throw new Error('Use --capture-source ou --backup-dir <diretório privado existente> [--audit-legacy|--smoke-app|--rehearse-test-products|--rehearse-opening].');
 }
 let sourceEnv;
 if (!reuse) {
@@ -350,8 +357,42 @@ try {
     };
     if (JSON.stringify(await fingerprint(pg,true,false))!==JSON.stringify(auditBefore) || await sequences(pg)!==auditSequences) throw new Error('Auditoria alterou o clone.');
     evidence.legacyAuditReadOnly = true;
+    evidence.legacyTreatment = await inspectLegacyTreatment(pg);
+    if (JSON.stringify(await fingerprint(pg,true,false))!==JSON.stringify(auditBefore) || await sequences(pg)!==auditSequences) throw new Error('Classificacao alterou o clone.');
     if (!report.integrityPassed) throw new Error('LEGACY_INTEGRITY_GATE_BLOCKED: clone exige revisão privada; nenhum dado foi corrigido.');
     console.log('[clone] Inventário WF-18 somente leitura; exceções segregadas, sem fatos/vínculos/estoque fabricados.');
+  }
+  if (smokeApp) {
+    evidence.stage = 'application-smoke';
+    // Only a previously captured, decrypted, sanitized and migrated clone reaches this point.
+    await assertClone(pg);
+    if (retireTests) evidence.testProductRetirement = await rehearseTestProductRetirement(pg);
+    if (opening) {
+      evidence.legacyOpening = await rehearseLegacyOpening(pg);
+      evidence.legacyOpeningReplay = await rehearseLegacyOpening(pg);
+      if (!evidence.legacyOpeningReplay.replay) throw new Error('OPENING_REPLAY_NOT_VERIFIED');
+    }
+    evidence.applicationSmoke = await smokeRestoredApplication(pg, retireTests ? {
+      excludedProductIds: testProducts.map(p => p.id), preservedProductIds: preservedVacuums,
+    } : {});
+    console.log('[clone] Aplicacao consultou o clone sanitizado; dados preservados e acessos indevidos recusados.');
+  }
+  if (opening) {
+    evidence.stage = 'opening-purchase-tests';
+    await assertClone(pg);
+    // HTTP reader has stopped; enable writes only on this disposable role for the fixture suite.
+    await pg.sql('ALTER ROLE ecommerce_test SET default_transaction_read_only=off;');
+    const testEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
+      /^(PATH|SYSTEMROOT|WINDIR|TEMP|TMP|LOCALAPPDATA|APPDATA|USERPROFILE|COMSPEC|PATHEXT|NUMBER_OF_PROCESSORS)$/i.test(key)));
+    for (const key of ['TEST_RUN_ID','TEST_DATABASE_URL','DATABASE_URL','DIRECT_URL','TEST_HTTP_TOKEN','FREIGHT_QUOTE_SECRET']) testEnv[key] = pg.env[key];
+    Object.assign(testEnv,{NODE_ENV:'test',TEST_RESTORED_OPENING:'true',PAYMENT_REMOTE_ENABLED:'false',PAYMENT_WORKER_ENABLED:'false',PAYMENT_EXPIRATION_ENABLED:'false',NEXT_TELEMETRY_DISABLED:'1'});
+    const resultPath = path.join(privateDir,`opening-tests-${runId}.json`);
+    await command(process.execPath,['node_modules/vitest/vitest.mjs','run','tests/clone/restored-opening.test.ts','--reporter=json','--outputFile',resultPath],{env:testEnv,capture:true});
+    const result = JSON.parse(await fs.readFile(resultPath,'utf8'));
+    if (!result.success || result.numPassedTests !== 3 || result.numFailedTests !== 0) throw new Error('OPENING_TESTS_INCOMPLETE');
+    evidence.openingTests = {passed:result.numPassedTests,failed:result.numFailedTests,legacyOrderCommandsDenied:20,
+      newPurchases:1,transport:'controlled manual payment; no Asaas calls',sourceWritten:false};
+    console.log('[clone] Abertura, replay, protecao de legados e compra nova aprovados em tres testes.');
   }
   evidence.success = true;
   evidence.stage = 'completed';

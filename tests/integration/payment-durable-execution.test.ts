@@ -101,6 +101,25 @@ async function event(p: Awaited<ReturnType<typeof purchase>>, type = 'PAYMENT_RE
 async function stock(p: Awaited<ReturnType<typeof purchase>>) { return (await prisma.product.findUniqueOrThrow({ where: { id: p.product.id } })).stock; }
 
 describe('WF-14: real PostgreSQL, controlled remote operations, resumable executor', () => {
+  it('purchase pause preserves durable payment receipt, reconciliation and exactly-once approval', async () => {
+    const p = await purchase();
+    p.remote[0].status = 'RECEIVED';
+    vi.stubEnv('CHECKOUT_PAUSED', 'true');
+    try {
+      const e = await event(p);
+      await drainPaymentInbox(50, p.gateway);
+      await due(p.attempt.id);
+      await reconcilePaymentAttempts(50, p.gateway);
+      await drainPaymentInbox(50, p.gateway);
+      expect((await prisma.paymentInbox.findUniqueOrThrow({ where: { id: e.row.id } })).status).toBe('COMPLETED');
+      expect(await stored(p.result.order.id)).toMatchObject({ status: 'PAID', version: 1,
+        reservations: [{ status: 'COMMITTED' }], paymentAttempts: [{ status: 'APPROVED' }] });
+      expect(await prisma.orderStatusHistory.count({ where: { orderId: p.result.order.id } })).toBe(1);
+      expect(await prisma.commerceOutbox.count({ where: { effectKey: 'payment-confirmation:' + p.result.order.id } })).toBe(1);
+      expect(p.gateway.createPixCharge).toHaveBeenCalledTimes(1);
+      expect(await stock(p)).toBe(4);
+    } finally { vi.unstubAllEnvs(); }
+  });
   it.each(['inbox', 'reconciliation'] as const)('slow DB approval through %s stays atomic and replay creates no duplicate effects', async consumer => {
     const config = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } });
     await prisma.loja.update({ where: { id: lojaID }, data: { loyaltyEnabled: true, loyaltyEarnRate: 1 } });

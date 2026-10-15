@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "harness": "Local uncommitted clone-only rehearsal scripts",
+  "identityRead": {
+    "mainAt": "2026-10-15T19:12:22.870Z",
+    "homologationAt": "2026-10-15T19:12:23.939Z",
+    "readOnly": true,
+    "sourceVacuumId": "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+    "homologationVacuumId": "a26fdbc1-d8c3-4173-b114-f759654b9ca4",
+    "sameImageUrl": true,
+    "imageVisuallyVerified": true,
+    "imageDescription": "Red and black handheld car vacuum",
+    "targets": [
+      {
+        "id": "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+        "name": "Aspirador de Pó",
+        "variants": 1,
+        "imageUrl": "https://res.cloudinary.com/dpt3zi8kx/image/upload/v1789777720/images__teste_aspirador_1_geqkhm.jpg"
+      },
+      {
+        "id": "622731a7-0158-486c-9626-0a739b3ddb91",
+        "name": "Calça Jeans",
+        "variants": 3
+      },
+      {
+        "id": "6178ba96-b383-4e50-be1d-93a506912011",
+        "name": "Camisa Branca ",
+        "variants": 3
+      },
+      {
+        "id": "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13",
+        "name": "Camisa Preta",
+        "variants": 3
+      }
+    ],
+    "preservedProductIds": [
+      "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+      "0486f861-4e39-426a-81ce-8b39f60a177f",
+      "5e86739a-6114-4df1-a15a-df88b7a349c3",
+      "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+      "bc076f2d-740c-45f3-84c5-9d0fb8657d84"
+    ]
+  },
+  "sourceCaptureAt": "2026-10-15T18:43:55.572Z",
+  "runId": "a5c12771c4fc46f375e960f18d22b304",
+  "startedAt": "2026-10-15T19:15:35.013Z",
+  "finishedAt": "2026-10-15T19:17:12.780Z",
+  "success": true,
+  "retirement": {
+    "at": "2026-10-15T19:16:34.959Z",
+    "cloneOnly": true,
+    "backupPreviouslyRestored": true,
+    "productIds": [
+      "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+      "622731a7-0158-486c-9626-0a739b3ddb91",
+      "6178ba96-b383-4e50-be1d-93a506912011",
+      "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13"
+    ],
+    "protectedProductIds": [
+      "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+      "0486f861-4e39-426a-81ce-8b39f60a177f",
+      "5e86739a-6114-4df1-a15a-df88b7a349c3",
+      "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+      "bc076f2d-740c-45f3-84c5-9d0fb8657d84"
+    ],
+    "retiredProducts": 4,
+    "retiredVariants": 10,
+    "activeProducts": 518,
+    "stockValuesPreserved": true,
+    "allOtherDataPreserved": true,
+    "sharedDatabaseWritten": false,
+    "strategy": "retiredAt with version increments; no deletion, stock reconciliation or financial effects",
+    "productionReady": false
+  },
+  "applicationSmoke": {
+    "startedAt": "2026-10-15T19:16:39.924Z",
+    "cloneRunId": "de23bf2160de60ad9c34947ea2eaae4c",
+    "cases": [
+      {
+        "name": "server_database_identity",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "catalog_read",
+        "count": 518,
+        "passed": true
+      },
+      {
+        "name": "test_products_absent_from_catalog",
+        "count": 4,
+        "passed": true
+      },
+      {
+        "name": "commercial_vacuums_and_accessories_preserved",
+        "count": 5,
+        "passed": true
+      },
+      {
+        "name": "legacy_admin_order_read",
+        "count": 24,
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_order_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "unknown_tenant_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "legacy_wallet_read_unreconciled",
+        "count": 2,
+        "passed": true
+      },
+      {
+        "name": "methods_remain_disabled",
+        "count": 1,
+        "passed": true
+      }
+    ],
+    "productionReady": false,
+    "allApplicationTablesPreserved": true,
+    "sessionBootstrapOnly": true,
+    "applicationDatabaseReadOnly": true,
+    "finishedAt": "2026-10-15T19:17:12.780Z"
+  },
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "productionReady": false,
+  "limits": [
+    "Changes applied exclusively to disposable restored and sanitized clone",
+    "Shared homologation test product retained for payment tests",
+    "No historical stock balances, links, orders, points or financial facts changed",
+    "HTTP read smoke does not constitute purchase/payment integration or production load testing"
+  ]
+}

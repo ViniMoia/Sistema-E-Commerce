@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-15T19:41:12.111Z",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "workingTreePublished": false,
+  "scope": "Deployment and recovery procedure preparation",
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "remoteDatabaseConnected": false,
+  "resourcesProvisioned": false,
+  "productionReady": false,
+  "documents": [
+    "diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md",
+    "diversos/AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md",
+    "infra/cloudrun/README.md",
+    "diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md"
+  ],
+  "checks": {
+    "relativeLinksChecked": 7,
+    "obsoleteNpmCommandsConfirmedAbsent": [
+      "validate:env",
+      "migrate:status",
+      "migrate:deploy",
+      "smoke:deployment"
+    ],
+    "prismaInstalledCliHelpChecked": [
+      "migrate status",
+      "migrate deploy",
+      "migrate diff"
+    ]
+  },
+  "remaining": [
+    "Final reviewed release SHA and immutable artifact",
+    "Actual Cloud Run project/region/service/domain and references",
+    "Backup recovery by alternate operator outside current Windows account",
+    "RPO/RTO and retention policy",
+    "Tested new-purchase containment and exclusive writer freeze",
+    "Proven webhook retention/redelivery during exclusive window",
+    "Reviewed final data treatment executor for authorized target",
+    "Fresh source audit, backup cutoff and migration window",
+    "Runtime observation and remaining commercial gates"
+  ]
+}
