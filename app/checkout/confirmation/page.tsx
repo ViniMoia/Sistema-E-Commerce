@@ -7,11 +7,10 @@ import { formatBoletoDueDate, purchaseClientSchema, purchaseView, type PurchaseC
 import { useCartStore } from '@/store/cart.store'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
+import { PaymentCopyButton } from '@/components/checkout/PaymentCopyButton'
 import {
   CheckCircle2,
   Clock,
-  Copy,
-  Check,
   ExternalLink,
   Loader2,
   Sparkles,
@@ -37,8 +36,6 @@ export default function CheckoutConfirmationPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [requestStartedAt, setRequestStartedAt] = useState(0)
   const [now, setNow] = useState(0)
-  const [copiedPix, setCopiedPix] = useState(false)
-  const [copiedBoleto, setCopiedBoleto] = useState(false)
   const consumed = useRef<string | null>(null)
 
   useEffect(() => {
@@ -124,23 +121,6 @@ export default function CheckoutConfirmationPage() {
     return verified && !document.hidden && elapsed < verificationMaxAgeMs ? purchaseView(order, elapsed) : null
   }
 
-  const handleCopyPix = () => {
-    const current = currentActions()
-    if ((current?.canPayPix || current?.canContact) && pixCopyText) {
-      navigator.clipboard.writeText(pixCopyText)
-      setCopiedPix(true)
-      setTimeout(() => setCopiedPix(false), 2500)
-    }
-  }
-
-  const handleCopyBoleto = () => {
-    if (currentActions()?.canPayBoleto && order.asaasDigitableLine) {
-      navigator.clipboard.writeText(order.asaasDigitableLine)
-      setCopiedBoleto(true)
-      setTimeout(() => setCopiedBoleto(false), 2500)
-    }
-  }
-
   const handleWhatsApp = () => {
     if (!currentActions()?.canContact) return
     const msg = buildWhatsAppMessage({
@@ -154,7 +134,7 @@ export default function CheckoutConfirmationPage() {
       pixKey: order.pixKey ?? null,
     })
     const url = buildWhatsAppUrl(order.whatsappNumber || '', msg)
-    window.open(url, '_blank')
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const qrCodeUrl = order.pixQrCode
@@ -297,22 +277,8 @@ export default function CheckoutConfirmationPage() {
                   <div className="flex-1 bg-[#050B14] border border-catalog-gold/30 rounded-xl px-3.5 py-2.5 font-mono text-xs text-slate-300 truncate select-all">
                     {pixCopyText}
                   </div>
-                  <button
-                    onClick={handleCopyPix}
-                    className="btn-shimmer shrink-0 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {copiedPix ? (
-                      <>
-                        <Check className="w-4 h-4 text-[#010E31]" />
-                        <span>Copiado!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 text-[#010E31]" />
-                        <span>Copiar</span>
-                      </>
-                    )}
-                  </button>
+                  <PaymentCopyButton key={order.id} value={pixCopyText} label="Copiar código PIX" successMessage="Código PIX copiado."
+                    isAllowed={() => { const current = currentActions(); return !!(current?.canPayPix || current?.canContact) }} />
                 </div>
               </div>
             )}
@@ -337,7 +303,7 @@ export default function CheckoutConfirmationPage() {
 
             {order.asaasBankSlipUrl && (
               <button
-                onClick={() => { if (currentActions()?.canPayBoleto) window.open(order.asaasBankSlipUrl!, '_blank') }}
+                onClick={() => { if (currentActions()?.canPayBoleto) window.open(order.asaasBankSlipUrl!, '_blank', 'noopener,noreferrer') }}
                 className="btn-shimmer w-full py-3.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(240,180,14,0.3)] border border-[#F5BD1E]/40 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
@@ -352,12 +318,8 @@ export default function CheckoutConfirmationPage() {
                   <div className="flex-1 bg-[#050B14] border border-catalog-gold/30 rounded-xl px-3.5 py-2.5 font-mono text-xs text-slate-300 truncate select-all">
                     {order.asaasDigitableLine}
                   </div>
-                  <button
-                    onClick={handleCopyBoleto}
-                    className="btn-shimmer shrink-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#F0B40E] to-[#E5A805] text-[#010E31] font-bold text-xs uppercase tracking-wider border border-[#F5BD1E]/40"
-                  >
-                    {copiedBoleto ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </button>
+                  <PaymentCopyButton key={order.id} value={order.asaasDigitableLine} label="Copiar linha digitável"
+                    successMessage="Linha digitável copiada." isAllowed={() => !!currentActions()?.canPayBoleto} />
                 </div>
               </div>
             )}

@@ -4,6 +4,7 @@ import HomeClient, { type Product } from "@/components/home/HomeClient";
 
 const harness = vi.hoisted(() => ({
   states: [] as any[], cursor: 0, products: [] as any[], addToCart: vi.fn(), setIsOpen: vi.fn(), toast: vi.fn(),
+  isMutating: false, hasUnresolvedMutation: false,
 }));
 vi.mock("react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react")>();
@@ -19,7 +20,10 @@ vi.mock("react", async (importOriginal) => {
     useCallback: (callback: any) => callback,
   };
 });
-vi.mock("@/store/cart.store", () => ({ useCartStore: () => ({ addToCart: harness.addToCart, isLoading: false }) }));
+vi.mock("@/store/cart.store", () => ({ useCartStore: Object.assign(
+  (selector: (state: typeof harness) => unknown) => selector(harness),
+  { getState: () => harness },
+) }));
 vi.mock("@/components/providers/CartProvider", () => ({ useCart: () => ({ setIsOpen: harness.setIsOpen }) }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: harness.toast }) }));
 vi.mock("@/hooks/useProductFilters", () => ({ useProductFilters: () => ({
@@ -57,6 +61,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   harness.states = [];
   harness.products = [];
+  harness.isMutating = false;
+  harness.hasUnresolvedMutation = false;
   harness.addToCart.mockResolvedValue(undefined);
 });
 
@@ -103,22 +109,22 @@ describe("Eventos do catálogo para compra", () => {
     expect(button(tree, "Preto").props.disabled).toBe(true);
     expect(button(tree, "Azul").props.disabled).toBe(false);
   });
-  it("o card abre o produto com opções e limpa a seleção anterior", () => {
+  it("o card abre o produto com opções e limpa a seleção anterior", async () => {
     const prod = product("grade", [variant("a", "P"), variant("b", "M")]);
     harness.products = [prod];
     harness.states = [null, "M", "Azul", null];
     const tree = render();
     const cardButton = elements(tree).find((el) => el.props.title === "Adicionar ao Carrinho")!;
-    cardButton.props.onClick(event());
+    await cardButton.props.onClick(event());
     expect(harness.states.slice(0, 3)).toEqual([prod, null, null]);
     expect(harness.addToCart).not.toHaveBeenCalled();
   });
-  it("o card de um produto simples usa sua própria variante, mesmo com seleção antiga", () => {
+  it("o card de um produto simples usa sua própria variante, mesmo com seleção antiga", async () => {
     const prod = product("outro", [variant("other-id")]);
     harness.products = [prod];
     harness.states = [null, "M", "Preto", null];
     const tree = render();
-    elements(tree).find((el) => el.props.title === "Adicionar ao Carrinho")!.props.onClick(event());
+    await elements(tree).find((el) => el.props.title === "Adicionar ao Carrinho")!.props.onClick(event());
     expect(harness.addToCart).toHaveBeenCalledWith("other-id", "outro", 1);
   });
   it("não envia uma variante sem estoque e mostra falhas da API", async () => {
@@ -130,5 +136,20 @@ describe("Eventos do catálogo para compra", () => {
     harness.addToCart.mockRejectedValue(new Error("Estoque insuficiente"));
     await button(render(), "Finalizar Compra").props.onClick(event());
     expect(harness.toast).toHaveBeenCalledWith(expect.objectContaining({ description: "Estoque insuficiente" }));
+  });
+  it("impede outra inclusão se uma mutação começou depois do render", async () => {
+    harness.states = [product("ok", [variant("v")]), null, null, null];
+    const tree = render();
+    harness.isMutating = true;
+    await button(tree, "Finalizar Compra").props.onClick(event());
+    expect(harness.addToCart).not.toHaveBeenCalled();
+    expect(button(render(), "Adicionando...").props.disabled).toBe(true);
+  });
+  it("orienta conferir o carrinho quando a resposta da inclusão é incerta", async () => {
+    harness.states = [product("ok", [variant("v")]), null, null, null];
+    harness.hasUnresolvedMutation = true;
+    harness.addToCart.mockRejectedValue(new Error("Resultado ainda não confirmado"));
+    await button(render(), "Finalizar Compra").props.onClick(event());
+    expect(harness.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Confira a alteração no carrinho" }));
   });
 });

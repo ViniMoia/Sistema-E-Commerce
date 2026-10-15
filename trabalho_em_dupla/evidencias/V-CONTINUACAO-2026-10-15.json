@@ -1,0 +1,80 @@
+{
+  "recordedAt": "2026-10-15T18:26:25.483Z",
+  "baseline": "8632514f03bded8ca0143f0ac053fa8ceadade30",
+  "readOnlyMain": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "baselineCI": {
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/38771509109",
+    "conclusion": "failure",
+    "reason": "Home cart mock ignored selectors and lacked getState"
+  },
+  "localChecks": {
+    "unitTestsPassed": 774,
+    "unitFilesPassed": 88,
+    "homeTestsPassed": 9,
+    "typecheck": "passed",
+    "changedFilesLintErrors": 0,
+    "changedFilesLintExistingWarnings": 1,
+    "standaloneTestsPassed": 80,
+    "standaloneSuitesPassed": 6
+  },
+  "standalone": {
+    "startedAt": "2026-10-15T18:21:09.381Z",
+    "finishedAt": "2026-10-15T18:25:56.400Z",
+    "runId": "f37441d84570fbda58bba2846fc04a14",
+    "database": "ecommerce_test_f37441d84570fbda58bba2846fc04a14",
+    "node": "v22.23.3",
+    "sourceSHA256": "284e8c8628a037f4efc60d9c4098a23a4cc4a9174e9c268a675bdfe06db5ea53",
+    "testsSHA256": "e41f36dbd0e0e6170894edb00cc14cb213b97ccb87d3daa48d9d60ea0494b729",
+    "scriptsSHA256": "6a703accf93430f568a4545068fd5ac81cb656944df25775da7ed504b2267864",
+    "buildId": "VBG-_bznuFnJfwdIzTzQn",
+    "runtime": "standalone/server.js",
+    "packageManifest": {
+      "sha256": "a31bd352dae2ccd7d44355f3dfacbd7f859bd476cbc352975e6c82db7af526db",
+      "files": 2447,
+      "bytes": 74488470,
+      "buildId": "VBG-_bznuFnJfwdIzTzQn"
+    },
+    "platform": "win32",
+    "architecture": "x64",
+    "instances": 2,
+    "postgres": 16,
+    "files": [
+      "tests/integration/payment-confirmation-browser.test.ts",
+      "tests/integration/checkout-browser-state.test.ts",
+      "tests/integration/cart-drawer-browser.test.ts",
+      "tests/integration/payment-durable-execution.test.ts",
+      "tests/production"
+    ],
+    "capacity": false,
+    "externalProviders": false,
+    "productionReady": false
+  },
+  "fileSHA256": {
+    "app/checkout/confirmation/page.tsx": "27b19e7f693c0e9691dab157f57aa222aee5a29df06ae47c7f37b1a9b62cbfe7",
+    "components/checkout/PaymentCopyButton.tsx": "3fbaad7fdf006eedd94cf909f12daaa3efcd29427f0e853ed9f7e54cad9aee68",
+    "tests/unit/home-variant-purchase.test.ts": "a251de087b327f14172a876f100d960c50b73c972bdf15789d418025d155adc6",
+    "tests/integration/payment-confirmation-browser.test.ts": "b5145752253939ba86db1e9e1a4d5e494fb559994db98f119e5d735305222b72",
+    "scripts/lib/homologation-suites.mjs": "d93afaf2eaf062d80f6e0a9ca5c2303da89ca18418003ccfa03effd473fa0f29"
+  },
+  "externalChecks": {
+    "previewHTTPStatus": 302,
+    "redirectHost": "vercel.com",
+    "ecommerceCloudProjectConfirmed": false
+  },
+  "financialReview": {
+    "source": "Replanejamento sections 30,32,33,34,35 at baseline",
+    "kind": "documentary review; isolated regression of received implementation",
+    "completedScenariosReported": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "preservedPendingOrder": 8,
+    "externalExpiryBRT": "2026-10-17T00:00:00-03:00",
+    "reservationEligibilityBRT": "2026-10-20T00:00:00-03:00",
+    "currentRemoteStateIndependentlyVerified": false
+  },
+  "remoteFinancialOperationsExecuted": false,
+  "productionApproved": false
+}

@@ -1,5 +1,7 @@
 # Tarefas e status dos desenvolvedores — Vanderlei e Leno
 
+> **Situação vigente em 15/10:** [continuação de Vanderlei](EXECUCAO_VANDERLEI_2026-10-15.md) e [pendências atuais](PENDENCIAS_VANDERLEI.md) prevalecem sobre os checkpoints históricos abaixo. Leno encerrou #4 (estorno integral 12x), #6 (boleto pago/e-mail) e #7 (boleto não pago cancelado); #5 já estava encerrado. #8 permanece aguardando os marcos de 17/10 e 20/10. Vanderlei corrigiu o bloqueio da CI nos mocks da home e a cópia de instruções de pagamento, com novos testes de confirmação. Cloud Run/Preview, débito, devolução de boleto pago, dados e aceites finais continuam pendentes. Main e bancos remotos preservados.
+
 > **Atualização posterior em 14/10:** consultar [execução atual de Vanderlei](EXECUCAO_VANDERLEI_2026-10-14.md) e [pendências atualizadas](PENDENCIAS_VANDERLEI.md). O pacote `6f4fa75` foi publicado e teve CI aprovada; a revisão posterior `576ad89` falhou no lint, com causa corrigida nesta continuação. Leno entregou o catálogo de homologação e o estorno integral de crédito 1x do #5, com pontos e produto não enviado. As tabelas abaixo preservam o checkpoint anterior e não negam essas entregas posteriores. Nenhum desses resultados encerra os gates de produção.
 
 **Atualização documental:** 14/10/2026. **Última rodada de validação registrada:** 13/10/2026.
@@ -12,7 +14,7 @@ Este é o quadro consolidado de acompanhamento. Reúne as atribuições do plano
 
 **Situação geral:** a implementação e a regressão local de Vanderlei estão entregues, com infraestrutura preparada para revisão. Há entregas de código e ensaios de Leno, mas dados, métodos financeiros e aceite externo ainda têm pendências. **Produção não está liberada; WF-18 e WF-19 permanecem abertos e a implantação/observação de WF-20 não foi executada.**
 
-As alterações de Vanderlei permanecem locais, sem novo commit, push ou execução da CI no GitHub. A base recebida de Leno e a validação do candidato local são identificadas nos relatórios; publicação de código não equivale a aprovação do ambiente implantado.
+O checkpoint de 13/10 abaixo precede a publicação de Vanderlei: `bfaf1a1` foi enviado e teve CI completa aprovada em 14/10. A revisão recebida `8632514` falhou nos unitários; a causa foi corrigida nesta continuação e a nova revisão exige CI própria. Publicação de código não equivale a aprovação do ambiente implantado.
 
 ## 1. Responsabilidades e escopo vigente
 

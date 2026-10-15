@@ -1,12 +1,28 @@
 # O que falta para Vanderlei
 
-**Atualizado em:** 14/10/2026.
+**Atualizado em:** 15/10/2026.
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
 
-## Atualização da execução de Vanderlei — revisão 576ad89 + correções locais
+## Situação vigente em 15/10 — base 8632514
 
-Esta seção prevalece sobre as listas históricas abaixo. Relatório: [execução e parecer por frente](EXECUCAO_VANDERLEI_2026-10-14.md).
+Esta seção prevalece sobre os registros históricos abaixo. [Relatório desta continuação](EXECUCAO_VANDERLEI_2026-10-15.md).
+
+- [x] Incorporar as entregas publicadas por Leno até `8632514`, preservando main e pedidos encerrados.
+- [x] Rever os encerramentos documentados: #4 estorno integral 12x, #5 estorno 1x, #6 boleto pago/e-mail e #7 boleto cancelado sem pagamento. Não repetir essas operações.
+- [x] Identificar e corrigir a falha atual da CI nos mocks da home, preservando as guardas de mutação/recuperação do carrinho; 774 unitários aprovados.
+- [x] Corrigir falso sucesso ao copiar PIX/boleto, tratar clipboard ausente/recusado, invalidar respostas tardias e tornar o botão do boleto acessível.
+- [x] Adicionar regressões da confirmação em desktop/mobile emulado: fuso, retorno não autoritativo, reload, falha de consulta, vencimento, cancelamento e estorno.
+- [ ] Obter CI da nova revisão. A execução de `bfaf1a1` foi aprovada em 14/10; a de `8632514` falhou e não deve ser marcada como aprovada.
+- [ ] Concluir V-06/V-07: projeto Cloud Run ainda não identificado; Preview continua protegido (HTTP 302 Vercel). Entrada solicitada ao responsável.
+- [ ] Validar catálogo efetivo, frete, Admin, domínio e integrações no candidato externo.
+- [ ] Integrar débito após contrato de Leno e concluir critérios financeiros/de dados/aceites conjuntos.
+
+**Preservar #8:** limite externo em 17/10 às 00:00 BRT; elegibilidade da reserva em 20/10 às 00:00 BRT. Não antecipar prazos nem executar cancelamento/pagamento manual. Testes isolados não encerram essa prova remota. Estorno parcelado #4 deixou de ser pendência; PIX #3, débito, devolução de boleto pago e devolução física continuam separados.
+
+## Histórico da execução de 14/10 — revisão 576ad89 + correções
+
+Registro histórico; a situação de 15/10 acima prevalece. Relatório anterior: [execução e parecer por frente](EXECUCAO_VANDERLEI_2026-10-14.md).
 
 - [x] Consultar `origin/main` e reutilizar as decisões já registradas, sem alterar a origem ou reaplicar cargas.
 - [x] Conferir a CI da revisão atual: `576ad89` falhou no lint do importador; a variável reservada foi renomeada sem mudar a lógica de dados. A aprovação histórica de `6f4fa75` não aprova essa revisão.

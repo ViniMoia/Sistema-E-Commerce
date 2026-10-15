@@ -5,7 +5,7 @@ export const homologationSuites = [
   'order-transition-atomicity', 'inventory-admin-integrity', 'inventory-admin-browser', 'cart-mutation-atomicity',
   'loyalty-lot-accounting', 'auth-eligibility-atomicity', 'freight-authority',
   'payment-plan-authority', 'checkout-intent-authority', 'payment-durable-execution',
-  'checkout-client-boundaries', 'checkout-browser-state', 'order-fulfillment-atomicity',
+  'checkout-client-boundaries', 'checkout-browser-state', 'payment-confirmation-browser', 'order-fulfillment-atomicity',
   'order-fulfillment-browser', 'customer-financial-metrics',
   'customer-financial-metrics-browser', 'legacy-commerce-compatibility',
   'cart-drawer-browser', 'registration-browser', 'storefront-readiness-browser', 'catalog-navigation-browser',
