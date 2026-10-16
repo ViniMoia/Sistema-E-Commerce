@@ -45,6 +45,35 @@ function isValidConfiguredHost(rawHost: string): boolean {
 
 const TRUSTED_FORWARDING_PROVIDERS = new Set(["vercel", "cloudflare", "generic"]);
 
+/** Server-owned, exact host -> store ID aliases for parallel hosting.
+ * An alias never changes the persisted domain or the canonical origin of links.
+ * Invalid configuration cannot become a wildcard/default tenant.
+ */
+export function getTenantAliasId(
+  host: string,
+  configuration = process.env.TENANT_HOST_ALIASES,
+): string | null {
+  const cleanHost = normalizeHost(host);
+  if (!cleanHost || !configuration || configuration.length > 8192) return null;
+  try {
+    const aliases: unknown = JSON.parse(configuration);
+    if (!aliases || typeof aliases !== "object" || Array.isArray(aliases)) return null;
+    const entries = Object.entries(aliases);
+    if (entries.length > 32) return null;
+    const normalized = new Map<string, string>();
+    for (const [alias, id] of entries) {
+      if (!isValidConfiguredHost(alias) || !alias.includes(".") ||
+        typeof id !== "string" || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) return null;
+      const key = normalizeHost(alias);
+      if (normalized.has(key)) return null;
+      normalized.set(key, id);
+    }
+    return normalized.get(cleanHost) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * X-Forwarded-Host só cruza a trust boundary quando o proxy foi declarado.
  * Valores múltiplos/ambíguos falham fechados em vez de serem sanitizados.
@@ -151,11 +180,20 @@ const getCachedLojaBySlug = unstable_cache(
   }
 );
 
+const getCachedLojaById = unstable_cache(
+  async (id: string) => prisma.loja.findUnique({
+    where: { id },
+    select: TENANT_SELECT_FIELDS,
+  }),
+  ["tenant-by-explicit-host-alias"],
+  { revalidate: 300, tags: ["tenant-settings"] }
+);
+
 /**
  * Resolve o tenant ativo a partir dos cabeçalhos HTTP da requisição.
  * COMPORTAMENTO FAIL-CLOSED (Finding TEN-003):
  * - Em desenvolvimento local (localhost/127.0.0.1), permite fallback para DEFAULT_LOJA_SLUG.
- * - Em produção, resolve exclusivamente por subdomínio da plataforma, Vercel ou customDomain verificado.
+ * - Em produção, resolve por subdomínio da plataforma, Vercel, customDomain ou alias exato configurado no servidor.
  * - Se o domínio/host não corresponder a nenhuma loja cadastrada, retorna null (404 Not Found),
  *   proibindo categoricamente qualquer fallback permissivo para primeira linha aleatória do banco.
  */
@@ -224,7 +262,12 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
 
     // 4. Domínio personalizado cadastrado no banco ou slug direto
     const loja = await getCachedLojaBySlugOrDomain(cleanHost);
-    return loja as TenantContext | null;
+    if (loja) return loja as TenantContext;
+
+    // 5. Hosts adicionais explicitamente autorizados neste runtime.
+    // Um domínio já cadastrado sempre tem precedência sobre o alias.
+    const aliasId = getTenantAliasId(cleanHost);
+    return aliasId ? await getCachedLojaById(aliasId) as TenantContext | null : null;
   } catch (error: any) {
     if (
       error?.digest === "DYNAMIC_SERVER_USAGE" ||

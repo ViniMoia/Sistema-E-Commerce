@@ -1,5 +1,40 @@
 # Cloud Run — pacote de preparação do Vanderlei
 
+## Transição com Vercel e Cloud Run simultâneos
+
+`TENANT_HOST_ALIASES` é uma variável somente do servidor: um objeto JSON de hosts
+exatos para IDs de lojas existentes. Exemplo de formato:
+
+```json
+{"servico-exemplo.run.app":"00000000-0000-0000-0000-000000000001"}
+```
+
+Configure apenas os endereços efetivamente atribuídos ao serviço, com o ID da
+mesma loja de homologação. Não usar curingas, URLs completas, portas ou um
+fallback para qualquer `*.run.app`. Configuração ausente, inválida ou loja
+inexistente não autoriza um host. Domínios já cadastrados têm precedência.
+O resolver mantém a política existente de confiança em `X-Forwarded-Host`;
+não habilitar proxy genérico para fazer o alias funcionar.
+
+Esse mapeamento não altera `customDomain`, schema ou migrations. O domínio da
+Vercel e a origem canônica de links continuam como estão durante a transição.
+Sem essa variável na Vercel, seu comportamento permanece o existente. URLs
+Cloud Run não autorizadas continuam sem acesso a uma loja.
+
+Atualize somente as variáveis necessárias no serviço existente, preservando os
+bindings de segredos. Valide catálogo, imagens, autenticação e Admin com
+`CHECKOUT_PAUSED=true`. `PAYMENT_REMOTE_ENABLED`, `PAYMENT_WORKER_ENABLED` e
+`PAYMENT_EXPIRATION_ENABLED` ficam desligados no Cloud Run enquanto Vercel mantém
+o destino de webhook e o processamento. Não criar um segundo agendador ativo.
+O fornecimento de uma chave Sandbox não é autorização para consumir filas.
+
+Transferência posterior exige coordenação com Leno: inventariar agendas e
+invocações em voo, pausar o acionamento anterior, observar leases, transferir o
+webhook com reentrega preservada e habilitar somente o novo acionador. Só então
+liberar compras de teste, validar efeitos e encerrar a Vercel de homologação.
+
+Testes de aliases: `npx vitest run tests/unit/tenant-host-aliases.test.ts`.
+
 Este pacote gera arquivos locais e não provisiona recursos. Produção exige G1–G8,
 aceite de dados/financeiro de Leno e janela coordenada. O projeto selecionado no
 gcloud não é considerado destino autorizado por este material.
