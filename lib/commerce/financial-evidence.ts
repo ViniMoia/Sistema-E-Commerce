@@ -35,7 +35,7 @@ instruments AS (
         (o."checkoutIntentID" IS NULL AND f."orderId" IS NULL) AS unverified,
         COALESCE(f.invalid,false) OR COALESCE(f.gross,0)>COALESCE(o."financialTotal",o.total) OR EXISTS (
           SELECT 1 FROM "PaymentAttempt" a WHERE a."orderId"=o.id AND
-            (a.status IN ('SUBMITTING','UNKNOWN') OR a."failureCode" ~ 'MISMATCH|CONFLICT|UNRESOLVED|EXTERNAL_STATE_REVIEW|PARTIAL_REVERSAL_REVIEW|RECONCILIATION_OVERDUE|REVERSAL_OVERDUE')
+            (a.status IN ('SUBMITTING','UNKNOWN') OR a."failureCode" ~ 'MISMATCH|CONFLICT|UNRESOLVED|EXTERNAL_STATE_REVIEW|PARTIAL_REVERSAL_REVIEW|REFUND_CANCELLED_REVIEW|RECONCILIATION_OVERDUE|REVERSAL_OVERDUE')
         ) AS review
       FROM scope o LEFT JOIN funds f ON f."orderId"=o.id
     )`;

@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Conferência financeira de homologação em 16/10, 17:42 BRT:** consulta somente leitura confirmou oito pedidos/34 fatos e ausência da tabela da migration de classificação naquele instante. Projeção isolada do dashboard e cálculo independente fecharam R$ 542,67 reconhecidos, R$ 124,75 liquidados, R$ 417,92 estornados e R$ 124,75 reconhecidos após estornos. Identificada e corrigida a falta de alerta para `PAYMENT_REFUND_CANCELLED_REVIEW` do #3; exige usar o novo head do PR #8, posterior a `eff10bf`. Detalhes e limites na seção 56; ainda não é conferência da tela publicada.
+
 **Integração do push de Vanderlei em 16/10:** recebido `93e6459`, com aliases de domínio (`8c7f865`), logout no host público (`896dc56`) e evidências do Cloud Run. Integrado sem conflitos à candidata do dashboard no PR #8; a lacuna de código mencionada na seção 54 foi resolvida. Migration e conferência da revisão integrada no destino continuam pendentes. Resultado da validação na seção 55.
 
 **Preparação da publicação em 16/10:** candidata organizada na branch de revisão `revisao/dashboard-financeiro-20261016`, baseada em `17366e8`. O remoto `origin/homologacao_teste` continua nessa base após novo fetch; a revisão Cloud Run informada por Vanderlei (`continental-hml-896dc56-logout`) não foi localizada no histórico Git disponível. Antes de promover a candidata, incorporar/preservar o trabalho dele e comprovar a migration no banco de homologação. Sequência e conferência na seção 54. Preparar/enviar código para revisão não comprova implantação.
@@ -1623,3 +1625,31 @@ Integrado por merge, sem conflitos e sem reescrever histórico, à branch `revis
 **Infraestrutura informada por Vanderlei:** [V-ACIONADORES-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/V-ACIONADORES-2026-10-16.json) registra em 16/10 às 19:56:50 UTC ausência de Cloud Run Jobs no levantamento, API Cloud Scheduler desabilitada e listagem de agendas não concluída. Revisão `continental-hml-896dc56-logout` com 100% do tráfego, manutenção desligada, checkout pausado e `PAYMENT_REMOTE_ENABLED`, `PAYMENT_WORKER_ENABLED`, `PAYMENT_EXPIRATION_ENABLED` em `false`. Isso é evidência fornecida por Vanderlei, não nova consulta independente nem autorização para habilitar consumidores. Inventário de acionadores ainda incompleto segundo a própria evidência.
 
 **Próximo passo de implantação:** revisar o novo head do [PR #8](https://github.com/ViniMoia/Sistema-E-Commerce/pull/8), conferir os gates e executar a sequência 54.1–54.6 usando a revisão integrada. Vanderlei deve comprovar a migration `20261016193000_order_reporting_exclusion` no destino de homologação antes de direcionar tráfego à nova aplicação e registrar revisão/digest e conferência autenticada do dashboard/logout. Não reaplicar o classificador de clone no banco compartilhado. Publicar código não classifica pedidos automaticamente nem transfere o webhook/consumidor financeiro. Nenhuma escrita em banco compartilhado, alteração da main, merge do PR ou promoção de tráfego ocorreu nesta integração.
+
+## 56. Conferência dos valores e evidências reais de homologação — 16/10/2026
+
+Consulta às **17:42:15 BRT**, transação `RepeatableRead` e `transaction_read_only=on`, conexão fixa de homologação validada por host/banco, loja e identidade do #6. Nesta cópia, `.env.homologacao` não contém as conexões; foi usada a conexão aprovada de `.env.local`, sem carregar a origem/main. Nenhuma credencial foi exposta. O banco contém oito pedidos e 34 fatos financeiros; `OrderReportingExclusion` ainda não existe no snapshot, e não há registro dessa migration aplicada. Nenhuma DDL/DML ou chamada ao Asaas foi executada.
+
+Para adiantar a nossa conferência, os campos financeiros mínimos foram reproduzidos em PostgreSQL descartável, com classificação vazia explicitamente assumida. Executada a consulta real da candidata transpilada localmente e comparados os totais a uma apuração independente em centavos por instrumento. Trata-se de projeção financeira, não restauração integral, prova de deployment ou leitura do dashboard remoto. Evidência sanitizada: [L-DASHBOARD-CONFERENCIA-HML-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-DASHBOARD-CONFERENCIA-HML-2026-10-16.json). Snapshot técnico privado e scripts da conferência ficam em `artifacts/dashboard-review/`, ignorados pelo Git.
+
+| Pedido | Reconhecido bruto | Liquidação registrada | Estorno confirmado | Reconhecido após estornos |
+|---|---:|---:|---:|---:|
+| #1 PIX | R$ 24,95 | R$ 24,95 | R$ 0,00 | R$ 24,95 |
+| #2 PIX cancelado sem pagamento | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| #3 PIX, devolução em revisão | R$ 49,90 | R$ 49,90 | R$ 0,00 | R$ 49,90 |
+| #4 crédito 12x | R$ 360,72 | R$ 0,00 | R$ 360,72 | R$ 0,00 |
+| #5 crédito 1x | R$ 57,20 | R$ 0,00 | R$ 57,20 | R$ 0,00 |
+| #6 boleto pago | R$ 49,90 | R$ 49,90 | R$ 0,00 | R$ 49,90 |
+| #7 boleto cancelado sem pagamento | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| #8 boleto pendente | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| **Total** | **R$ 542,67** | **R$ 124,75** | **R$ 417,92** | **R$ 124,75** |
+
+Mês e histórico coincidem nesse recorte; os quatro valores de hoje (16/10, Brasília) são zero. #4/#5 têm autorização e devolução, sem fato `SETTLED`: não inventar liquidação por causa do status anterior ou do estorno. Os dois valores finais de R$ 124,75 coincidem nesta base, mas representam medidas diferentes e não comprovam saldo bancário disponível.
+
+**Achado e correção:** #3 mantém tentativa `REFUND_PENDING` com `PAYMENT_REFUND_CANCELLED_REVIEW`, mas a expressão de revisão compartilhada não incluía esse código. Foi acrescentado ao alerta, preservando R$ 49,90 reconhecidos/liquidados e zero estorno confirmado. Dashboard e clientes agora sinalizam cobertura **parcial, um pedido em revisão**. Não foi reaberto o estorno, alterado o pedido ou consultado o provedor. A correção é posterior a `eff10bf`; Vanderlei deve usar o novo head do PR #8.
+
+**Outros valores esperados:** pendente R$ 49,90 (#8); cancelados sem reconhecimento R$ 99,80 (#2/#7); cinco pedidos reconhecidos entre oito (63% arredondados); ticket após estornos R$ 24,95. Composição histórica antes dos estornos: produtos R$ 419,15, frete R$ 12,30, encargos R$ 61,32 e R$ 49,90 não alocados enquanto #3 está em revisão. A soma é R$ 542,67. Não são valores líquidos de taxas nem lucro. Nenhum pedido foi excluído apenas por ser um ensaio Sandbox; exclusão exige classificação explícita, distinta dos 24 legados ensaiados no clone da origem.
+
+**Validação da correção:** nove testes de integração do dashboard, 16 regressões dos clientes e um navegador desktop/celular aprovados (run `ca8beccbc1a0686d29d9c3c2a17b8bfa`). Incluída regressão do estorno cancelado no provedor, exigindo cobertura parcial e preservação dos valores nos dois relatórios. Projeção real `cfeb9859981d1c43d7bd0fdd0ab786ff` fechou com a apuração independente.
+
+**Conferência remota restante:** após migration e publicação da revisão corrigida, capturar baseline fresco e comparar o painel autenticado na mesma loja, data e escopo, após o cache de até 60 segundos. Conferir aviso de cobertura parcial e os quatro indicadores por período. Se houver fatos/classificações novos, recalcular antes de comparar; não alterar dados para reproduzir os números acima. O código e as evidências já permitem adiantar nossa análise, mas não encerram a validação da revisão publicada nem a pendência operacional do #3.

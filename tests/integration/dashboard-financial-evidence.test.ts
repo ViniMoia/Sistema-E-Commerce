@@ -90,6 +90,18 @@ describe('dashboard canonical financial evidence and registration periods', () =
     await prisma.paymentAttempt.update({ where: { id: other.attempt.id }, data: { status: 'UNKNOWN' } });
     expect(await read(f)).toMatchObject({ financialReviewOrders: 2, allTime: { recognizedGross: 100, settledGross: 0 } });
   });
+  it('cancelled provider refund requires review without inventing a financial reversal', async () => {
+    const f = await createFulfillmentFixture(), c = await contract(f);
+    await fact(c,'AUTHORIZED',100); await fact(c,'SETTLED',100);
+    await prisma.paymentAttempt.update({ where: { id: c.attempt.id }, data: {
+      status: 'REFUND_PENDING', failureCode: 'PAYMENT_REFUND_CANCELLED_REVIEW',
+    } });
+    expect(await read(f)).toMatchObject({ coverage: 'PARTIAL', financialReviewOrders: 1,
+      allTime: { recognizedGross: 100, settledGross: 100, confirmedRefunds: 0, netRecognized: 100 },
+      composition: { unallocatedRecognized: 100, merchandiseAfterDiscount: 0 } });
+    expect((await readCustomerFinancialSummaries(prisma,f.lojaID,[f.customer.id])).get(f.customer.id))
+      .toMatchObject({ coverage: 'PARTIAL', financialReviewOrders: 1, recognizedGross: 100, confirmedRefunds: 0, totalSpent: 100 });
+  });
   it('test classification excludes facts, foreign tenants are isolated and guest evidence is included', async () => {
     const f = await createFulfillmentFixture(), c = await contract(f), other = await createFulfillmentFixture();
     await fact(c,'AUTHORIZED',100);
