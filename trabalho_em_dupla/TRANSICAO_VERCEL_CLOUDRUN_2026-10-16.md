@@ -1,5 +1,10 @@
 # Transição Vercel / Cloud Run — 16/10/2026
 
+> Atualização posterior: a candidata integrada `eff10bf` foi publicada e validada
+> com 0% de tráfego, após backup restaurado e aplicação da migration estrutural.
+> A revisão abaixo continua com 100% do tráfego. Consulte a
+> [validação do dashboard](VALIDACAO_DASHBOARD_CLOUDRUN_2026-10-16.md).
+
 O Cloud Run agora resolve a mesma loja de homologação sem substituir o domínio
 da Vercel. Home e catálogo estão acessíveis; compras seguem pausadas. A validação
 com contas temporárias de cliente/Admin foi concluída, inclusive no navegador
