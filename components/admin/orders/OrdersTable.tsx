@@ -5,6 +5,7 @@ import { OrderStatus } from '@prisma/client'
 import { Eye, Truck, Store, Clock, CheckCircle2, XCircle, Package } from 'lucide-react'
 
 export interface OrderRow {
+  isTest?: boolean
   id: string
   orderNumber: number
   createdAt: string
@@ -89,6 +90,7 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                       <span className="font-bold text-sm text-white font-mono group-hover:text-catalog-gold transition-colors block">
                         #{order.orderNumber}
                       </span>
+                      {order.isTest && <span className="text-xs text-catalog-gold">Teste · fora dos indicadores</span>}
                       <span className="text-[11px] text-catalog-muted font-mono mt-0.5 block">
                         {formattedDate}
                       </span>

@@ -377,6 +377,7 @@ model Order {
   paymentAttempts    PaymentAttempt[]
   reservations       InventoryReservation[]
   financialFacts     FinancialFact[]
+  reportingExclusion OrderReportingExclusion?
 
   @@index([syncStatus])
   @@index([nuvemshopOrderId])
@@ -390,6 +391,18 @@ model Order {
   @@index([lojaID, userID])
   @@unique([checkoutIntentID, lojaID])
   @@unique([sourceCartID, lojaID])
+}
+
+// Explicit, audited reporting classification. Never inferred from legacy fields.
+model OrderReportingExclusion {
+  orderId             String   @id
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reason              String
+  classificationBatch String
+  classifiedBy        String
+  classifiedAt        DateTime @default(now())
+
+  @@index([classificationBatch])
 }
 
 model OrderItem {

@@ -17,6 +17,7 @@ import { orderOperationDetailSchema } from '@/lib/validators/order.validators'
 import { getTrackingInfo } from '@/lib/freight/tracking-url'
 
 export interface OrderDetail {
+  reportingExclusion?: { reason: string; classifiedAt: string } | null
   id: string
   orderNumber: number
   status: OrderStatus
@@ -243,6 +244,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   <div className="flex items-center gap-3 mb-1">
                     <h2 className="text-2xl font-bold tracking-tight text-white uppercase font-mono">
                       Pedido #{order.orderNumber}
+                      {order.reportingExclusion && <span className="block text-xs text-catalog-gold">Pedido de teste · fora dos indicadores comerciais</span>}
                     </h2>
                     <Badge status={order.status} />
                   </div>

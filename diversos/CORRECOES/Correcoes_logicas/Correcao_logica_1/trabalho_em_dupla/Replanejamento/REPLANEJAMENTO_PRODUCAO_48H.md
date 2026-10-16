@@ -1,5 +1,13 @@
 # Replanejamento para produção em até 48 horas
 
+**Conferência financeira de homologação em 16/10, 17:42 BRT:** consulta somente leitura confirmou oito pedidos/34 fatos e ausência da tabela da migration de classificação naquele instante. Projeção isolada do dashboard e cálculo independente fecharam R$ 542,67 reconhecidos, R$ 124,75 liquidados, R$ 417,92 estornados e R$ 124,75 reconhecidos após estornos. Identificada e corrigida a falta de alerta para `PAYMENT_REFUND_CANCELLED_REVIEW` do #3; exige usar o novo head do PR #8, posterior a `eff10bf`. Detalhes e limites na seção 56; ainda não é conferência da tela publicada.
+
+**Integração do push de Vanderlei em 16/10:** recebido `93e6459`, com aliases de domínio (`8c7f865`), logout no host público (`896dc56`) e evidências do Cloud Run. Integrado sem conflitos à candidata do dashboard no PR #8; a lacuna de código mencionada na seção 54 foi resolvida. Migration e conferência da revisão integrada no destino continuam pendentes. Resultado da validação na seção 55.
+
+**Preparação da publicação em 16/10:** candidata organizada na branch de revisão `revisao/dashboard-financeiro-20261016`, baseada em `17366e8`. O remoto `origin/homologacao_teste` continua nessa base após novo fetch; a revisão Cloud Run informada por Vanderlei (`continental-hml-896dc56-logout`) não foi localizada no histórico Git disponível. Antes de promover a candidata, incorporar/preservar o trabalho dele e comprovar a migration no banco de homologação. Sequência e conferência na seção 54. Preparar/enviar código para revisão não comprova implantação.
+
+**Atualização de 16/10 — interpretação financeira:** implementada localmente a apuração compartilhada entre dashboard e métricas dos clientes, separando reconhecimento, liquidação bruta e estornos, sem duplicar autorização/liquidação. Períodos pela data de registro dos fatos, cobertura parcial explícita e composição de produtos/frete/encargos. Seção 53. A classificação dos 24 testes e a correção do zero da fidelidade permanecem conforme seção 52. Nenhuma publicação, classificação ou migration aplicada a banco compartilhado nesta etapa. A transferência financeira para Cloud Run aguarda o levantamento de Vanderlei; não reativar o acionador antigo por causa desta correção de relatório.
+
 **Retomada da revisão de compra observada no Preview:** após as instruções para retirar a pausa e fazer redeploy, imagem enviada pelo operador mostra proposta PIX/retirada de R$ 49,90 e botão de confirmação. Fechados os checkpoints de sondas bloqueadas, aviso visual, recuperação do #7 e retorno da proposta. Não comprova conclusão/replay de compra, continuidade financeira durante pausa ou congelamento dos demais escritores. Evidências e limites na seção 43.
 
 **Pausa observada no Preview — evidência enviada pelo operador:** três POSTs com contrato vazio retornaram 503/`CHECKOUT_PAUSED`/`no-store`; GET de recuperação do pedido #7 retornou 200 com identidade verificada. Primeiro checkpoint remoto aprovado nesse escopo. Ainda faltam proposta válida, aviso visual, continuidade financeira, cobertura das revisões e reabertura. Registro na seção 43; não equivale a congelamento geral do banco.
@@ -1401,3 +1409,275 @@ O operador autorizou publicar a preparação da seção 44 e conferir deployment
 Escopo da candidata: manutenção completa, testes/CI, defaults de exemplo, runbooks e evidências agregadas das seções 43–44. Nenhum segredo, dump privado ou configuração real integra o commit. Os resultados locais da seção 44 continuam válidos para este código; esta etapa não os apresenta como CI remota. O JSON de evidência registra o estado no momento do ensaio, quando as alterações ainda não estavam publicadas.
 
 A publicação não ativa `APP_MAINTENANCE_MODE`: ausente/`false` mantém funcionamento normal. Não alterar flags remotas, main, bancos compartilhados ou comandos financeiros. Conferir os resultados de Vercel/GitHub vinculados ao SHA publicado; status de build não comprova navegação autenticada ou reentrega de eventos. A ativação remota do modo completo continua dependente da coordenação descrita na seção 44.
+
+### Resultado da publicação
+
+Publicado `17366e8b5c2a44bd2c0157a159a371886b3126d1` em `homologacao_teste`. Vercel: `success`, deployment Preview `7104520978`. [CI 38808225101](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/38808225101): `completed/success`, conferido pela API GitHub antes de iniciar a próxima etapa. O acesso anônimo ao deployment retornou 302 para login Vercel; não foi apresentado como navegação autenticada. Nenhuma flag remota foi alterada.
+
+## 46. Preparação do ensaio de reentrega de webhook — 15/10/2026
+
+Operador autorizou iniciar após aprovação da CI. Consultado o receptor da main de referência, que não deve ser confundido com o processamento durável da candidata. As leituras efetivas foram exclusivamente no banco de homologação, com host fixo validado e transações `READ ONLY / REPEATABLE READ`. Primeira verificação da ferramenta recusou a precedência de configuração inadequada antes da conexão; corrigida ordem de carregamento para resolver `.env.local` antes de importar Prisma. Main e seu banco não receberam conexão ou alteração nesta etapa.
+
+Selecionado como **candidato** o evento `PAYMENT_RECEIVED` do pedido #6, `evt_d26e303b238e509335ac9ba210e51b0f&22120169`, único registro correlacionado na inbox, `COMPLETED` com uma tentativa de processamento. Pedido `PAID`, versão 1, R$ 49,90, 24 pontos creditados; tentativa `APPROVED`, sem operações de reversão. O #7 não possui evento na inbox e não foi selecionado. #8 preservado.
+
+Criado `scripts/homologation/webhook-recovery-baseline.mjs`: coleta e compara contagens/hashes de 17 recortes de pedido/estoque/pontos/efeitos e do registro do #8. Não envia webhooks nem processa filas. Baseline privado agregado salvo em `artifacts/webhook-recovery/baseline-order-6.json`; comparação de controle, sem evento intermediário, terminou `unchanged=true`, `providerRedeliveryVerified=false`, em 15/10 às 22:47 BRT (16/10 01:47 UTC). **Sete testes do comparador aprovados**. O baseline deverá ser atualizado antes do ensaio efetivo se houver intervalo/atividade concorrente.
+
+Procedimento detalhado incorporado ao [runbook de implantação](../../../../../AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md). Fontes oficiais consultadas: logs de entrega acessíveis pela interface web e idempotência por ID. Não há acesso autenticado à interface Asaas nesta sessão. Solicitado ao operador conferir estado da fila e existência de reenvio individual; resposta pendente. Não foi presumido botão/API de reenvio nem utilizada a função de remover penalidade como replay.
+
+**Limite da evidência:** replay de evento já concluído testa reconhecimento de duplicata; não prova processamento inicial de evento novo retido. Envio manual de JSON não prova retry automático do provedor. No ensaio real, correlacionar o mesmo ID nos logs de entrega e distinguir 503 da aplicação de bloqueio de acesso Vercel. Não rodar lote financeiro global para um evento já `COMPLETED`.
+
+Manutenção completa continua sem ativação remota; sem compra, confirmação, cancelamento, estorno, reenvio ou processamento novo. Preparação local ainda não publicada. Continuidade financeira, recuperação independente e janela produtiva continuam pendentes.
+
+### Evento confirmado pelo operador e referência anterior ao replay
+
+A imagem do operador confirmou a existência de **Reenviar** nos detalhes dos logs e respostas históricas HTTP 200; não comprovou o estado atual da fila. O primeiro item mostrado era de estorno e não foi usado. Depois, o operador forneceu o evento exato do #6: ID completo acima, `PAYMENT_RECEIVED`, pagamento `pay_blfexx8zkousw431`, referência `0f0a05ff-2a24-4e6f-93ef-be13451388c9`, boleto R$ 49,90, `RECEIVED`, data de criação `2026-10-14 17:35:43`. Não é necessário versionar o payload bruto ou os dados do cliente.
+
+Nova leitura confirmou igualdade dos campos efetivamente aceitos pelo receptor com o payload persistido; evento permanece `COMPLETED`, uma tentativa. Baseline anterior ao reenvio salvo em `artifacts/webhook-recovery/before-provider-replay-2026-10-16T01-52-41-530Z.json` (15/10 22:52:41 BRT), com 17 recortes, uma inbox, um histórico, uma transação/lote de pontos, duas evidências financeiras e três registros de outbox. Nenhuma escrita no banco ou envio de evento.
+
+Próxima ação orientada: **um reenvio manual desse evento pela interface Asaas, com aplicação funcionando e manutenção desligada**. Esperado HTTP 200 com `received=true`, mesmo `eventId` e `status=PROCESSED`; coletar resposta antes de qualquer repetição e comparar com o baseline preservado. Não executar lote financeiro global. Esse primeiro passo prova reconhecimento de duplicata se confirmado; não simula indisponibilidade nem prova retry automático. Resultado do reenvio ainda pendente.
+
+A imagem anterior expôs parâmetro de bypass Vercel. Não copiado para arquivos ou ferramentas; operador orientado a ocultá-lo e coordenar rotação/atualização da integração. Nenhuma credencial foi alterada pelo assistente.
+
+### Retomada do ensaio em 16/10 às 15:05 BRT
+
+Operador autorizou retomar o webhook enquanto Vanderlei resolve o domínio Cloud Run. Captura atual em transação somente leitura confirmou pedido #6 `PAID`, versão 1, R$ 49,90, 24 pontos creditados; evento selecionado `COMPLETED`, uma tentativa, sem operações de reversão. Preservado novo baseline privado `artifacts/webhook-recovery/before-provider-replay-2026-10-16T18-05-23-291Z.json`, com os 17 recortes de comparação; baseline anterior não sobrescrito.
+
+Solicitada confirmação do destino Vercel e do estado ativo da fila no Asaas antes do reenvio, porque a transição para Google Cloud está em andamento. GET anônimo de `/login` no Preview retornou 302, o que não comprova disponibilidade do receptor autenticado nem manutenção desligada. Nenhum webhook enviado, fila processada ou estado financeiro alterado. O resultado do reenvio continua pendente; conferir o mesmo ID e a resposta real antes de comparar o estado posterior. Se houver demora ou mudanças concorrentes, atualizar novamente o baseline.
+
+### Destino e fila confirmados pelo operador — 16/10 às 15:17 BRT
+
+Operador confirmou destino no Preview Vercel, caminho `/api/webhooks/asaas`, e fila de sincronização ativa. Parâmetros secretos da URL não foram registrados. Sua exposição na conversa exige rotação coordenada do segredo de bypass e atualização do destino no Asaas; rotação ainda não executada.
+
+Atualizada a captura somente leitura imediatamente antes da orientação de reenvio: `artifacts/webhook-recovery/before-provider-replay-2026-10-16T18-17-41-004Z.json`. Evento do #6 permanece `COMPLETED`, uma tentativa, sem operação de reversão; 17 recortes preservados para comparação. Próximo passo: operador reenviar uma única vez o evento exato da seção 46 e fornecer horário, HTTP e corpo da resposta sanitizado. Esperado `received=true`, mesmo `eventId`, `status=PROCESSED`. Não executar processador global, rearmar inbox ou confirmar outro pagamento. Reenvio e comparação posterior ainda pendentes.
+
+### Reenvio informado; comparação sem alterações — 16/10 às 15:35 BRT
+
+Operador informou reenvio e apresentou aviso do Asaas de notificação reenviada com sucesso. A imagem não mostra o HTTP nem o conteúdo da resposta da nova entrega; a data original exibida não comprova o horário do reenvio. Confirmação do receptor continua pendente.
+
+Comparação somente leitura com o baseline das 15:17 BRT concluída às 15:35:32 BRT: `unchanged=true`, `changedParts=[]` nos 17 recortes, incluindo estoque, variantes, carteira, movimentos/lotes de pontos, histórico, evidências financeiras, inbox/outbox e pedido #8. Evento segue `COMPLETED`, uma tentativa. Evidência privada: `artifacts/webhook-recovery/after-provider-replay-2026-10-16T18-35-32-114Z.json`. Nenhuma duplicação observada nessa consulta, mas estado inalterado isoladamente não prova recebimento do reenvio. Próxima evidência: HTTP e resposta da nova entrega com o mesmo eventId; esperado 200 / `received=true` / `PROCESSED`. Não reenviar novamente nem executar processador global para obter essa evidência.
+
+### Resposta do reenvio recebida — 16/10/2026
+
+Operador forneceu o conteúdo da resposta: `received=true`, `eventId=evt_d26e303b238e509335ac9ba210e51b0f&22120169`, `status=PROCESSED`. A identidade corresponde ao evento selecionado. Junto do reenvio manual informado na interface Asaas e da comparação independente dos 17 recortes sem alterações, a evidência valida o reconhecimento de duplicata sem efeitos repetidos no recorte do pedido #6. Não é necessário repetir o reenvio ou processar filas.
+
+Limites: o código HTTP e o horário exato da nova tentativa não foram fornecidos; não registrar HTTP 200 como observado. A resposta do provedor foi apresentada pelo operador, sem acesso autenticado do assistente aos logs. Este ensaio não valida retry automático, retenção durante manutenção, evento novo retido ou entrega ao Google Cloud. A rotação coordenada do segredo de bypass continua pendente. O comparador isolado mantém `providerRedeliveryVerified=false` por contrato, pois ele só compara banco; a correlação com o relato e a resposta do operador está registrada aqui.
+
+## 47. Alinhamento da configuração Google Cloud de homologação — 16/10/2026
+
+O operador informou que Vanderlei está preparando o primeiro deployment Google Cloud **para homologação**, tendo este replanejamento como referência. Reenvio do webhook permanece aguardando; não há resultado de replay recebido. Vanderlei relatou conexões Supabase em um arquivo, URL Asaas Sandbox e ausência de `PAYMENT_DEPLOYMENT_ENVIRONMENT`, `ASAAS_ENABLED_LOJA_IDS` e `SUPABASE_URL`. O arquivo de ambiente efetivamente inspecionado por ele não foi identificado: este Markdown não representa a configuração carregada no runtime.
+
+### Conferência desta máquina e das fontes existentes
+
+Fetch confirmou `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`; código e documentos consultados sem alteração. Configuração local examinada em memória, sem imprimir URLs de conexão, chaves ou tokens e sem conectar a bancos/provedores nesta rodada. Tanto `.env` quanto `.env.local` locais apontam a **Neon** nas duas variáveis de banco. A configuração efetiva, com precedência do Next, resolve a homologação já usada nos testes; as declarações financeiras faltantes no `.env` base estão presentes em `.env.local`.
+
+Isso não comprova o conteúdo do arquivo de Vanderlei. As conexões Supabase relatadas divergem da homologação auditada; não tratá-las como equivalentes apenas porque Asaas está em Sandbox. Banco relacional e Storage são serviços independentes nesta configuração: **Neon para PostgreSQL, Supabase para arquivos**. Não foi autorizada migração da base de homologação para Supabase.
+
+Identidade de referência do banco de homologação: host direto `ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech`, database `neondb`, loja `3a82b33c-3646-4272-9a89-80bb1ba327a5`. Fonte: guard de `scripts/import-jt-homologation.mjs`, configuração local efetiva e leituras das seções anteriores. O host contém `sa-east-1`; a região Google Cloud efetiva continua sem confirmação e não deve ser deduzida de `config.example.json`. Confirmar painel/identidade do provedor e região real antes de fechar o registro de implantação. Não enviar strings de conexão pelo chat.
+
+### Valores não secretos definidos para este deployment de homologação
+
+```dotenv
+NODE_ENV=production
+PAYMENT_DEPLOYMENT_ENVIRONMENT=SANDBOX
+ASAAS_ACCOUNT_SCOPE=sandbox-hml
+ASAAS_ENABLED_LOJA_IDS=3a82b33c-3646-4272-9a89-80bb1ba327a5
+ASAAS_API_URL=https://api-sandbox.asaas.com/v3
+CHECKOUT_PAUSED=true
+APP_MAINTENANCE_MODE=false
+```
+
+`NODE_ENV=production` corresponde ao build otimizado; a declaração financeira explícita mantém Sandbox fora da Vercel. Preservar `sandbox-hml` ao usar a mesma conta e seus registros duráveis. A allowlist libera somente a loja indicada e não substitui as demais flags/credenciais/capacidades. Não reutilizar esses valores de Sandbox para o futuro deployment produtivo.
+
+`scripts/render-cloudrun.mjs` já materializa `PAYMENT_DEPLOYMENT_ENVIRONMENT` e `ASAAS_ACCOUNT_SCOPE` a partir da configuração e referencia `ASAAS_ENABLED_LOJA_IDS` por Secret Manager. Conferir o manifesto efetivamente gerado/aplicado, não apenas um `.env` enviado. `DATABASE_URL` e `DIRECT_URL` devem corresponder à mesma base Neon de homologação, com as credenciais apropriadas; nenhuma credencial foi copiada ou transmitida nesta rodada.
+
+### Storage existente e lacuna real
+
+Na candidata, `lib/supabase/storage.ts` resolve **`SUPABASE_URL || NEXT_PUBLIC_SUPABASE_URL`**, junto de **`SUPABASE_SERVICE_ROLE_KEY`** no servidor. Na main de referência, o código herdado usava `NEXT_PUBLIC_SUPABASE_URL`. Localmente, o fallback e a chave estão presentes; presença não valida autenticação, permissões ou isolamento do projeto.
+
+O gerador Cloud Run referencia `SUPABASE_URL` explicitamente como segredo: preencher essa configuração com a URL do projeto de Storage confirmado, e a chave correspondente, pelo mecanismo de segredos. A existência do fallback no código não cria uma versão ausente no Secret Manager. Conferir buckets `products` e `avatars`, permissões e acesso às imagens. `STORAGE_BUCKET_URL` isolada não substitui a URL/chave usadas pelo cliente de upload; não foi encontrada implementação alternativa baseada nela no código executável pesquisado.
+
+### Próximas conferências para Vanderlei
+
+1. Comparar o banco do arquivo/manifestações dele com a identidade Neon acima; confirmar qual arquivo está sendo usado se continuar indicando Supabase. Não trocar destino nem executar migrations nesse banco desconhecido.
+2. Registrar projeto/região/serviço Google Cloud reais e versões de segredos, sem valores no repositório. Selecionar `environment=SANDBOX` e `accountScope=sandbox-hml` no gerador existente.
+3. Confirmar projeto de Storage e a correspondência da chave/buckets; a validação remota ainda está pendente.
+4. Publicar primeiro o serviço de homologação com novas compras pausadas, manutenção completa desligada e capacidades financeiras conforme o manifesto inicial. Não reaplicar esses defaults ao Preview ativo. Manter webhook/consumidores existentes no destino atual até coordenar a transição, evitando duplicar agendadores ou interromper recebimento por trocar URL antes da validação.
+
+Este registro é local e não foi enviado diretamente a Vanderlei. Nenhuma variável de ambiente, recurso Google Cloud, segredo, banco, domínio ou webhook foi alterado. Identidade do banco de Vanderlei, Storage remoto e runtime efetivamente aplicado permanecem por conferir.
+
+## 48. Primeiro acesso ao Google Cloud de homologação — 16/10/2026
+
+Operador informou publicação por Vanderlei em `https://continental-hml-15531616695.southamerica-east1.run.app/`, commit `17366e8`. Esse SHA corresponde à candidata aprovada pela CI registrada na seção 45; a revisão/digest efetivamente em execução no Cloud Run ainda não foram consultados independentemente. A região consta na URL fornecida; o projeto e demais recursos efetivos não foram inventariados nesta sessão.
+
+Cinco GETs anônimos, sem cookies e sem seguir redirects, chegaram à aplicação: `/`, `/login` e `/admin` responderam HTTP **503**, título **Manutenção temporária**; `/api/loja/active` e `/api/payment/capabilities` responderam HTTP **503**, `success=false`, `error=APP_MAINTENANCE`. Todas as respostas apresentaram `private, no-store`. O ingresso está acessível, mas a aplicação está em manutenção completa. A flag efetiva não foi lida: pelo contrato da candidata, `true` ou qualquer valor configurado diferente de `false` produz esse bloqueio.
+
+Registro: [L-CLOUDRUN-INGRESSO-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-CLOUDRUN-INGRESSO-2026-10-16.json). Esses resultados não validam conexão/identidade do banco, Sandbox, Storage, autenticação, configuração de checkout ou saúde financeira; a resposta ocorre antes dessas consultas.
+
+Próximo ajuste pelo operador do novo serviço de homologação: definir **`APP_MAINTENANCE_MODE=false`** literalmente e manter/confirmar **`CHECKOUT_PAUSED=true`**, publicando a revisão e conferindo o tráfego efetivo. Preservar demais controles financeiros, URL de webhook e agendas existentes. Não houve alteração remota pelo assistente. Após o ajuste, repetir conferência pública de loja/capacidades e então fechar as verificações autenticadas e de dados. Não ativar consumidores duplicados nem mover webhook para o serviço em manutenção.
+
+Nenhuma compra, POST financeiro, replay, processamento de fila, upload ou migração foi executado. O replay do pedido #6 continua pendente; seu baseline deverá ser atualizado antes de retomá-lo, considerando o intervalo desde a captura.
+
+## 49. Manutenção retirada; resolução de loja pendente no Cloud Run — 16/10/2026
+
+Após o operador informar a alteração por Vanderlei, repetida a conferência às **10:59 BRT**. `/login` retornou 200 e `/admin` redirecionou para `/login` (307), sem cookie. A manutenção completa deixou de ser observada. Dois POSTs com apenas `{}`, sem sessão/identidade/proposta válida, para `/api/checkout/intents` e `/api/checkout` responderam **503 / CHECKOUT_PAUSED**, `private, no-store`. Não criaram compra nem processaram pagamentos; a pausa foi observada nesses comandos incompletos, sem comprovar todas as rotas, revisões ou submissões autenticadas.
+
+O catálogo `/`, `/api/loja/active` e `/api/payment/capabilities` agora retornam **404 / loja não encontrada**. Uma consulta somente leitura à base Neon de homologação conhecida confirmou a loja `3a82b33c-3646-4272-9a89-80bb1ba327a5`, atualmente com slug **`continental-homologacao`** e `customDomain` **`continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app`**. O slug atual difere da referência anterior; nenhuma correção ou renomeação foi feita pelo assistente.
+
+O endereço Cloud Run não corresponde a esse domínio cadastrado. Entretanto, os GETs diretos `/api/loja/continental-homologacao` e `/api/loja/continental-prototipo` também retornaram 404. A implementação `getLojaBySlug` consulta por slug independentemente do Host, mas converte exceções do banco em `null`/404. Portanto, **não atribuir a falha somente ao domínio nem considerar comprovada a conexão do Cloud Run com a base conhecida**. São necessárias conferência de `DATABASE_URL`/`DIRECT_URL` efetivos, banco/schema e logs da revisão para distinguir conexão, schema, ausência de registro ou divergência de versão/configuração.
+
+Próximo diagnóstico com Vanderlei: confirmar sem expor segredos que a revisão usa a conexão Neon de homologação, e fornecer o código/mensagem sanitizada de erro relacionado a `GET_LOJA_FROM_HEADERS_ERROR`, `GET_LOJA_BY_SLUG` ou Prisma. Após localizar a loja pelo slug, coordenar o vínculo do domínio Cloud Run à loja correta e a origem canônica dos links. Não trocar o `customDomain` compartilhado nem cadastrar outra loja por tentativa; essa mudança afeta também a Vercel e requer coordenação dos acessos existentes.
+
+Evidência atualizada em [L-CLOUDRUN-INGRESSO-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-CLOUDRUN-INGRESSO-2026-10-16.json). Nenhuma conexão Cloud Run autenticada, segredo, banco, domínio ou agenda foi alterado. Main preservada. Validação de Sandbox, Storage e compra permanece pendente enquanto a loja não for resolvida.
+
+### Diagnóstico confirmado por Vanderlei
+
+Operador transmitiu o retorno de Vanderlei: **`DATABASE_URL` ausente no ambiente da revisão publicada**, impedindo a inicialização da conexão Prisma. Conferência de Vanderlei somente leitura, sem configuração alterada. A referência `schema.prisma:10` identifica `env("DATABASE_URL")`, e não uma linha do `.env`. Diagnóstico relatado pelo responsável; ambiente Cloud Run não foi inspecionado diretamente pelo assistente.
+
+Correção a aplicar por Vanderlei: vincular `DATABASE_URL` ao segredo da conexão Neon de homologação e conferir `DIRECT_URL` para a mesma base. O gerador local, para serviço `continental-hml`, prevê os nomes `continental-hml-database-url` e `continental-hml-direct-url`; confirmar existência, versão e permissão da conta do serviço nos segredos realmente usados. Criar o segredo isoladamente não injeta a variável no container: o manifesto/revisão precisa conter o vínculo. Não copiar o `.env` base inteiro, que pode conter configuração de outro ambiente.
+
+Publicar nova revisão com esses vínculos, preservando `APP_MAINTENANCE_MODE=false`, `CHECKOUT_PAUSED=true` e os demais controles; verificar qual revisão recebe tráfego. Depois repetir a consulta por slug e a resolução por Host. A ausência da variável explica a falha de acesso ao banco; o vínculo de domínio Cloud Run continua sendo uma verificação separada. Nenhuma migration, alteração de loja ou escrita em banco foi executada ou indicada como correção para a variável ausente.
+
+## 50. Leitura da loja restabelecida; acesso por domínio pendente — 16/10/2026
+
+Após o operador informar que Vanderlei concluiu a configuração, a consulta pública direta `/api/loja/continental-homologacao` retornou **200 às 14:51 BRT**, com a loja esperada `3a82b33c-3646-4272-9a89-80bb1ba327a5`. A conexão necessária para essa leitura funciona; isso não verifica independentemente o host do banco, `DIRECT_URL`, todas as revisões ou o schema completo.
+
+`/api/loja/active` ainda retornou **404 / Loja não encontrada**. A consulta direta revelou `customDomain=continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app`, diferente do endereço Cloud Run. O próximo passo é coordenar a resolução do domínio Cloud Run para essa mesma loja e a origem canônica dos links, considerando os acessos e integrações ainda usados na Vercel. Não substituir o domínio compartilhado por tentativa nem criar outra loja. Algumas leituras iniciais retornaram 429; consultas pontuais posteriores responderam 404/200, sem causa do 429 determinada.
+
+Nesta rodada, dois POSTs incompletos `{}` para `/api/checkout/intents` e `/api/checkout` continuaram retornando **503 / CHECKOUT_PAUSED**, com `no-store`. Nenhuma compra válida, processamento de fila ou alteração remota foi executada. Evidência: `trabalho_em_dupla/evidencias/L-CLOUDRUN-INGRESSO-2026-10-16.json`, campo `afterOperatorDatabaseBinding`. Sandbox, Storage, webhook no novo destino e abertura de compras continuam pendentes de validação.
+
+## 51. Indicadores após abertura do banco existente — auditoria no clone em 16/10/2026
+
+Revisados dashboard, métricas de clientes e relatório de fidelidade, reaproveitando a decisão de preservar os pedidos classificados como teste. Consultados serviço e runbook de `origin/main` `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`; candidata local baseada em `17366e8`. Reutilizado o backup de 15/10 às 18:43:55 UTC, sem nova conexão com a origem. Restauração/sanitização, migrations e abertura ocorreram exclusivamente em containers descartáveis.
+
+**Achados reproduzidos:** os 24 pedidos históricos geram quatro pagos/R$ 1.069,99, dez pendentes/R$ 1.209,00 e dez cancelados/R$ 580,00 no dashboard, além de dois despachos e duas retiradas. As métricas de clientes preservam R$ 0 reconhecido e 24 pedidos sem evidência financeira. Após zerar as carteiras no clone, o relatório de fidelidade ainda retorna 475 pontos concedidos pelo fallback que trata zero como ausência; saldo disponível permanece zero, sem recrédito.
+
+Cenários sintéticos adicionais: recebimento com `paidAt` nulo entra pelo `createdAt`; encargos não entram na soma por `total`; estorno solicitado mantém R$ 100 no painel, e sua confirmação leva o recebido a zero e o cancelado a R$ 100, enquanto as métricas de clientes distinguem bruto e estornado. Os testes caracterizam o comportamento atual e não aprovam essa interpretação para abertura.
+
+**Entrega:** modo `--audit-indicators` no executor de clone e suíte dedicada com três cenários. Corrigido também o falso drift da ferramenta causado por aviso de atualização da CLI Prisma: SQL lido de `--output`, sem relaxar validação. Execução final `71a813f2e80c0e910bc6889ac68bde96`, 16:00:40–16:02:07 BRT: três cenários passaram, histórico de pedidos/carteiras/transações preservado, diff vazio e dados/sequências preservados. Quatro testes de proteções, tipagem e lint passaram. A fixture inicialmente incompleta foi corrigida sem remover constraints. Containers descartados; sem chamadas ao Asaas, escrita compartilhada, deploy ou publicação.
+
+Relatório com propostas e limites: [INDICADORES_ABERTURA_AUDITORIA_2026-10-16.md](../../../../../AUDITORIAS/operations/operations/INDICADORES_ABERTURA_AUDITORIA_2026-10-16.md). Evidência: [L-INDICADORES-ABERTURA-CLONE-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-INDICADORES-ABERTURA-CLONE-2026-10-16.json).
+
+**Próxima implementação:** classificar explicitamente os pedidos de teste auditados e separá-los dos indicadores/ações comerciais sem apagá-los; unificar a interpretação financeira com evidências e datas próprias de recebimento/devolução; corrigir o zero válido e o escopo do relatório de fidelidade. Não inferir teste genericamente por falta de intenção de checkout, nome de produto ou data. Nenhum cálculo de negócio foi alterado nesta auditoria, e o banco principal permanece somente leitura. Evidência do snapshot não substitui reauditoria antes da aplicação real.
+
+## 52. Pedidos de teste separados dos indicadores comerciais — 16/10/2026
+
+Implementada a primeira correção da seção 51, com a decisão anterior do operador e a mesma origem/revisão auditadas. A nova relação `OrderReportingExclusion` registra pedido, motivo, lote, responsável e data; não altera status, pagamento, estoque ou pontos. A migration `20261016193000_order_reporting_exclusion` cria somente a estrutura: **não classifica nenhum pedido automaticamente**. Ausência de intenção, data antiga, produto ou status não são usados como regra genérica de exclusão.
+
+Dashboard: contagens, valores por status/período, listas recentes, logística e caixa de ações passam a considerar pedidos sem classificação de teste. Métricas financeiras de clientes usam o mesmo escopo, mantendo suas regras de evidência, bruto, estorno e líquido. Admin abre em **Comerciais** e permite **Histórico de testes** ou **Todos**, com identificação na lista/detalhe; busca e filtros são feitos no servidor e o histórico pode ser paginado. A API sem filtro explícito continua retornando todos para preservar compatibilidade das consultas existentes. Busca numérica identifica o número do pedido, sem confundi-lo com dígitos em emails.
+
+O acumulado de fidelidade preserva zero válido da carteira, sem recuperar os 475 pontos antigos por fallback. Histórico de movimentações e obrigações financeiras continuam preservados; classificar pedidos não liquida/cancela cobranças nem sana carteiras ou estoques. A abertura das carteiras continua sendo o tratamento separado da seção 40.
+
+Ensaio restrito ao clone: `node scripts/verify-restored-clone.mjs --backup-dir <diretório privado existente> --rehearse-reporting`. Exige o backup aprovado e o fingerprint completo dos 24 pedidos do snapshot de 15/10, confere identidade do container/banco e recusa divergências. Grava 24 classificações e 24 auditorias em transação; replay mantém uma classificação por pedido e não duplica auditoria. Não é ferramenta de aplicação em homologação compartilhada ou produção.
+
+Execução `64ba5a45a66728c774138db05b754884`, **16:14:06–16:15:36 BRT**: três cenários passaram. Dashboard comercial sem pedidos/valores/ações do histórico; 24 pedidos acessíveis e pagináveis; pedido antigo não classificado continua no escopo comercial. Compra manual sintética nova de R$ 100 aparece uma vez, solicitação de estorno conserva o valor e confirmação/replay resultam em R$ 100 bruto, R$ 100 devolvido e R$ 0 líquido nas métricas do cliente. Pedidos/itens/históricos originais preservados. SQL de diff vazio, segundo deploy de migrations e preservação dos dados/sequências aprovados; leituras HTTP preservaram todas as tabelas. A primeira rodada detectou a ambiguidade da busca por número/email, corrigida antes deste resultado.
+
+**Validação complementar:** nove testes unitários focados, cinco proteções do clone, três testes do executor de homologação, 16 testes financeiros de clientes e quatro testes de operações no navegador aprovados. Novo cenário no navegador passou com 103 pedidos sintéticos: escopos, busca fora da primeira página, paginação, identificação no detalhe, rejeição de filtro inválido e acesso a pedido de outra loja. A primeira execução desse teste falhou apenas na comparação da capitalização do rótulo renderizado; corrigida a asserção, o cenário completo passou. TypeScript, lint, diff e build de produção isolado aprovados. Evidência: [L-INDICADORES-CLASSIFICACAO-CLONE-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-INDICADORES-CLASSIFICACAO-CLONE-2026-10-16.json).
+
+**Publicação e limites ao concluir esta etapa:** candidata local, ainda sem commit/push/deploy desta alteração. Aplicar a migration estrutural antes de executar esta versão da aplicação; a classificação de dados exige reauditoria dos IDs/estado e procedimento próprio no destino, pois o ensaio não é reaplicável a outro banco. A main e seu banco permanecem somente leitura. A interpretação financeira, então pendente, foi tratada posteriormente na seção 53. Escopo histórico de resgates de fidelidade, recuperação por outro operador e validações remotas continuam pendentes.
+
+## 53. Interpretação financeira do dashboard — 16/10/2026
+
+Retomada autorizada enquanto Vanderlei levanta os acionadores para a transferência financeira ao Cloud Run. Referências de continuidade: `origin/main` em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017` e candidata local baseada em `17366e8b5c2a44bd2c0157a159a371886b3126d1`. Reaproveitada a política de evidências das métricas de clientes, preservando as correções posteriores à main.
+
+**Implementação local:** `lib/commerce/financial-evidence.ts` concentra a interpretação compartilhada. `services/dashboard-financial.service.ts` consulta os fatos em um único snapshot, por loja, incluindo visitantes e excluindo somente pedidos explicitamente classificados como teste. A tela apresenta hoje, mês e histórico, cada um com reconhecimento bruto, liquidação bruta, estornos confirmados e reconhecimento menos estornos. Autorização e liquidação do mesmo instrumento contam uma única venda; parcelas são somadas e o denominador do ticket conta pedidos. Solicitar estorno não reduz o valor; confirmação/replay não duplicam a devolução. Cancelamento sem valor reconhecido fica separado.
+
+**Datas e limites contábeis:** períodos em Brasília pela primeira data de registro de cada confirmação no livro (`FinancialFact.createdAt`), com política `RECORDED_FINANCIAL_FACTS_V1`. O escritor existente pode reutilizar a data original do pagamento em `occurredAt` de estorno/liquidação; por isso, esse campo não foi apresentado como data bancária própria. Não houve reescrita dos fatos imutáveis nem alteração do processamento de pagamentos. Devolução registrada em outro mês entra nesse mês e preserva o reconhecimento anterior; o líquido do período pode ser negativo. Liquidação é bruta e exige fato `SETTLED`; não é saldo bancário disponível, receita líquida de taxas ou lucro.
+
+**Composição e cobertura:** produtos após descontos, frete e encargos usam o contrato congelado integralmente reconhecido, no histórico e antes dos estornos. Reconhecimento parcial ou contrato sem composição conferida aparece como não alocado, sem rateio inventado. Legados sem provas e inconsistências tornam a cobertura parcial; status `PAID`, datas do pedido e total do contrato não fabricam recebimento. O total de frete da logística foi renomeado para contratado, incluindo pendentes/cancelados. Conversão passa a identificar pedidos com valor reconhecido. Cache `aggregated_metrics_v3`, TTL de 60 segundos e instante da consulta visível.
+
+**Validação:** oito integrações do agregador e as 16 regressões financeiras de clientes passaram em PostgreSQL descartável; incluem reconhecimento versus liquidação, parcelas/encargos, devoluções parciais e duplicadas, meses distintos, meia-noite de Brasília, sessão PostgreSQL em fusos diferentes, visitantes, isolamento de loja, fatos futuros e exclusão dos testes. Um cenário real no navegador passou em desktop e 390 px, incluindo cobertura parcial e valores separados. Seis unitários focados, TypeScript, lint e build de produção isolado aprovados. As primeiras rodadas detectaram uma fixture sem modalidade de entrega e uma asserção dependente da capitalização visual; corrigidas antes da aprovação, sem afrouxar regras financeiras.
+
+No clone restaurado do backup de 15/10, o ensaio de classificação `7dabcb77bc339ec06375cc5c27c94900`, **17:00:37–17:02:19 BRT**, passou nos três cenários com a nova apuração: histórico preservado, classificação/replay auditáveis, compra nova e estorno sem duplicação; dados/sequências preservados, diff vazio e repetição das migrations aprovada. Evidências agregadas e hashes: [L-DASHBOARD-FINANCEIRO-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-DASHBOARD-FINANCEIRO-2026-10-16.json). Registros e hashes das etapas anteriores continuam como evidências históricas, sem atualização retroativa.
+
+Conferência complementar `71ebc10e70a3639084d880862923613e`, **17:09:10–17:11:33 BRT**: três cenários de indicadores aprovados no clone, incluindo legados pagos sem fatos com cobertura parcial/zero reconhecido e ciclo manual de estorno alinhado aos clientes; tabelas, dados/sequências e histórico preservados. Duas tentativas anteriores pararam na limpeza do servidor temporário por retorno não zero do `taskkill`. O helper passou a aceitar encerramento somente após comprovar saída do processo e fechamento da porta local; as proteções de destino/identidade e os cinco testes de guardas continuam aprovados. Não houve mudança de regra financeira para fazer o ensaio passar. Três testes do executor de homologação também aprovados.
+
+**Estado e próximo passo:** correção implementada e validada localmente; publicação e conferência no ambiente de homologação ainda pendentes de coordenação com Vanderlei. Não acrescenta migration além da classificação já preparada na seção 52. Nenhuma alteração em banco compartilhado, main, webhook, agendador, segredos ou deployment. Permanecem separados o histórico de resgates de fidelidade, a recuperação por operador alternativo e os demais gates de produção. Não usar esta aprovação de relatório como autorização para reativar consumidores ou trocar destino financeiro.
+
+## 54. Candidata para revisão e implantação coordenada — 16/10/2026
+
+O operador autorizou iniciar o próximo passo: coordenar a publicação e conferir o dashboard na homologação. Novo `git fetch origin` confirmou `origin/homologacao_teste=17366e8b5c2a44bd2c0157a159a371886b3126d1`; `origin/main` permanece referência somente leitura em `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Nenhum commit de logout foi localizado no histórico disponível. O nome da revisão Cloud Run informado pelo operador não prova qual árvore Git foi implantada nem que alterações locais de Vanderlei estejam publicadas.
+
+**Entrega preparada:** branch `revisao/dashboard-financeiro-20261016` com a classificação explícita, apuração financeira, testes, ferramentas de clone e evidências das seções 51–53. Inclui também a coleta somente leitura do replay do webhook e o registro histórico do ingresso Cloud Run já preparados anteriormente. Os arquivos `.env`, `.env.local` e `.env.homologacao` permanecem ignorados; valores de conexão e credenciais não compõem a entrega. A branch de revisão permite comparar o conjunto antes de atualizar a homologação compartilhada. Não atualizar `main` nem forçar histórico.
+
+**Dependência solicitada:** Vanderlei deve indicar a branch/SHA acessível das alterações presentes em `continental-hml-896dc56-logout`, ou confirmar que continuam locais. Enquanto essa identidade estiver pendente, não substituir a revisão ativa com uma reconstrução da base antiga. A integração deve conservar logout e demais correções dele, resolver conflitos explicitamente e executar os gates no commit combinado.
+
+**Conferência antes do envio:** 809 testes unitários em 90 arquivos e sete testes da coleta de replay passaram. Os 16 hashes de fontes/testes/ferramentas da evidência financeira correspondem à candidata; verificações de whitespace e de padrões de segredos nas alterações não encontraram ocorrências. Permanecem válidos os ensaios focados, navegador, clones e build descritos na seção 53. Isso não substitui a CI da futura revisão integrada nem valida automaticamente um deployment do Google Cloud.
+
+**Sequência de implantação pelo responsável do Cloud Run:**
+
+1. Integrar as duas entregas em uma revisão identificada e aprovada nos gates; gerar a imagem dessa revisão e registrar o digest. Confirmar banco separado de homologação e a identidade da loja, sem expor valores secretos. Não usar credenciais de origem/main.
+2. Preservar backup/estado de migrations do destino. Pelo procedimento de migrations já configurado para esse banco, conferir `prisma migrate status` e aplicar somente a cadeia pendente revisada. A candidata exige `20261016193000_order_reporting_exclusion`; se houver outras pendências/falhas, investigar antes de aplicar. O SQL cria estrutura e restrições; não classifica nem altera os pedidos existentes. Não usar `db push`, `reset` nem o classificador de clone em banco compartilhado.
+3. Confirmar migration aplicada, ausência de drift e compatibilidade da revisão anterior. Publicar a candidata primeiro sem transferir tráfego, mantendo `APP_MAINTENANCE_MODE=false` e `CHECKOUT_PAUSED=true` conforme a configuração informada para Cloud Run. Preservar as configurações financeiras efetivas; esta entrega não define nova agenda nem muda webhook.
+4. Na revisão candidata, conferir catálogo, autenticação e logout; abrir o dashboard como Admin. Registrar revisão/digest, horário/loja, cobertura e valores de hoje/mês/histórico. Comparar com fatos válidos do mesmo banco e a mesma base temporal de registro, considerando o cache de até 60 segundos. Um screenshot isolado não comprova o cálculo nem a ausência de efeitos repetidos.
+5. Conferir: autorização não aparece como liquidação; estorno confirmado não apaga o bruto; produtos/frete/encargos pertencem à composição histórica; legados sem fatos sinalizam cobertura parcial; pedidos explicitamente classificados como teste continuam acessíveis no histórico. Não classificar todos os pedidos da homologação como teste por data/nome e não repetir cobranças/estornos para testar a tela.
+6. Só promover o digest conferido após preservar o trabalho de Vanderlei e aprovar a conferência. Em erro de schema ou de interpretação, manter/restaurar o tráfego na revisão anterior e investigar. Não remover a tabela aditiva nem desfazer dados para rollback da aplicação.
+
+**Evidência a retornar:** branch/SHA integrado, revisão Cloud Run/digest, resultado da migration e conferência do painel/logout. Sem credenciais, tokens ou payloads pessoais. O inventário dos acionadores e a transferência financeira continuam em frente separada; o Worker antigo permanece desabilitado conforme o log observado, e esse único log não comprova ausência de outros acionadores.
+
+## 55. Integração das correções de Vanderlei — 16/10/2026
+
+Após o operador confirmar o push, `git fetch origin` trouxe `93e6459d06e6e9a5fbc8f1b77fc1fdd95435a004` em `homologacao_teste`. O histórico contém `8c7f8651a3319c8568206be50acb8d7675c00d34` (aliases exatos de host para a loja), `896dc564a6365bfbf2dd64fddb32b5a7aca8c951` (logout relativo ao host público) e as evidências de implantação/acionadores. Resolvida a lacuna de disponibilidade do código da seção 54; não é necessário pedir a Vanderlei novamente esses commits.
+
+Integrado por merge, sem conflitos e sem reescrever histórico, à branch `revisao/dashboard-financeiro-20261016`, candidata anterior `0eef7240d3b0b0f94fa6c26e5627b3cee3303340`. Os arquivos de domínio/logout e seus testes permanecem idênticos aos do commit de Vanderlei. Nenhuma configuração remota foi aplicada pelo merge. O arquivo versionado `homologacao-maintenance.env.json` descreve manutenção inicial; sua presença não substitui a evidência da configuração efetiva da revisão ativa.
+
+**Validação da árvore integrada:** 836 testes unitários em 92 arquivos aprovados; 25 testes com PostgreSQL/Next/Chrome isolados aprovados (oito do dashboard, 16 das métricas de clientes e um cenário de tela desktop/celular). TypeScript, lint dos arquivos incorporados, verificação de whitespace e build de produção isolado aprovados. Run isolado `577cc149d69e7fae4c68b84564b4aeb6`. Evidência: [L-DASHBOARD-INTEGRACAO-VANDERLEI-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-DASHBOARD-INTEGRACAO-VANDERLEI-2026-10-16.json). A CI do GitHub deve ser conferida para o novo head do PR; o resultado de um head anterior não é aprovação do merge integrado.
+
+**Infraestrutura informada por Vanderlei:** [V-ACIONADORES-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/V-ACIONADORES-2026-10-16.json) registra em 16/10 às 19:56:50 UTC ausência de Cloud Run Jobs no levantamento, API Cloud Scheduler desabilitada e listagem de agendas não concluída. Revisão `continental-hml-896dc56-logout` com 100% do tráfego, manutenção desligada, checkout pausado e `PAYMENT_REMOTE_ENABLED`, `PAYMENT_WORKER_ENABLED`, `PAYMENT_EXPIRATION_ENABLED` em `false`. Isso é evidência fornecida por Vanderlei, não nova consulta independente nem autorização para habilitar consumidores. Inventário de acionadores ainda incompleto segundo a própria evidência.
+
+**Próximo passo de implantação:** revisar o novo head do [PR #8](https://github.com/ViniMoia/Sistema-E-Commerce/pull/8), conferir os gates e executar a sequência 54.1–54.6 usando a revisão integrada. Vanderlei deve comprovar a migration `20261016193000_order_reporting_exclusion` no destino de homologação antes de direcionar tráfego à nova aplicação e registrar revisão/digest e conferência autenticada do dashboard/logout. Não reaplicar o classificador de clone no banco compartilhado. Publicar código não classifica pedidos automaticamente nem transfere o webhook/consumidor financeiro. Nenhuma escrita em banco compartilhado, alteração da main, merge do PR ou promoção de tráfego ocorreu nesta integração.
+
+## 56. Conferência dos valores e evidências reais de homologação — 16/10/2026
+
+Consulta às **17:42:15 BRT**, transação `RepeatableRead` e `transaction_read_only=on`, conexão fixa de homologação validada por host/banco, loja e identidade do #6. Nesta cópia, `.env.homologacao` não contém as conexões; foi usada a conexão aprovada de `.env.local`, sem carregar a origem/main. Nenhuma credencial foi exposta. O banco contém oito pedidos e 34 fatos financeiros; `OrderReportingExclusion` ainda não existe no snapshot, e não há registro dessa migration aplicada. Nenhuma DDL/DML ou chamada ao Asaas foi executada.
+
+Para adiantar a nossa conferência, os campos financeiros mínimos foram reproduzidos em PostgreSQL descartável, com classificação vazia explicitamente assumida. Executada a consulta real da candidata transpilada localmente e comparados os totais a uma apuração independente em centavos por instrumento. Trata-se de projeção financeira, não restauração integral, prova de deployment ou leitura do dashboard remoto. Evidência sanitizada: [L-DASHBOARD-CONFERENCIA-HML-2026-10-16.json](../../../../../../trabalho_em_dupla/evidencias/L-DASHBOARD-CONFERENCIA-HML-2026-10-16.json). Snapshot técnico privado e scripts da conferência ficam em `artifacts/dashboard-review/`, ignorados pelo Git.
+
+| Pedido | Reconhecido bruto | Liquidação registrada | Estorno confirmado | Reconhecido após estornos |
+|---|---:|---:|---:|---:|
+| #1 PIX | R$ 24,95 | R$ 24,95 | R$ 0,00 | R$ 24,95 |
+| #2 PIX cancelado sem pagamento | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| #3 PIX, devolução em revisão | R$ 49,90 | R$ 49,90 | R$ 0,00 | R$ 49,90 |
+| #4 crédito 12x | R$ 360,72 | R$ 0,00 | R$ 360,72 | R$ 0,00 |
+| #5 crédito 1x | R$ 57,20 | R$ 0,00 | R$ 57,20 | R$ 0,00 |
+| #6 boleto pago | R$ 49,90 | R$ 49,90 | R$ 0,00 | R$ 49,90 |
+| #7 boleto cancelado sem pagamento | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| #8 boleto pendente | R$ 0,00 | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| **Total** | **R$ 542,67** | **R$ 124,75** | **R$ 417,92** | **R$ 124,75** |
+
+Mês e histórico coincidem nesse recorte; os quatro valores de hoje (16/10, Brasília) são zero. #4/#5 têm autorização e devolução, sem fato `SETTLED`: não inventar liquidação por causa do status anterior ou do estorno. Os dois valores finais de R$ 124,75 coincidem nesta base, mas representam medidas diferentes e não comprovam saldo bancário disponível.
+
+**Achado e correção:** #3 mantém tentativa `REFUND_PENDING` com `PAYMENT_REFUND_CANCELLED_REVIEW`, mas a expressão de revisão compartilhada não incluía esse código. Foi acrescentado ao alerta, preservando R$ 49,90 reconhecidos/liquidados e zero estorno confirmado. Dashboard e clientes agora sinalizam cobertura **parcial, um pedido em revisão**. Não foi reaberto o estorno, alterado o pedido ou consultado o provedor. A correção é posterior a `eff10bf`; Vanderlei deve usar o novo head do PR #8.
+
+**Outros valores esperados:** pendente R$ 49,90 (#8); cancelados sem reconhecimento R$ 99,80 (#2/#7); cinco pedidos reconhecidos entre oito (63% arredondados); ticket após estornos R$ 24,95. Composição histórica antes dos estornos: produtos R$ 419,15, frete R$ 12,30, encargos R$ 61,32 e R$ 49,90 não alocados enquanto #3 está em revisão. A soma é R$ 542,67. Não são valores líquidos de taxas nem lucro. Nenhum pedido foi excluído apenas por ser um ensaio Sandbox; exclusão exige classificação explícita, distinta dos 24 legados ensaiados no clone da origem.
+
+**Validação da correção:** nove testes de integração do dashboard, 16 regressões dos clientes e um navegador desktop/celular aprovados (run `ca8beccbc1a0686d29d9c3c2a17b8bfa`). Incluída regressão do estorno cancelado no provedor, exigindo cobertura parcial e preservação dos valores nos dois relatórios. Projeção real `cfeb9859981d1c43d7bd0fdd0ab786ff` fechou com a apuração independente.
+
+**Conferência remota restante:** após migration e publicação da revisão corrigida, capturar baseline fresco e comparar o painel autenticado na mesma loja, data e escopo, após o cache de até 60 segundos. Conferir aviso de cobertura parcial e os quatro indicadores por período. Se houver fatos/classificações novos, recalcular antes de comparar; não alterar dados para reproduzir os números acima. O código e as evidências já permitem adiantar nossa análise, mas não encerram a validação da revisão publicada nem a pendência operacional do #3.
+
+## 57. Escopo histórico e valores do relatório de fidelidade — 16/10/2026
+
+Operador autorizou avançar nesta pendência das seções 51–53 enquanto a publicação de `dbfeb1f` aguarda Vanderlei. Consultados novamente código e runbook de `origin/main` `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`, sem alteração da origem ou consulta ao banco principal. Base local desta entrega: `dbfeb1f` na branch de revisão do dashboard.
+
+**Achados:** a API do relatório somava resgates de todos os pedidos e multiplicava os pontos pelo valor atual, alterando retroativamente o desconto histórico quando a configuração mudava. O widget somava os valores monetários registrados, mas também incluía pedidos de teste e chamava o bruto de “Economia Gerada”, sem separar devoluções. O acumulador válido igual a zero já estava corrigido; não foi reaberto esse problema nem usado o ledger antigo para repor o zero.
+
+**Correção local:** `services/loyalty-report.service.ts` passa a atender API e widget, em transação `RepeatableRead`, somente leitura. Concessões, reversões de ganhos, resgates e devoluções são separados, vinculados a pedidos da loja e excluem apenas a classificação explícita de teste. O total de resgates não depende de `PAID`: representa o movimento de pontos registrado, inclusive no checkout, e não recebimento financeiro. `monetaryValue` preserva a cotação histórica; ausência não é substituída pela cotação atual. A tela mostra bruto, devolvido e diferença, com aviso quando existem valores ausentes ou movimentos sem vínculo com pedido da loja. Os valores monetários nesses casos são subtotais conhecidos, não estimativas do total ausente.
+
+Carteiras, dívidas e histórico de auditoria continuam completos, incluindo efeitos de testes e ajustes. A classificação não apaga nem reduz obrigações. `lifetimeEarn` permanece o acumulador registrado das carteiras, separado das concessões comerciais brutas; carteiras legadas recebem aviso de conciliação pendente. A cotação atual só valoriza o saldo para uma estimativa sujeita às regras de resgate. As movimentações de pedidos de teste permanecem visíveis com identificação. Nenhum escritor de pontos, cancelamento, expiração, pagamento ou estorno foi modificado; nenhuma migration adicional foi criada. Cache do dashboard atualizado para `aggregated_metrics_v4`, TTL mantido em 60 segundos; API do relatório sem cache.
+
+**Validação:** quatro integrações novas e um cenário de navegador autenticado passaram em PostgreSQL/Next/Chrome descartáveis, run `b60ac50ac0f1045067956674e75b3ac4`. Cobrem mudança de cotação, classificação explícita, isolamento entre lojas, valores ausentes versus zero, preservação de saldo/dívida/histórico, replay real de resgate/devolução, igualdade da API com o dashboard e telas desktop/celular. Os 17 testes existentes de lotes/concorrência/expiração e o navegador financeiro também passaram na rodada anterior `1644473951410eb633ae1bd81192438f`; essa rodada falhou em três cenários novos por duas fixtures inválidas e zero negativo na projeção. Corrigidas as fixtures conforme as restrições existentes e normalizado o zero na projeção, sem flexibilizar controles de negócio; todos os cinco novos cenários passaram na repetição. Os 46 unitários de fidelidade, TypeScript e lint passaram. Resultado do build e hashes registrados em `trabalho_em_dupla/evidencias/L-FIDELIDADE-RELATORIO-2026-10-16.json`.
+
+**Continuidade remota:** o fetch trouxe `eb0708c` de Vanderlei, somente documentação, relatando migration aplicada e validação de `eff10bf` em revisão com 0% de tráfego. O registro é anterior à correção de cobertura de `dbfeb1f` e não prova publicação desta revisão de fidelidade. Sua evidência inclui restauração pelo próprio operador, mantendo pendente recuperação por operador alternativo. Não houve merge, publicação, promoção, nova consulta/escrita no banco compartilhado, mudança de webhook ou ativação de consumidor nesta etapa.
+
+**Próximo passo:** revisar/publicar o conjunto atualizado em homologação e conferir `/admin/fidelidade` e o widget no mesmo escopo, com baseline fresco e cache considerado. A implementação e a validação isolada do escopo histórico estão concluídas; o aceite remoto permanece pendente. Não usar esta correção de relatório para classificar pedidos, sanear carteiras ou retomar a operação financeira do #3.
+
+## 58. Correção da CI e da invalidação do dashboard — 16/10/2026
+
+Na ausência de Vanderlei, retomada a preparação da candidata. A entrega de fidelidade `f7762b3` e a documentação dele `eb0708c` foram reunidas em `d65c1ed` no PR #8. A [CI 38968865487](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/38968865487) desse head falhou em dois unitários de `dashboard-service.test.ts`: o mock anterior de Prisma não representava o novo serviço compartilhado de fidelidade. A falha foi reproduzida localmente antes da correção.
+
+O unitário passou a simular a dependência `readLoyaltyReport`, assim como já fazia com a apuração financeira, mantendo os testes de banco real da seção 57. Acrescentadas asserções de cobertura parcial, valores históricos, dívida, zero válido, validade sem expiração, histórico de teste e isolamento de cache entre lojas. Ao alcançar novamente a asserção de invalidação, foi identificado um defeito real: gravação em `aggregated_metrics_v4` e exclusão ainda em `aggregated_metrics_v3`. Leitura e invalidação agora usam a mesma constante; o teste comprova nova consulta após invalidar uma loja e preservação do cache de outra.
+
+As duas suítes novas de fidelidade foram incluídas em `homologation-suites.mjs`, utilizado pela CI e pelos executores isolados. Nenhum teste foi desabilitado nem foi alterada a apuração de dinheiro/pontos para obter aprovação.
+
+**Validação local:** 836 unitários em 92 arquivos, três testes do executor, TypeScript, lint focado e whitespace aprovados. A rodada anterior com 835/836 aprovados registrou a falha de invalidação antes de corrigi-la. Os testes de integração/navegador e build da seção 57 permanecem evidências da implementação anterior; a nova execução completa da CI deve aprovar o novo head antes da publicação. Não declarar que o resultado de `eff10bf` aprova esta entrega.
+
+**Trabalho independente que pode avançar enquanto a publicação aguarda:** acompanhar os gates do novo head e resolver falhas; consolidar uma matriz G1–G8 vinculada a evidências/revisões, distinguindo ensaio local, homologação e produção; revisar o pacote de abertura do banco existente e a conferência comercial final, preservando decisões já tomadas. Continuam dependentes de coordenação a publicação/promover tráfego, troca de webhook/agendadores, configuração real de Storage/e-mail, recuperação por operador alternativo e aplicação do tratamento no banco produtivo. Nenhuma dessas operações foi executada nesta correção.

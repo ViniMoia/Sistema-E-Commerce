@@ -171,7 +171,7 @@ describe('WF-17: customer financial recognition in PostgreSQL and HTTP', () => {
   });
   it('external-state/reconciliation review flags incomplete evidence without inventing a refund', async () => {
     const f = await createFulfillmentFixture(); const o = await f.order('PICKUP');
-    for (const failureCode of ['PAYMENT_EXTERNAL_STATE_REVIEW', 'PAYMENT_RECONCILIATION_OVERDUE', 'PAYMENT_PARTIAL_REVERSAL_REVIEW']) {
+    for (const failureCode of ['PAYMENT_EXTERNAL_STATE_REVIEW', 'PAYMENT_RECONCILIATION_OVERDUE', 'PAYMENT_PARTIAL_REVERSAL_REVIEW', 'PAYMENT_REFUND_CANCELLED_REVIEW']) {
       await prisma.paymentAttempt.updateMany({ where: { orderId: o.id }, data: { failureCode } });
       expect(await metrics(f)).toMatchObject({ totalSpent: 100, confirmedRefunds: 0, financialReviewOrders: 1, coverage: 'PARTIAL' });
     }

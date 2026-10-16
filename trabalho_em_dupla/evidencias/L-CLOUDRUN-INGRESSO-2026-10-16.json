@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "observedDateBrt": "2026-10-16",
+  "origin": "https://continental-hml-15531616695.southamerica-east1.run.app",
+  "declaredCommit": "17366e8",
+  "commitSource": "operator",
+  "deployedDigestIndependentlyVerified": false,
+  "method": "anonymous_GET_no_cookies_no_redirect_following",
+  "checks": [
+    {
+      "path": "/",
+      "httpStatus": 503,
+      "title": "Manutenção temporária",
+      "noStore": true
+    },
+    {
+      "path": "/api/loja/active",
+      "httpStatus": 503,
+      "error": "APP_MAINTENANCE",
+      "noStore": true
+    },
+    {
+      "path": "/api/payment/capabilities",
+      "httpStatus": 503,
+      "error": "APP_MAINTENANCE",
+      "noStore": true
+    },
+    {
+      "path": "/login",
+      "httpStatus": 503,
+      "title": "Manutenção temporária",
+      "noStore": true
+    },
+    {
+      "path": "/admin",
+      "httpStatus": 503,
+      "title": "Manutenção temporária",
+      "noStore": true
+    }
+  ],
+  "maintenanceObserved": true,
+  "exactEnvironmentValueRead": false,
+  "checkoutPauseVerified": false,
+  "databaseIdentityVerified": false,
+  "sandboxAccountVerified": false,
+  "storageVerified": false,
+  "webhookDeliveryTested": false,
+  "remoteSettingsChanged": false,
+  "purchaseSubmitted": false,
+  "queuesProcessed": false,
+  "productionReady": false,
+  "afterOperatorConfigurationChange": {
+    "observedAt": "2026-10-16T13:59:10.234Z",
+    "maintenanceObserved": false,
+    "checks": [
+      {
+        "method": "GET",
+        "path": "/",
+        "httpStatus": 404
+      },
+      {
+        "method": "GET",
+        "path": "/api/loja/active",
+        "httpStatus": 404,
+        "error": "Loja não encontrada"
+      },
+      {
+        "method": "GET",
+        "path": "/api/payment/capabilities",
+        "httpStatus": 404,
+        "error": "Loja não encontrada."
+      },
+      {
+        "method": "GET",
+        "path": "/login",
+        "httpStatus": 200
+      },
+      {
+        "method": "GET",
+        "path": "/admin",
+        "httpStatus": 307,
+        "location": "/login"
+      },
+      {
+        "method": "POST",
+        "path": "/api/checkout/intents",
+        "body": {},
+        "httpStatus": 503,
+        "error": "CHECKOUT_PAUSED",
+        "noStore": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/checkout",
+        "body": {},
+        "httpStatus": 503,
+        "error": "CHECKOUT_PAUSED",
+        "noStore": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/loja/continental-prototipo",
+        "httpStatus": 404,
+        "error": "Loja not found"
+      },
+      {
+        "method": "GET",
+        "path": "/api/loja/continental-homologacao",
+        "httpStatus": 404,
+        "error": "Loja not found"
+      }
+    ],
+    "knownHmlDatabaseReadOnly": {
+      "storeId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "slug": "continental-homologacao",
+      "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+      "cloudRunDomainMatches": false
+    },
+    "validPurchaseSubmitted": false,
+    "remoteSettingsChanged": false,
+    "databaseChanged": false,
+    "cloudRunDatasourceIdentityVerified": false,
+    "allCheckoutRoutesOrRevisionsVerified": false,
+    "interpretation": "Checkout pause observed on two incomplete-command probes. Store resolution fails; direct slug lookup also returns 404 and its implementation hides database errors as not-found. Runtime datasource/logs must be checked before attributing failure only to customDomain."
+  },
+  "afterOperatorDatabaseBinding": {
+    "observedAt": "2026-10-16T17:51:27.740Z",
+    "checks": [
+      {
+        "method": "GET",
+        "path": "/api/loja/active",
+        "httpStatus": 404,
+        "error": "Loja nao encontrada",
+        "at": "2026-10-16T17:51:09.728Z"
+      },
+      {
+        "method": "GET",
+        "path": "/api/loja/continental-homologacao",
+        "httpStatus": 200,
+        "storeId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+        "slug": "continental-homologacao",
+        "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app"
+      },
+      {
+        "method": "POST",
+        "path": "/api/checkout/intents",
+        "body": {},
+        "httpStatus": 503,
+        "error": "CHECKOUT_PAUSED",
+        "noStore": true
+      },
+      {
+        "method": "POST",
+        "path": "/api/checkout",
+        "body": {},
+        "httpStatus": 503,
+        "error": "CHECKOUT_PAUSED",
+        "noStore": true
+      }
+    ],
+    "initialPublicReadsReturned429": true,
+    "subsequentBoundedReadsReturned429": false,
+    "storeReadSucceeded": true,
+    "cloudRunHostResolved": false,
+    "datasourceHostIndependentlyVerified": false,
+    "directUrlVerified": false,
+    "remoteSettingsChanged": false,
+    "databaseChanged": false,
+    "validPurchaseSubmitted": false,
+    "queuesProcessed": false,
+    "interpretation": "Direct slug lookup now returns the expected HML store. Host lookup still fails; stored customDomain remains the Vercel hostname. Coordinate domain routing and canonical origin before moving webhooks or opening checkout. Transient HTTP 429 cause not determined."
+  }
+}

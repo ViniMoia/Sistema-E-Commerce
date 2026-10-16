@@ -1,6 +1,6 @@
 // HTTP read smoke of the restored/sanitized clone, never a shared datasource.
 import { spawn } from 'node:child_process';
-import { createServer } from 'node:net';
+import { createServer, createConnection } from 'node:net';
 import { request } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { command } from './disposable-postgres.mjs';
@@ -10,6 +10,32 @@ const quote = text => "'" + text.replaceAll("'", "''") + "'";
 const identifier = text => '"' + text.replaceAll('"', '""') + '"';
 const check = (value, code) => { if (!value) throw new Error(code); };
 const parse = output => JSON.parse(output.split('\n').find(line => line.trim().startsWith('{')));
+
+async function stopSmokeServer(server, port) {
+  let stopError;
+  if (server.exitCode === null && server.signalCode === null) {
+    try {
+      if (process.platform === 'win32') await command('taskkill', ['/PID', String(server.pid), '/T', '/F'], { capture: true });
+      else process.kill(-server.pid, 'SIGTERM');
+    } catch (error) { stopError = error; }
+  }
+  // taskkill may report a descendant error after successfully stopping
+  // Next. Accept cleanup only when our child exited AND its listener is gone.
+  for (let attempt = 0; attempt < 30; attempt++) {
+    if (server.exitCode !== null || server.signalCode !== null) {
+      const closed = await new Promise(resolve => {
+        const socket = createConnection({ host: '127.0.0.1', port });
+        const finish = value => { socket.destroy(); resolve(value); };
+        socket.once('connect', () => finish(false));
+        socket.once('error', error => finish(error.code === 'ECONNREFUSED'));
+        socket.setTimeout(200, () => finish(false));
+      });
+      if (closed) return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw stopError ?? new Error('SMOKE_SERVER_STOP_UNVERIFIED');
+}
 
 export function assertSmokeTarget(pg) {
   const u = new URL(pg.env.TEST_DATABASE_URL);
@@ -47,7 +73,7 @@ export async function smokeRestoredApplication(pg, { excludedProductIds = [], pr
   check(admin && state.wallets?.every(w => w.active), 'SMOKE_ACTOR_UNAVAILABLE');
   const host = store.slug + '.plataforma.com';
   const sessions = [];
-  let server, project;
+  let server, project, serverPort;
   const startedAt = new Date().toISOString();
   const report = { startedAt, cloneRunId: pg.runId, cases: [], productionReady: false };
   const record = (name, count = 1) => report.cases.push({ name, count, passed: true });
@@ -68,6 +94,7 @@ export async function smokeRestoredApplication(pg, { excludedProductIds = [], pr
       const probe = createServer(); probe.on('error', reject);
       probe.listen(0, '127.0.0.1', () => { const port = probe.address().port; probe.close(() => resolve(port)); });
     });
+    serverPort = port;
     project = await copyIsolatedProject();
     // Allow only OS bootstrap values and explicitly isolated application values.
     const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
@@ -142,10 +169,7 @@ export async function smokeRestoredApplication(pg, { excludedProductIds = [], pr
     check(capabilities.status === 200 && Array.isArray(capabilities.body.methods) && capabilities.body.methods.length === 0, 'SMOKE_METHOD_ACTIVATION');
     record('methods_remain_disabled');
   } finally {
-    if (server && server.exitCode === null) {
-      if (process.platform === 'win32') await command('taskkill', ['/PID', String(server.pid), '/T', '/F'], { capture: true });
-      else process.kill(-server.pid, 'SIGTERM');
-    }
+    if (server) await stopSmokeServer(server, serverPort);
     if (sessions.length) await pg.sql(`DELETE FROM "Session" WHERE id IN (${sessions.map(quote).join(',')});`);
     if (project) await discardIsolatedProject(project);
   }

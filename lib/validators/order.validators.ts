@@ -3,6 +3,7 @@ import { z } from 'zod';
 const STATUS = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
 
 export const listOrdersQuerySchema = z.object({
+  reportingScope: z.enum(['COMMERCIAL', 'TEST', 'ALL']).default('ALL'),
   status: z.enum(STATUS).optional(),
   search: z.string().optional(),
   dateFrom: z.coerce.date().optional(),

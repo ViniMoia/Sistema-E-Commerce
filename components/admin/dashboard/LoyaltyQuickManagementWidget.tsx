@@ -1,4 +1,5 @@
 'use client';
+import { LoyaltyCommercialSummary } from '@/components/admin/loyalty/LoyaltyCommercialSummary';
 
 import React, { useState, useRef } from 'react';
 import { prepareLoyaltyAdjustment, type PendingLoyaltyAdjustment } from '@/lib/commerce/loyalty-adjust-draft';
@@ -220,7 +221,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
               </div>
 
               <div className="bg-[#0B132B]/70 p-3.5 rounded-xl border border-catalog-gold/25">
-                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Economia Gerada</p>
+                <p className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider font-bold">Resgates Brutos</p>
                 <p className="text-lg font-bold text-emerald-400 font-mono mt-0.5">
                   {formatBRL(loyalty.totalRedeemedMonetaryDiscount)}
                 </p>
@@ -234,6 +235,8 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                 </p>
               </div>
             </div>
+
+            <LoyaltyCommercialSummary commercial={loyalty.commercial} debt={loyalty.totalDebtPoints} legacyWallets={loyalty.legacyWallets} />
 
             {/* Regras Vigentes Resumo */}
             <div className="bg-[#050B14]/80 p-3 rounded-xl border border-catalog-gold/20 flex flex-wrap items-center justify-between gap-2 text-xs text-catalog-muted font-mono">
@@ -273,6 +276,7 @@ export const LoyaltyQuickManagementWidget: React.FC<LoyaltyQuickManagementWidget
                         </span>
                         <span className="text-catalog-muted text-[11px] truncate hidden sm:inline">
                           — {tx.description}
+                          {tx.isTestOrder && <span className="ml-2 text-amber-300">Pedido de teste</span>}
                         </span>
                       </div>
                       <span

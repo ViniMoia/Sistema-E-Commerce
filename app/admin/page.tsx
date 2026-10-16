@@ -170,9 +170,9 @@ export default async function AdminDashboardPage() {
 
           {/* Taxa de Conversão */}
           <div className="mt-4 pt-3 border-t border-catalog-gold/15 flex items-center justify-between text-xs font-mono">
-            <span className="text-catalog-muted">Taxa de Conversão</span>
+            <span className="text-catalog-muted">Pedidos com valor reconhecido</span>
             <span className="text-catalog-gold font-bold">
-              {data.financial.paymentConversionRatePct}% liquidado
+              {data.financial.paymentConversionRatePct}%
             </span>
           </div>
         </div>

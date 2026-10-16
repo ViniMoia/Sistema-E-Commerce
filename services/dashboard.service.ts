@@ -1,7 +1,10 @@
+import { readLoyaltyReport } from '@/services/loyalty-report.service';
+import { readDashboardFinancial } from '@/services/dashboard-financial.service';
+import { orderReportingWhere } from '@/lib/commerce/order-reporting';
 import { buyerSelect, orderCustomer } from '@/lib/commerce/order-buyer';
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
-import { getBusinessTimeRanges } from '@/lib/utils/date-ranges';
+
 import { Prisma, OrderStatus, DeliveryType } from '@prisma/client';
 import type {
   AggregatedDashboardDataDTO,
@@ -12,6 +15,8 @@ import type {
   RecentOrderDashboardDTO,
   UrgentActionItemDTO,
 } from '@/types/dashboard';
+
+const DASHBOARD_CACHE_KEY = 'aggregated_metrics_v4';
 
 /**
  * ============================================================================
@@ -69,16 +74,15 @@ export async function getAggregatedDashboardMetrics(
   return await tenantCache.getOrSet(
     lojaID,
     'dashboard',
-    'aggregated_metrics_v1',
+    DASHBOARD_CACHE_KEY,
     async () => {
-      const timeRanges = getBusinessTimeRanges();
+
 
       // 1. Execução paralela em batch das consultas necessárias
       const [
         loja,
         orderGroups,
-        todayReceiptsAggregate,
-        monthReceiptsAggregate,
+        financialEvidence,
         carrierGroups,
         awaitingDispatchCount,
         awaitingPickupCount,
@@ -89,10 +93,7 @@ export async function getAggregatedDashboardMetrics(
         totalCustomers,
         localTableRulesCount,
         jtExpressRatesCount,
-        walletsAggregate,
-        activeWalletsCount,
-        redeemAggregate,
-        recentLoyaltyTxRaw,
+        loyaltyReport,
       ] = await Promise.all([
         // Configurações da Loja
         prisma.loja.findUnique({
@@ -119,51 +120,24 @@ export async function getAggregatedDashboardMetrics(
         // Agrupamento de pedidos por status (Financeiro & Funil)
         prisma.order.groupBy({
           by: ['status'],
-          where: { lojaID },
+          where: { ...orderReportingWhere(), lojaID },
           _count: { _all: true },
           _sum: { total: true, shippingCost: true },
         }),
 
-        // Recebimento do Dia (paidAt no dia civil corrente em America/Sao_Paulo)
-        prisma.order.aggregate({
-          where: {
-            lojaID,
-            status: { in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED] },
-            OR: [
-              { paidAt: { gte: timeRanges.startOfDay, lte: timeRanges.endOfDay } },
-              { paidAt: null, createdAt: { gte: timeRanges.startOfDay, lte: timeRanges.endOfDay } },
-            ],
-          },
-          _sum: { total: true, shippingCost: true },
-          _count: { _all: true },
-        }),
-
-        // Recebimento do Mês (paidAt no mês civil corrente em America/Sao_Paulo)
-        prisma.order.aggregate({
-          where: {
-            lojaID,
-            status: { in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED] },
-            OR: [
-              { paidAt: { gte: timeRanges.startOfMonth, lte: timeRanges.endOfMonth } },
-              { paidAt: null, createdAt: { gte: timeRanges.startOfMonth, lte: timeRanges.endOfMonth } },
-            ],
-          },
-          _sum: { total: true, shippingCost: true },
-          _count: { _all: true },
-        }),
+        readDashboardFinancial(prisma, lojaID),
 
         // Agrupamento de pedidos por Provedor e Tipo de Entrega (Logística)
         prisma.order.groupBy({
           by: ['deliveryType', 'shippingProvider'],
-          where: { lojaID },
+          where: { ...orderReportingWhere(), lojaID },
           _count: { _all: true },
           _sum: { shippingCost: true },
         }),
 
         // Inbox Operacional: Pedidos pagos que precisam de despacho
         prisma.order.count({
-          where: {
-            lojaID,
+          where: { ...orderReportingWhere(), lojaID,
             status: { in: [OrderStatus.PAID] },
             deliveryType: DeliveryType.DELIVERY,
             trackingCode: null,
@@ -172,8 +146,7 @@ export async function getAggregatedDashboardMetrics(
 
         // Inbox Operacional: Pedidos pagos para retirada no balcão
         prisma.order.count({
-          where: {
-            lojaID,
+          where: { ...orderReportingWhere(), lojaID,
             status: { in: [OrderStatus.PAID] },
             deliveryType: DeliveryType.PICKUP,
           },
@@ -181,16 +154,14 @@ export async function getAggregatedDashboardMetrics(
 
         // Inbox Operacional: Pedidos pendentes de pagamento PIX
         prisma.order.count({
-          where: {
-            lojaID,
+          where: { ...orderReportingWhere(), lojaID,
             status: OrderStatus.PENDING,
           },
         }),
 
         // Pedidos Urgentes para exibição no Inbox
         prisma.order.findMany({
-          where: {
-            lojaID,
+          where: { ...orderReportingWhere(), lojaID,
             OR: [
               {
                 status: OrderStatus.PAID,
@@ -222,7 +193,7 @@ export async function getAggregatedDashboardMetrics(
 
         // 10 Pedidos Recentes com metadados completos
         prisma.order.findMany({
-          where: { lojaID },
+          where: { ...orderReportingWhere(), lojaID },
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
@@ -246,49 +217,7 @@ export async function getAggregatedDashboardMetrics(
         prisma.freightRule.count({ where: { lojaID } }),
         prisma.jtExpressRate.count(),
 
-        // Agregação de Carteiras de Fidelidade
-        prisma.loyaltyWallet.aggregate({
-          where: { lojaID },
-          _sum: {
-            balance: true,
-            lifetimeEarn: true,
-          },
-        }),
-
-        // Carteiras com saldo positivo
-        prisma.loyaltyWallet.count({
-          where: {
-            lojaID,
-            balance: { gt: 0 },
-          },
-        }),
-
-        // Agregação de Resgates de Fidelidade
-        prisma.loyaltyTransaction.aggregate({
-          where: {
-            lojaID,
-            type: 'REDEEM',
-          },
-          _sum: {
-            points: true,
-            monetaryValue: true,
-          },
-        }),
-
-        // Transações Recentes de Fidelidade para auditoria no widget
-        prisma.loyaltyTransaction.findMany({
-          where: { lojaID },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-        }),
+        readLoyaltyReport(lojaID),
       ]);
 
       if (!loja) {
@@ -296,97 +225,8 @@ export async function getAggregatedDashboardMetrics(
       }
 
       // ─── 2. Consolidação de Métricas Financeiras & Funil ───────────────────
-      let settledRevenue = 0;
-      let settledShipping = 0;
-      let pendingRevenue = 0;
-      let cancelledRevenue = 0;
-      let totalOrdersCount = 0;
-      let paidOrdersCount = 0;
-      let pendingOrdersCount = 0;
-      let cancelledOrdersCount = 0;
-      let settledOrdersCount = 0; // Pagos + Enviados + Entregues
-
-      for (const group of orderGroups) {
-        const count = group._count._all;
-        const totalVal = group._sum.total?.toNumber() ?? 0;
-        const shippingVal = group._sum.shippingCost?.toNumber() ?? 0;
-        totalOrdersCount += count;
-
-        switch (group.status) {
-          case OrderStatus.PAID:
-            paidOrdersCount += count;
-            settledOrdersCount += count;
-            settledRevenue += totalVal;
-            settledShipping += shippingVal;
-            break;
-          case OrderStatus.SHIPPED:
-          case OrderStatus.DELIVERED:
-            settledOrdersCount += count;
-            settledRevenue += totalVal;
-            settledShipping += shippingVal;
-            break;
-          case OrderStatus.PENDING:
-            pendingOrdersCount += count;
-            pendingRevenue += totalVal;
-            break;
-          case OrderStatus.CANCELLED:
-            cancelledOrdersCount += count;
-            cancelledRevenue += totalVal;
-            break;
-        }
-      }
-
-      const averageTicket =
-        settledOrdersCount > 0 ? settledRevenue / settledOrdersCount : 0;
-      const paymentConversionRatePct =
-        totalOrdersCount > 0
-          ? Math.round((settledOrdersCount / totalOrdersCount) * 100)
-          : 0;
-
-      const settledTodayRevenue =
-        Math.round((todayReceiptsAggregate?._sum?.total?.toNumber() ?? 0) * 100) / 100;
-      const settledTodayShipping =
-        Math.round((todayReceiptsAggregate?._sum?.shippingCost?.toNumber() ?? 0) * 100) / 100;
-      const settledTodayNetRevenue =
-        Math.max(0, Math.round((settledTodayRevenue - settledTodayShipping) * 100) / 100);
-      const settledTodayOrdersCount = todayReceiptsAggregate?._count?._all ?? 0;
-
-      const settledMonthRevenue =
-        Math.round((monthReceiptsAggregate?._sum?.total?.toNumber() ?? 0) * 100) / 100;
-      const settledMonthShipping =
-        Math.round((monthReceiptsAggregate?._sum?.shippingCost?.toNumber() ?? 0) * 100) / 100;
-      const settledMonthNetRevenue =
-        Math.max(0, Math.round((settledMonthRevenue - settledMonthShipping) * 100) / 100);
-      const settledMonthOrdersCount = monthReceiptsAggregate?._count?._all ?? 0;
-
-      const settledTotalRevenue = Math.round(settledRevenue * 100) / 100;
-      const settledTotalShipping = Math.round(settledShipping * 100) / 100;
-      const settledTotalNetRevenue =
-        Math.max(0, Math.round((settledTotalRevenue - settledTotalShipping) * 100) / 100);
-      const settledTotalOrdersCount = settledOrdersCount;
-
       const financialDTO: DashboardFinancialDTO = {
-        settledTodayRevenue,
-        settledTodayShipping,
-        settledTodayNetRevenue,
-        settledTodayOrdersCount,
-        settledMonthRevenue,
-        settledMonthShipping,
-        settledMonthNetRevenue,
-        settledMonthOrdersCount,
-        settledTotalRevenue,
-        settledTotalShipping,
-        settledTotalNetRevenue,
-        settledTotalOrdersCount,
-        settledRevenue: settledTotalRevenue,
-        pendingRevenue: Math.round(pendingRevenue * 100) / 100,
-        cancelledRevenue: Math.round(cancelledRevenue * 100) / 100,
-        averageTicket: Math.round(averageTicket * 100) / 100,
-        totalOrdersCount,
-        paidOrdersCount,
-        pendingOrdersCount,
-        cancelledOrdersCount,
-        paymentConversionRatePct,
+        ...financialEvidence,
         pixConfig: {
           hasPixKey: Boolean(loja.pixKey),
           pixKeyType: loja.pixKeyType,
@@ -397,7 +237,7 @@ export async function getAggregatedDashboardMetrics(
       };
 
       // ─── 3. Consolidação de Métricas de Logística & Frete ───────────────────
-      let totalShippingRevenue = 0;
+      let totalShippingQuoted = 0;
       let deliveryOrdersCount = 0;
       let pickupOrdersCount = 0;
       let customFreightOrdersCount = 0;
@@ -413,7 +253,7 @@ export async function getAggregatedDashboardMetrics(
       for (const group of carrierGroups) {
         const count = group._count._all;
         const shippingVal = group._sum.shippingCost?.toNumber() ?? 0;
-        totalShippingRevenue += shippingVal;
+        totalShippingQuoted += shippingVal;
 
         if (group.deliveryType === DeliveryType.DELIVERY) {
           deliveryOrdersCount += count;
@@ -436,7 +276,7 @@ export async function getAggregatedDashboardMetrics(
       }
 
       const logisticsDTO: DashboardLogisticsDTO = {
-        totalShippingRevenue: Math.round(totalShippingRevenue * 100) / 100,
+        totalShippingQuoted: Math.round(totalShippingQuoted * 100) / 100,
         deliveryOrdersCount,
         pickupOrdersCount,
         customFreightOrdersCount,
@@ -455,41 +295,20 @@ export async function getAggregatedDashboardMetrics(
       };
 
       // ─── 4. Consolidação de Métricas de Fidelidade & Pontos ─────────────────
-      const pointValue = (loja.loyaltyPointValue as Prisma.Decimal | null)?.toNumber() ?? 0.05;
-      const totalCirculatingPoints = walletsAggregate._sum.balance ?? 0;
-      const projectedFinancialLiability = Math.round(totalCirculatingPoints * pointValue * 100) / 100;
-      const totalLifetimeEarnedPoints = walletsAggregate._sum.lifetimeEarn ?? 0;
-      const totalRedeemedPoints = Math.abs(redeemAggregate._sum.points ?? 0);
-      const totalRedeemedMonetaryDiscount =
-        redeemAggregate._sum.monetaryValue?.toNumber() ?? 0;
-
+      const m = loyaltyReport.metrics;
       const loyaltyDTO: DashboardLoyaltyDTO = {
-        loyaltyEnabled: loja.loyaltyEnabled,
-        totalCirculatingPoints,
-        projectedFinancialLiability,
-        totalLifetimeEarnedPoints,
-        totalRedeemedPoints,
-        totalRedeemedMonetaryDiscount: Math.round(totalRedeemedMonetaryDiscount * 100) / 100,
-        activeWalletsCount,
-        settings: {
-          loyaltyEarnRate: (loja.loyaltyEarnRate as Prisma.Decimal | null)?.toNumber() ?? 0.5,
-          loyaltyPointValue: pointValue,
-          loyaltyMinPointsRedeem: loja.loyaltyMinPointsRedeem ?? 100,
-          loyaltyMaxDiscountPct: (loja.loyaltyMaxDiscountPct as Prisma.Decimal | null)?.toNumber() ?? 50,
-          loyaltyPointsExpiryDays: loja.loyaltyPointsExpiryDays ?? 365,
-        },
-        recentTransactions: recentLoyaltyTxRaw.map((tx) => ({
-          id: tx.id,
-          userName: tx.user?.name || 'Cliente',
-          userEmail: tx.user?.email || '',
-          type: tx.type,
-          points: tx.points,
-          balanceAfter: tx.balanceAfter,
-          monetaryValue: tx.monetaryValue ? (tx.monetaryValue as Prisma.Decimal).toNumber() : null,
-          description: tx.description,
-          orderId: tx.orderId,
-          createdAt: tx.createdAt.toISOString(),
-        })),
+        loyaltyEnabled: loyaltyReport.settings.loyaltyEnabled,
+        totalCirculatingPoints: m.totalCirculatingPoints,
+        projectedFinancialLiability: m.projectedFinancialLiability,
+        totalLifetimeEarnedPoints: m.totalLifetimeEarnedPoints,
+        totalRedeemedPoints: m.totalRedeemedPoints,
+        totalRedeemedMonetaryDiscount: m.totalRedeemedMonetaryValue,
+        totalDebtPoints: m.totalDebtPoints,
+        legacyWallets: m.legacyWallets,
+        commercial: m.commercial,
+        activeWalletsCount: m.activeCustomersWithPoints,
+        settings: loyaltyReport.settings,
+        recentTransactions: loyaltyReport.recentTransactions.slice(0, 5),
       };
 
       // ─── 5. Consolidação de Alertas do Inbox Operacional ────────────────────
@@ -586,5 +405,5 @@ export async function getAggregatedDashboardMetrics(
  */
 export function invalidateDashboardCache(lojaID: string): void {
   if (!lojaID) return;
-  tenantCache.del(lojaID, 'dashboard', 'aggregated_metrics_v1');
+  tenantCache.del(lojaID, 'dashboard', DASHBOARD_CACHE_KEY);
 }

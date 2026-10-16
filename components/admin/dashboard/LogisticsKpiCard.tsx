@@ -37,8 +37,9 @@ export const LogisticsKpiCard: React.FC<LogisticsKpiCardProps> = ({ logistics })
           Expedição & Frete Multi-Provedor
         </p>
         <p className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white mt-1">
-          {formatBRL(logistics.totalShippingRevenue)}
+          {formatBRL(logistics.totalShippingQuoted)}
         </p>
+        <p className="text-xs text-catalog-muted mt-1">Frete contratado, incluindo pedidos pendentes e cancelados. Não representa recebimento.</p>
 
         {/* Subtotais de Logística */}
         <div className="mt-4 pt-3 border-t border-catalog-gold/15 space-y-2">

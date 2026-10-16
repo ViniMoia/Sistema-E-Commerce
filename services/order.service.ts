@@ -1,4 +1,5 @@
 import { createOrder } from './checkout.service';
+import { orderReportingWhere } from '@/lib/commerce/order-reporting';
 import { requirePurchaseAccount } from '@/lib/commerce/account-scope';
 import { transitionOrder } from '@/lib/commerce/order-command';
 import { allowedOrderActions } from '@/lib/commerce/order-fulfillment';
@@ -79,7 +80,10 @@ export async function getOrdersByUser(params: GetUserOrdersParams): Promise<Orde
 
 export async function listOrdersForAdmin(params: ListOrdersParams) {
   if (!params.lojaID) throw new OrderError('ACCOUNT_ACCESS_DENIED');
+  const numericSearch = Boolean(params.search && /^\d+$/.test(params.search));
+  const searchedNumber = Number(params.search);
   const where: Prisma.OrderWhereInput = {
+    ...orderReportingWhere(params.reportingScope ?? 'ALL'),
     ...(params.lojaID ? { lojaID: params.lojaID } : {}),
     ...(params.customerId ? { userID: params.customerId } : {}),
     ...(params.status ? { status: params.status } : {}),
@@ -92,7 +96,10 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
         }
       : {}),
     ...(params.search
-      ? {
+      ? numericSearch ? {
+          // A numeric query identifies an order, not digits inside a customer's email.
+          orderNumber: Number.isSafeInteger(searchedNumber) && searchedNumber <= 2147483647 ? searchedNumber : -1,
+        } : {
           OR: [
             { user: { name: { contains: params.search, mode: "insensitive" } } },
             { user: { email: { contains: params.search, mode: "insensitive" } } },
@@ -111,7 +118,7 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
       take: pageSize + 1,
       cursor: params.cursor ? { id: params.cursor } : undefined,
       skip: params.cursor ? 1 : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: 'desc' }],
       select: {
         id: true,
         orderNumber: true,
@@ -120,6 +127,7 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
         status: true,
         total: true,
         createdAt: true,
+        reportingExclusion: { select: { reason: true } },
         user: { select: { id: true, name: true, email: true } },
         buyer: { select: buyerSelect },
         _count: { select: { items: true } },
@@ -149,6 +157,7 @@ export async function getOrderDetailForAdmin(
     },
     include: {
       buyer: { select: buyerSelect },
+      reportingExclusion: { select: { reason: true, classifiedAt: true } },
       paymentAttempts: { orderBy: { number: 'desc' }, take: 1, select: { status: true, provider: true, failureCode: true } },
       user: { select: { id: true, name: true, email: true, phone: true } },
       address: true,

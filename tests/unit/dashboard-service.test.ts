@@ -1,8 +1,29 @@
+import { readDashboardFinancial } from '@/services/dashboard-financial.service';
+import { readLoyaltyReport } from '@/services/loyalty-report.service';
+import type { DashboardFinancialEvidenceDTO } from '@/types/dashboard';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
 import { getAggregatedDashboardMetrics, invalidateDashboardCache } from '@/services/dashboard.service';
 import { OrderStatus, DeliveryType, Prisma } from '@prisma/client';
+
+vi.mock('@/services/dashboard-financial.service', () => ({ readDashboardFinancial: vi.fn() }));
+vi.mock('@/services/loyalty-report.service', () => ({ readLoyaltyReport: vi.fn() }));
+const loyaltyReport = {
+  settings: { loyaltyEnabled: true, loyaltyEarnRate: 0.5, loyaltyPointValue: 0.05,
+    loyaltyMinPointsRedeem: 100, loyaltyMaxDiscountPct: 50, loyaltyPointsExpiryDays: null },
+  metrics: { totalCirculatingPoints: 1250, totalDebtPoints: 10, projectedFinancialLiability: 62.5,
+    activeCustomersWithPoints: 4, totalLifetimeEarnedPoints: 0, legacyWallets: 1,
+    totalRedeemedPoints: 500, totalRedeemedMonetaryValue: 25,
+    commercial: { earnedPoints: 600, reversedEarnedPoints: 100, redeemedPoints: 500, returnedPoints: 200,
+      netRedeemedPoints: 300, redeemedValue: 25, returnedValue: 10, netRedeemedValue: 15,
+      missingMonetaryValues: 1, unlinkedTransactions: 0, coverage: 'PARTIAL' as const } },
+  recentTransactions: Array.from({ length: 7 }, (_, i) => ({ id: `loyalty-${i}`, userName: 'Cliente',
+    userEmail: 'customer@example.invalid', type: 'REDEEM', points: -10, balanceAfter: 0,
+    monetaryValue: 0.5, description: 'Resgate registrado', orderId: `order-${i}`,
+    isTestOrder: i === 0, createdAt: '2026-10-16T12:00:00.000Z' })),
+} satisfies Awaited<ReturnType<typeof readLoyaltyReport>>;
+const evidence = { policy: 'RECORDED_FINANCIAL_FACTS_V1', timeBasis: 'FACT_CREATED_AT', timezone: 'America/Sao_Paulo', currency: 'BRL', asOf: '2026-10-16T12:00:00.000Z', coverage: 'COMPLETE', unverifiedOrders: 0, financialReviewOrders: 0, today: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, month: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, allTime: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, composition: { merchandiseAfterDiscount: 100, shipping: 0, financingCharge: 0, unallocatedRecognized: 0 }, pendingOrderValue: 0, cancelledUnpaidOrderValue: 0, cancelledUnpaidOrderCount: 0, averageNetTicket: 100, totalOrdersCount: 1, paidOrdersCount: 1, pendingOrdersCount: 0, cancelledOrdersCount: 0, paymentConversionRatePct: 100 } satisfies DashboardFinancialEvidenceDTO;
 
 // Mock do prisma
 vi.mock('@/lib/prisma', () => {
@@ -29,14 +50,6 @@ vi.mock('@/lib/prisma', () => {
       jtExpressRate: {
         count: vi.fn(),
       },
-      loyaltyWallet: {
-        aggregate: vi.fn(),
-        count: vi.fn(),
-      },
-      loyaltyTransaction: {
-        aggregate: vi.fn(),
-        findMany: vi.fn(),
-      },
     },
   };
 });
@@ -46,6 +59,8 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(readDashboardFinancial).mockResolvedValue(evidence);
+    vi.mocked(readLoyaltyReport).mockResolvedValue(loyaltyReport);
     tenantCache.clear();
   });
 
@@ -178,61 +193,16 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     (prisma.freightRule.count as any).mockResolvedValue(0);
     (prisma.jtExpressRate.count as any).mockResolvedValue(5181);
 
-    // 8. Mock de Fidelidade
-    (prisma.loyaltyWallet.aggregate as any).mockResolvedValue({
-      _sum: {
-        balance: 1250,
-        lifetimeEarn: 3500,
-      },
-    });
-    (prisma.loyaltyWallet.count as any).mockResolvedValue(4);
-    (prisma.loyaltyTransaction.aggregate as any).mockResolvedValue({
-      _sum: {
-        points: -500,
-        monetaryValue: new Prisma.Decimal(25.0),
-      },
-    });
-    (prisma.loyaltyTransaction.findMany as any).mockResolvedValue([]);
-
     // Executa a função do serviço
     const result = await getAggregatedDashboardMetrics(mockLojaID);
 
-    // Asserções Financeiras
-    expect(result.financial.settledRevenue).toBe(980.0);
-    expect(result.financial.pendingRevenue).toBe(1435.99);
-    expect(result.financial.cancelledRevenue).toBe(500.0);
-    expect(result.financial.totalOrdersCount).toBe(25);
-    expect(result.financial.paidOrdersCount).toBe(3);
-    expect(result.financial.pendingOrdersCount).toBe(12);
-    expect(result.financial.cancelledOrdersCount).toBe(10);
-    expect(result.financial.averageTicket).toBe(326.67);
-    expect(result.financial.paymentConversionRatePct).toBe(12);
+    expect(readDashboardFinancial).toHaveBeenCalledWith(prisma, mockLojaID);
+    expect(result.financial).toMatchObject(evidence);
     expect(result.financial.pixConfig.hasPixKey).toBe(true);
     expect(result.financial.pixConfig.pixKeyMasked).toBe('**.***.678/0001-**');
 
-    // Asserções Financeiras
-    expect(result.financial.settledTodayRevenue).toBe(320.0);
-    expect(result.financial.settledTodayShipping).toBe(20.0);
-    expect(result.financial.settledTodayNetRevenue).toBe(300.0);
-    expect(result.financial.settledTodayOrdersCount).toBe(1);
-
-    expect(result.financial.settledMonthRevenue).toBe(980.0);
-    expect(result.financial.settledMonthShipping).toBe(65.0);
-    expect(result.financial.settledMonthNetRevenue).toBe(915.0);
-    expect(result.financial.settledMonthOrdersCount).toBe(3);
-
-    expect(result.financial.settledTotalRevenue).toBe(980.0);
-    expect(result.financial.settledTotalShipping).toBe(65.0);
-    expect(result.financial.settledTotalNetRevenue).toBe(915.0);
-    expect(result.financial.settledTotalOrdersCount).toBe(3);
-    expect(result.financial.settledRevenue).toBe(980.0);
-    expect(result.financial.pendingRevenue).toBe(1435.99);
-    expect(result.financial.cancelledRevenue).toBe(500.0);
-    expect(result.financial.averageTicket).toBe(326.67);
-    expect(result.financial.paymentConversionRatePct).toBe(12);
-
     // Asserções de Logística
-    expect(result.logistics.totalShippingRevenue).toBe(45.0);
+    expect(result.logistics.totalShippingQuoted).toBe(45.0);
     expect(result.logistics.deliveryOrdersCount).toBe(2);
     expect(result.logistics.pickupOrdersCount).toBe(1);
     expect(result.logistics.providerStatus.enableCorreios).toBe(true);
@@ -245,6 +215,13 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     expect(result.loyalty.totalRedeemedPoints).toBe(500);
     expect(result.loyalty.totalRedeemedMonetaryDiscount).toBe(25.0);
     expect(result.loyalty.activeWalletsCount).toBe(4);
+    expect(readLoyaltyReport).toHaveBeenCalledExactlyOnceWith(mockLojaID);
+    expect(result.loyalty.commercial).toEqual(loyaltyReport.metrics.commercial);
+    expect(result.loyalty.totalLifetimeEarnedPoints).toBe(0);
+    expect(result.loyalty.totalDebtPoints).toBe(10);
+    expect(result.loyalty.legacyWallets).toBe(1);
+    expect(result.loyalty.settings.loyaltyPointsExpiryDays).toBeNull();
+    expect(result.loyalty.recentTransactions).toEqual(loyaltyReport.recentTransactions.slice(0, 5));
 
     // Asserções de Catálogo e Clientes (Inalterados)
     expect(result.catalog.totalProducts).toBe(521);
@@ -276,10 +253,6 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     (prisma.user.count as any).mockResolvedValue(5);
     (prisma.freightRule.count as any).mockResolvedValue(0);
     (prisma.jtExpressRate.count as any).mockResolvedValue(0);
-    (prisma.loyaltyWallet.aggregate as any).mockResolvedValue({ _sum: { balance: 0, lifetimeEarn: 0 } });
-    (prisma.loyaltyWallet.count as any).mockResolvedValue(0);
-    (prisma.loyaltyTransaction.aggregate as any).mockResolvedValue({ _sum: { points: 0, monetaryValue: null } });
-    (prisma.loyaltyTransaction.findMany as any).mockResolvedValue([]);
 
     // Primeira chamada: consulta banco
     const first = await getAggregatedDashboardMetrics(mockLojaID);
@@ -289,12 +262,22 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     const second = await getAggregatedDashboardMetrics(mockLojaID);
     expect(prisma.loja.findUnique).toHaveBeenCalledTimes(1);
     expect(second.generatedAt).toBe(first.generatedAt);
+    expect(readLoyaltyReport).toHaveBeenCalledExactlyOnceWith(mockLojaID);
+
+    // Outra loja consulta o próprio relatório, sem reutilizar o resultado em cache.
+    await getAggregatedDashboardMetrics('tenant-other');
+    expect(readLoyaltyReport).toHaveBeenLastCalledWith('tenant-other');
+    expect(readLoyaltyReport).toHaveBeenCalledTimes(2);
 
     // Invalidação de cache
     invalidateDashboardCache(mockLojaID);
 
     // Terceira chamada: consulta banco novamente
     await getAggregatedDashboardMetrics(mockLojaID);
-    expect(prisma.loja.findUnique).toHaveBeenCalledTimes(2);
+    expect(prisma.loja.findUnique).toHaveBeenCalledTimes(3);
+    expect(readLoyaltyReport).toHaveBeenCalledTimes(3);
+    expect(readLoyaltyReport).toHaveBeenLastCalledWith(mockLojaID);
+    await getAggregatedDashboardMetrics('tenant-other');
+    expect(readLoyaltyReport).toHaveBeenCalledTimes(3);
   });
 });
