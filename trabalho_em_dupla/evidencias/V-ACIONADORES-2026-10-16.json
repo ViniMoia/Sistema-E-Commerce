@@ -1,0 +1,68 @@
+{
+  "jobsAllRegions": {
+    "ok": true,
+    "data": []
+  },
+  "schedulerService": {
+    "ok": true,
+    "data": [
+      {
+        "name": "cloudscheduler.googleapis.com",
+        "state": "DISABLED"
+      }
+    ]
+  },
+  "schedulerJobs": {
+    "ok": false,
+    "exitCode": 1,
+    "reason": "SERVICE_DISABLED"
+  },
+  "runtime": {
+    "latestReadyRevision": "continental-hml-896dc56-logout",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      }
+    ],
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+    }
+  },
+  "schedulerAudit": {
+    "ok": true,
+    "window": "400d (subject to log retention)",
+    "limit": 100,
+    "entries": []
+  },
+  "checkedAt": "2026-10-16T19:56:50.280675+00:00",
+  "project": "continental-511812",
+  "cloudflare": {
+    "worker": "continental-pagamentos-hml",
+    "source": "operator report in this conversation",
+    "executionResult": "disabled",
+    "cronConfigured": false,
+    "financialProcessingOccurred": false,
+    "independentlyQueriedThisStage": false
+  },
+  "changes": {
+    "cloudConfigurationModified": false,
+    "apisEnabled": false,
+    "workerInvoked": false,
+    "consumerInvoked": false,
+    "webhookChanged": false
+  },
+  "schedulerInventoryComplete": false,
+  "activationGate": "NOT_APPROVED: Scheduler listing unavailable with API disabled; do not activate consumer",
+  "documentation": [
+    "https://docs.cloud.google.com/sdk/gcloud/reference/run/jobs/list",
+    "https://docs.cloud.google.com/scheduler/docs/reference/rest/v1/projects.locations.jobs/list"
+  ]
+}

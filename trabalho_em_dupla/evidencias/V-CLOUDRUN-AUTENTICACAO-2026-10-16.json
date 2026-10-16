@@ -1,0 +1,426 @@
+{
+  "at": "2026-10-16T19:05:37.635182+00:00",
+  "sourceCommit": "896dc564a6365bfbf2dd64fddb32b5a7aca8c951",
+  "branch": "homologacao_teste",
+  "githubPushedThisStage": false,
+  "runtime": {
+    "at": "2026-10-16T19:04:11.049147+00:00",
+    "revision": "continental-hml-896dc56-logout",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      }
+    ],
+    "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:742784f75af449390d077b5ec1f7f63fa0ca6156403127b2b76475d63ee48881",
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "ASAAS_INSTALLMENTS_APPROVED": "false"
+    },
+    "secrets": {
+      "DATABASE_URL": {
+        "key": "1",
+        "name": "continental-hml-database-url"
+      },
+      "DIRECT_URL": {
+        "key": "1",
+        "name": "continental-hml-direct-url"
+      },
+      "ASAAS_API_KEY": {
+        "key": "1",
+        "name": "continental-hml-asaas-api-key"
+      },
+      "CRON_SECRET": {
+        "key": "1",
+        "name": "continental-hml-cron-secret"
+      },
+      "FREIGHT_QUOTE_SECRET": {
+        "key": "1",
+        "name": "continental-hml-freight-quote-secret"
+      }
+    },
+    "aliases": {
+      "continental-hml-15531616695.southamerica-east1.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5"
+    },
+    "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+    "jobs": []
+  },
+  "admin": {
+    "startedAt": "2026-10-16T19:03:36.135Z",
+    "temporaryAdminExplicitlyAuthorized": true,
+    "checks": [
+      {
+        "label": "homologation identity",
+        "passed": true
+      },
+      {
+        "label": "temporary admin login",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "secure admin session",
+        "passed": true
+      },
+      {
+        "label": "/admin",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/products",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/orders",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/customers",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/settings",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/users",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/orders",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/freight",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "browser login form",
+        "passed": true
+      },
+      {
+        "label": "browser /admin",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/products",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/orders",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/customers",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/settings",
+        "passed": true
+      },
+      {
+        "label": "browser admin session revoked",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "label": "anonymous denied after logout",
+        "passed": true,
+        "status": 401
+      }
+    ],
+    "browser": [
+      {
+        "path": "/admin",
+        "heading": "Dashboard",
+        "title": "Dashboard | Painel Administrativo",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/products",
+        "heading": "Produtos & Variantes",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/orders",
+        "heading": "Gestão de Pedidos",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/customers",
+        "heading": "Clientes Continental",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/settings",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      }
+    ],
+    "cleanup": true,
+    "finishedAt": "2026-10-16T19:03:49.778Z"
+  },
+  "customer": {
+    "startedAt": "2026-10-16T19:04:03.835Z",
+    "accountType": "temporary CUSTOMER",
+    "checks": [
+      {
+        "label": "expected homologation store",
+        "passed": true
+      },
+      {
+        "label": "register customer",
+        "passed": true,
+        "status": 201
+      },
+      {
+        "label": "registration session",
+        "passed": true
+      },
+      {
+        "label": "customer login",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "secure session cookie",
+        "passed": true
+      },
+      {
+        "label": "authenticated /profile",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "authenticated /api/user/profile",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "customer cannot access Admin",
+        "passed": true,
+        "status": 403
+      },
+      {
+        "label": "authenticated checkout remains paused",
+        "passed": true,
+        "status": 503
+      },
+      {
+        "label": "logout",
+        "passed": true,
+        "status": 303
+      },
+      {
+        "label": "revoked session rejected",
+        "passed": true,
+        "status": 401
+      }
+    ],
+    "cleanup": true,
+    "finishedAt": "2026-10-16T19:04:08.009Z"
+  },
+  "finalChecks": {
+    "at": "2026-10-16T19:04:35.165Z",
+    "temporaryAccountsRemaining": 0,
+    "store": {
+      "slug": "continental-homologacao",
+      "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app"
+    },
+    "logout": {
+      "status": 303,
+      "location": "/",
+      "cacheControl": "no-store"
+    }
+  },
+  "logs": {
+    "at": "2026-10-16T19:04:39.525189+00:00",
+    "revision": "continental-hml-896dc56-logout",
+    "window": "1h",
+    "limit": 50,
+    "matchingEntries": 1,
+    "rawLogsPersisted": false,
+    "entries": [
+      {
+        "timestamp": "2026-10-16T19:04:09.052079Z",
+        "severity": "ERROR",
+        "status": 503,
+        "path": "/api/checkout",
+        "markers": []
+      }
+    ]
+  },
+  "inventory": {
+    "checkedAt": "2026-10-16T18:54:34.277346+00:00",
+    "webhooksHttpStatus": 200,
+    "webhooks": [
+      {
+        "id": "5d452f63-7272-4cea-93f1-b15bf6251e32",
+        "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+        "path": "/api/webhooks/asaas",
+        "queryParameterNames": [
+          "x-vercel-protection-bypass"
+        ],
+        "enabled": true,
+        "interrupted": false,
+        "sendType": "SEQUENTIALLY",
+        "eventCount": 4
+      }
+    ],
+    "hasMore": false,
+    "webhooksModified": false,
+    "cloudRunSupervisionStatus": 200,
+    "supervision": {
+      "accountScope": "sandbox-hml",
+      "inbox": [
+        {
+          "_count": 30,
+          "status": "COMPLETED"
+        }
+      ],
+      "outbox": [
+        {
+          "_count": 22,
+          "status": "COMPLETED"
+        },
+        {
+          "_count": 1,
+          "status": "DEAD_LETTER"
+        }
+      ],
+      "uncertain": 0,
+      "overdue": 1,
+      "abandonedLeases": 0,
+      "operations": [
+        {
+          "_count": 13,
+          "status": "COMPLETED",
+          "kind": "REFUND"
+        },
+        {
+          "_count": 2,
+          "status": "COMPLETED",
+          "kind": "CANCEL"
+        },
+        {
+          "_count": 1,
+          "status": "PENDING",
+          "kind": "REFUND"
+        }
+      ],
+      "untrackedLegacyOrders": 0,
+      "oldestUnresolvedInboxAt": null
+    }
+  },
+  "vercelReadOnly": {
+    "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+    "method": "GET only",
+    "automationAuthorizationSource": "existing authenticated Sandbox webhook configuration",
+    "checks": [
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/api/products",
+        "status": 200
+      },
+      {
+        "path": "/api/cron/payments/status",
+        "status": 200,
+        "accountScope": "sandbox-hml"
+      }
+    ],
+    "configurationModified": false
+  },
+  "financialReview": {
+    "checkedAt": "2026-10-16T18:55:38.879Z",
+    "transactionReadOnly": true,
+    "suppliedAccountExists": false,
+    "account": null,
+    "operations": [
+      {
+        "id": "895e8eec-8052-49ae-86b8-f35812003b7e",
+        "kind": "REFUND",
+        "status": "PENDING",
+        "createdAt": "2026-10-09T18:58:40.968Z",
+        "submittedAt": "2026-10-09T19:29:07.726Z",
+        "lastErrorCode": "PAYMENT_REFUND_CANCELLED_REVIEW",
+        "attempt": {
+          "orderId": "5b5bef57-2fd2-4f88-83fd-bf3d76238c40",
+          "method": "PIX",
+          "status": "REFUND_PENDING",
+          "providerAccount": "sandbox-hml",
+          "reviewAfter": "2026-10-10T21:04:41.350Z",
+          "order": {
+            "orderNumber": 3,
+            "status": "PAID"
+          }
+        }
+      }
+    ],
+    "outbox": [
+      {
+        "id": "24c2a64b-0d7e-43a2-85fa-27fbaa656134",
+        "commandType": "PAYMENT_REVIEW",
+        "aggregateId": "5b5bef57-2fd2-4f88-83fd-bf3d76238c40",
+        "status": "DEAD_LETTER",
+        "attempts": 1,
+        "lastErrorCode": "PAYMENT_REVIEW_REQUIRED",
+        "createdAt": "2026-10-10T00:59:17.814Z",
+        "nextAttemptAt": "2026-10-10T00:59:17.814Z"
+      }
+    ],
+    "outboxOrders": [
+      {
+        "id": "5b5bef57-2fd2-4f88-83fd-bf3d76238c40",
+        "orderNumber": 3,
+        "status": "PAID"
+      }
+    ],
+    "activeLeaseCount": 0
+  },
+  "validation": {
+    "targetedUnitTests": 27,
+    "targetedFiles": 2,
+    "logoutNewTests": 4,
+    "lintPassed": true,
+    "linuxStandaloneBuildAndTypeScriptPassed": true,
+    "fullSuiteRerunAfterLogoutFix": false
+  },
+  "boundaries": {
+    "existingAccountsChanged": false,
+    "temporaryAccountsRemoved": true,
+    "mainDatabaseAccessed": false,
+    "webhookDestinationChanged": false,
+    "paymentConsumersExecuted": false,
+    "schedulersCreated": false,
+    "purchasesEnabled": false,
+    "vercelDeploymentChanged": false
+  },
+  "pending": [
+    "Storage upload and email delivery configuration/validation",
+    "Identify current Vercel payment trigger and coordinate switch with Leno",
+    "Leno financial review for order 3; preserve real deadlines of order 8",
+    "Controlled Sandbox purchases after coordinated transfer"
+  ]
+}

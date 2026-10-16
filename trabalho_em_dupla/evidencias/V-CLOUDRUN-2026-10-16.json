@@ -1,0 +1,68 @@
+{
+  "verifiedAt": "2026-10-16T13:42:56.497966+00:00",
+  "project": "continental-511812",
+  "region": "southamerica-east1",
+  "service": "continental-hml",
+  "revision": "continental-hml-17366e8-maint",
+  "sourceCommit": "17366e8b5c2a44bd2c0157a159a371886b3126d1",
+  "imageDigest": "sha256:239091138f051f45de3274ea38a8e8efb057b2385391ca545ed85b3100ab9fa5",
+  "url": "https://continental-hml-15531616695.southamerica-east1.run.app",
+  "state": "DEPLOYED_IN_MAINTENANCE",
+  "functionalHomologationReady": false,
+  "databaseCredentialsDeployed": false,
+  "providerCredentialsDeployed": false,
+  "minInstances": 0,
+  "maxInstances": 1,
+  "unitTestsPassed": 43,
+  "remoteChecks": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/admin",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/api/checkout",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/api/webhooks/asaas",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cron/payments",
+      "status": 503,
+      "maintenanceConfirmed": true,
+      "cacheControl": "private, no-store"
+    }
+  ],
+  "pending": [
+    "isolated homologation database",
+    "runtime secrets and tenant host",
+    "functional smoke tests",
+    "notification channel and alert validation",
+    "approved budget and scheduler cadence"
+  ]
+}

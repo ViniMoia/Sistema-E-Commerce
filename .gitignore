@@ -1,6 +1,9 @@
 # Environment variables
 # Private file supplied locally; the versioned template is .env.example.
 /env.example
+/env
+/env.local
+/env.homologacao
 .env
 .env.*
 !.env.example
