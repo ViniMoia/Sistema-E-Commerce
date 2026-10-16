@@ -3,7 +3,7 @@ export const homologationSuites = [
   'test-environment-isolation', 'application-maintenance', 'loja-credentials', 'commerce-model',
   'loyalty-simulation-identity', 'purchase-tenant-scope', 'guest-buyer-identity',
   'order-transition-atomicity', 'inventory-admin-integrity', 'inventory-admin-browser', 'cart-mutation-atomicity',
-  'loyalty-lot-accounting', 'auth-eligibility-atomicity', 'freight-authority',
+  'loyalty-lot-accounting', 'loyalty-reporting', 'loyalty-reporting-browser', 'auth-eligibility-atomicity', 'freight-authority',
   'payment-plan-authority', 'checkout-intent-authority', 'payment-durable-execution',
   'checkout-client-boundaries', 'checkout-browser-state', 'payment-confirmation-browser', 'order-fulfillment-atomicity',
   'order-fulfillment-browser', 'order-reporting-browser', 'dashboard-financial-evidence', 'dashboard-financial-browser', 'customer-financial-metrics',

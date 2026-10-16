@@ -16,6 +16,8 @@ import type {
   UrgentActionItemDTO,
 } from '@/types/dashboard';
 
+const DASHBOARD_CACHE_KEY = 'aggregated_metrics_v4';
+
 /**
  * ============================================================================
  * CONTINENTAL ADMIN DASHBOARD — SERVIÇO DE AGREGAÇÃO DE DADOS (SOLID)
@@ -72,7 +74,7 @@ export async function getAggregatedDashboardMetrics(
   return await tenantCache.getOrSet(
     lojaID,
     'dashboard',
-    'aggregated_metrics_v4',
+    DASHBOARD_CACHE_KEY,
     async () => {
 
 
@@ -403,5 +405,5 @@ export async function getAggregatedDashboardMetrics(
  */
 export function invalidateDashboardCache(lojaID: string): void {
   if (!lojaID) return;
-  tenantCache.del(lojaID, 'dashboard', 'aggregated_metrics_v3');
+  tenantCache.del(lojaID, 'dashboard', DASHBOARD_CACHE_KEY);
 }
