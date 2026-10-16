@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "17366e8b5c2a44bd2c0157a159a371886b3126d1",
+  "localUncommittedHarness": true,
+  "runId": "71a813f2e80c0e910bc6889ac68bde96",
+  "sourceCapturedAt": "2026-10-15T18:43:55.572Z",
+  "startedAt": "2026-10-16T19:00:40.828Z",
+  "finishedAt": "2026-10-16T19:02:07.078Z",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "success": true,
+  "scenariosPassed": 3,
+  "scenariosFailed": 0,
+  "checks": {
+    "typeScript": "passed",
+    "eslint": "passed",
+    "cloneGuardTests": 4,
+    "migrationDiff": "-- This is an empty migration.",
+    "dataPreserved": true,
+    "sequencesPreserved": true
+  },
+  "audit": {
+    "schemaVersion": 1,
+    "cloneOnly": true,
+    "productionReady": false,
+    "sourceWritten": false,
+    "sharedHomologationWritten": false,
+    "transport": "local services; no provider requests",
+    "legacy": {
+      "financial": {
+        "settledTodayRevenue": 0,
+        "settledTodayShipping": 0,
+        "settledTodayNetRevenue": 0,
+        "settledTodayOrdersCount": 0,
+        "settledMonthRevenue": 0,
+        "settledMonthShipping": 0,
+        "settledMonthNetRevenue": 0,
+        "settledMonthOrdersCount": 0,
+        "settledTotalRevenue": 1069.99,
+        "settledTotalShipping": 0,
+        "settledTotalNetRevenue": 1069.99,
+        "settledTotalOrdersCount": 4,
+        "settledRevenue": 1069.99,
+        "pendingRevenue": 1209,
+        "cancelledRevenue": 580,
+        "averageTicket": 267.5,
+        "totalOrdersCount": 24,
+        "paidOrdersCount": 4,
+        "pendingOrdersCount": 10,
+        "cancelledOrdersCount": 10,
+        "paymentConversionRatePct": 17
+      },
+      "customerEvidence": {
+        "spent": 0,
+        "unverified": 24
+      },
+      "inbox": {
+        "dispatch": 2,
+        "pickup": 2,
+        "pending": 10
+      },
+      "recentLegacyOrders": 10,
+      "loyalty": {
+        "dashboardCirculating": 0,
+        "report": {
+          "totalCirculatingPoints": 0,
+          "projectedFinancialLiability": 0,
+          "activeCustomersWithPoints": 0,
+          "totalLifetimeEarnedPoints": 475,
+          "totalRedeemedPoints": 0,
+          "totalRedeemedMonetaryValue": 0
+        }
+      },
+      "declaredHistoricalTestOrders": 24
+    },
+    "periods": {
+      "synthetic": true,
+      "today": 150,
+      "month": 150,
+      "total": 220,
+      "creationDateAssumedReceipt": 50,
+      "financingAbsentFromTotal": 20,
+      "observations": "Paid date selects receipt period; null paidAt falls back to creation; sums use total instead of financialTotal. No settlement evidence supplied."
+    },
+    "refund": {
+      "synthetic": true,
+      "dashboardBefore": 100,
+      "dashboardWhileRequested": 100,
+      "dashboardAfter": 0,
+      "cancelledRevenueAfter": 100,
+      "customerRecognizedGross": 100,
+      "customerConfirmedRefunds": 100,
+      "customerNet": 0,
+      "observations": "Confirmed full refund leaves receipts totals and enters cancellations; dashboard has no separate gross/refund amounts or refund-date period."
+    },
+    "originalOrdersWalletsAndTransactionsPreserved": true
+  },
+  "productionReady": false,
+  "applicationCalculationsChanged": false
+}

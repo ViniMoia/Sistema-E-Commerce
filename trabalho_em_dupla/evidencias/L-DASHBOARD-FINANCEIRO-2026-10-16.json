@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-16T20:11:43.620Z",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateBaseRevision": "17366e8b5c2a44bd2c0157a159a371886b3126d1",
+  "localUncommittedImplementation": true,
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "providerRequests": false,
+  "deployed": false,
+  "productionReady": false,
+  "policy": {
+    "name": "RECORDED_FINANCIAL_FACTS_V1",
+    "timeBasis": "FACT_CREATED_AT",
+    "timezone": "America/Sao_Paulo",
+    "authorizationAndSettlementDeduplicated": true,
+    "refundsUseRegistrationPeriod": true,
+    "immutableFactsRewritten": false,
+    "guestOrdersIncluded": true,
+    "explicitTestOrdersExcluded": true,
+    "composition": "All-time fully recognized frozen contracts, before refunds; incomplete composition remains unallocated",
+    "notBankBalanceOrProfit": true
+  },
+  "checks": {
+    "financialDashboardIntegration": {
+      "passed": 8,
+      "failed": 0
+    },
+    "customerFinancialIntegration": {
+      "passed": 16,
+      "failed": 0
+    },
+    "browser": {
+      "passed": 1,
+      "failed": 0,
+      "desktop": true,
+      "mobileWidth": 390
+    },
+    "focusedUnit": {
+      "passed": 6,
+      "failed": 0
+    },
+    "homologationHarness": {
+      "passed": 3,
+      "failed": 0
+    },
+    "typeScript": "passed",
+    "eslint": "passed",
+    "isolatedProductionBuild": "passed",
+    "cloneGuardTests": {
+      "passed": 5,
+      "failed": 0
+    },
+    "diffWhitespace": "passed"
+  },
+  "reportingClone": {
+    "runId": "7dabcb77bc339ec06375cc5c27c94900",
+    "startedAt": "2026-10-16T20:00:37.007Z",
+    "finishedAt": "2026-10-16T20:02:19.805Z",
+    "sourceCapturedAt": "2026-10-15T18:43:55.572Z",
+    "tests": {
+      "passed": 3,
+      "failed": 0,
+      "cloneOnly": true
+    },
+    "dataPreserved": true,
+    "sequencesPreserved": true,
+    "migrationDiff": "-- This is an empty migration.",
+    "success": true
+  },
+  "observations": {
+    "previousMonthRecognition": 100,
+    "currentMonthRefund": 100,
+    "currentMonthNet": -100,
+    "allTimeGrossAfterRefund": 100,
+    "allTimeNetAfterRefund": 0,
+    "manualAuthorizationDoesNotInventSettlement": true,
+    "overRefundAndFutureFactsFlagReview": true,
+    "sessionTimezoneDoesNotChangeResults": true,
+    "paidLegacyWithoutFactsDoesNotInventRevenue": true
+  },
+  "resolvedValidationFindings": [
+    "Initial fixture missing required deliveryType corrected; production constraints preserved.",
+    "Browser text assertion uses textContent to avoid CSS capitalization dependence; monetary and mobile checks passed.",
+    "Windows taskkill returned a descendant error twice after killing Next; clone smoke cleanup now requires child exit and closed localhost listener before accepting shutdown."
+  ],
+  "limitations": [
+    "Registration dates are not asserted to be actual bank dates; existing occurredAt may reuse original paidAt.",
+    "Provider fees and profit are not calculated.",
+    "Shared environment publication and classification require coordinated baseline and deployment.",
+    "Historical loyalty redemption scope and other production gates remain separate."
+  ],
+  "fileSha256": {
+    "lib/commerce/financial-evidence.ts": "8c57acf1f494fb31ebc84044e5386bf05f23848d29343e1a3c928ce1551e880b",
+    "services/dashboard-financial.service.ts": "1d2c7096cff90275f87577d998908512604b06695e0474c945b5e3198bace472",
+    "services/customer-financial-metrics.service.ts": "ab2c3bbba220183a7223823405e9f1ef66fa6f569f19c53bad608c2a415f9c21",
+    "services/dashboard.service.ts": "2cef40a9814fa7625f2f9e60c16b208318ac1f5528f9f04e9c2997c3f8630611",
+    "types/dashboard.ts": "00a3342aaf2cd2bf8a801eca30ef72b4f43c6355dcd7204360c9d87ce5c6185d",
+    "components/admin/dashboard/FinancialKpiCard.tsx": "f003db7e8821b515b30509114365725758cea003ec81828c610d3aeff918e09d",
+    "components/admin/dashboard/LogisticsKpiCard.tsx": "d40e5d1f40f4065aaca696449ec7a36682733fc7acc2992ba5030e593f41f70a",
+    "app/admin/page.tsx": "ab46d779b34520d3b2da16c0ed769b65059e2cf357ac399fb7bb96f3268411b8",
+    "tests/integration/dashboard-financial-evidence.test.ts": "f427dea9ae7b1a0e9fe09151e8d6c7866a7f780a4465121c363f93fd563023b5",
+    "tests/integration/dashboard-financial-browser.test.ts": "5afd56a55a90609a28b178315edb86c692924b5bc93f88d30e44837cb81176b4",
+    "tests/unit/dashboard-service.test.ts": "3c4d74164661f32ab86a5821e966440388506aa43ca4c226ee116e7c70d8c1c8",
+    "tests/unit/financial-indicators.test.ts": "b9ca3ae77af7945fd7077d7f719470b84418b1b4d6a10b13584a9b42933e3d6b",
+    "tests/clone/restored-reporting.test.ts": "1838e2c734e3604cd285b6c3db1e0dfc20adc5db8e272ff23059ae90326c560c",
+    "tests/clone/restored-indicators.test.ts": "8289945dc9609a5ef52fbce96b15fa4838fee62ec3cc11d70bb70d699349c40b",
+    "scripts/lib/homologation-suites.mjs": "34b0c818f7fa796b3e4c0250cc9ca76833a898e4004053d5c28910cb656e0739",
+    "scripts/lib/restored-application-smoke.mjs": "c88893776711b7ed990e6788c2412aded63b186e9c73aeee58da512657e590a2"
+  },
+  "indicatorClone": {
+    "runId": "71ebc10e70a3639084d880862923613e",
+    "startedAt": "2026-10-16T20:09:10.102Z",
+    "finishedAt": "2026-10-16T20:11:33.943Z",
+    "success": true,
+    "tests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "dataPreserved": true,
+    "sequencesPreserved": true,
+    "applicationHttpTablesPreserved": true,
+    "originalOrdersWalletsAndTransactionsPreserved": true,
+    "periods": {
+      "synthetic": true,
+      "today": 0,
+      "month": 0,
+      "total": 0,
+      "unverifiedOrders": 3,
+      "observations": "No facts: paid status, paidAt, createdAt and financing snapshots alone do not establish recognition or settlement."
+    },
+    "refund": {
+      "synthetic": true,
+      "dashboardBefore": 100,
+      "dashboardWhileRequested": 100,
+      "dashboardAfter": 0,
+      "cancelledUnpaidOrderValueAfter": 0,
+      "customerRecognizedGross": 100,
+      "customerConfirmedRefunds": 100,
+      "customerNet": 0,
+      "observations": "Confirmed refunds retain gross and settlement history; net recognition decreases, unpaid cancellation value stays zero."
+    }
+  }
+}

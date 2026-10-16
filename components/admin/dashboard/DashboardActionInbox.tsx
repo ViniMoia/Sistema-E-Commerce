@@ -160,7 +160,7 @@ export const DashboardActionInbox: React.FC<DashboardActionInboxProps> = ({
               Aguardando Pagamento
             </h4>
             <p className="text-xs text-catalog-muted mt-1 leading-relaxed">
-              Pedidos gerados que ainda não foram liquidados via PIX
+              Pedidos que ainda aguardam confirmação do pagamento
             </p>
           </div>
           <div className="mt-4 pt-2.5 border-t border-catalog-gold/15 flex items-center justify-between text-[11px] text-catalog-gold font-mono uppercase tracking-wider">

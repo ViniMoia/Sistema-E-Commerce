@@ -46,6 +46,7 @@ export async function cleanupFixtureStores() {
     await tx.orderStatusHistory.deleteMany({ where: { order: { lojaID } } })
     await tx.orderItem.deleteMany({ where: { order: { lojaID } } })
     await tx.loyaltyTransaction.deleteMany({ where: { lojaID } })
+    await tx.orderReportingExclusion.deleteMany({ where: { order: { lojaID } } })
     await tx.order.deleteMany({ where: { lojaID } })
     await tx.freightQuote.deleteMany({ where: { lojaID } })
     await tx.checkoutIntent.deleteMany({ where: { lojaID } })

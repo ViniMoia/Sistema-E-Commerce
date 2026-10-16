@@ -52,50 +52,43 @@ export interface DashboardPixConfigDTO {
   whatsappNumber: string | null;
 }
 
-export interface DashboardFinancialDTO {
-  /** Valor recebido no dia civil corrente em horário oficial de Brasília (R$) - Maior destaque */
-  settledTodayRevenue: number;
-  /** Frete recebido em pedidos liquidados hoje (R$) */
-  settledTodayShipping: number;
-  /** Receita líquida de produtos recebida hoje (Total - Frete) em R$ */
-  settledTodayNetRevenue: number;
-  /** Quantidade de pedidos liquidados no dia civil corrente */
-  settledTodayOrdersCount: number;
-  /** Valor acumulado recebido no mês civil corrente em horário oficial de Brasília (R$) */
-  settledMonthRevenue: number;
-  /** Frete acumulado recebido no mês corrente (R$) */
-  settledMonthShipping: number;
-  /** Receita líquida de produtos recebida no mês corrente (Total - Frete) em R$ */
-  settledMonthNetRevenue: number;
-  /** Quantidade de pedidos liquidados no mês civil corrente */
-  settledMonthOrdersCount: number;
-  /** Valor acumulado total de todos os recebimentos históricos válidos (R$) */
-  settledTotalRevenue: number;
-  /** Frete acumulado total em pedidos liquidados históricos (R$) */
-  settledTotalShipping: number;
-  /** Receita líquida de produtos histórica total (Total - Frete) em R$ */
-  settledTotalNetRevenue: number;
-  /** Quantidade total histórica de pedidos liquidados */
-  settledTotalOrdersCount: number;
-  /** Receita confirmada total em pedidos pagos ou entregues (R$) - compatibilidade reversa */
-  settledRevenue: number;
-  /** Receita em aberto aguardando pagamento PIX (R$) */
-  pendingRevenue: number;
-  /** Volume financeiro de pedidos cancelados (R$) */
-  cancelledRevenue: number;
-  /** Ticket médio baseado exclusivamente em pedidos pagos (R$) */
-  averageTicket: number;
-  /** Total absoluto de pedidos computados */
+export interface FinancialPeriodDTO {
+  recognizedGross: number;
+  settledGross: number;
+  confirmedRefunds: number;
+  /** Recognized minus refunds registered in this period; may be negative. */
+  netRecognized: number;
+  recognizedOrderCount: number;
+  settledOrderCount: number;
+  refundedOrderCount: number;
+}
+
+export interface DashboardFinancialEvidenceDTO {
+  policy: 'RECORDED_FINANCIAL_FACTS_V1';
+  timeBasis: 'FACT_CREATED_AT';
+  timezone: 'America/Sao_Paulo';
+  currency: 'BRL';
+  asOf: string;
+  coverage: 'COMPLETE' | 'PARTIAL';
+  unverifiedOrders: number;
+  financialReviewOrders: number;
+  today: FinancialPeriodDTO;
+  month: FinancialPeriodDTO;
+  allTime: FinancialPeriodDTO;
+  /** Frozen commercial composition of fully recognized contracts, before refunds. */
+  composition: { merchandiseAfterDiscount: number; shipping: number; financingCharge: number; unallocatedRecognized: number };
+  pendingOrderValue: number;
+  cancelledUnpaidOrderValue: number;
+  cancelledUnpaidOrderCount: number;
+  averageNetTicket: number;
   totalOrdersCount: number;
-  /** Pedidos com status PAID */
   paidOrdersCount: number;
-  /** Pedidos com status PENDING */
   pendingOrdersCount: number;
-  /** Pedidos com status CANCELLED */
   cancelledOrdersCount: number;
-  /** Taxa de conversão de pagamentos (Pagos / Total em %) */
   paymentConversionRatePct: number;
-  /** Informações de status e configuração do gateway PIX */
+}
+
+export interface DashboardFinancialDTO extends DashboardFinancialEvidenceDTO {
   pixConfig: DashboardPixConfigDTO;
 }
 
@@ -119,8 +112,8 @@ export interface DashboardLogisticsProviderStatusDTO {
 }
 
 export interface DashboardLogisticsDTO {
-  /** Total arrecadado em taxas de envio/frete pagas pelos clientes (R$) */
-  totalShippingRevenue: number;
+  /** Frete contratado nos pedidos comerciais, independentemente de pagamento. */
+  totalShippingQuoted: number;
   /** Pedidos com modalidade de entrega em domicílio (DELIVERY) */
   deliveryOrdersCount: number;
   /** Pedidos com retirada presencial no balcão da loja (PICKUP) */

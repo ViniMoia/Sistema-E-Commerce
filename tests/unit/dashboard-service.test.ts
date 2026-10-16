@@ -1,8 +1,13 @@
+import { readDashboardFinancial } from '@/services/dashboard-financial.service';
+import type { DashboardFinancialEvidenceDTO } from '@/types/dashboard';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import prisma from '@/lib/prisma';
 import { tenantCache } from '@/lib/cache';
 import { getAggregatedDashboardMetrics, invalidateDashboardCache } from '@/services/dashboard.service';
 import { OrderStatus, DeliveryType, Prisma } from '@prisma/client';
+
+vi.mock('@/services/dashboard-financial.service', () => ({ readDashboardFinancial: vi.fn() }));
+const evidence = { policy: 'RECORDED_FINANCIAL_FACTS_V1', timeBasis: 'FACT_CREATED_AT', timezone: 'America/Sao_Paulo', currency: 'BRL', asOf: '2026-10-16T12:00:00.000Z', coverage: 'COMPLETE', unverifiedOrders: 0, financialReviewOrders: 0, today: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, month: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, allTime: { recognizedGross: 100, settledGross: 0, confirmedRefunds: 0, netRecognized: 100, recognizedOrderCount: 1, settledOrderCount: 0, refundedOrderCount: 0 }, composition: { merchandiseAfterDiscount: 100, shipping: 0, financingCharge: 0, unallocatedRecognized: 0 }, pendingOrderValue: 0, cancelledUnpaidOrderValue: 0, cancelledUnpaidOrderCount: 0, averageNetTicket: 100, totalOrdersCount: 1, paidOrdersCount: 1, pendingOrdersCount: 0, cancelledOrdersCount: 0, paymentConversionRatePct: 100 } satisfies DashboardFinancialEvidenceDTO;
 
 // Mock do prisma
 vi.mock('@/lib/prisma', () => {
@@ -46,6 +51,7 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(readDashboardFinancial).mockResolvedValue(evidence);
     tenantCache.clear();
   });
 
@@ -197,42 +203,13 @@ describe('Dashboard Service — Agregação e Cache Multi-Tenant (Fase 1)', () =
     // Executa a função do serviço
     const result = await getAggregatedDashboardMetrics(mockLojaID);
 
-    // Asserções Financeiras
-    expect(result.financial.settledRevenue).toBe(980.0);
-    expect(result.financial.pendingRevenue).toBe(1435.99);
-    expect(result.financial.cancelledRevenue).toBe(500.0);
-    expect(result.financial.totalOrdersCount).toBe(25);
-    expect(result.financial.paidOrdersCount).toBe(3);
-    expect(result.financial.pendingOrdersCount).toBe(12);
-    expect(result.financial.cancelledOrdersCount).toBe(10);
-    expect(result.financial.averageTicket).toBe(326.67);
-    expect(result.financial.paymentConversionRatePct).toBe(12);
+    expect(readDashboardFinancial).toHaveBeenCalledWith(prisma, mockLojaID);
+    expect(result.financial).toMatchObject(evidence);
     expect(result.financial.pixConfig.hasPixKey).toBe(true);
     expect(result.financial.pixConfig.pixKeyMasked).toBe('**.***.678/0001-**');
 
-    // Asserções Financeiras
-    expect(result.financial.settledTodayRevenue).toBe(320.0);
-    expect(result.financial.settledTodayShipping).toBe(20.0);
-    expect(result.financial.settledTodayNetRevenue).toBe(300.0);
-    expect(result.financial.settledTodayOrdersCount).toBe(1);
-
-    expect(result.financial.settledMonthRevenue).toBe(980.0);
-    expect(result.financial.settledMonthShipping).toBe(65.0);
-    expect(result.financial.settledMonthNetRevenue).toBe(915.0);
-    expect(result.financial.settledMonthOrdersCount).toBe(3);
-
-    expect(result.financial.settledTotalRevenue).toBe(980.0);
-    expect(result.financial.settledTotalShipping).toBe(65.0);
-    expect(result.financial.settledTotalNetRevenue).toBe(915.0);
-    expect(result.financial.settledTotalOrdersCount).toBe(3);
-    expect(result.financial.settledRevenue).toBe(980.0);
-    expect(result.financial.pendingRevenue).toBe(1435.99);
-    expect(result.financial.cancelledRevenue).toBe(500.0);
-    expect(result.financial.averageTicket).toBe(326.67);
-    expect(result.financial.paymentConversionRatePct).toBe(12);
-
     // Asserções de Logística
-    expect(result.logistics.totalShippingRevenue).toBe(45.0);
+    expect(result.logistics.totalShippingQuoted).toBe(45.0);
     expect(result.logistics.deliveryOrdersCount).toBe(2);
     expect(result.logistics.pickupOrdersCount).toBe(1);
     expect(result.logistics.providerStatus.enableCorreios).toBe(true);

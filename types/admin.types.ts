@@ -2,6 +2,7 @@ import type { OrderStatus } from "@prisma/client";
 import type { CommerceActor } from '@/lib/commerce/contracts';
 
 export type ListOrdersParams = {
+  reportingScope?: import('@/lib/commerce/order-reporting').OrderReportingScope;
   pageSize?: number;
   status?: OrderStatus;
   search?: string;

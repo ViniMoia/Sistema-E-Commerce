@@ -75,7 +75,7 @@ export async function GET(req: Request) {
     ])
 
     const totalCirculatingPoints = walletsAggregate._sum.balance || 0
-    const totalLifetimeEarned = walletsAggregate._sum.lifetimeEarn || earnedAggregate._sum.points || 0
+    const totalLifetimeEarned = walletsAggregate._sum.lifetimeEarn ?? earnedAggregate._sum.points ?? 0
     const totalRedeemedPoints = Math.abs(redeemedAggregate._sum.points || 0)
 
     // Passivo financeiro projetado: total de pontos em circulação * valor do ponto
