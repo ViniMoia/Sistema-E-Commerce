@@ -1,0 +1,53 @@
+{
+  "revision": "continental-hml-00003-xhx",
+  "traffic": [
+    {
+      "latestRevision": true,
+      "percent": 100,
+      "revisionName": "continental-hml-00003-xhx"
+    }
+  ],
+  "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+  "flags": {
+    "APP_MAINTENANCE_MODE": "false",
+    "CHECKOUT_PAUSED": "true",
+    "PAYMENT_REMOTE_ENABLED": "false",
+    "PAYMENT_WORKER_ENABLED": "false",
+    "PAYMENT_EXPIRATION_ENABLED": "false"
+  },
+  "secrets": {
+    "DATABASE_URL": {
+      "key": "1",
+      "name": "continental-hml-database-url"
+    },
+    "DIRECT_URL": {
+      "key": "1",
+      "name": "continental-hml-direct-url"
+    }
+  },
+  "verifiedAt": "2026-10-16T16:07:29.559808+00:00",
+  "sourceConfiguration": "env.homologacao",
+  "mapping": {
+    "DATABASE_URL_UNPOOLED": "DATABASE_URL",
+    "DIRECT_DATABASE_KEY": "DIRECT_URL"
+  },
+  "migrationsExecuted": false,
+  "schemaModified": false,
+  "tenantDomainChanged": false,
+  "httpChecks": [
+    {
+      "path": "/api/loja/continental-homologacao",
+      "status": 200,
+      "slug": "continental-homologacao",
+      "expectedStore": true
+    },
+    {
+      "path": "/",
+      "status": 404
+    },
+    {
+      "path": "/api/products",
+      "status": 404
+    }
+  ]
+}

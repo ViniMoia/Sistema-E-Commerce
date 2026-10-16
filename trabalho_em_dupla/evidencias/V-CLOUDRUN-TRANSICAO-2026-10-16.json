@@ -1,0 +1,196 @@
+{
+  "at": "2026-10-16T18:20:28.898690+00:00",
+  "revision": "continental-hml-8c7f865-alias",
+  "sourceCommit": "8c7f8651a3319c8568206be50acb8d7675c00d34",
+  "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:cf8965541d21514ab1585d4cb6994d484b36df38adc606989306d1e0914005b4",
+  "traffic": [
+    {
+      "latestRevision": true,
+      "percent": 100,
+      "revisionName": "continental-hml-8c7f865-alias"
+    }
+  ],
+  "flags": {
+    "APP_MAINTENANCE_MODE": "false",
+    "CHECKOUT_PAUSED": "true",
+    "PAYMENT_REMOTE_ENABLED": "false",
+    "PAYMENT_WORKER_ENABLED": "false",
+    "PAYMENT_EXPIRATION_ENABLED": "false",
+    "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+    "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+  },
+  "aliases": {
+    "continental-hml-15531616695.southamerica-east1.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5"
+  },
+  "secrets": {
+    "DATABASE_URL": {
+      "key": "1",
+      "name": "continental-hml-database-url"
+    },
+    "DIRECT_URL": {
+      "key": "1",
+      "name": "continental-hml-direct-url"
+    },
+    "ASAAS_API_KEY": {
+      "key": "1",
+      "name": "continental-hml-asaas-api-key"
+    },
+    "CRON_SECRET": {
+      "key": "1",
+      "name": "continental-hml-cron-secret"
+    },
+    "FREIGHT_QUOTE_SECRET": {
+      "key": "1",
+      "name": "continental-hml-freight-quote-secret"
+    }
+  },
+  "unitTests": 840,
+  "testFiles": 91,
+  "authenticatedAdminValidated": false,
+  "databaseDomainChanged": false,
+  "vercelDeploymentChanged": false,
+  "webhookDestinationChanged": false,
+  "schedulersCreated": false,
+  "purchasesEnabled": false,
+  "tenantOrPrismaErrorEntries": 0,
+  "additionalHosts": [
+    {
+      "host": "continental-hml-jctvprygla-rj.a.run.app",
+      "status": 200,
+      "redirectHost": null
+    },
+    {
+      "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+      "status": 302,
+      "redirectHost": "vercel.com"
+    }
+  ],
+  "http": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "status": 200,
+      "responseKeys": [
+        "array"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/admin",
+      "status": 307,
+      "redirectPath": "/login"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "status": 401,
+      "error": "Unauthorized"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payment/capabilities",
+      "status": 200,
+      "methods": [],
+      "lojaID": "3a82b33c-3646-4272-9a89-80bb1ba327a5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/checkout",
+      "status": 503,
+      "error": "CHECKOUT_PAUSED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/checkout/intents",
+      "status": 503,
+      "error": "CHECKOUT_PAUSED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401,
+      "error": "Credenciais inválidas"
+    },
+    {
+      "method": "POST",
+      "path": "/api/webhooks/asaas",
+      "status": 503,
+      "error": "Configuração de webhook não inicializada."
+    },
+    {
+      "method": "POST",
+      "path": "/api/cron/payments",
+      "status": 503,
+      "error": "Executor financeiro desabilitado."
+    }
+  ],
+  "browser": {
+    "checks": [
+      {
+        "name": "home-desktop",
+        "title": "Continental — Homologação",
+        "heading": "ESTÉTICAAUTOMOTIVADE ALTA PRECISÃO",
+        "imageCount": 69,
+        "loadedImages": 23,
+        "brokenImages": [],
+        "passwordInput": false,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "home-mobile",
+        "title": "Continental — Homologação",
+        "heading": "ESTÉTICAAUTOMOTIVADE ALTA PRECISÃO",
+        "imageCount": 69,
+        "loadedImages": 29,
+        "brokenImages": [],
+        "passwordInput": false,
+        "horizontalOverflow": false
+      },
+      {
+        "name": "login",
+        "title": "Login | Continental Produtos Estéticos",
+        "imageCount": 3,
+        "loadedImages": 3,
+        "brokenImages": [],
+        "passwordInput": true,
+        "horizontalOverflow": false
+      }
+    ],
+    "failures": [],
+    "exceptions": [],
+    "blockedWrites": []
+  },
+  "asaas": {
+    "environment": "SANDBOX",
+    "method": "GET",
+    "path": "/v3/myAccount/status",
+    "status": 200,
+    "deployedSecretMatchesConfirmedSource": true,
+    "registrationStatus": {
+      "commercialInfo": "APPROVED",
+      "bankAccountInfo": "APPROVED",
+      "documentation": "APPROVED",
+      "general": "APPROVED"
+    }
+  },
+  "store": {
+    "store": {
+      "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "slug": "continental-homologacao",
+      "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app"
+    },
+    "readOnly": true,
+    "domainPreserved": true
+  }
+}
