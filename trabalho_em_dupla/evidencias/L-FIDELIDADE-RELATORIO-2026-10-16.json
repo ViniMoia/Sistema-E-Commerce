@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-16T21:18:50.016Z",
+  "scope": "Local loyalty reporting review; no shared database access",
+  "baseCommit": "dbfeb1f441b70b56b83f9089f27c2e9730fbebfd",
+  "mainReadOnlyReference": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "remoteDocumentationObserved": "eb0708c69ddda41e5b456f36b5df2e4cc6ca3cab",
+  "policy": {
+    "walletScope": "All tenant wallets; no classification-based balance changes",
+    "commercialScope": "Ledger movements linked to same-store orders without explicit reporting exclusion",
+    "moneyBasis": "Historical LoyaltyTransaction.monetaryValue; no current-rate substitution",
+    "currentRateUse": "Wallet redemption estimate only",
+    "history": "Includes test movements with explicit label",
+    "snapshot": "RepeatableRead, SET TRANSACTION READ ONLY",
+    "unknownValues": "Partial coverage; sum recorded amounts only",
+    "limits": [
+      "Not proof of full ledger reconciliation",
+      "Registered redemption is not proof of order payment",
+      "No classification or wallet remediation performed"
+    ]
+  },
+  "validation": {
+    "finalIntegrationRun": "b60ac50ac0f1045067956674e75b3ac4",
+    "integration": 4,
+    "browser": 1,
+    "browserSurfaces": [
+      "/admin",
+      "/admin/fidelidade",
+      "desktop",
+      "390px"
+    ],
+    "priorRun": "1644473951410eb633ae1bd81192438f",
+    "priorRunPassed": {
+      "lotAccounting": 17,
+      "financialBrowser": 1
+    },
+    "priorRunFailed": {
+      "newTests": 3,
+      "causes": [
+        "Invalid fixture with ready wallet balance and debt simultaneously",
+        "Wrong classification fixture field",
+        "Negative zero in projection"
+      ],
+      "resolution": "Corrected fixtures without changing constraints; normalized zero; all new tests passed on final run"
+    },
+    "unit": {
+      "files": 6,
+      "tests": 46
+    },
+    "typecheck": "passed",
+    "eslint": "passed",
+    "productionIsolatedBuild": "passed"
+  },
+  "deployment": {
+    "published": false,
+    "sharedDatabaseWritten": false,
+    "sharedDatabaseRead": false,
+    "mainChanged": false,
+    "financialProcessingAttempted": false,
+    "newMigration": false,
+    "cacheKey": "aggregated_metrics_v4",
+    "cacheTtlSeconds": 60,
+    "remoteAcceptance": "pending"
+  },
+  "sourceSha256": {
+    "services/loyalty-report.service.ts": "b44570f250264f962d046b2528205e8acd496df76028accf02b11e20683ac23b",
+    "services/dashboard.service.ts": "4ece48e26a8b0b9bbc7a1921415e39b33a21fd7f5203b7a6671615e62374d6b4",
+    "app/api/admin/loyalty/reports/route.ts": "b979bac07cc4ee00f3e13e94ec5bfecfe92438123908f17798bc36a369b5405e",
+    "types/loyalty.types.ts": "8f0a0f1b9a869c5a5bd23a47b7ce969793707703f0b78095e8db912da5136381",
+    "types/dashboard.ts": "8a91e0cbe139192f0f72b567fda9929aa3debbe1976edd4a9af7846b19532cd8",
+    "components/admin/loyalty/LoyaltyCommercialSummary.tsx": "cdacf20b942c0cf8b13cb2a5bce47cd4b63c7564c221f593d120ac472dba3ef6",
+    "components/admin/loyalty/LoyaltyAdminView.tsx": "f0dce76370466f107cdafd9ad9e618021c62b983a8147e483b69561583f809c5",
+    "components/admin/dashboard/LoyaltyQuickManagementWidget.tsx": "9bfaa2c2d32472f1c0511d7db54b982011fecda07ebf5a51792be2b118fb803b",
+    "tests/integration/loyalty-reporting.test.ts": "7aa3195df84332bc12b64e6e3ff2ded932e07efa6a9b1d7b9d7fde340be4f48c",
+    "tests/integration/loyalty-reporting-browser.test.ts": "b82397655b9e39b379482183738c5bbdf9f755c1e68c0c33d154a0b5e303c139"
+  }
+}

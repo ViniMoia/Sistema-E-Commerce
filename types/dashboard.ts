@@ -143,6 +143,7 @@ export interface DashboardLoyaltySettingsDTO {
 }
 
 export interface DashboardLoyaltyTransactionDTO {
+  isTestOrder: boolean;
   id: string;
   userName: string;
   userEmail: string;
@@ -156,17 +157,20 @@ export interface DashboardLoyaltyTransactionDTO {
 }
 
 export interface DashboardLoyaltyDTO {
+  commercial: import('./loyalty.types').LoyaltyCommercialMetrics;
+  totalDebtPoints: number;
+  legacyWallets: number;
   /** Flag master do programa de pontos da loja */
   loyaltyEnabled: boolean;
   /** Total de pontos ativos atualmente em poder dos clientes */
   totalCirculatingPoints: number;
   /** Passivo financeiro projetado em R$ caso todos os pontos fossem resgatados */
   projectedFinancialLiability: number;
-  /** Total de pontos acumulados historicamente por compras */
+  /** Acumulador das carteiras, incluindo ajustes e reversões; não é ganho comercial bruto. */
   totalLifetimeEarnedPoints: number;
   /** Total de pontos já resgatados como desconto em pedidos */
   totalRedeemedPoints: number;
-  /** Economia monetária total gerada aos clientes (R$) */
+  /** Valor histórico bruto registrado nos resgates comerciais, antes das devoluções. */
   totalRedeemedMonetaryDiscount: number;
   /** Número de clientes com carteira e saldo positivo no programa */
   activeWalletsCount: number;

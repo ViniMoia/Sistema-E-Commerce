@@ -129,3 +129,17 @@ export interface ProcessLoyaltyExpirationsResult {
   skippedLegacyWallets?: number
 }
 
+/** Historical movements for orders not explicitly classified as tests. */
+export interface LoyaltyCommercialMetrics {
+  earnedPoints: number
+  reversedEarnedPoints: number
+  redeemedPoints: number
+  returnedPoints: number
+  netRedeemedPoints: number
+  redeemedValue: number
+  returnedValue: number
+  netRedeemedValue: number
+  missingMonetaryValues: number
+  unlinkedTransactions: number
+  coverage: 'COMPLETE' | 'PARTIAL'
+}

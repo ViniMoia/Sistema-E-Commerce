@@ -27,10 +27,15 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { LoyaltySettings } from '@/types/loyalty.types'
+import type { LoyaltyCommercialMetrics } from '@/types/loyalty.types'
+import { LoyaltyCommercialSummary } from './LoyaltyCommercialSummary'
 
 interface ReportData {
   settings: LoyaltySettings
   metrics: {
+    commercial: LoyaltyCommercialMetrics
+    totalDebtPoints: number
+    legacyWallets: number
     totalCirculatingPoints: number
     projectedFinancialLiability: number
     activeCustomersWithPoints: number
@@ -39,6 +44,7 @@ interface ReportData {
     totalRedeemedMonetaryValue: number
   }
   recentTransactions: Array<{
+    isTestOrder: boolean
     id: string
     userName: string
     userEmail: string
@@ -221,7 +227,7 @@ export function LoyaltyAdminView() {
         {/* Passivo Financeiro Projetado */}
         <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/35 shadow-2xl relative overflow-hidden group hover:border-catalog-gold transition-all">
           <div className="flex items-center justify-between text-xs text-catalog-gold font-mono font-semibold uppercase tracking-wider">
-            <span>Passivo Financeiro</span>
+            <span>Valor de resgate estimado</span>
             <div className="w-8 h-8 rounded-lg bg-catalog-gold/15 border border-catalog-gold/30 flex items-center justify-center text-catalog-gold">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -231,7 +237,7 @@ export function LoyaltyAdminView() {
               {formatCurrency(report?.metrics.projectedFinancialLiability ?? 0)}
             </p>
             <p className="text-[11px] text-catalog-muted font-light mt-1">
-              Valor de resgate dos pontos em circulação
+              Saldo das carteiras × valor atual do ponto
             </p>
           </div>
         </div>
@@ -249,7 +255,7 @@ export function LoyaltyAdminView() {
               {(report?.metrics.totalCirculatingPoints ?? 0).toLocaleString('pt-BR')} <span className="text-sm text-catalog-gold font-normal">pts</span>
             </p>
             <p className="text-[11px] text-catalog-muted font-light mt-1">
-              Disponíveis nas carteiras dos clientes
+              Saldo registrado nas carteiras dos clientes
             </p>
           </div>
         </div>
@@ -275,7 +281,7 @@ export function LoyaltyAdminView() {
         {/* Total Economizado por Clientes */}
         <div className="rounded-2xl bg-catalog-card p-6 border border-catalog-gold/20 shadow-xl relative overflow-hidden group hover:border-catalog-gold/40 transition-all">
           <div className="flex items-center justify-between text-xs text-catalog-muted font-mono font-medium uppercase tracking-wider">
-            <span>Total Resgatado</span>
+            <span>Resgates comerciais brutos</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -285,11 +291,13 @@ export function LoyaltyAdminView() {
               {formatCurrency(report?.metrics.totalRedeemedMonetaryValue ?? 0)}
             </p>
             <p className="text-[11px] text-catalog-muted font-light mt-1">
-              {(report?.metrics.totalRedeemedPoints ?? 0).toLocaleString('pt-BR')} pontos convertidos em descontos
+              {(report?.metrics.totalRedeemedPoints ?? 0).toLocaleString('pt-BR')} pontos; valores registrados antes das devoluções
             </p>
           </div>
         </div>
       </div>
+
+      {report && <LoyaltyCommercialSummary commercial={report.metrics.commercial} debt={report.metrics.totalDebtPoints} legacyWallets={report.metrics.legacyWallets} />}
 
       {/* Pílulas de Navegação por Abas */}
       <div className="flex flex-wrap gap-2.5 border-b border-catalog-gold/20 pb-4">
@@ -630,6 +638,7 @@ export function LoyaltyAdminView() {
                       </td>
                       <td className="py-4 px-6 text-neutral-300">
                         {tx.description}
+                        {tx.isTestOrder && <span className="ml-2 text-amber-300">Pedido de teste</span>}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-neutral-300 font-semibold">
