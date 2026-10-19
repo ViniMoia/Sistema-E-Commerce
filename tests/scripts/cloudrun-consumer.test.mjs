@@ -4,7 +4,9 @@ import { consumerConfig, runConsumer } from '../../scripts/cloudrun-consumer.mjs
 const env = { CONSUMER_ORIGIN: 'https://shop.example', CRON_SECRET: 's'.repeat(32),
   ASAAS_ACCOUNT_SCOPE: 'sandbox-hml', PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX' };
 const snapshot = { schemaVersion: 1, accountScope: 'sandbox-hml', uncertain: 0, overdue: 0,
-  abandonedLeases: 0, inbox: [], outbox: [], oldestUnresolvedInboxAt: null };
+  abandonedLeases: 0, inbox: [], outbox: [], untrackedLegacyOrders: 0, oldestUnresolvedInboxAt: null,
+  supervision: { schemaVersion: 1, reviewAttempts: 0, chargebackReviews: 0, physicalReturnReviews: 0, heldOperations: 0,
+    emailDeadLetters: 0, expiredQueueLeases: 0, foreignAccountAttempts: 0, oldestUnresolvedOutboxAt: null, oldestPendingEmailAt: null, oldestDueReconciliationAt: null } };
 const summary = n => ({ claimed: n, completed: n, retried: 0, review: 0 });
 const batch = n => ({ inbox: summary(n), reconciliation: summary(0), outbox: summary(n),
   expiration: { success: true, errorCount: 0, processedCount: 0, cancelledCount: 0 } });
@@ -81,4 +83,53 @@ test('rejects redirects/embedded credentials/path and production loopback bypass
   }
   assert.throws(() => consumerConfig({ ...env, PAYMENT_DEPLOYMENT_ENVIRONMENT: 'PRODUCTION', CONSUMER_ORIGIN: 'http://127.0.0.1', CONSUMER_ALLOW_LOCAL: 'true' }));
   assert.throws(() => consumerConfig({ ...env, CONSUMER_MAX_BATCHES: '100' }));
+});
+
+
+test('supervision is GET only and surfaces persistent cases without queue activity', async () => {
+  const calls = [], logs = [];
+  const result = await runConsumer({ ...env, CONSUMER_MODE: 'supervision' }, { log: x => logs.push(x), fetcher: async (url, options) => {
+    calls.push({ url, method: options.method });
+    return response({ ...snapshot, uncertain: 1, supervision: { ...snapshot.supervision, reviewAttempts: 2,
+      heldOperations: 1, chargebackReviews: 1, physicalReturnReviews: 1, emailDeadLetters: 1, foreignAccountAttempts: 1 } });
+  } });
+  assert.deepEqual(calls, [{ url: env.CONSUMER_ORIGIN + '/api/cron/payments/status', method: 'GET' }]);
+  assert.equal(result.processingAttempted, false); assert.equal(result.batches, 0); assert.equal(result.outcome, 'attention');
+  for (const code of ['PAYMENT_UNCERTAIN','PAYMENT_REVIEW','OPERATION_HELD','CHARGEBACK_REVIEW','PHYSICAL_RETURN_REVIEW','EMAIL_REVIEW','STORED_ACCOUNT_MISMATCH']) assert.ok(result.attentionReasons.includes(code));
+  assert.equal(logs.at(-1).severity, 'WARNING');
+});
+
+test('detects aged outbox, email, reconciliation, expired leases and legacy obligations', async () => {
+  const now = Date.parse('2026-10-19T12:00:00Z'), old = '2026-10-19T11:55:00Z';
+  const result = await runConsumer({ ...env, CONSUMER_MODE: 'supervision' }, { now: () => now, log() {}, fetcher: async () => response({
+    ...snapshot, untrackedLegacyOrders: 1, supervision: { ...snapshot.supervision, expiredQueueLeases: 1,
+      oldestUnresolvedOutboxAt: old, oldestPendingEmailAt: old, oldestDueReconciliationAt: old },
+  }) });
+  for (const code of ['OUTBOX_DELAY','EMAIL_DELAY','RECONCILIATION_DELAY','EXPIRED_LEASES','UNTRACKED_LEGACY']) assert.ok(result.attentionReasons.includes(code));
+});
+
+test('older status contract is incomplete coverage, never a healthy observation', async () => {
+  const { supervision, ...older } = snapshot;
+  const result = await runConsumer({ ...env, CONSUMER_MODE: 'supervision' }, { log() {}, fetcher: async () => response(older) });
+  assert.equal(result.outcome, 'attention'); assert.deepEqual(result.attentionReasons, ['SUPERVISION_UNAVAILABLE']);
+});
+
+test('malformed supervision fails without exposing payload or issuing a POST', async () => {
+  for (const changed of [{ heldOperations: -1 }, { oldestPendingEmailAt: 123 }, { schemaVersion: 99 }]) {
+    const calls = [], logs = [];
+    await assert.rejects(runConsumer({ ...env, CONSUMER_MODE: 'supervision' }, { log: x => logs.push(x), fetcher: async (url, options) => {
+      calls.push(options.method); return response({ ...snapshot, secret: env.CRON_SECRET, supervision: { ...snapshot.supervision, ...changed } });
+    } }), /RESPONSE_INVALID/);
+    assert.deepEqual(calls, ['GET']); assert.ok(!JSON.stringify(logs).includes(env.CRON_SECRET));
+  }
+});
+
+test('fresh healthy observation clears attention reasons without sending financial commands', async () => {
+  const results = [];
+  for (const reviewAttempts of [1,1,0]) results.push(await runConsumer({ ...env, CONSUMER_MODE: 'supervision' }, {
+    log() {}, fetcher: async (_, options) => { assert.equal(options.method, 'GET'); return response({ ...snapshot, supervision: { ...snapshot.supervision, reviewAttempts } }); },
+  }));
+  assert.deepEqual(results.map(x => x.outcome), ['attention','attention','idle']);
+  assert.deepEqual(results[0].attentionReasons, results[1].attentionReasons);
+  assert.deepEqual(results[2].attentionReasons, []);
 });

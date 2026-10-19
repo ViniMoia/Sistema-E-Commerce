@@ -31,3 +31,25 @@ test('refuses mutable images, missing notification recipients and origin injecti
   assert.throws(() => cloudRunManifests({ ...config, notificationChannels: [] }));
   assert.throws(() => cloudRunManifests({ ...config, origin: 'https://user:password@host.example/' }));
 });
+
+
+test('independent supervision job uses the existing secret and bounded alerts without financial activation', () => {
+  const m = cloudRunManifests(config);
+  const task = m['supervision-job.json'].spec.template.spec.template.spec;
+  assert.equal(task.maxRetries, 0);
+  assert.equal(task.containers[0].env.find(e => e.name === 'CONSUMER_MODE').value, 'supervision');
+  assert.ok(!JSON.stringify(task).includes('DATABASE_URL'));
+  const alert = m['supervision-failure-alert.json'];
+  assert.deepEqual(alert.notificationChannels, config.notificationChannels);
+  assert.equal(alert.alertStrategy.notificationRateLimit.period, '300s');
+  assert.match(alert.documentation.content, /nao comprova resolucao financeira/);
+  assert.ok(alert.conditions[0].conditionMatchedLog.filter.includes('resource.labels.location="' + config.region + '"'));
+  assert.equal(m['supervision-heartbeat-alert.json'].conditions[0].conditionAbsent.duration, '600s');
+  assert.equal(m['readiness.json'].resourcesProvisioned, false);
+  for (const mode of ['payments', 'loyalty', 'supervision']) {
+    const filter = m[`${mode}-failure-alert.json`].conditions[0].conditionMatchedLog.filter;
+    // Cloud Run promotes structured severity to LogEntry.severity on ingestion.
+    assert.ok(filter.includes('severity>=ERROR OR jsonPayload.severity="ERROR"'));
+    assert.ok(filter.includes('jsonPayload.outcome="attention"'));
+  }
+});

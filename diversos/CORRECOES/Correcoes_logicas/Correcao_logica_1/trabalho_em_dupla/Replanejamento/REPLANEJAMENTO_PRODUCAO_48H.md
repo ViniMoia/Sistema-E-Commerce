@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Avanço local G6 — 19/10:** ampliada a supervisão de pendências financeiras e preparado um observador que faz somente GET autenticado, com alertas nos manifestos existentes. Validação local aprovada; **ainda sem commit, CI remota ou implantação desta alteração**. Detalhes, evidência e sequência de aceite na **seção 67**. Isso não substitui a candidata `d63ad8a` que Vanderlei está preparando conforme seção 66. G6 permanece aberto até execução automática, recebimento real dos alertas e recuperação comprovados no destino.
+
 **Direcionamento vigente para Vanderlei — 19/10:** o [PR #8](https://github.com/ViniMoia/Sistema-E-Commerce/pull/8) foi integrado à `homologacao_teste` em **`d63ad8a1ab2d712153177155eae518d3eddcdc86`**. A [CI após integração](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722) passou, assim como a CI da candidata `d78fdae`; as árvores de arquivos são idênticas. Dashboard/fidelidade, retorno físico integral e resultado de chargeback estão integrados. **Publicação e aceite dessa revisão no Cloud Run ainda não foram comprovados.** Executar as atribuições e devolver as evidências da **[seção 66](#66-publicação-da-candidata-e-atribuições-de-vanderlei--19102026)**. A próxima atualização de Git contém somente documentação; o SHA acima continua identificando o código aprovado. Os avisos antigos abaixo descrevem seus respectivos momentos e não substituem este direcionamento.
 
 **Atendimento G3 preparado — 16/10:** [roteiro de revisão financeira, devolução após entrega e chargeback](../../../../../../trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md) e modelo de caso disponíveis. Revisão do código confirmou que reconciliação é mutação, retorno físico não tem comando específico de encerramento e chargeback entra em revisão sem ciclo próprio completo. Ajuste de estoque e outbox de revisão não substituem, respectivamente, encerramento físico e alerta ao responsável. Nenhuma operação executada; G3/G6 permanecem abertos. Seção 62.
@@ -1835,3 +1837,36 @@ Executor / horário UTC:
 Leno prepara a revisão de **supervisão e alertas G6**, reaproveitando os manifestos existentes: mapear pagamento incerto, estorno retido, chargeback, filas sem progresso e falhas de envio; verificar cobertura antes de implementar lacunas. `PAYMENT_REVIEW` registra a pendência, mas não envia notificação ao atendimento por si. A frente ainda não foi implementada por esta atualização documental. Vanderlei informa os canais/recursos efetivos disponíveis; preparação no Git não comprova alerta entregue.
 
 Leno também complementa o roteiro de aceite e o procedimento de atendimento com responsável, próxima ação, prazo e evidência. Envio de disputa/documentos ao Asaas, retomada controlada de estorno retido e retorno parcial permanecem pendentes. Transferência de webhook/acionadores exige inventário e janela coordenada próprios; não está incluída no simples deploy desta candidata. Main e banco principal permanecem somente leitura. G1–G8 só fecham pelas respectivas evidências, e a exceção de expiração do boleto continua limitada ao teste já aceito como adiado.
+
+## 67. Supervisão e alertas G6 — implementação local em 19/10/2026
+
+**Estado:** implementação e testes locais concluídos na branch `trabalho/g6-supervisao-20261019`, a partir de `e644b01`. Ainda não integra a candidata publicada/entregue a Vanderlei. [Evidência da rodada e hashes](../../../../../../trabalho_em_dupla/evidencias/L-G6-SUPERVISAO-2026-10-19.json). A consulta ao código/documentos de `origin/main` (`7f9b26e`) não identificou implementação equivalente a reaproveitar; nenhuma configuração do banco principal foi consultada ou alterada nesta etapa.
+
+### Lacuna corrigida e escopo entregue
+
+O consumidor podia informar ausência de trabalho mesmo com pagamento incerto ou operação retida. O status agora reúne contagens de revisão, chargeback, retorno físico, operações com erro, e-mails pendentes, leases vencidos, contas divergentes e idade da conciliação/outbox. A consulta usa transação somente leitura com snapshot consistente, preserva o contrato anterior e não retorna payloads financeiros ou dados de compradores.
+
+`CONSUMER_MODE=supervision` executa somente um GET autenticado: não aciona filas, expiração, e-mail ou gateway. Emite `attentionReasons` e `processingAttempted=false`. Servidor sem a nova extensão resulta em cobertura incompleta explícita; `idle` significa somente ausência dos sinais observados naquele instante. A credencial reutilizada é CRON_SECRET e ainda tem permissão para outros endpoints: não é um token dedicado exclusivamente à leitura.
+
+Os manifestos passam a preparar um terceiro Job/agenda para observação, separado de pagamentos e pontos, com heartbeat e alerta de atenção/falha. Canais existentes devem ser reaproveitados. Corrigido o filtro para erros cuja severidade é promovida ao campo próprio pelo Cloud Logging. Limite de notificações e fechamento automático de incidente não substituem atendimento nem encerramento financeiro. O gerador apenas produz arquivos; não criou recursos, agendas ou notificações. [Sinais, limites e procedimento de aceite](../../../../../../infra/cloudrun/README.md#execução-e-observabilidade).
+
+### Validação local
+
+- 21 testes de consumidor, manifestos e seleção de suítes aprovados.
+- Quatro testes novos com PostgreSQL e HTTP reais em ambiente descartável: autenticação, consulta sem mutações, retenções sem atividade de fila, atraso e recuperação. A primeira rodada encontrou uma falha na leitura de cabeçalho pelo teste; corrigida e repetida com 4/4 aprovados.
+- Os 56 testes existentes de execução durável passaram na rodada conjunta. As duas rodadas totalizam cobertura aprovada de 60 cenários distintos, não 60 aprovações na primeira execução.
+- TypeScript, lint dos arquivos alterados e build isolado aprovados. Nenhuma migration criada ou aplicada em banco compartilhado. Os novos testes foram incluídos na seleção de homologação para a próxima CI.
+
+### Próximas ações e responsáveis
+
+| Responsável | Ação | Critério de conclusão |
+|---|---|---|
+| Leno | Revisar e integrar esta alteração em candidata própria, registrar commit e executar CI. | SHA e CI aprovados identificados; comparar com eventuais mudanças de Vanderlei antes da integração. |
+| Vanderlei | Retornar a identidade da publicação da seção 66 e inventário de Jobs, agendas, canais/políticas efetivos. | Revisão/digest, tráfego, origem dos acionadores e referências sem segredos. Não ativar um segundo processador. |
+| Vanderlei + Leno | Comparar os manifestos G6 com recursos existentes, definir destinatário nominal/substituto e medir custo/latência/cadência. | Configuração revisada, responsável e orçamento de recorrência registrados. Proposta de um minuto não é cadência aprovada. |
+| Leno + Vanderlei | Ensaiar observação, atenção, falha, ausência e recuperação na homologação com caso controlado. | GET sem efeitos, alerta recebido no canal real, caso atribuído, próxima ação/prazo e resolução com evidência. |
+| Vanderlei + Leno | Concluir transferência coordenada e demonstrar execução automática dos consumidores. | Progresso de filas/e-mails/expirações, recuperação e heartbeats independentes do observador, sem depender de execução manual. |
+
+O ensaio deve registrar SHA/digest/revisão, modo, runId, horários UTC, contagens/motivos, incidente/canal, recebimento, executor, responsável pelo caso, próxima ação e evidência de resolução. Alertas por ausência exigem uma série inicial; testar tanto o observador quanto os processadores. Não limpar revisão, rearmar estornos ou alterar pedidos históricos por SQL para gerar sinal. Baseline e mutações de teste devem pertencer a caso descartável identificado em homologação.
+
+**Não comprovado:** provisionamento, entrega real, destinatário/substituto, custo e cadência sustentáveis, transferência dos acionadores, aceite remoto ou produção. A publicação de `d63ad8a` pode seguir seu procedimento próprio; não presumir que contenha G6. Envio de disputa/documentos ao Asaas e demais lacunas de atendimento continuam separados desta supervisão.

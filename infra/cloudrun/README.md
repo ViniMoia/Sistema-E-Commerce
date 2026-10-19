@@ -95,7 +95,7 @@ O destino precisa estar sem os arquivos gerados; o gerador usa criação exclusi
 para não sobrescrever evidências anteriores. O exemplo pode ser renderizado para
 revisão, mas seus identificadores fictícios não são implantáveis.
 
-Saídas: serviço web, dois Jobs, dois agendadores, políticas de invocação, métricas
+Saídas: serviço web, três Jobs, três agendadores, políticas de invocação, métricas
 de conclusão, alertas de ausência/falha e `readiness.json`. A sintaxe JSON é aceita
 como YAML pelo fluxo de substituição declarativa do Cloud Run; métricas, alertas e
 agendadores usam os respectivos corpos da API. Não há comando de aplicação automática.
@@ -160,13 +160,45 @@ execução; a API atual inclui inbox, conciliação, expiração de pedidos e ou
 Pontos usam `/api/cron/loyalty-expiration` em Job separado. Não incluir novamente o
 cron legado de expiração de pedidos, evitando um segundo agendamento do mesmo ciclo.
 
+**Preparação G6 em 19/10 (ainda não implantada):** `CONSUMER_MODE=supervision`
+executa somente um GET autenticado de `/api/cron/payments/status`. Não chama o
+processamento, expira pontos/pedidos, envia e-mail ou reabre trabalho. Usa a mesma
+imagem/conta consumer e referência de CRON_SECRET; não recebe conexão de banco.
+O segredo compartilhado ainda permite chamar outros endpoints de cron: o modo é
+um contrato do programa, não uma credencial com permissão exclusiva de leitura.
+Não executar um Job configurado como `payments` esperando esse comportamento.
+
+O status preserva `schemaVersion=1` e acrescenta `supervision.schemaVersion=1`.
+Sua leitura usa transação REPEATABLE READ / READ ONLY, com contagens por instalação
+e sem payloads, IDs de compradores ou documentos. A conta configurada identifica
+a instalação; dados Asaas vinculados a outra conta (inclusive sem vínculo) geram
+atenção explícita e não são silenciosamente descartados. Não é relatório por loja
+nem comprovação de que a conexão de banco pertence ao ambiente pretendido.
+
+| Sinal nos logs `attentionReasons` | Encaminhamento do operador |
+|---|---|
+| PAYMENT_UNCERTAIN / PAYMENT_OVERDUE | Conferir tentativa e evidência atual; não repetir um POST incerto. |
+| PAYMENT_REVIEW / CHARGEBACK_REVIEW / PHYSICAL_RETURN_REVIEW | Abrir/acompanhar o caso de atendimento e separar resultado financeiro de mercadoria. |
+| OPERATION_HELD | Conferir estorno/operação retida, sem limpar erro ou rearmar a fila. |
+| EMAIL_REVIEW / EMAIL_DELAY | Conferir entrega e janela de idempotência; evitar reenvio cego. |
+| INBOX_DELAY / OUTBOX_DELAY / RECONCILIATION_DELAY / EXPIRED_LEASES | Conferir execução, backlog e leases; não habilitar consumidores concorrentes por inferência. |
+| STORED_ACCOUNT_MISMATCH / UNTRACKED_LEGACY | Conferir configuração/proveniência e obrigações históricas, sem copiar ou apagar registros. |
+| SUPERVISION_UNAVAILABLE | O servidor ainda não fornece a extensão de supervisão; não declarar saúde completa. |
+
+Os campos antigos permanecem para os clientes existentes. O novo consumidor
+sinaliza cobertura incompleta em servidor antigo; extensão malformada falha com
+erro sanitizado. `idle` no modo supervision significa ausência dos sinais de
+atenção observados naquele snapshot, não prova de fila vazia, entrega de alerta
+ou execução financeira saudável. O resultado inclui `processingAttempted=false`.
+
 Os Jobs não repetem automaticamente um POST incerto. Nova execução recupera
 trabalho pelas filas/leases já implementadas. Nenhum comando de nova cobrança,
 cancelamento ou estorno é inventado pelo acionador. Um timeout do cliente pode
 coexistir com execução ainda em andamento; observar os leases antes de intervir.
 
 Logs: `consumer_started`, `consumer_completed` e `consumer_failed`, com runId,
-modo, escopo, duração e contagens permitidas. `idle` é fila sem trabalho observado;
+modo, escopo, duração e contagens permitidas. `idle` indica ausência de progresso
+e dos sinais de atenção naquele snapshot, conforme o modo;
 `progress` registra conclusões; `attention` sinaliza retry, revisão, atraso ou falta
 de progresso. Nenhum corpo bruto de resposta, instrumento de cartão ou segredo é
 registrado. HTTP 200 sozinho não comprova progresso financeiro.
@@ -183,6 +215,48 @@ Alertas preparados: falta de conclusão por 10 minutos (pagamentos) ou 2 horas
 financeiro aprovado. Após provisionamento, provocar falha controlada e ausência
 de execução, confirmar recebimento no canal nominal e registrar atendimento.
 Alertas por ausência de métrica requerem que a série tenha sido inicialmente emitida.
+
+O gerador acrescenta Job, agenda, heartbeat e alerta de atenção para `supervision`,
+com filtros de projeto/região/Job. A proposta de intervalo é um minuto e a ausência
+de conclusão é de dez minutos, sujeitos à mesma medição de custo/cadência dos
+consumidores. A consulta agrega diversas tabelas: medir latência, volume e compute
+do banco antes de criar recorrência. O gerador não implanta ou ativa os recursos.
+
+As políticas por log mantêm intervalo mínimo de 300 segundos entre notificações e
+autoClose de 86400 segundos. O programa emite observações em cada rodada; não envia
+mensagem de atendimento por rodada. Limite de notificação é aplicado pelo Monitoring
+e deve ser comprovado no canal real. **Fechamento automático do incidente não encerra
+o caso financeiro** nem comprova atendimento. Referências oficiais:
+[configuração de notificações](https://docs.cloud.google.com/logging/docs/alerting/log-based-alerts)
+e [ciclo do incidente](https://docs.cloud.google.com/monitoring/alerts/log-based-incidents).
+
+O filtro inclui `severity>=ERROR` no LogEntry, além do campo JSON e do resultado
+`attention`: o Cloud Run pode retirar campos especiais do JSON ao ingerir logs
+estruturados. Conferir os registros efetivamente ingeridos durante o aceite;
+teste local do manifesto não comprova entrega. Referência:
+[logs estruturados no Cloud Run](https://docs.cloud.google.com/run/docs/logging).
+
+### Aceite operacional G6 — responsabilidade conjunta
+
+1. Vanderlei identifica políticas/canais já existentes e compara os manifestos;
+   não criar políticas duplicadas ou reaplicar o serviço web para acrescentar alertas.
+   Registrar destinatário nominal, substituto, referências de canal/política e revisão.
+2. Leno define caso controlado e baseline de homologação. Primeiro executar uma
+   observação supervision e conferir que só houve GET. Não usar #3/#4/#5/#6/#7/#8
+   como mutações novas para provocar incidente, nem operar na base principal.
+3. Demonstrar sinal de atenção, entrega real ao destinatário e atribuição do caso.
+   Registrar incidente, horários, responsável, próxima ação e prazo. Repetição deve
+   preservar os dados e respeitar o intervalo de notificações configurado.
+4. Demonstrar falha do observador e ausência de execução após emitir a primeira
+   série. Um observador saudável não prova que o Job de pagamentos funciona: manter
+   seus heartbeats independentes. Fechar o caso apenas com evidência do domínio.
+5. Após resolver o caso controlado, observar redução dos sinais; conferir separadamente
+   comportamento do incidente de monitoramento. Atraso de ingestão e autoClose não
+   autorizam declarar obrigação encerrada. Registrar recuperação e pendências.
+
+Até executar essa rodada no destino, ficam pendentes destinatário/canal efetivos,
+alerta recebido, atendimento, recorrência sustentável e aceite G6. Nenhum ensaio
+isolado confirma esses itens e nenhuma notificação real foi enviada pelo desenvolvimento.
 
 Medir compute ativo do Neon, CU efetivos, pool/locks e consumo do Google Cloud.
 Projeção mensal: CU médio ativo × horas ativas/dia × dias do período; usar cotas
