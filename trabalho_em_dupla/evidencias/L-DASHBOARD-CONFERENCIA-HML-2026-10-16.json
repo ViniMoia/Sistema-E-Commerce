@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-16T20:45:27.666Z",
+  "candidateBase": "eff10bf879485292d9fff0950af73ffcdfea3883",
+  "sourceReadOnly": true,
+  "transactionReadOnly": "on",
+  "isolation": "RepeatableRead",
+  "accountScope": "sandbox-hml",
+  "identityVerified": true,
+  "snapshotAt": "2026-10-16T20:42:15.771Z",
+  "snapshotSha256": "d74d493f4d9878b64f79bf0c2c7ac7042df8ed63684b9f8eab3d22ded256371c",
+  "orders": 8,
+  "financialFacts": 34,
+  "classificationTableObserved": false,
+  "migrationAppliedByThisWork": false,
+  "sharedDatabaseWritten": false,
+  "providerConsulted": false,
+  "processingAttempted": false,
+  "remoteUiVerified": false,
+  "projection": {
+    "runId": "cfeb9859981d1c43d7bd0fdd0ab786ff",
+    "kind": "Disposable PostgreSQL financial projection; not full restore",
+    "assumesEmptyClassificationAfterMigration": true,
+    "independentCentsComparison": "passed",
+    "dashboard": {
+      "asOf": "2026-10-16T20:44:04.177Z",
+      "month": {
+        "settledGross": 124.75,
+        "netRecognized": 124.75,
+        "recognizedGross": 542.67,
+        "confirmedRefunds": 417.92,
+        "settledOrderCount": 3,
+        "refundedOrderCount": 2,
+        "recognizedOrderCount": 5
+      },
+      "today": {
+        "settledGross": 0,
+        "netRecognized": 0,
+        "recognizedGross": 0,
+        "confirmedRefunds": 0,
+        "settledOrderCount": 0,
+        "refundedOrderCount": 0,
+        "recognizedOrderCount": 0
+      },
+      "policy": "RECORDED_FINANCIAL_FACTS_V1",
+      "allTime": {
+        "settledGross": 124.75,
+        "netRecognized": 124.75,
+        "recognizedGross": 542.67,
+        "confirmedRefunds": 417.92,
+        "settledOrderCount": 3,
+        "refundedOrderCount": 2,
+        "recognizedOrderCount": 5
+      },
+      "coverage": "PARTIAL",
+      "currency": "BRL",
+      "timezone": "America/Sao_Paulo",
+      "timeBasis": "FACT_CREATED_AT",
+      "composition": {
+        "shipping": 12.3,
+        "financingCharge": 61.32,
+        "unallocatedRecognized": 49.9,
+        "merchandiseAfterDiscount": 419.15
+      },
+      "paidOrdersCount": 3,
+      "averageNetTicket": 24.95,
+      "totalOrdersCount": 8,
+      "unverifiedOrders": 0,
+      "pendingOrderValue": 49.9,
+      "pendingOrdersCount": 1,
+      "cancelledOrdersCount": 4,
+      "financialReviewOrders": 1,
+      "paymentConversionRatePct": 63,
+      "cancelledUnpaidOrderCount": 2,
+      "cancelledUnpaidOrderValue": 99.8
+    },
+    "perOrder": [
+      {
+        "orderNumber": 1,
+        "status": "PAID",
+        "method": "PIX",
+        "recognizedGross": 24.95,
+        "settledGross": 24.95,
+        "confirmedRefunds": 0,
+        "netRecognized": 24.95,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 2,
+        "status": "CANCELLED",
+        "method": "PIX",
+        "recognizedGross": 0,
+        "settledGross": 0,
+        "confirmedRefunds": 0,
+        "netRecognized": 0,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 3,
+        "status": "PAID",
+        "method": "PIX",
+        "recognizedGross": 49.9,
+        "settledGross": 49.9,
+        "confirmedRefunds": 0,
+        "netRecognized": 49.9,
+        "failureCodes": [
+          "PAYMENT_REFUND_CANCELLED_REVIEW"
+        ]
+      },
+      {
+        "orderNumber": 4,
+        "status": "CANCELLED",
+        "method": "CREDIT_CARD",
+        "recognizedGross": 360.72,
+        "settledGross": 0,
+        "confirmedRefunds": 360.72,
+        "netRecognized": 0,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 5,
+        "status": "CANCELLED",
+        "method": "CREDIT_CARD",
+        "recognizedGross": 57.2,
+        "settledGross": 0,
+        "confirmedRefunds": 57.2,
+        "netRecognized": 0,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 6,
+        "status": "PAID",
+        "method": "BOLETO",
+        "recognizedGross": 49.9,
+        "settledGross": 49.9,
+        "confirmedRefunds": 0,
+        "netRecognized": 49.9,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 7,
+        "status": "CANCELLED",
+        "method": "BOLETO",
+        "recognizedGross": 0,
+        "settledGross": 0,
+        "confirmedRefunds": 0,
+        "netRecognized": 0,
+        "failureCodes": []
+      },
+      {
+        "orderNumber": 8,
+        "status": "PENDING",
+        "method": "BOLETO",
+        "recognizedGross": 0,
+        "settledGross": 0,
+        "confirmedRefunds": 0,
+        "netRecognized": 0,
+        "failureCodes": []
+      }
+    ]
+  },
+  "finding": {
+    "orderNumber": 3,
+    "code": "PAYMENT_REFUND_CANCELLED_REVIEW",
+    "priorPolicyDidNotFlagThisCode": true,
+    "correctedCoverage": "PARTIAL",
+    "reviewOrders": 1,
+    "retainsRecognizedAndSettled": 49.9,
+    "confirmedRefund": 0,
+    "financialMutationPerformed": false
+  },
+  "validation": {
+    "dashboardIntegrationPassed": 9,
+    "customerIntegrationPassed": 16,
+    "browserPassed": 1,
+    "isolatedRunId": "ca8beccbc1a0686d29d9c3c2a17b8bfa",
+    "typeScript": "passed",
+    "targetedEslint": "passed"
+  },
+  "limitations": [
+    "Not a bank balance or provider-fee net calculation.",
+    "Month and history coincide for this snapshot; today uses the civil date in Sao Paulo at capture.",
+    "No shared migration or classification was executed. The expected projection assumes no exclusions after the additive migration.",
+    "New facts or explicit classifications require a fresh baseline before screen comparison.",
+    "Provider refund review is reported from persisted evidence; no retry or new refund authorized."
+  ],
+  "fileSha256": {
+    "lib/commerce/financial-evidence.ts": "196e76ec2797273134834d0b4fa954d2311d31bfd0e2487e17a44b13509636eb",
+    "services/dashboard-financial.service.ts": "1d2c7096cff90275f87577d998908512604b06695e0474c945b5e3198bace472",
+    "tests/integration/dashboard-financial-evidence.test.ts": "d225df1abf38511582fd902bd7c4689bbeb7efc74f63c58b7e59fdc78353e771",
+    "tests/integration/customer-financial-metrics.test.ts": "150bdffb7f09b0d5f47ca821f217556dbce77a1c71c78fc5850f6168a87b9135",
+    "artifacts/dashboard-review/read-baseline.mjs": "33a884849bb118130f4c49bf47d3b8c7ba1143140d637a74be7e4466f4612fe1",
+    "artifacts/dashboard-review/replay-projection.mjs": "8398494cf02625fe698ee92bc536e061287535e0c06c9e654cc7abc34a808c05"
+  }
+}

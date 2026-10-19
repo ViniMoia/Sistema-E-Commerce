@@ -2,6 +2,8 @@
 
 Revisão em 15/10/2026. Recuperação local em clone demonstrada; recuperação operacional independente ainda pendente. Este documento não autoriza escrita na main, restauração sobre banco compartilhado, troca de conexão ou contratação de recurso.
 
+**Atualização de 16/10:** o [pacote G2](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md) reúne as identidades, comparações e ficha de recuperação por operador alternativo. O backup histórico foi novamente restaurado com a candidata `55a3003`, com upgrade, abertura e classificação aprovados; [evidência](../../../../trabalho_em_dupla/evidencias/L-G2-REVISAO-ABERTURA-2026-10-16.json). Não houve nova captura da origem. Continua pendente a recuperação fora da conta Windows original e a definição/comprovação de RPO, RTO e retenção da janela real.
+
 ## O que foi comprovado
 
 Backup do schema public da origem PostgreSQL 18 capturado em **15/10/2026 às 18:43:55 UTC**, com conexão somente leitura. Localizador privado:

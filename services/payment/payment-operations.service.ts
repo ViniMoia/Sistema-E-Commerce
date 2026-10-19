@@ -23,6 +23,7 @@ export async function requestPaymentOperation(input: { orderId: string; lojaID: 
       return { attemptId: attempt.id, operations: applied, replay: true };
     }
     if (order.version !== input.expectedVersion) throw new Error('PAYMENT_ORDER_VERSION_CONFLICT');
+    if (attempt.failureCode?.startsWith('PAYMENT_CHARGEBACK_')) throw new Error('PAYMENT_RECONCILIATION_REQUIRED');
     const lateRefund = order.status === 'CANCELLED' && attempt.failureCode === 'LATE_PAYMENT';
     if (input.kind === 'CANCEL' ? order.status !== 'PENDING' || attempt.status !== 'PENDING' || attempt.charges.some(c => !['PENDING','OVERDUE','AWAITING_RISK_ANALYSIS'].includes(c.providerStatus)) :
       (!(lateRefund || ['PAID', 'SHIPPED', 'DELIVERED'].includes(order.status) && attempt.status === 'APPROVED')) ||

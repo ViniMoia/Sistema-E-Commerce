@@ -15,8 +15,13 @@ import { X, ExternalLink } from 'lucide-react'
 import type { allowedOrderActions } from '@/lib/commerce/order-fulfillment'
 import { orderOperationDetailSchema } from '@/lib/validators/order.validators'
 import { getTrackingInfo } from '@/lib/freight/tracking-url'
+import { PhysicalReturnPanel } from './PhysicalReturnPanel'
+import { ChargebackPanel } from './ChargebackPanel'
+import type { ChargebackSnapshot } from '@/services/payment/chargeback'
 
 export interface OrderDetail {
+  chargebacks?: Array<ChargebackSnapshot & { ordinal: number }>
+  reportingExclusion?: { reason: string; classifiedAt: string } | null
   id: string
   orderNumber: number
   status: OrderStatus
@@ -243,6 +248,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   <div className="flex items-center gap-3 mb-1">
                     <h2 className="text-2xl font-bold tracking-tight text-white uppercase font-mono">
                       Pedido #{order.orderNumber}
+                      {order.reportingExclusion && <span className="block text-xs text-catalog-gold">Pedido de teste · fora dos indicadores comerciais</span>}
                     </h2>
                     <Badge status={order.status} />
                   </div>
@@ -486,6 +492,11 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   </div>
                 )}
               </section>
+
+              <ChargebackPanel charges={order.chargebacks ?? []} />
+              {['SHIPPED', 'DELIVERED'].includes(order.status) && <PhysicalReturnPanel
+                key={`${order.id}:${order.version}`} orderId={order.id}
+                onCompleted={() => { void loadOrder(); onStatusUpdate() }} />}
 
               {/* 8. HISTÓRICO DE STATUS */}
               <section className="space-y-3">

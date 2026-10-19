@@ -1,7 +1,9 @@
 import { createOrder } from './checkout.service';
+import { orderReportingWhere } from '@/lib/commerce/order-reporting';
 import { requirePurchaseAccount } from '@/lib/commerce/account-scope';
 import { transitionOrder } from '@/lib/commerce/order-command';
 import { allowedOrderActions } from '@/lib/commerce/order-fulfillment';
+import { savedChargeback } from '@/services/payment/chargeback';
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { invalidateDashboardCache } from "@/services/dashboard.service";
@@ -79,7 +81,10 @@ export async function getOrdersByUser(params: GetUserOrdersParams): Promise<Orde
 
 export async function listOrdersForAdmin(params: ListOrdersParams) {
   if (!params.lojaID) throw new OrderError('ACCOUNT_ACCESS_DENIED');
+  const numericSearch = Boolean(params.search && /^\d+$/.test(params.search));
+  const searchedNumber = Number(params.search);
   const where: Prisma.OrderWhereInput = {
+    ...orderReportingWhere(params.reportingScope ?? 'ALL'),
     ...(params.lojaID ? { lojaID: params.lojaID } : {}),
     ...(params.customerId ? { userID: params.customerId } : {}),
     ...(params.status ? { status: params.status } : {}),
@@ -92,7 +97,10 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
         }
       : {}),
     ...(params.search
-      ? {
+      ? numericSearch ? {
+          // A numeric query identifies an order, not digits inside a customer's email.
+          orderNumber: Number.isSafeInteger(searchedNumber) && searchedNumber <= 2147483647 ? searchedNumber : -1,
+        } : {
           OR: [
             { user: { name: { contains: params.search, mode: "insensitive" } } },
             { user: { email: { contains: params.search, mode: "insensitive" } } },
@@ -111,7 +119,7 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
       take: pageSize + 1,
       cursor: params.cursor ? { id: params.cursor } : undefined,
       skip: params.cursor ? 1 : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: 'desc' }],
       select: {
         id: true,
         orderNumber: true,
@@ -120,6 +128,7 @@ export async function listOrdersForAdmin(params: ListOrdersParams) {
         status: true,
         total: true,
         createdAt: true,
+        reportingExclusion: { select: { reason: true } },
         user: { select: { id: true, name: true, email: true } },
         buyer: { select: buyerSelect },
         _count: { select: { items: true } },
@@ -149,7 +158,9 @@ export async function getOrderDetailForAdmin(
     },
     include: {
       buyer: { select: buyerSelect },
-      paymentAttempts: { orderBy: { number: 'desc' }, take: 1, select: { status: true, provider: true, failureCode: true } },
+      reportingExclusion: { select: { reason: true, classifiedAt: true } },
+      paymentAttempts: { orderBy: { number: 'desc' }, take: 1, select: { status: true, provider: true, failureCode: true,
+        charges: { orderBy: { ordinal: 'asc' }, select: { ordinal: true, instructions: true } } } },
       user: { select: { id: true, name: true, email: true, phone: true } },
       address: true,
       items: {
@@ -172,7 +183,9 @@ export async function getOrderDetailForAdmin(
   });
   if (!order) return null;
   const { paymentAttempts, ...detail } = order;
-  return { ...detail, actions: allowedOrderActions(order, paymentAttempts[0] ?? null, 'ADMIN'), customer: orderCustomer(order), address: order.address ?? snapshotDeliveryAddress(order.buyer) };
+  return { ...detail, actions: allowedOrderActions(order, paymentAttempts[0] ?? null, 'ADMIN'),
+    chargebacks: (paymentAttempts[0]?.charges ?? []).flatMap(c => { const snapshot = savedChargeback(c.instructions); return snapshot ? [{ ordinal: c.ordinal, ...snapshot }] : []; }),
+    customer: orderCustomer(order), address: order.address ?? snapshotDeliveryAddress(order.buyer) };
 }
 
 export async function updateOrderNotes(params: {

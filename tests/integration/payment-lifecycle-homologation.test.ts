@@ -161,11 +161,11 @@ describe('L-04: persisted deadlines, payment lifecycle and slow evidence applica
     expect(await prisma.loyaltyTransaction.count({ where: { orderId: p.result.order.id, type: 'REFUND_EARN' } })).toBe(0);
   });
 
-  it('unimplemented chargeback evidence requires review and cannot create an invented refund or return inventory', async () => {
+  it('chargeback without a financial result requires review without an invented refund or inventory return', async () => {
     const p = await purchase('CREDIT_CARD', provider('CONFIRMED')); await approvedOnce(p);
     p.remote[0].status = 'CHARGEBACK_REQUESTED';
     expect(await reconcile(p)).toMatchObject({ review: 1 });
-    expect(await stored(p)).toMatchObject({ status: 'PAID', paymentAttempts: [{ failureCode: 'PAYMENT_EXTERNAL_STATE_REVIEW' }] });
+    expect(await stored(p)).toMatchObject({ status: 'PAID', paymentAttempts: [{ failureCode: 'PAYMENT_CHARGEBACK_REVIEW' }] });
     await inventory(p, 4);
     expect(await prisma.financialFact.count({ where: { orderId: p.result.order.id, type: 'REFUNDED' } })).toBe(0);
     expect(await prisma.loyaltyTransaction.count({ where: { orderId: p.result.order.id, type: 'REFUND_EARN' } })).toBe(0);

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-16T20:33:33.559Z",
+  "candidateParent": "0eef7240d3b0b0f94fa6c26e5627b3cee3303340",
+  "vanderleiParent": "93e6459d06e6e9a5fbc8f1b77fc1fdd95435a004",
+  "sourceMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "branch": "revisao/dashboard-financeiro-20261016",
+  "pullRequest": 8,
+  "mergeConflicts": false,
+  "preservedUpstreamBlobs": {
+    "app/api/auth/logout/route.ts": "e23ef2e61c1f680c0bed2e7417a2c54dc6f0ba10",
+    "lib/tenant.ts": "894a1a2af0215c1595fbf10e211047cb10656b61",
+    "tests/unit/logout-redirect.test.ts": "5e2c270fb15e2de70891f360596a69f6e5086d0b",
+    "tests/unit/tenant-host-aliases.test.ts": "c12b6629c25a1e3f0bc27fdea0bece1d8d7a0258"
+  },
+  "checks": {
+    "unitTests": {
+      "passed": 836,
+      "failed": 0,
+      "files": 92
+    },
+    "integration": {
+      "passed": 25,
+      "failed": 0,
+      "runId": "577cc149d69e7fae4c68b84564b4aeb6",
+      "includesDesktopAndMobileBrowser": true
+    },
+    "typeScript": "passed",
+    "targetedEslint": "passed",
+    "isolatedProductionBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "sharedDatabaseWritten": false,
+  "remoteConfigurationChanged": false,
+  "productionReady": false,
+  "cloudRunPromoted": false,
+  "remaining": [
+    "Verify GitHub CI on integrated PR head",
+    "Confirm additive migration on homologation before traffic",
+    "Deploy and verify dashboard/logout on integrated Cloud Run revision",
+    "Payment trigger inventory and financial transfer remain separate"
+  ],
+  "fileSha256": {
+    "app/api/auth/logout/route.ts": "2fcaa26aa0cdc536e655bc60ef54becfcbac3555cc8ba6394acdd7384a548dcc",
+    "lib/tenant.ts": "ee434f8c17d4d352553d4a526ca165dd7aa6392f862a32c83af2a0399b1c23ee",
+    "tests/unit/logout-redirect.test.ts": "f319d73316d08e61721b7b6e1b54be9d2a00fda28277fb01b182c98eaa50b4c8",
+    "tests/unit/tenant-host-aliases.test.ts": "d0e3f4fa322d9e9f9a3a0ca097454dc53c57e4e83a70b57bdff0b83b2069cb04",
+    "lib/commerce/financial-evidence.ts": "8c57acf1f494fb31ebc84044e5386bf05f23848d29343e1a3c928ce1551e880b",
+    "services/dashboard-financial.service.ts": "1d2c7096cff90275f87577d998908512604b06695e0474c945b5e3198bace472",
+    "components/admin/dashboard/FinancialKpiCard.tsx": "f003db7e8821b515b30509114365725758cea003ec81828c610d3aeff918e09d",
+    "tests/integration/dashboard-financial-evidence.test.ts": "f427dea9ae7b1a0e9fe09151e8d6c7866a7f780a4465121c363f93fd563023b5",
+    "tests/integration/dashboard-financial-browser.test.ts": "5afd56a55a90609a28b178315edb86c692924b5bc93f88d30e44837cb81176b4"
+  }
+}

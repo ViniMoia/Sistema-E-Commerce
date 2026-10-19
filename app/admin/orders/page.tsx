@@ -4,7 +4,7 @@ import * as React from 'react'
 import { OrdersTable, OrderRow } from '@/components/admin/orders/OrdersTable'
 import { AlertBanner } from '@/components/ui'
 import { OrderDetailDrawer } from '@/components/admin/orders/OrderDetailDrawer'
-import { Search, ShoppingCart, Filter } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 export default function OrdersPage() {
   const [orders, setOrders] = React.useState<OrderRow[]>([])
@@ -14,17 +14,30 @@ export default function OrdersPage() {
 
   const [statusFilter, setStatusFilter] = React.useState<string>('ALL')
   const [searchTerm, setSearchTerm] = React.useState('')
+  const [reportingScope, setReportingScope] = React.useState<'COMMERCIAL' | 'TEST' | 'ALL'>('COMMERCIAL')
+  const [nextCursor, setNextCursor] = React.useState<string | null>(null)
+  const [totalCount, setTotalCount] = React.useState(0)
+  const activeRequest = React.useRef<AbortController | null>(null)
 
-  const fetchOrders = React.useCallback(async () => {
+  const fetchOrders = React.useCallback(async (cursor?: string) => {
+    activeRequest.current?.abort()
+    const controller = new AbortController()
+    activeRequest.current = controller
+    if (!cursor) { setOrders([]); setNextCursor(null); setTotalCount(0) }
     try {
       setIsLoading(true)
       setError(null)
-      const res = await fetch('/api/admin/orders')
+      const query = new URLSearchParams({ reportingScope, pageSize: '100' })
+      if (statusFilter !== 'ALL') query.set('status', statusFilter)
+      if (searchTerm.trim()) query.set('search', searchTerm.trim())
+      if (cursor) query.set('cursor', cursor)
+      const res = await fetch('/api/admin/orders?' + query, { signal: controller.signal, cache: 'no-store' })
       if (!res.ok) {
         const errData = await res.json()
         throw new Error(errData.error || 'Erro ao carregar pedidos')
       }
       const json = await res.json()
+      if (controller.signal.aborted) return
 
       let ordersArray = null
       if (json.success) {
@@ -38,6 +51,7 @@ export default function OrdersPage() {
       if (ordersArray) {
         const mapped = ordersArray.map((o: any) => ({
           id: o.id,
+          isTest: Boolean(o.reportingExclusion),
           orderNumber: typeof o.orderNumber === 'number' ? o.orderNumber : (parseInt(o.id.replace(/\D/g, '')) || 0),
           createdAt: o.createdAt,
           customerName: o.customer?.name || o.user?.name || 'Sem nome',
@@ -47,45 +61,28 @@ export default function OrdersPage() {
           total: typeof o.total === 'number' ? o.total : parseFloat(o.total || '0'),
           freightValue: typeof o.freightValue === 'number' ? o.freightValue : parseFloat(o.freightValue || '0')
         }))
-        setOrders(mapped)
+        setOrders(previous => cursor ? [...previous, ...mapped] : mapped)
+        setNextCursor(json.data?.nextCursor ?? null)
+        setTotalCount(json.data?.totalCount ?? mapped.length)
       } else {
         throw new Error('Formato inválido de resposta da API.')
       }
     } catch (err: unknown) {
+      if (controller.signal.aborted) return
       if (err instanceof Error) {
         setError(err.message)
       } else {
         setError('Ocorreu um erro desconhecido ao carregar pedidos.')
       }
     } finally {
-      setIsLoading(false)
+      if (!controller.signal.aborted) setIsLoading(false)
     }
-  }, [])
+  }, [reportingScope, statusFilter, searchTerm])
 
   React.useEffect(() => {
-    fetchOrders()
+    void fetchOrders()
+    return () => activeRequest.current?.abort()
   }, [fetchOrders])
-
-  const filteredOrders = React.useMemo(() => {
-    return orders.filter(order => {
-      const matchStatus = statusFilter === 'ALL' || order.status === statusFilter
-      const matchSearch =
-        searchTerm === '' ||
-        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(order.orderNumber).includes(searchTerm)
-      return matchStatus && matchSearch
-    })
-  }, [orders, statusFilter, searchTerm])
-
-  const statusCounts = React.useMemo(() => {
-    return {
-      ALL: orders.length,
-      PENDING: orders.filter(o => o.status === 'PENDING').length,
-      PAID: orders.filter(o => o.status === 'PAID').length,
-      SHIPPED: orders.filter(o => o.status === 'SHIPPED').length,
-      CANCELLED: orders.filter(o => o.status === 'CANCELLED').length,
-    }
-  }, [orders])
 
   return (
     <div className="p-6 md:p-10 space-y-8 min-h-screen bg-catalog-bg text-catalog-text">
@@ -106,24 +103,35 @@ export default function OrdersPage() {
         <div className="flex items-center gap-2 text-xs font-mono text-catalog-muted">
           <span>Pedidos filtrados:</span>
           <span className="font-bold text-catalog-gold px-2.5 py-0.5 rounded-full bg-catalog-gold/15 border border-catalog-gold/40">
-            {filteredOrders.length}
+            {totalCount}
           </span>
         </div>
       </div>
 
       {error && <AlertBanner variant="error" message={error} />}
 
+      <div className="flex flex-wrap gap-3" role="group" aria-label="Origem dos pedidos">
+        {([{ id: 'COMMERCIAL', label: 'Comerciais' }, { id: 'TEST', label: 'Histórico de testes' }, { id: 'ALL', label: 'Todos' }] as const).map(scope => (
+          <button key={scope.id} type="button" aria-pressed={reportingScope === scope.id}
+            onClick={() => setReportingScope(scope.id)}
+            className={reportingScope === scope.id ? 'rounded-lg border border-catalog-gold px-4 py-2 text-catalog-gold' : 'rounded-lg border border-catalog-gold/25 px-4 py-2 text-catalog-muted'}>
+            {scope.label}
+          </button>
+        ))}
+      </div>
+      {reportingScope === 'TEST' && <p className="text-sm text-catalog-muted">Pedidos de teste preservados para consulta. Não entram nos indicadores comerciais.</p>}
       {/* Barra de Filtros e Busca */}
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Pílulas de Filtro de Status */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Status dos pedidos">
             {[
-              { id: 'ALL', label: 'Todos', count: statusCounts.ALL },
-              { id: 'PENDING', label: 'Pendentes', count: statusCounts.PENDING },
-              { id: 'PAID', label: 'Pagos', count: statusCounts.PAID },
-              { id: 'SHIPPED', label: 'Enviados', count: statusCounts.SHIPPED },
-              { id: 'CANCELLED', label: 'Cancelados', count: statusCounts.CANCELLED },
+              { id: 'ALL', label: 'Todos' },
+              { id: 'PENDING', label: 'Pendentes' },
+              { id: 'PAID', label: 'Pagos' },
+              { id: 'SHIPPED', label: 'Enviados' },
+              { id: 'DELIVERED', label: 'Entregues' },
+              { id: 'CANCELLED', label: 'Cancelados' },
             ].map((tab) => {
               const isActive = statusFilter === tab.id
               return (
@@ -138,13 +146,6 @@ export default function OrdersPage() {
                   }`}
                 >
                   <span>{tab.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      isActive ? 'bg-catalog-gold text-[#010E31] font-bold' : 'bg-[#050B14] text-catalog-muted'
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
                 </button>
               )
             })}
@@ -154,6 +155,8 @@ export default function OrdersPage() {
           <div className="relative w-full md:max-w-xs">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-catalog-gold" />
             <input
+                name="orderSearch"
+                aria-label="Buscar por cliente ou número do pedido"
               type="text"
               placeholder="Buscar por cliente ou nº..."
               value={searchTerm}
@@ -165,11 +168,14 @@ export default function OrdersPage() {
 
         {/* Tabela Canônica de Pedidos */}
         <OrdersTable
-          data={filteredOrders}
+          data={orders}
           isLoading={isLoading}
           onSelectOrder={(id) => setSelectedOrderId(id)}
         />
       </div>
+
+      {nextCursor && <button type="button" disabled={isLoading} onClick={() => void fetchOrders(nextCursor)}
+        className="rounded-lg border border-catalog-gold px-4 py-2 text-catalog-gold">Carregar mais pedidos</button>}
 
       {/* Drawer de Detalhes do Pedido Canônico Continental */}
       {selectedOrderId && (

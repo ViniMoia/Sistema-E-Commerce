@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-19",
+  "environment": "LOCAL_DISPOSABLE_ONLY",
+  "status": "LOCAL_IMPLEMENTATION_VERIFIED_REMOTE_ACCEPTANCE_PENDING",
+  "baseCommit": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "originMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "originHomologationObserved": "eb0708c69ddda41e5b456f36b5df2e4cc6ca3cab",
+  "scope": "Retorno físico integral após estorno integral confirmado, com inspeção e comprovante único por pedido.",
+  "validation": {
+    "integration": {
+      "runId": "bebc1fafd175ff4a4305a972c061b143",
+      "passed": 88,
+      "failed": 0,
+      "suites": {
+        "physical-return-atomicity": 10,
+        "physical-return-browser": 1,
+        "payment-durable-execution": 56,
+        "order-fulfillment-atomicity": 21
+      }
+    },
+    "initialIntegration": {
+      "runId": "f9076f17ab9beba59d8f6f794bc4eb42",
+      "passed": 65,
+      "failed": 1,
+      "reason": "A versão carregada não invalidava o lease do alerta físico; correção verificada na rodada final."
+    },
+    "unit": {
+      "passed": 836,
+      "files": 92
+    },
+    "operations": {
+      "passed": 15
+    },
+    "typescript": "PASSED",
+    "focusedLint": "PASSED",
+    "isolatedProductionBuild": "PASSED",
+    "gitDiffCheck": "PASSED",
+    "runtimeIsolation": "PostgreSQL descartável; Next em cópia temporária sem arquivos .env; provedores de teste controlados; Chrome isolado.",
+    "initialEnvironmentIssue": "Docker Desktop estava parado. Iniciado localmente e testes executados apenas em bancos descartáveis."
+  },
+  "notPerformed": [
+    "Deploy",
+    "Push",
+    "Migration em banco compartilhado",
+    "Operação financeira no Asaas",
+    "Alteração de pedido Sandbox existente",
+    "Mudança de webhook ou acionador"
+  ],
+  "limitations": [
+    "Aceite remoto e CI da nova candidata pendentes",
+    "Retornos e estornos parciais fora deste contrato",
+    "Chargeback ainda sem encerramento específico",
+    "Ajustes genéricos de estoque anteriores precisam de conferência humana; não declarar ausência de reposição se já ocorreram",
+    "Comprovante reutiliza AuditLog e sua chave única; não há migration nova"
+  ],
+  "sourceHashes": [
+    {
+      "path": "lib/commerce/physical-return.ts",
+      "sha256": "b490a4b7d7f21b41c5bbed60c4fd9ff8d058bd8c9c44e121b69e4c33926befaf"
+    },
+    {
+      "path": "services/physical-return.service.ts",
+      "sha256": "e9675c975ba0306c1845c4b3344a70e11f4d6bb4c76f3732342dfcbc6b981b4c"
+    },
+    {
+      "path": "services/payment/payment-evidence.service.ts",
+      "sha256": "cf1754baa1a45062f30f22b9b99d1c354cb89db655c1c9b3cd7d0c9d8028dd46"
+    },
+    {
+      "path": "app/api/admin/orders/[orderId]/physical-return/route.ts",
+      "sha256": "46e69ae384ba7c3602d683b240c3be5e7ac843792440d7fead95a864d09e01c3"
+    },
+    {
+      "path": "components/admin/orders/PhysicalReturnPanel.tsx",
+      "sha256": "2a0819f2d6e5aed1042518b36a28800c52e79a181594d632a3366f0c0d8ff012"
+    },
+    {
+      "path": "components/admin/orders/OrderDetailDrawer.tsx",
+      "sha256": "9692db350a1c2b076bdfb249a317fb2e1a2047db56c51873ad7d5b26c8f07f4c"
+    },
+    {
+      "path": "tests/setup/physical-return-fixture.ts",
+      "sha256": "1c6240db869b2d5f4e85bf382d04f164b8ba34cf4dd7f1b6d4d92e25b02f075b"
+    },
+    {
+      "path": "tests/setup/fulfillment-fixture.ts",
+      "sha256": "a7d77777bea8adc509d1da390e6776b12e9fa64c528925e4c602fb8a1165558b"
+    },
+    {
+      "path": "tests/integration/physical-return-atomicity.test.ts",
+      "sha256": "e11091246ed5dca444a109cb3caab5da797ddfaf363a1ded4f4348556323bb96"
+    },
+    {
+      "path": "tests/integration/physical-return-browser.test.ts",
+      "sha256": "d8e9851d7aaaa168429c2d09c80b1968abd982be160793b576020744761e327b"
+    },
+    {
+      "path": "tests/integration/payment-durable-execution.test.ts",
+      "sha256": "728ccbab7b21852ca79a925361769ad1633b7c121b00dea402f6211a797cebab"
+    },
+    {
+      "path": "scripts/lib/homologation-suites.mjs",
+      "sha256": "bbd0043016f0bae8c6e107ac37065fb5995d98e96a27117d7bd81e6b58992e48"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateBaseRevision": "17366e8b5c2a44bd2c0157a159a371886b3126d1",
+  "localUncommittedImplementation": true,
+  "runId": "64ba5a45a66728c774138db05b754884",
+  "sourceCapturedAt": "2026-10-15T18:43:55.572Z",
+  "startedAt": "2026-10-16T19:14:06.255Z",
+  "finishedAt": "2026-10-16T19:15:36.061Z",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "deployed": false,
+  "productionReady": false,
+  "success": true,
+  "classification": {
+    "replay": false,
+    "excludedOrders": 24,
+    "batch": "legacy-test-orders-20261015-v1",
+    "cloneOnly": true,
+    "ordersAndHistoryPreserved": true,
+    "auditRecords": 24
+  },
+  "replay": {
+    "replay": true,
+    "excludedOrders": 24,
+    "batch": "legacy-test-orders-20261015-v1",
+    "cloneOnly": true
+  },
+  "cloneTests": {
+    "passed": 3,
+    "failed": 0,
+    "cloneOnly": true
+  },
+  "checks": {
+    "dataPreserved": true,
+    "sequencesPreserved": true,
+    "migrationDiff": "-- This is an empty migration.",
+    "applicationHttpTablesPreserved": true,
+    "cloneGuardTestsPassed": 5,
+    "focusedUnitTestsPassed": 9,
+    "customerFinancialIntegrationTestsPassed": 16,
+    "fulfillmentBrowserTestsPassed": 4,
+    "reportingBrowserTestsPassed": 1,
+    "reportingBrowserSyntheticOrders": 103,
+    "typeScript": "passed",
+    "eslint": "passed",
+    "isolatedProductionBuild": "passed"
+  },
+  "observations": {
+    "commercialOrdersAfterClassification": 0,
+    "historicalOrdersAccessible": 24,
+    "classificationReplayDuplicates": 0,
+    "originalOrdersItemsHistoryPreserved": true,
+    "loyaltyLifetimeZeroPreserved": true,
+    "unclassifiedLegacyOrderRemainsCommercial": true,
+    "newManualPayment": 100,
+    "requestedRefundKeepsRecognized": 100,
+    "confirmedRefundReplay": {
+      "recognizedGross": 100,
+      "confirmedRefunds": 100,
+      "net": 0
+    },
+    "providerRequests": false
+  },
+  "limitations": [
+    "Migration creates structure only; no automatic classification.",
+    "Classifier accepts only the exact reviewed snapshot in a disposable clone.",
+    "Application/shared data not deployed or changed.",
+    "Dashboard financial semantics, periods and historical loyalty redemptions still pending."
+  ],
+  "fileSha256": {
+    "prisma/schema.prisma": "00857519e57ffab2501600275e186e7d742b5036d779f6cfe365b5862d5f5861",
+    "prisma/migrations/20261016193000_order_reporting_exclusion/migration.sql": "b0c6f3a3ccb4ec8f9de25f478dcbccd4314a2bdaba498274194c3c653ff3de0d",
+    "lib/commerce/order-reporting.ts": "82da3db6ee9fe0110bff6c7d25d9034969aefa64452c7d45b3803ca5080ad572",
+    "services/dashboard.service.ts": "7d17190bf8d2177f6626218dc7cce60f41776e9d26fd5feae431b4d7ffccdd00",
+    "services/customer-financial-metrics.service.ts": "d25d9893b7ca5e5cf3be5db3d4265d48612ca84292513c3d27c47bb7a4dc2efe",
+    "services/order.service.ts": "81d43b60db3b9a3958151fb86acdfe7fd99b7230fbd22d25e837a8e4c9ecb648",
+    "app/admin/orders/page.tsx": "55dc8b5cdbae292f09fc2793e6a5d9cb75753a3d29fe7b47be1350e0dda581d0",
+    "app/api/admin/loyalty/reports/route.ts": "ff95810ef282d8f56cc8d7641ee9a9a517d838d74ef37d5b1bef9012168abed3",
+    "scripts/lib/restored-order-reporting.mjs": "f2a50b42c622b389c7511ad9cb4dbf69746ee2a41b5f2dd7d5d1cc3649135ed2",
+    "scripts/verify-restored-clone.mjs": "ec6d812e59670128b4782dd1a7e0da99fe4094f6ffe9a3c8bb0ca349c0359a3c",
+    "tests/clone/restored-reporting.test.ts": "241daa47b4e8ec98f02ec88f179d3e10684b1e1c27cc8763ef2f9fed2192010c",
+    "tests/integration/order-reporting-browser.test.ts": "566072dc099276ebc62d93d0bc219e9c47bd728117021d9aaa3a4942b27147e5"
+  }
+}

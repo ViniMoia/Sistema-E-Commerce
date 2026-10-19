@@ -2,6 +2,8 @@
 
 Revisão em 15/10/2026. Procedimento preparado na homologação, **não executado em produção**. Main e seu banco permanecem somente leitura para o assistente. O destino definido pelo operador é o banco já conectado à main; não criar outra base de produção por padrão nem substituir sua conexão pela homologação.
 
+**Estado atualizado em 16/10:** candidata `55a3003` com CI aprovada; homologação Cloud Run existente em `continental-511812` / `southamerica-east1`. Vanderlei publicou/conferiu `eff10bf` com 0% de tráfego e aplicou a migration de classificação nesse banco. Publicação da candidata atual e abertura produtiva continuam pendentes. [Checklist G1–G8](../../../../trabalho_em_dupla/CHECKLIST_PRODUCAO_G1_G8.md) e [pacote de abertura G2](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md) consolidam evidências posteriores. Referências abaixo a conjunto local, ausência de CI ou infraestrutura ainda não identificada descrevem a preparação de 15/10, não a situação atual. O procedimento de contenção e suas condições continuam aplicáveis.
+
 ## Base comprovada e responsáveis
 
 Origem: `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Base publicada em homologação: `b90b41dbe2f795f95fdd0f0f78ea648febaa3427`, mais manutenção completa e documentação locais ainda não publicadas. Não há SHA final de release desse conjunto local.
@@ -23,7 +25,7 @@ Leno confere dados, migrations e obrigações financeiras; Vanderlei confere run
 | Dados de teste | Manifesto de IDs/hashes e tratamento final revisado separadamente das migrations. Scripts de clone não aceitam destino compartilhado. |
 | Observação | Critérios de erro, latência, backlog, conexões, janela de acompanhamento e canal de alerta. Limiares comerciais ainda não aprovados. |
 
-Cloud Run continua sendo pacote de preparação: `config.example.json` não identifica recursos implantados. A imagem standalone atual não executa migrations nem garante inclusão da Prisma CLI; preparar um checkout/job exclusivo de migração com o lockfile da release.
+`config.example.json` não identifica recursos implantados; usar a evidência da revisão efetiva. A homologação Cloud Run já está identificada na atualização acima; isso não comprova o destino produtivo. A imagem standalone não executa migrations nem garante inclusão da Prisma CLI; preparar um checkout/job exclusivo de migração com o lockfile da release.
 
 ## Contenção em três fases
 
@@ -99,6 +101,20 @@ Antes do deploy, status com migrations pendentes é esperado; falha/divergência
 8. Promover a versão compatível e validar leituras autenticadas, domínio/tenant, cookies e integrações no escopo acordado. Não inferir readiness por TCP/HTTP 200 isolado.
 9. Retomar eventos/consumidores; observar backlog, revisões, e-mails, conexões, locks e entrega dos alertas. Só depois retirar contenção de novas compras.
 
+## Dependência adicional da candidata de 16/10: classificação para indicadores
+
+A versão com `OrderReportingExclusion` exige a migration `20261016193000_order_reporting_exclusion` antes de receber tráfego. Ela cria a estrutura, sem classificar ou alterar pedidos. Portanto, **deploy da aplicação/migration não retira automaticamente os testes dos indicadores**.
+
+O modo `--rehearse-reporting` foi ensaiado somente no clone restaurado do snapshot aprovado: 24 classificações, 24 auditorias, replay sem duplicação e histórico preservado. Ele confere o fingerprint integral dos pedidos e rejeita outro estado; não deve ser adaptado para apontar a um banco compartilhado. Antes da aplicação efetiva, reauditar IDs/estado, preservar backup e preparar transação/auditoria/comparação próprias no destino autorizado. A main e seu banco continuam somente leitura para este trabalho.
+
+A mudança afeta relatórios/listas; não cancela cobranças nem desativa obrigações financeiras. Após classificação, renovar o cache do dashboard ou aguardar seu TTL de 60 segundos antes de comparar indicadores. O cache da candidata com a revisão de fidelidade usa `aggregated_metrics_v4`. O histórico permanece no Admin em “Histórico de testes” e “Todos”; chamadas à API sem escopo explícito continuam incluindo todos. Zero do acumulado da carteira passa a ser respeitado.
+
+O relatório de fidelidade e o widget do dashboard compartilham a apuração comercial: concessões, reversões de ganhos, resgates brutos e devoluções de resgates. Pedidos explicitamente classificados como teste ficam fora desses totais, mantendo suas movimentações no histórico, identificadas como teste. Valores históricos usam `LoyaltyTransaction.monetaryValue`; valores ausentes não são recalculados pela cotação atual. O aviso de apuração parcial informa movimentos sem valor ou sem vínculo com pedido da loja. A ausência desse aviso não certifica conciliação integral do ledger nem pagamento de pedidos. Resgates são movimentos registrados de pontos, não receita ou estorno em dinheiro.
+
+Carteiras continuam abrangendo todos os clientes da loja: classificação de pedidos não extingue saldo, dívida ou obrigações. O valor atual do ponto serve somente para a estimativa de resgate do saldo; carteiras legadas sem conciliação recebem aviso separado. O acumulador `lifetimeEarn` da carteira não é confundido com o bruto de concessões comerciais. A revisão de relatório não cria migration adicional nem realiza saneamento de carteiras. Conferir ambos os relatórios após publicação, no mesmo escopo e considerando o TTL do dashboard; `/api/admin/loyalty/reports` responde `private, no-store`.
+
+A revisão financeira da seção 53 não acrescenta migration, mas depende da estrutura de classificação acima. Publicar serviços, DTO e componentes juntos. Conferir valores reconhecidos, liquidação bruta, estornos e cobertura antes/depois com a mesma loja e o mesmo recorte. Os períodos usam a primeira data de registro de cada confirmação (`FinancialFact.createdAt`, Brasília), não a data bancária presumida: o escritor existente pode reutilizar `paidAt` em `occurredAt` de devoluções. Fatos antigos permanecem imutáveis. Uma base sem provas financeiras deve aparecer como parcial, sem transformar status `PAID` em caixa. Frete/encargos são composição histórica dos contratos integralmente reconhecidos, antes dos estornos; taxas do provedor e lucro não são apurados. Esta alteração não autoriza troca de webhook, acionador ou ambiente financeiro.
+
 ## Abortar e recuperar
 
 | Situação | Ação |
@@ -116,3 +132,50 @@ Registrar revisão, ponto recuperado, impacto, pendências e critérios de retom
 Não existem os scripts npm `validate:env`, `migrate:status`, `migrate:deploy` ou `smoke:deployment` no package.json auditado. Não há endpoint geral de readiness/health comprovado no pacote atual. A startup probe proposta é TCP; `/api/cron/payments/status` é diagnóstico financeiro autenticado. `/api/test-environment` não é health check de produção. O procedimento anterior que pressupunha esses comandos/probes foi substituído por esta revisão.
 
 Verificações locais existentes: `node --test tests/scripts/restored-clone-tools.test.mjs`, `npm run test:operations`, `node node_modules/typescript/bin/tsc --noEmit --incremental false` e executores de clone/container documentados. Repetir quando a revisão/escopo justificar; resultados locais não substituem observação no destino.
+
+## Ensaio de reentrega Sandbox — preparação iniciada em 15/10/2026
+
+Deployment Vercel e CI `38808225101` da candidata `17366e8b5c2a44bd2c0157a159a371886b3126d1` concluídos com sucesso. A ativação de manutenção remota não foi realizada. Na preparação, apenas leitura do banco de homologação, em transação `REPEATABLE READ / READ ONLY`; main permaneceu intacta.
+
+### Candidato e escopo da prova
+
+Pedido **#6**, boleto R$ 49,90, pago (`PAID`, versão 1), 24 pontos creditados, tentativa `APPROVED`, sem operação de cancelamento/estorno. Evento persistido e concluído:
+
+```text
+orderId:   0f0a05ff-2a24-4e6f-93ef-be13451388c9
+paymentId: pay_blfexx8zkousw431
+eventId:   evt_d26e303b238e509335ac9ba210e51b0f&22120169
+tipo:      PAYMENT_RECEIVED
+recebido:  14/10/2026 17:35:44 BRT
+concluído: 14/10/2026 17:38:50 BRT
+```
+
+Preservar o ID completo, inclusive `&22120169`; não fabricar outro ID nem editar o conteúdo. O pedido #7 foi descartado como candidato porque não há evento correspondente na inbox, embora seu cancelamento esteja concluído. O #8 permanece reservado para expiração.
+
+Um replay deste evento poderá comprovar reconhecimento de uma entrega já processada, sem efeitos repetidos. **Não comprova o processamento inicial de um evento novo retido durante indisponibilidade.** Enviar JSON por PowerShell/curl também não comprova transporte, retenção ou tentativa automática do Asaas. Registrar separadamente reenvio manual e retry automático, sem promover um ao outro.
+
+### Coleta e comparação somente leitura
+
+Ferramenta: `scripts/homologation/webhook-recovery-baseline.mjs`. Carrega a configuração local pela precedência do Next e rejeita host/identidade fora da homologação fixa. Não aceita destino arbitrário, não executa DML, não envia evento, não chama gateway e não processa fila. O carregamento do Prisma ocorre depois da configuração para impedir que seu carregador de `.env` prevaleça sobre `.env.local`.
+
+```powershell
+node scripts/homologation/webhook-recovery-baseline.mjs
+node scripts/homologation/webhook-recovery-baseline.mjs --compare=artifacts/webhook-recovery/baseline-order-6.json
+```
+
+Baseline inicial salvo localmente em `artifacts/webhook-recovery/baseline-order-6.json`, contendo somente identidades técnicas, contagens e hashes. Comparação de controle sem reenvio: `unchanged=true`, `providerRedeliveryVerified=false`. Antes do ensaio efetivo, capturar novamente e preservar um arquivo distinto; não sobrescrever evidência de uma etapa anterior.
+
+Conferidos 17 recortes: estado comercial do pedido, item, histórico, reserva, estoque agregado/variante, carteira/transação/lote/alocação de pontos, fatos financeiros, estado da tentativa/cobrança/operações, outbox, inbox correlacionada e registro do #8. Campos de polling da tentativa não integram os hashes; não é prova de congelamento global. Mudança concorrente em estoque/carteira exige investigar, não corrigir valores para obter igualdade. Hash de outbox igual não substitui confirmação de entrega no serviço de e-mail.
+
+### Próxima ação assistida na interface Asaas
+
+1. Abrir **Sandbox → Integrações → Webhooks/Logs de Webhooks**. Confirmar configuração que aponta ao Preview de homologação e estado da fila; não compartilhar token, payload bruto ou URL com query de bypass.
+2. Localizar o evento acima pelo pagamento/data. Conferir ID integral, tipo, última resposta HTTP e existência de ação de reenvio. Somente inspecionar nesta etapa. O log do provedor deve confirmar a origem do evento registrado na aplicação.
+3. Informar se a fila está ativa/interrompida e se existe reenvio individual. Esses dados foram solicitados ao operador e ainda não foram recebidos. A documentação consultada não comprova disponibilidade de um botão de reenvio para este evento; não inventar endpoint de replay nem usar `removeBackoff` como reenvio individual.
+4. Se não houver reenvio do evento já entregue, definir outro ensaio com um evento Sandbox próprio antes de interromper o recebimento. Não rearmar inbox `COMPLETED`, não repetir operações encerradas e não interferir no #8.
+
+Somente após confirmar mecanismo e recuperação, fechar a sequência concreta: baseline fresco, agendas/execuções e obrigações conhecidas, entrega identificada rejeitada com 503 pela **aplicação** (401/403/redirect da Vercel não servem), retomada de recebimento e comprovação no log do Asaas do mesmo ID com 200. Para o candidato já concluído, a aplicação deve responder `PROCESSED` e não reencaminhar trabalho. Não executar `process-payments-once.ps1` apenas para esse replay: seu limite é global e pode alcançar obrigações alheias ao ensaio.
+
+Depois comparar os recortes e registrar evento, horários, respostas e número de tentativas. Se a identidade/conteúdo divergir, consultar o estado sem repetir automaticamente. Não apagar a fila para encerrar o ensaio.
+
+Fontes oficiais consultadas: [Logs de Webhooks](https://docs.asaas.com/docs/logs-de-webhooks), disponíveis na interface web, e [idempotência](https://docs.asaas.com/docs/how-to-implement-idempotence-in-webhooks), que distingue identidade do evento e execução única. A fila real e a recuperação operacional ainda não foram comprovadas neste projeto.

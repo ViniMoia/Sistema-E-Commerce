@@ -9,6 +9,7 @@ import { drainPaymentInbox, reconcilePaymentAttempts } from '@/services/payment/
 import { drainPaymentOutbox } from '@/services/payment/payment-outbox.service';
 import { requestPaymentOperation } from '@/services/payment/payment-operations.service';
 import { manualRefund } from '@/services/payment/manual-refund.service';
+import { completePhysicalReturn } from '@/services/physical-return.service';
 import { requestPaymentReconciliation } from '@/services/payment/payment-supervision.service';
 import { applyPaymentEvidence } from '@/services/payment/payment-evidence.service';
 import { AsaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
@@ -324,6 +325,17 @@ describe('WF-14: real PostgreSQL, controlled remote operations, resumable execut
     await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
     const order = await stored(p.result.order.id); expect(order.status).toBe('DELIVERED'); expect(order.paymentAttempts[0].status).toBe('REFUNDED');
     expect(order.paymentAttempts[0].failureCode).toBe('PHYSICAL_RETURN_REQUIRED'); expect(await stock(p)).toBe(4);
+    const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+    await completePhysicalReturn({ orderId: order.id, lojaID, actorId: adminID }, {
+      commandId: randomUUID(), expectedVersion: order.version, inspectionReference: 'fixture-physical-return', receivedAllItems: true,
+      items: items.map(i => ({ orderItemId: i.id, receivedQuantity: i.quantity, restockQuantity: i.quantity })),
+    });
+    const points = await prisma.loyaltyTransaction.findMany({ where: { orderId: order.id } });
+    await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway);
+    expect((await stored(order.id)).paymentAttempts[0]).toMatchObject({ status: 'REFUNDED', failureCode: null });
+    expect((await stored(order.id)).status).toBe('DELIVERED'); expect(await stock(p)).toBe(5);
+    expect(await prisma.loyaltyTransaction.findMany({ where: { orderId: order.id } })).toEqual(points);
+    expect(p.gateway.refundPayment).toHaveBeenCalledTimes(1);
   });
   it('late payment after cancellation produces facts/review, never reopens or takes stock again', async () => {
     const p = await purchase(); p.remote[0].deleted = true; await due(p.attempt.id); await reconcilePaymentAttempts(50, p.gateway); expect(await stock(p)).toBe(5);

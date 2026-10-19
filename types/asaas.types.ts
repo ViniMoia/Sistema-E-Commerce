@@ -93,6 +93,7 @@ export interface AsaasPaymentResponse {
   identificationField?: string;
   installmentNumber?: number | null;
   installment?: string | null;
+  chargeback?: unknown;
 }
 
 export interface AsaasPixQrCodeResponse {

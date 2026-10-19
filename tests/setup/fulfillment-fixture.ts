@@ -14,10 +14,10 @@ export async function createFulfillmentFixture() {
   const loja = await prisma.loja.findUniqueOrThrow({ where: { id: lojaID } });
   const context = { lojaID, performedById: admin.id };
   return { lojaID, admin, customer, session, host: loja.slug + '.plataforma.com', context,
-    async order(deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE' = 'DELIVERY', provider: string | null = 'LOCAL_TABLE') {
-      const product = await prisma.product.create({ data: { lojaID, userID: admin.id, name: 'Produto WF16', description: '', imageUrl: '', price: 100, stock: 2,
-        productVariants: { create: { size: 'Único', color: 'Padrão', stock: 2 } } }, include: { productVariants: true } });
-      const items = [{ productId: product.id, variantId: product.productVariants[0].id, quantity: 1 }];
+    async order(deliveryType: 'DELIVERY' | 'PICKUP' | 'NONE' = 'DELIVERY', provider: string | null = 'LOCAL_TABLE', quantity = 1) {
+      const product = await prisma.product.create({ data: { lojaID, userID: admin.id, name: 'Produto WF16', description: '', imageUrl: '', price: 100, stock: quantity + 1,
+        productVariants: { create: { size: 'Único', color: 'Padrão', stock: quantity + 1 } } }, include: { productVariants: true } });
+      const items = [{ productId: product.id, variantId: product.productVariants[0].id, quantity }];
       const freightQuoteToken = deliveryType === 'DELIVERY' ? await fixtureFreightQuote({ lojaID, ownerKey: 'u:' + customer.id, items }) : undefined;
       const purchase = await createOrder({ lojaID, customer: { userId: customer.id, name: customer.name, email: customer.email, phone: '11999999999', cpfCnpj: '52998224725' },
         items, deliveryType, paymentMethod: 'WHATSAPP_PIX', freightQuoteToken,

@@ -12,16 +12,19 @@ import { smokeRestoredApplication } from './lib/restored-application-smoke.mjs';
 import { inspectLegacyTreatment } from './lib/restored-legacy-treatment.mjs';
 import { rehearseTestProductRetirement, testProducts, preservedVacuums } from './lib/restored-test-products.mjs';
 import { rehearseLegacyOpening } from './lib/restored-opening.mjs';
+import { rehearseOrderReporting } from './lib/restored-order-reporting.mjs';
 
 if (process.platform !== 'win32') throw new Error('Este executor exige DPAPI/ACL do Windows para proteger o backup.');
 const args = process.argv.slice(2);
-const opening = args.length === 3 && args[2] === '--rehearse-opening';
+const auditIndicators = args.length === 3 && args[2] === '--audit-indicators';
+const reporting = args.length === 3 && args[2] === '--rehearse-reporting';
+const opening = reporting || auditIndicators || (args.length === 3 && args[2] === '--rehearse-opening');
 const retireTests = opening || (args.length === 3 && args[2] === '--rehearse-test-products');
 const smokeApp = retireTests || (args.length === 3 && args[2] === '--smoke-app');
 const auditLegacy = smokeApp || (args.length === 3 && args[2] === '--audit-legacy');
 const reuse = (args.length === 2 || auditLegacy) && args[0] === '--backup-dir';
 if (!(args.length === 1 && args[0] === '--capture-source') && !reuse) {
-  throw new Error('Use --capture-source ou --backup-dir <diretório privado existente> [--audit-legacy|--smoke-app|--rehearse-test-products|--rehearse-opening].');
+  throw new Error('Use --capture-source ou --backup-dir <diretório privado existente> [--audit-legacy|--smoke-app|--rehearse-test-products|--rehearse-opening|--audit-indicators|--rehearse-reporting].');
 }
 let sourceEnv;
 if (!reuse) {
@@ -327,8 +330,11 @@ try {
     SELECT count(*) FROM "Loja" WHERE "enableManualPix" OR "enablePix" OR "enableBoleto" OR "enableCreditCard";`);
   evidence.paymentLegacyPreserved = inventedPayment.split('\n').filter(line => line.trim()==='0').length === 2;
   if (!evidence.paymentLegacyPreserved) throw new Error('Upgrade fabricou plano/ganho ou habilitou pagamento legado.');
-  evidence.diff = await command(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'diff',
-    '--from-url', pg.env.DATABASE_URL, '--to-schema-datamodel', 'prisma/schema.prisma', '--script'], { env: pg.env, capture: true });
+  // Read SQL separately: CLI update notices on stderr are not schema drift.
+  const diffPath = path.join(privateDir, `schema-diff-${runId}.sql`);
+  await command(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'diff',
+    '--from-url', pg.env.DATABASE_URL, '--to-schema-datamodel', 'prisma/schema.prisma', '--script', '--output', diffPath], { env: pg.env, capture: true });
+  evidence.diff = await fs.readFile(diffPath, 'utf8');
   // After sanitization there are no further authorized data changes. Compare
   // every original column, including the redacted fields and audit JSON.
   evidence.dataPreserved = JSON.stringify(await fingerprint(pg, true, false)) === JSON.stringify(evidence.sanitizedFullFingerprint);
@@ -371,6 +377,12 @@ try {
       evidence.legacyOpening = await rehearseLegacyOpening(pg);
       evidence.legacyOpeningReplay = await rehearseLegacyOpening(pg);
       if (!evidence.legacyOpeningReplay.replay) throw new Error('OPENING_REPLAY_NOT_VERIFIED');
+      if (reporting) {
+        const scope = { backupSha: evidence.backup.sha256, originalOrderColumns: originalColumns.Order };
+        evidence.orderReporting = await rehearseOrderReporting(pg, scope);
+        evidence.orderReportingReplay = await rehearseOrderReporting(pg, scope);
+        if (!evidence.orderReportingReplay.replay) throw new Error('REPORTING_REPLAY_NOT_VERIFIED');
+      }
     }
     evidence.applicationSmoke = await smokeRestoredApplication(pg, retireTests ? {
       excludedProductIds: testProducts.map(p => p.id), preservedProductIds: preservedVacuums,
@@ -378,7 +390,7 @@ try {
     console.log('[clone] Aplicacao consultou o clone sanitizado; dados preservados e acessos indevidos recusados.');
   }
   if (opening) {
-    evidence.stage = 'opening-purchase-tests';
+    evidence.stage = reporting ? 'reporting-tests' : auditIndicators ? 'indicator-audit' : 'opening-purchase-tests';
     await assertClone(pg);
     // HTTP reader has stopped; enable writes only on this disposable role for the fixture suite.
     await pg.sql('ALTER ROLE ecommerce_test SET default_transaction_read_only=off;');
@@ -386,13 +398,31 @@ try {
       /^(PATH|SYSTEMROOT|WINDIR|TEMP|TMP|LOCALAPPDATA|APPDATA|USERPROFILE|COMSPEC|PATHEXT|NUMBER_OF_PROCESSORS)$/i.test(key)));
     for (const key of ['TEST_RUN_ID','TEST_DATABASE_URL','DATABASE_URL','DIRECT_URL','TEST_HTTP_TOKEN','FREIGHT_QUOTE_SECRET']) testEnv[key] = pg.env[key];
     Object.assign(testEnv,{NODE_ENV:'test',TEST_RESTORED_OPENING:'true',PAYMENT_REMOTE_ENABLED:'false',PAYMENT_WORKER_ENABLED:'false',PAYMENT_EXPIRATION_ENABLED:'false',NEXT_TELEMETRY_DISABLED:'1'});
-    const resultPath = path.join(privateDir,`opening-tests-${runId}.json`);
-    await command(process.execPath,['node_modules/vitest/vitest.mjs','run','tests/clone/restored-opening.test.ts','--reporter=json','--outputFile',resultPath],{env:testEnv,capture:true});
-    const result = JSON.parse(await fs.readFile(resultPath,'utf8'));
-    if (!result.success || result.numPassedTests !== 3 || result.numFailedTests !== 0) throw new Error('OPENING_TESTS_INCOMPLETE');
-    evidence.openingTests = {passed:result.numPassedTests,failed:result.numFailedTests,legacyOrderCommandsDenied:20,
-      newPurchases:1,transport:'controlled manual payment; no Asaas calls',sourceWritten:false};
-    console.log('[clone] Abertura, replay, protecao de legados e compra nova aprovados em tres testes.');
+    if (reporting) {
+      const resultPath = path.join(privateDir, `reporting-tests-${runId}.json`);
+      await command(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', 'tests/clone/restored-reporting.test.ts',
+        '--reporter=json', '--outputFile', resultPath], { env: { ...testEnv, TEST_RESTORED_REPORTING: 'true' }, capture: true });
+      const result = JSON.parse(await fs.readFile(resultPath, 'utf8'));
+      if (!result.success || result.numPassedTests !== 3 || result.numFailedTests !== 0) throw new Error('REPORTING_TESTS_INCOMPLETE');
+      evidence.reportingTests = { passed: result.numPassedTests, failed: result.numFailedTests, cloneOnly: true };
+    } else if (auditIndicators) {
+      const auditPath = path.join(privateDir, `indicators-${runId}.json`);
+      const resultPath = path.join(privateDir, `indicator-tests-${runId}.json`);
+      await command(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', 'tests/clone/restored-indicators.test.ts',
+        '--reporter=json', '--outputFile', resultPath], { env: { ...testEnv, TEST_AUDIT_INDICATORS: 'true', TEST_INDICATOR_REPORT: auditPath }, capture: true });
+      const result = JSON.parse(await fs.readFile(resultPath, 'utf8'));
+      if (!result.success || result.numPassedTests !== 3 || result.numFailedTests !== 0) throw new Error('INDICATOR_AUDIT_INCOMPLETE');
+      evidence.indicatorAudit = JSON.parse(await fs.readFile(auditPath, 'utf8'));
+      console.log('[clone] Tres cenarios de diagnostico de indicadores executados; consultar achados, nao equivalem a aceite funcional.');
+    } else {
+      const resultPath = path.join(privateDir,`opening-tests-${runId}.json`);
+      await command(process.execPath,['node_modules/vitest/vitest.mjs','run','tests/clone/restored-opening.test.ts','--reporter=json','--outputFile',resultPath],{env:testEnv,capture:true});
+      const result = JSON.parse(await fs.readFile(resultPath,'utf8'));
+      if (!result.success || result.numPassedTests !== 3 || result.numFailedTests !== 0) throw new Error('OPENING_TESTS_INCOMPLETE');
+      evidence.openingTests = {passed:result.numPassedTests,failed:result.numFailedTests,legacyOrderCommandsDenied:20,
+        newPurchases:1,transport:'controlled manual payment; no Asaas calls',sourceWritten:false};
+      console.log('[clone] Abertura, replay, protecao de legados e compra nova aprovados em tres testes.');
+    }
   }
   evidence.success = true;
   evidence.stage = 'completed';
