@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-16T22:35:55.540Z",
+  "candidateRevision": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "sourceCaptureAt": "2026-10-15T18:43:55.572Z",
+  "runId": "b90a3a5a7c3960def95338ec1a97d716",
+  "startedAt": "2026-10-16T22:33:33.600Z",
+  "finishedAt": "2026-10-16T22:35:07.785Z",
+  "scope": "Rehearsal of opening and reporting on existing encrypted backup with current candidate",
+  "sourceReconnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "productionReady": false,
+  "success": true,
+  "stage": "completed",
+  "backupSha256": "51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9",
+  "checks": {
+    "cloneGuardTestsPassed": 5,
+    "sanitizedRestoreVerified": true,
+    "historyVerified": true,
+    "dataPreserved": true,
+    "sequencesPreserved": true,
+    "migrationDiff": "-- This is an empty migration.\n",
+    "checksPreserved": true,
+    "loyaltyChecksPreserved": true,
+    "freightAuthorityChecks": true,
+    "paymentAuthorityChecks": true,
+    "checkoutAuthorityChecks": true,
+    "durablePaymentChecks": true,
+    "cloneContainerAbsent": true
+  },
+  "productRetirement": {
+    "at": "2026-10-16T22:34:33.507Z",
+    "cloneOnly": true,
+    "backupPreviouslyRestored": true,
+    "productIds": [
+      "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+      "622731a7-0158-486c-9626-0a739b3ddb91",
+      "6178ba96-b383-4e50-be1d-93a506912011",
+      "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13"
+    ],
+    "protectedProductIds": [
+      "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+      "0486f861-4e39-426a-81ce-8b39f60a177f",
+      "5e86739a-6114-4df1-a15a-df88b7a349c3",
+      "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+      "bc076f2d-740c-45f3-84c5-9d0fb8657d84"
+    ],
+    "retiredProducts": 4,
+    "retiredVariants": 10,
+    "activeProducts": 518,
+    "stockValuesPreserved": true,
+    "allOtherDataPreserved": true,
+    "sharedDatabaseWritten": false,
+    "strategy": "retiredAt with version increments; no deletion, stock reconciliation or financial effects",
+    "productionReady": false
+  },
+  "legacyOpening": {
+    "replay": false,
+    "wallets": 2,
+    "removedTestPoints": 475,
+    "balance": 0,
+    "adjustments": 2,
+    "auditRecords": 2,
+    "originalTransactionsPreserved": 2,
+    "legacyOrdersPreserved": 24,
+    "otherTablesPreserved": true,
+    "lotsFabricated": 0,
+    "remoteCalls": 0,
+    "cloneOnly": true,
+    "productionReady": false
+  },
+  "legacyOpeningReplay": {
+    "replay": true,
+    "wallets": 2,
+    "balance": 0,
+    "adjustments": 2
+  },
+  "classification": {
+    "replay": false,
+    "excludedOrders": 24,
+    "batch": "legacy-test-orders-20261015-v1",
+    "cloneOnly": true,
+    "ordersAndHistoryPreserved": true,
+    "auditRecords": 24
+  },
+  "classificationReplay": {
+    "replay": true,
+    "excludedOrders": 24,
+    "batch": "legacy-test-orders-20261015-v1",
+    "cloneOnly": true
+  },
+  "applicationSmoke": {
+    "startedAt": "2026-10-16T22:34:40.005Z",
+    "cloneRunId": "ff9f21659366120430ede3765a2bf05d",
+    "cases": [
+      {
+        "name": "server_database_identity",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "catalog_read",
+        "count": 518,
+        "passed": true
+      },
+      {
+        "name": "test_products_absent_from_catalog",
+        "count": 4,
+        "passed": true
+      },
+      {
+        "name": "commercial_vacuums_and_accessories_preserved",
+        "count": 5,
+        "passed": true
+      },
+      {
+        "name": "legacy_admin_order_read",
+        "count": 24,
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_order_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "unknown_tenant_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "opening_wallet_read",
+        "count": 2,
+        "passed": true
+      },
+      {
+        "name": "methods_remain_disabled",
+        "count": 1,
+        "passed": true
+      }
+    ],
+    "productionReady": false,
+    "allApplicationTablesPreserved": true,
+    "sessionBootstrapOnly": true,
+    "applicationDatabaseReadOnly": true,
+    "finishedAt": "2026-10-16T22:35:04.209Z"
+  },
+  "reportingTests": {
+    "passed": 3,
+    "failed": 0,
+    "cloneOnly": true
+  },
+  "fileSha256": {
+    "scripts/verify-restored-clone.mjs": "ec6d812e59670128b4782dd1a7e0da99fe4094f6ffe9a3c8bb0ca349c0359a3c",
+    "scripts/lib/restored-test-products.mjs": "c0104a06fa72c09bb76213a2b0b8c3481e4e2ddfbf9001688e821ffb5d9f3f3d",
+    "scripts/lib/restored-opening.mjs": "ba86ffc85ac049ea4990007ad74927adfb8238e6285018918327077cb2797052",
+    "scripts/lib/restored-order-reporting.mjs": "f2a50b42c622b389c7511ad9cb4dbf69746ee2a41b5f2dd7d5d1cc3649135ed2",
+    "tests/clone/restored-reporting.test.ts": "1838e2c734e3604cd285b6c3db1e0dfc20adc5db8e272ff23059ae90326c560c",
+    "services/loyalty-report.service.ts": "b44570f250264f962d046b2528205e8acd496df76028accf02b11e20683ac23b",
+    "services/dashboard.service.ts": "75364577c60187d34f26293160c9265d365bd613a2bbaaa5840bf57dc42a68c3"
+  },
+  "limitations": [
+    "Historical backup; no fresh source inventory",
+    "Same Windows account DPAPI recovery only; alternate operator not verified",
+    "Mutations restricted to disposable clone; no production executor approved",
+    "Stock preservation is not physical stock verification",
+    "No external provider requests; simulated financial fixture only"
+  ]
+}

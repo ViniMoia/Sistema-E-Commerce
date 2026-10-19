@@ -2,6 +2,8 @@
 
 Revisão em 15/10/2026. Procedimento preparado na homologação, **não executado em produção**. Main e seu banco permanecem somente leitura para o assistente. O destino definido pelo operador é o banco já conectado à main; não criar outra base de produção por padrão nem substituir sua conexão pela homologação.
 
+**Estado atualizado em 16/10:** candidata `55a3003` com CI aprovada; homologação Cloud Run existente em `continental-511812` / `southamerica-east1`. Vanderlei publicou/conferiu `eff10bf` com 0% de tráfego e aplicou a migration de classificação nesse banco. Publicação da candidata atual e abertura produtiva continuam pendentes. [Checklist G1–G8](../../../../trabalho_em_dupla/CHECKLIST_PRODUCAO_G1_G8.md) e [pacote de abertura G2](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md) consolidam evidências posteriores. Referências abaixo a conjunto local, ausência de CI ou infraestrutura ainda não identificada descrevem a preparação de 15/10, não a situação atual. O procedimento de contenção e suas condições continuam aplicáveis.
+
 ## Base comprovada e responsáveis
 
 Origem: `7f9b26e062ec2654420fecffb6dd78ad3ba1e017`. Base publicada em homologação: `b90b41dbe2f795f95fdd0f0f78ea648febaa3427`, mais manutenção completa e documentação locais ainda não publicadas. Não há SHA final de release desse conjunto local.
@@ -23,7 +25,7 @@ Leno confere dados, migrations e obrigações financeiras; Vanderlei confere run
 | Dados de teste | Manifesto de IDs/hashes e tratamento final revisado separadamente das migrations. Scripts de clone não aceitam destino compartilhado. |
 | Observação | Critérios de erro, latência, backlog, conexões, janela de acompanhamento e canal de alerta. Limiares comerciais ainda não aprovados. |
 
-Cloud Run continua sendo pacote de preparação: `config.example.json` não identifica recursos implantados. A imagem standalone atual não executa migrations nem garante inclusão da Prisma CLI; preparar um checkout/job exclusivo de migração com o lockfile da release.
+`config.example.json` não identifica recursos implantados; usar a evidência da revisão efetiva. A homologação Cloud Run já está identificada na atualização acima; isso não comprova o destino produtivo. A imagem standalone não executa migrations nem garante inclusão da Prisma CLI; preparar um checkout/job exclusivo de migração com o lockfile da release.
 
 ## Contenção em três fases
 

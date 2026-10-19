@@ -3,6 +3,7 @@ import { orderReportingWhere } from '@/lib/commerce/order-reporting';
 import { requirePurchaseAccount } from '@/lib/commerce/account-scope';
 import { transitionOrder } from '@/lib/commerce/order-command';
 import { allowedOrderActions } from '@/lib/commerce/order-fulfillment';
+import { savedChargeback } from '@/services/payment/chargeback';
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { invalidateDashboardCache } from "@/services/dashboard.service";
@@ -158,7 +159,8 @@ export async function getOrderDetailForAdmin(
     include: {
       buyer: { select: buyerSelect },
       reportingExclusion: { select: { reason: true, classifiedAt: true } },
-      paymentAttempts: { orderBy: { number: 'desc' }, take: 1, select: { status: true, provider: true, failureCode: true } },
+      paymentAttempts: { orderBy: { number: 'desc' }, take: 1, select: { status: true, provider: true, failureCode: true,
+        charges: { orderBy: { ordinal: 'asc' }, select: { ordinal: true, instructions: true } } } },
       user: { select: { id: true, name: true, email: true, phone: true } },
       address: true,
       items: {
@@ -181,7 +183,9 @@ export async function getOrderDetailForAdmin(
   });
   if (!order) return null;
   const { paymentAttempts, ...detail } = order;
-  return { ...detail, actions: allowedOrderActions(order, paymentAttempts[0] ?? null, 'ADMIN'), customer: orderCustomer(order), address: order.address ?? snapshotDeliveryAddress(order.buyer) };
+  return { ...detail, actions: allowedOrderActions(order, paymentAttempts[0] ?? null, 'ADMIN'),
+    chargebacks: (paymentAttempts[0]?.charges ?? []).flatMap(c => { const snapshot = savedChargeback(c.instructions); return snapshot ? [{ ordinal: c.ordinal, ...snapshot }] : []; }),
+    customer: orderCustomer(order), address: order.address ?? snapshotDeliveryAddress(order.buyer) };
 }
 
 export async function updateOrderNotes(params: {

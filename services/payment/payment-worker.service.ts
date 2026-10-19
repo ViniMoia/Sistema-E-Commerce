@@ -11,13 +11,15 @@ import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { logger } from '@/lib/logger';
 import { paymentEvidenceTransactionOptions, paymentRetryCode } from './payment-execution-policy';
 import { moneyCents } from './installment.service';
+import { savedChargeback, chargebackPaymentStatuses } from './chargeback';
 
-export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter): Promise<PaymentInspection> {
+export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter, chargebackHints: string[] = []): Promise<PaymentInspection> {
   const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
   if (attempt.providerAccount !== paymentAccountScope()) throw new Error('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
   if (!gateway.inspectAttempt || (gateway === asaasPaymentAdapter && !asaasClient.configurationReady())) throw new Error('PAYMENT_LOOKUP_UNAVAILABLE');
   return gateway.inspectAttempt({ externalReference: attempt.externalReference, paymentIds: attempt.charges.map(c => c.providerPaymentId),
     method: attempt.method as PaymentMethod, installments: attempt.installments,
+    chargebackPaymentIds: [...new Set([...chargebackHints, ...attempt.charges.filter(c => savedChargeback(c.instructions) || chargebackPaymentStatuses.includes(c.providerStatus)).map(c => c.providerPaymentId)])],
     refundPaymentIds: attempt.charges.filter(c => attempt.operations.some(op => op.chargeId === c.id && op.kind === 'REFUND')).map(c => c.providerPaymentId) });
 }
 
@@ -46,7 +48,7 @@ export async function drainPaymentInbox(limit = 10, gateway: PaymentGateway = as
       }
       // A webhook triggers lookup, not unconditional approval/refund. Current
       // complete contract also neutralizes duplicates and out-of-order events.
-      const inspection = await inspectPaymentAttempt(attempt.id, gateway);
+      const inspection = await inspectPaymentAttempt(attempt.id, gateway, envelope.event.includes('CHARGEBACK') ? [envelope.payment.id] : []);
       if (!inspection.charges.some(c => c.paymentId === envelope.payment.id)) throw new Error('PAYMENT_EVENT_REFERENCE_UNRESOLVED');
       phase = 'evidence';
       const outcome = await prisma.$transaction(async tx => {
@@ -146,6 +148,7 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
       await new CommerceLocks(tx).acquire('order', [attempt.orderId]); await fenceAttempt(tx, attemptId, owner);
       const order = await tx.order.findUniqueOrThrow({ where: { id: attempt.orderId } });
       const current = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
+      if (current.failureCode?.startsWith('PAYMENT_CHARGEBACK_')) return false;
       const stateValid = operation.kind === 'CANCEL' ? current.status === 'CANCEL_PENDING' && order.status === 'PENDING' : current.status === 'REFUND_PENDING';
       if (!stateValid) return false;
       const applied = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'READY', lastErrorCode: null }, data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
@@ -185,6 +188,7 @@ async function dispatchInstallmentRefund(attemptId: string, owner: string, gatew
     await fenceAttempt(tx, attemptId, owner);
     const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
     if (attempt.status !== 'REFUND_PENDING') return { review: false };
+    if (attempt.failureCode?.startsWith('PAYMENT_CHARGEBACK_')) return { review: true };
     const refunds = attempt.operations.filter(op => op.kind === 'REFUND');
     // Never convert a partly dispatched legacy batch into another full refund.
     // Claim every charge atomically before the single contract POST. A crash or

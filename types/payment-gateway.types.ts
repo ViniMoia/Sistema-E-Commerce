@@ -110,7 +110,7 @@ export class PaymentGatewayError extends Error {
 }
 
 export interface PaymentGateway {
-  inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[] }): Promise<PaymentInspection>;
+  inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[]; chargebackPaymentIds?: string[] }): Promise<PaymentInspection>;
   cancelPayment?(paymentId: string): Promise<void>;
   refundPayment?(paymentId: string, amount: number): Promise<void>;
   /** Full installment contract refund; no per-charge amount or automatic retry. */
@@ -142,6 +142,7 @@ export interface RemoteCharge {
   ordinal: number; value: number; status: string; deleted?: boolean;
   contractId?: string; dueAt?: string; paidAt?: string;
   refundHistory?: RemoteRefundHistory;
+  chargeback?: unknown;
   instructions?: { pixPayload?: string; pixQrCodeBase64?: string; bankSlipUrl?: string; digitableLine?: string; expiresAt?: string };
 }
 export interface RemoteRefundHistory {

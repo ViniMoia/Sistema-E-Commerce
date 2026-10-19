@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-19T16:16:45.491354+00:00",
+  "status": "LOCAL_REVIEW_COMPLETE_AWAITING_COMMIT_AND_CI",
+  "scope": "Consolidation of physical return, chargeback result handling and existing preparation documentation. No runtime edit in this review.",
+  "branch": "revisao/dashboard-financeiro-20261016",
+  "baseCommit": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "originMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "originHomologation": "eb0708c69ddda41e5b456f36b5df2e4cc6ca3cab",
+  "originReviewBranch": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "ancestry": {
+    "localOnlyCommits": 6,
+    "remoteHomologationOnlyCommits": 0,
+    "mergeRequiredAtReview": false
+  },
+  "vanderleiFilesComparedIdentical": [
+    "lib/tenant.ts",
+    "app/api/auth/logout/route.ts",
+    "tests/unit/tenant-host-aliases.test.ts",
+    "tests/unit/logout-redirect.test.ts"
+  ],
+  "groups": {
+    "ci_suite_selection": 1,
+    "documentation_and_evidence": 12,
+    "runtime": 16,
+    "tests": 10
+  },
+  "files": [
+    {
+      "path": "app/api/admin/orders/[orderId]/physical-return/route.ts",
+      "group": "runtime",
+      "workingTreeSha256": "46e69ae384ba7c3602d683b240c3be5e7ac843792440d7fead95a864d09e01c3"
+    },
+    {
+      "path": "components/admin/orders/ChargebackPanel.tsx",
+      "group": "runtime",
+      "workingTreeSha256": "24080c5eff479e5ca7b14b96839862c67aed6a59fb5686132a153dc0ad4f8925"
+    },
+    {
+      "path": "components/admin/orders/OrderDetailDrawer.tsx",
+      "group": "runtime",
+      "workingTreeSha256": "b4229799f8f9d78370da5c2d87f64e29aa45ecfe2434773505487765a6cfb772"
+    },
+    {
+      "path": "components/admin/orders/PhysicalReturnPanel.tsx",
+      "group": "runtime",
+      "workingTreeSha256": "2a0819f2d6e5aed1042518b36a28800c52e79a181594d632a3366f0c0d8ff012"
+    },
+    {
+      "path": "diversos/AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "6de5b8ebbb5aab4710cafaeecd349bfaafdd6e28d7dd4b1bffb80fef75b05729"
+    },
+    {
+      "path": "diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "5ce9df3907b84b90b276a428361f205ec1878c97e66eaf237b815e0161381212"
+    },
+    {
+      "path": "diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "f60a34f74a6639d43a5800d02386fedc2875d7390d223172070143c9c70f05f3"
+    },
+    {
+      "path": "lib/commerce/financial-evidence.ts",
+      "group": "runtime",
+      "workingTreeSha256": "7051f33f0a5937947b811a1fed9438d8ae96fbd47de03727f9ecea5dbc939e2a"
+    },
+    {
+      "path": "lib/commerce/physical-return.ts",
+      "group": "runtime",
+      "workingTreeSha256": "b490a4b7d7f21b41c5bbed60c4fd9ff8d058bd8c9c44e121b69e4c33926befaf"
+    },
+    {
+      "path": "scripts/lib/homologation-suites.mjs",
+      "group": "ci_suite_selection",
+      "workingTreeSha256": "6f82d13eeff1baeef5e35cfd2678f8dee98edfe0b9077c0904ddf7841ac32f30"
+    },
+    {
+      "path": "services/asaas/asaas.adapter.ts",
+      "group": "runtime",
+      "workingTreeSha256": "5caef01e2e803d6eb4960f7e4a576110ca029cea1f7b3d4725fa4296c2f604f0"
+    },
+    {
+      "path": "services/asaas/asaas.client.ts",
+      "group": "runtime",
+      "workingTreeSha256": "245dd42b91d107f4b1ca354689dc788cb4833abf4ad5898bd9c6de129e3ab6c0"
+    },
+    {
+      "path": "services/order.service.ts",
+      "group": "runtime",
+      "workingTreeSha256": "ba28dd21a60e5928638a90857bd7c0ce7213881e5e233f85d4d14d8b8f503c63"
+    },
+    {
+      "path": "services/payment/chargeback.ts",
+      "group": "runtime",
+      "workingTreeSha256": "7e6d86a6f61d40ec6a6001490a79c3eb58588cba4d50d4421d85a3a9c200909d"
+    },
+    {
+      "path": "services/payment/payment-evidence.service.ts",
+      "group": "runtime",
+      "workingTreeSha256": "7b0837a6dc1fc0d55faa036627c250e4522363abb5cfd70e37e0fe34986ab868"
+    },
+    {
+      "path": "services/payment/payment-operations.service.ts",
+      "group": "runtime",
+      "workingTreeSha256": "9c46dd2ef7ec4bfe787eea2c58d4b0d46e5f8cbea3707b1086864572fcc6a4ec"
+    },
+    {
+      "path": "services/payment/payment-worker.service.ts",
+      "group": "runtime",
+      "workingTreeSha256": "cae9edebdf571c70446330ebde50e3949d0e6f6ccc6d20454afe96936886ae81"
+    },
+    {
+      "path": "services/physical-return.service.ts",
+      "group": "runtime",
+      "workingTreeSha256": "e9675c975ba0306c1845c4b3344a70e11f4d6bb4c76f3732342dfcbc6b981b4c"
+    },
+    {
+      "path": "tests/integration/chargeback-browser.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "690be0c7f6064588dd4c52d875dfc2467014e5c1f8667ce8f06fe48af675a47d"
+    },
+    {
+      "path": "tests/integration/chargeback-results.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "afb9e78a6b227b5e9ba2a7bea262430a986d7807333477dd36a53e5d10460651"
+    },
+    {
+      "path": "tests/integration/payment-durable-execution.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "728ccbab7b21852ca79a925361769ad1633b7c121b00dea402f6211a797cebab"
+    },
+    {
+      "path": "tests/integration/payment-lifecycle-homologation.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "8c15e8139e9d852ee880b6a120147eeb39e6a6c7e25198a61bb69c90cf6fe688"
+    },
+    {
+      "path": "tests/integration/physical-return-atomicity.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "e11091246ed5dca444a109cb3caab5da797ddfaf363a1ded4f4348556323bb96"
+    },
+    {
+      "path": "tests/integration/physical-return-browser.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "d8e9851d7aaaa168429c2d09c80b1968abd982be160793b576020744761e327b"
+    },
+    {
+      "path": "tests/setup/chargeback-fixture.ts",
+      "group": "tests",
+      "workingTreeSha256": "89d22434b6d6703aa7239435456e924a342f5f9bba76e43893402db07b11d6f4"
+    },
+    {
+      "path": "tests/setup/fulfillment-fixture.ts",
+      "group": "tests",
+      "workingTreeSha256": "a7d77777bea8adc509d1da390e6776b12e9fa64c528925e4c602fb8a1165558b"
+    },
+    {
+      "path": "tests/setup/physical-return-fixture.ts",
+      "group": "tests",
+      "workingTreeSha256": "1c6240db869b2d5f4e85bf382d04f164b8ba34cf4dd7f1b6d4d92e25b02f075b"
+    },
+    {
+      "path": "tests/unit/chargeback.test.ts",
+      "group": "tests",
+      "workingTreeSha256": "a1951b6b450f88989ccaccd400be85d7ee11a2ca68d6ef9e517a39611cd317cd"
+    },
+    {
+      "path": "trabalho_em_dupla/ACEITE_REMOTO_DASHBOARD_FIDELIDADE.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "6b4c9ad6e44a970c67f0c79967a490c655c720db3b5c20044b3db74d01f8c02c"
+    },
+    {
+      "path": "trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "6df899ccde7d7b7bb83e7ebe3372079c7ded720e645f8d2d6b0dc5f8553be306"
+    },
+    {
+      "path": "trabalho_em_dupla/CHECKLIST_PRODUCAO_G1_G8.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "bd887053bf573e2d7f9ab48405bc11e92603ee5dd05cab1691f95b2892300243"
+    },
+    {
+      "path": "trabalho_em_dupla/PACOTE_ABERTURA_G2.md",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "bd4c6f01a1f3438a16241bdafa4cf05f8b8351670d58ee2a0a52a8134a6d5b85"
+    },
+    {
+      "path": "trabalho_em_dupla/evidencias/L-CHARGEBACK-RESULTADOS-2026-10-19.json",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "8169d1694e04858154048de66fbce070405830755b81caee0a2705f3977e61c9"
+    },
+    {
+      "path": "trabalho_em_dupla/evidencias/L-G2-REVISAO-ABERTURA-2026-10-16.json",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "8335884d11ecd51b3011698cfea55cda1ec81479e7c9e0fa6e8322a4fa018f75"
+    },
+    {
+      "path": "trabalho_em_dupla/evidencias/L-RETORNO-FISICO-2026-10-19.json",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "84c15a48f13c9672aae282a46323bc362bcb390add066d0a598944c279fba989"
+    },
+    {
+      "path": "trabalho_em_dupla/modelos/ACEITE_DASHBOARD_FIDELIDADE.json",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "ae2b87be19f3c95cf3fbaebfc4edf44586d23184a7ca3304f3584ba021d69def"
+    },
+    {
+      "path": "trabalho_em_dupla/modelos/CASO_REVISAO_FINANCEIRA.json",
+      "group": "documentation_and_evidence",
+      "workingTreeSha256": "43318d86ba713d812b969874c82ddab97ff4862bba727f93ebae5048159630ad"
+    },
+    {
+      "path": "types/asaas.types.ts",
+      "group": "runtime",
+      "workingTreeSha256": "33dc8fc6002a109708f76bd3d77240f5ce2f1d813437e9f9181c03e7346a1c4f"
+    },
+    {
+      "path": "types/payment-gateway.types.ts",
+      "group": "runtime",
+      "workingTreeSha256": "35b80c1b7a8599e931af9257161ebcc75966aa37c372a86ca8d52ed471b4d017"
+    }
+  ],
+  "manifestHashNote": "Hashes refer to current working-tree bytes, before Git line-ending normalization. Manifest excludes its own recursive hash; historical evidence remains unchanged.",
+  "priorEvidenceChecks": [
+    {
+      "path": "trabalho_em_dupla/evidencias/L-RETORNO-FISICO-2026-10-19.json",
+      "matchingHashCount": 9,
+      "supersededSourceHashes": [
+        "services/payment/payment-evidence.service.ts",
+        "components/admin/orders/OrderDetailDrawer.tsx",
+        "scripts/lib/homologation-suites.mjs"
+      ]
+    },
+    {
+      "path": "trabalho_em_dupla/evidencias/L-CHARGEBACK-RESULTADOS-2026-10-19.json",
+      "matchingHashCount": 18,
+      "supersededSourceHashes": []
+    }
+  ],
+  "validation": {
+    "runtimeChangedThisReview": false,
+    "testsRerun": false,
+    "reason": "All current runtime/test sources covered by matching physical-return or later chargeback hashes; no new failures or runtime changes identified.",
+    "fourNewSuitesRegistered": [
+      "physical-return-atomicity",
+      "physical-return-browser",
+      "chargeback-results",
+      "chargeback-browser"
+    ],
+    "credentialPatternScan": "No matches in added diff lines and new files for database credentials, private key headers, GitHub/AWS token patterns or Vercel bypass values. Limited scan, not a comprehensive secret audit.",
+    "envFilesRead": false,
+    "conflictMarkers": "PASSED",
+    "gitDiffCheck": "PASSED",
+    "localLinks": {
+      "checked": 63,
+      "missing": 0
+    }
+  },
+  "nextStep": {
+    "action": "Commit reviewed files on review branch, push and update homologation PR; record CI reference/result.",
+    "ciCaveat": "Push trigger excludes revisao/*; requires PR targeting homologacao_teste or workflow_dispatch. A PR synthetic merge SHA must be correlated with the final published artifact.",
+    "remoteRefetchBeforeIntegration": true
+  },
+  "notPerformed": [
+    "git add",
+    "commit",
+    "push",
+    "merge",
+    "deploy",
+    "shared database access",
+    "provider financial operation",
+    "dispute submission",
+    "webhook or scheduler update"
+  ],
+  "openLimitations": [
+    "New candidate CI and remote acceptance",
+    "Operational dispute/document submission",
+    "Delivered operator alerts",
+    "Controlled resumption of held refund",
+    "Partial physical returns"
+  ]
+}

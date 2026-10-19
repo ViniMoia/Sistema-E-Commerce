@@ -15,8 +15,12 @@ import { X, ExternalLink } from 'lucide-react'
 import type { allowedOrderActions } from '@/lib/commerce/order-fulfillment'
 import { orderOperationDetailSchema } from '@/lib/validators/order.validators'
 import { getTrackingInfo } from '@/lib/freight/tracking-url'
+import { PhysicalReturnPanel } from './PhysicalReturnPanel'
+import { ChargebackPanel } from './ChargebackPanel'
+import type { ChargebackSnapshot } from '@/services/payment/chargeback'
 
 export interface OrderDetail {
+  chargebacks?: Array<ChargebackSnapshot & { ordinal: number }>
   reportingExclusion?: { reason: string; classifiedAt: string } | null
   id: string
   orderNumber: number
@@ -488,6 +492,11 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
                   </div>
                 )}
               </section>
+
+              <ChargebackPanel charges={order.chargebacks ?? []} />
+              {['SHIPPED', 'DELIVERED'].includes(order.status) && <PhysicalReturnPanel
+                key={`${order.id}:${order.version}`} orderId={order.id}
+                onCompleted={() => { void loadOrder(); onStatusUpdate() }} />}
 
               {/* 8. HISTÓRICO DE STATUS */}
               <section className="space-y-3">

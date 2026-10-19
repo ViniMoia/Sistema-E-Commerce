@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "kind": "REMOTE_DASHBOARD_LOYALTY_ACCEPTANCE_TEMPLATE",
+  "status": "NOT_EXECUTED",
+  "targetEnvironment": "HOMOLOGATION",
+  "expectedCandidateSha": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "effectiveDeployment": {
+    "sha": null,
+    "digest": null,
+    "revision": null,
+    "testedOriginWithoutSecretQuery": null,
+    "trafficPercent": null,
+    "identityEvidenceReference": null,
+    "classificationMigrationVerified": null,
+    "checkoutPaused": null
+  },
+  "scope": {
+    "expectedLojaId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "verifiedLojaId": null,
+    "currency": "BRL",
+    "financialTimezone": "America/Sao_Paulo",
+    "financialTimeBasis": "FACT_CREATED_AT",
+    "loyaltyScope": "Historical commercial movements; all store wallets preserved"
+  },
+  "baseline": {
+    "capturedAtUtc": null,
+    "readOnlyTransactionVerified": null,
+    "independentCalculationReference": null,
+    "sanitizedFingerprintReference": null,
+    "commercialOrderCount": null,
+    "excludedOrderCount": null,
+    "financialFactCount": null,
+    "financialExpected": null,
+    "loyaltyExpected": null
+  },
+  "observations": {
+    "startedAtUtc": null,
+    "finishedAtUtc": null,
+    "dashboardDisplayedAsOf": null,
+    "loyaltyApiCapturedAtUtc": null,
+    "dashboardCacheConsidered": null,
+    "concurrentChangesExcludedOrReconciled": null,
+    "loyaltyApiHttpStatus": null,
+    "loyaltyApiSuccess": null,
+    "loyaltyApiPrivateNoStore": null,
+    "financialObserved": null,
+    "loyaltyApiMetricsObserved": null,
+    "loyaltyPageObserved": null,
+    "loyaltyWidgetObserved": null
+  },
+  "comparisons": [],
+  "comparisonRecordShape": {
+    "id": null,
+    "field": null,
+    "periodOrScope": null,
+    "expected": null,
+    "observed": null,
+    "difference": null,
+    "result": "NOT_EXECUTED",
+    "evidenceReference": null
+  },
+  "uiAndAccess": {
+    "dashboardDesktop": "NOT_EXECUTED",
+    "dashboard390px": "NOT_EXECUTED",
+    "loyaltyDesktop": "NOT_EXECUTED",
+    "loyalty390px": "NOT_EXECUTED",
+    "anonymousDenied": "NOT_EXECUTED",
+    "logoutSameHostAndAccessRevoked": "NOT_EXECUTED",
+    "noUnexplainedErrors": "NOT_EXECUTED",
+    "applicableWarningsVerified": "NOT_EXECUTED"
+  },
+  "review": {
+    "executor": null,
+    "reviewer": null,
+    "reviewedAtUtc": null,
+    "result": "NOT_EXECUTED",
+    "openDifferences": [],
+    "notApplicableItemsWithReason": [],
+    "sanitizedEvidenceReferences": [],
+    "productionApproved": false
+  },
+  "instructions": [
+    "Copy this template to record a real run; null is unknown, not zero or approval.",
+    "Record all applicable comparisons; an empty array is not a passed run.",
+    "Record financial values in BRL with cent-based comparison, points and counts as integers.",
+    "Never include credentials, cookies, raw customer payloads or secret URL queries.",
+    "This template does not query, mutate, deploy or prove any remote state."
+  ]
+}

@@ -107,6 +107,12 @@ export class AsaasClient {
     return response.json();
   }
 
+  async getPaymentChargeback(id: string): Promise<unknown> {
+    const response = await this.request(this.baseUrl + '/payments/' + encodeURIComponent(id) + '/chargeback');
+    if (!response.ok) throw new AsaasClientError('PAYMENT_CHARGEBACK_LOOKUP_UNAVAILABLE', response.status);
+    return response.json();
+  }
+
   async refundInstallment(id: string): Promise<void> {
     const response = await this.request(this.baseUrl + '/installments/' + encodeURIComponent(id) + '/refund', { method: 'POST', body: '{}' });
     if (!response.ok) throw new AsaasClientError('PAYMENT_REFUND_UNRESOLVED', response.status);

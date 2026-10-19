@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-19",
+  "environment": "LOCAL_DISPOSABLE_ONLY",
+  "status": "LOCAL_IMPLEMENTATION_VERIFIED_REMOTE_ACCEPTANCE_PENDING",
+  "baseCommit": "55a300313570f2a504a8f042ba7f228cd7382e58",
+  "originMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "originHomologationObserved": "eb0708c69ddda41e5b456f36b5df2e4cc6ca3cab",
+  "scope": "Conciliar resultado de chargeback por parcela, auditar a observacao, bloquear resultados incompletos e apresentar a evidencia no Admin; preservar fluxo de retorno fisico.",
+  "officialSourcesCheckedOn": "2026-10-19",
+  "officialSources": [
+    "https://docs.asaas.com/docs/chargeback",
+    "https://docs.asaas.com/docs/payment-events",
+    "https://docs.asaas.com/reference/retrieve-a-single-chargeback"
+  ],
+  "validation": {
+    "initialIntegration": {
+      "runId": "b4b7dfe4f197bf86eb21e5c79a03b9b6",
+      "passed": 97,
+      "failed": 0,
+      "suites": {
+        "payment-durable-execution": 56,
+        "payment-lifecycle-homologation": 8,
+        "physical-return-atomicity": 10,
+        "dashboard-financial-evidence": 9,
+        "chargeback-results": 13,
+        "chargeback-browser": 1
+      }
+    },
+    "finalFocusedIntegration": {
+      "runId": "e63912b8e532584e1819fb33ed5e06f9",
+      "passed": 16,
+      "failed": 0,
+      "suites": {
+        "chargeback-results": 15,
+        "chargeback-browser": 1
+      },
+      "reason": "After fencing stale chargeback review leases; adds webhook hint and audit rollback cases. Prior chargeback cases rerun, not distinct extra cases."
+    },
+    "unit": {
+      "passed": 843,
+      "files": 93
+    },
+    "operations": {
+      "passed": 15
+    },
+    "typescript": "PASSED",
+    "focusedLint": "PASSED",
+    "isolatedProductionBuild": "PASSED",
+    "runtimeIsolation": "Disposable PostgreSQL, Next temporary copy without .env files, controlled test providers and isolated Chrome.",
+    "gitDiffCheck": "PASSED"
+  },
+  "verifiedBehaviors": [
+    "Open, unknown or financially incompatible disputes remain in review and block fulfillment/new refund.",
+    "REVERSED requires current CONFIRMED/RECEIVED; earlier REFUNDED is not reverted to paid.",
+    "DISPUTE_LOST/DONE plus REFUNDED reuses financial facts and compensation; no refund POST.",
+    "One refunded installment records only its amount and keeps partial review.",
+    "Queued refund is held during dispute and never automatically resumed after reversal.",
+    "Physical delivery remains separate; audited return receipt required after shipment/delivery.",
+    "Repeat observations do not duplicate effects; failed audit rolls back projections and commercial effects.",
+    "Resolved chargeback review fences stale outbox leases; other review obligations remain.",
+    "Admin displays selected current evidence, without provider payload or financial action button."
+  ],
+  "notPerformed": [
+    "Commit",
+    "Push",
+    "Deploy",
+    "Shared database mutation",
+    "Asaas financial operation",
+    "Dispute submission",
+    "Webhook or scheduler change"
+  ],
+  "limitations": [
+    "New candidate CI and remote acceptance pending",
+    "No dispute/document submission workflow",
+    "No automatic resumption of held refund commands",
+    "No partial physical return command",
+    "No proof of real provider transport or delivered operator alerts",
+    "No new migration; reuses instructions snapshot and AuditLog unique effect key"
+  ],
+  "sourceHashes": [
+    {
+      "path": "services/payment/chargeback.ts",
+      "sha256": "7e6d86a6f61d40ec6a6001490a79c3eb58588cba4d50d4421d85a3a9c200909d"
+    },
+    {
+      "path": "services/payment/payment-evidence.service.ts",
+      "sha256": "7b0837a6dc1fc0d55faa036627c250e4522363abb5cfd70e37e0fe34986ab868"
+    },
+    {
+      "path": "services/payment/payment-worker.service.ts",
+      "sha256": "cae9edebdf571c70446330ebde50e3949d0e6f6ccc6d20454afe96936886ae81"
+    },
+    {
+      "path": "services/payment/payment-operations.service.ts",
+      "sha256": "9c46dd2ef7ec4bfe787eea2c58d4b0d46e5f8cbea3707b1086864572fcc6a4ec"
+    },
+    {
+      "path": "services/asaas/asaas.adapter.ts",
+      "sha256": "5caef01e2e803d6eb4960f7e4a576110ca029cea1f7b3d4725fa4296c2f604f0"
+    },
+    {
+      "path": "services/asaas/asaas.client.ts",
+      "sha256": "245dd42b91d107f4b1ca354689dc788cb4833abf4ad5898bd9c6de129e3ab6c0"
+    },
+    {
+      "path": "services/order.service.ts",
+      "sha256": "ba28dd21a60e5928638a90857bd7c0ce7213881e5e233f85d4d14d8b8f503c63"
+    },
+    {
+      "path": "lib/commerce/financial-evidence.ts",
+      "sha256": "7051f33f0a5937947b811a1fed9438d8ae96fbd47de03727f9ecea5dbc939e2a"
+    },
+    {
+      "path": "types/payment-gateway.types.ts",
+      "sha256": "35b80c1b7a8599e931af9257161ebcc75966aa37c372a86ca8d52ed471b4d017"
+    },
+    {
+      "path": "types/asaas.types.ts",
+      "sha256": "33dc8fc6002a109708f76bd3d77240f5ce2f1d813437e9f9181c03e7346a1c4f"
+    },
+    {
+      "path": "components/admin/orders/ChargebackPanel.tsx",
+      "sha256": "24080c5eff479e5ca7b14b96839862c67aed6a59fb5686132a153dc0ad4f8925"
+    },
+    {
+      "path": "components/admin/orders/OrderDetailDrawer.tsx",
+      "sha256": "b4229799f8f9d78370da5c2d87f64e29aa45ecfe2434773505487765a6cfb772"
+    },
+    {
+      "path": "tests/setup/chargeback-fixture.ts",
+      "sha256": "89d22434b6d6703aa7239435456e924a342f5f9bba76e43893402db07b11d6f4"
+    },
+    {
+      "path": "tests/integration/chargeback-results.test.ts",
+      "sha256": "afb9e78a6b227b5e9ba2a7bea262430a986d7807333477dd36a53e5d10460651"
+    },
+    {
+      "path": "tests/integration/chargeback-browser.test.ts",
+      "sha256": "690be0c7f6064588dd4c52d875dfc2467014e5c1f8667ce8f06fe48af675a47d"
+    },
+    {
+      "path": "tests/unit/chargeback.test.ts",
+      "sha256": "a1951b6b450f88989ccaccd400be85d7ee11a2ca68d6ef9e517a39611cd317cd"
+    },
+    {
+      "path": "tests/integration/payment-lifecycle-homologation.test.ts",
+      "sha256": "8c15e8139e9d852ee880b6a120147eeb39e6a6c7e25198a61bb69c90cf6fe688"
+    },
+    {
+      "path": "scripts/lib/homologation-suites.mjs",
+      "sha256": "6f82d13eeff1baeef5e35cfd2678f8dee98edfe0b9077c0904ddf7841ac32f30"
+    }
+  ]
+}

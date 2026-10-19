@@ -6,6 +6,9 @@ import type { PaymentInspection } from '@/types/payment-gateway.types';
 import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { refundOrderPoints } from '@/services/loyalty.service';
 import { parseRefundHistory, refundHistoryReview } from './refund-history';
+import { physicalReturnCompleted } from '@/services/physical-return.service';
+import { classifyChargeback, savedChargeback } from './chargeback';
+import { createHash } from 'node:crypto';
 
 const chargeSchema = z.object({ paymentId: z.string().min(1).max(128), externalReference: z.string().min(1).max(128),
   method: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']), ordinal: z.number().int().positive(), value: z.number().finite().positive(),
@@ -59,6 +62,10 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
   for (const operation of attempt.operations.filter(op => op.kind === 'REFUND' && op.status !== 'COMPLETED')) {
     const charge = attempt.charges.find(c => c.id === operation.chargeId)!;
     const row = inspection.charges.find(c => c.paymentId === charge.providerPaymentId)!;
+    const chargeback = classifyChargeback(row.chargeback, row.status, row.method, savedChargeback(charge.instructions), charge.providerStatus);
+    // A chargeback result is not a response to our refund POST. Pending cases
+    // are held below; a confirmed chargeback refund is its own remote proof.
+    if (chargeback?.review || chargeback?.outcome === 'REFUNDED') continue;
     const parsedHistory = parseRefundHistory(row.refundHistory?.records);
     const history = { ...parsedHistory, complete: row.refundHistory?.complete === true && parsedHistory.complete };
     const reason = refundHistoryReview(history, row.status, Number(charge.amount), operation.submittedAt !== null);
@@ -77,25 +84,39 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
   }
   const chargeStates: string[] = [];
   let unknown = false;
+  let chargebackReview = false;
+  let chargebackObserved = false;
   for (const row of rows) {
     const elsewhere = await tx.paymentCharge.findUnique({ where: { provider_providerPaymentId: { provider: 'ASAAS', providerPaymentId: row.paymentId } } });
     if (elsewhere && elsewhere.attemptId !== attempt.id) {
       await markPaymentReview(tx, attemptId, 'PAYMENT_CORRELATION_CONFLICT'); return { review: true, state: attempt.status };
     }
     const previous = attempt.charges.find(c => c.providerPaymentId === row.paymentId);
+    const chargeback = classifyChargeback(inspection.charges.find(c => c.paymentId === row.paymentId)?.chargeback,
+      row.status, row.method, savedChargeback(previous?.instructions), previous?.providerStatus);
+    if (chargeback?.review) { chargebackReview = true; unknown = true; }
     let state = ['CONFIRMED', 'RECEIVED', 'REFUNDED'].includes(row.status) ? row.status : row.deleted ? 'DELETED' : row.status;
     if (previous?.providerStatus === 'REFUNDED' && state !== 'REFUNDED') state = 'REFUNDED';
     if (previous && ['CONFIRMED', 'RECEIVED'].includes(previous.providerStatus) && ['PENDING', 'OVERDUE', 'AWAITING_RISK_ANALYSIS', 'DELETED'].includes(state)) state = previous.providerStatus;
     if (previous?.providerStatus === 'RECEIVED' && state === 'CONFIRMED') state = 'RECEIVED';
     if (previous?.providerStatus === 'DELETED' && !['DELETED', 'CONFIRMED', 'RECEIVED', 'REFUNDED'].includes(state)) unknown = true;
     if (!['PENDING', 'OVERDUE', 'AWAITING_RISK_ANALYSIS', 'CONFIRMED', 'RECEIVED', 'REFUNDED', 'DELETED', 'CREDIT_CARD_CAPTURE_REFUSED'].includes(state)) unknown = true;
+    const instructions = { ...(previous?.instructions as object ?? {}), ...(row.instructions ?? {}), ...(chargeback ? { chargeback } : {}) };
     const charge = await tx.paymentCharge.upsert({ where: { provider_providerPaymentId: { provider: 'ASAAS', providerPaymentId: row.paymentId } },
       create: { attemptId, provider: 'ASAAS', providerAccount: attempt.providerAccount, providerPaymentId: row.paymentId, ordinal: row.ordinal, amount: new Prisma.Decimal(row.value), providerStatus: state,
-        dueAt: row.dueAt ? new Date(row.dueAt) : null, instructions: row.instructions ? { ...row.instructions } : undefined },
+        dueAt: row.dueAt ? new Date(row.dueAt) : null, instructions },
       update: { providerStatus: state, ...(row.dueAt ? { dueAt: new Date(row.dueAt) } : {}),
-        ...(row.instructions && Object.values(row.instructions).some(Boolean) ? { instructions: { ...(previous?.instructions as object ?? {}), ...row.instructions } } : {}) } });
+        ...(chargeback || row.instructions && Object.values(row.instructions).some(Boolean) ? { instructions } : {}) } });
+    if (chargeback) {
+      chargebackObserved = true;
+      const digest = createHash('sha256').update(JSON.stringify(chargeback)).digest('hex');
+      const effectKey = `chargeback:${charge.id}:${digest}`;
+      await tx.auditLog.upsert({ where: { effectKey }, update: {}, create: { effectKey,
+        actorType: 'SYSTEM', systemActor: 'PAYMENT_RECONCILIATION', action: 'PAYMENT_CHARGEBACK_OBSERVED', entity: 'Order', entityId: attempt.orderId,
+        metadata: { attemptId, chargeId: charge.id, providerAccount: attempt.providerAccount, paymentId: row.paymentId, ordinal: row.ordinal, ...chargeback } } });
+    }
     chargeStates.push(state);
-    const factTypes = state === 'RECEIVED' ? ['AUTHORIZED', 'SETTLED'] as const : state === 'CONFIRMED' ? ['AUTHORIZED'] as const :
+    const factTypes = chargeback?.review ? [] : state === 'RECEIVED' ? ['AUTHORIZED', 'SETTLED'] as const : state === 'CONFIRMED' ? ['AUTHORIZED'] as const :
       state === 'REFUNDED' ? ['REFUNDED'] as const : state === 'DELETED' ? ['CANCELLED'] as const : [];
     for (const type of factTypes) {
       const factKey = 'charge:' + charge.id + ':' + type;
@@ -103,13 +124,13 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
         create: { orderId: attempt.orderId, attemptId, chargeId: charge.id, provider: 'ASAAS', providerAccount: attempt.providerAccount, factKey, type,
           amount: charge.amount, occurredAt: row.paidAt ? new Date(row.paidAt) : now }, update: {} });
     }
-    if (state === 'DELETED' || state === 'REFUNDED') await tx.paymentOperation.updateMany({ where: { chargeId: charge.id,
+    if (!chargeback?.review && (state === 'DELETED' || state === 'REFUNDED')) await tx.paymentOperation.updateMany({ where: { chargeId: charge.id,
       kind: state === 'DELETED' ? 'CANCEL' : 'REFUND', status: { not: 'COMPLETED' } }, data: { status: 'COMPLETED', completedAt: now, lastErrorCode: null } });
   }
-  const paid = inspection.contractApproved !== false && chargeStates.every(s => ['CONFIRMED', 'RECEIVED'].includes(s));
-  const refunded = chargeStates.every(s => s === 'REFUNDED');
-  const cancelled = chargeStates.every(s => s === 'DELETED');
-  const declined = chargeStates.every(s => s === 'CREDIT_CARD_CAPTURE_REFUSED');
+  const paid = !chargebackReview && inspection.contractApproved !== false && chargeStates.every(s => ['CONFIRMED', 'RECEIVED'].includes(s));
+  const refunded = !chargebackReview && chargeStates.every(s => s === 'REFUNDED');
+  const cancelled = !chargebackReview && chargeStates.every(s => s === 'DELETED');
+  const declined = !chargebackReview && chargeStates.every(s => s === 'CREDIT_CARD_CAPTURE_REFUSED');
   const partial = chargeStates.some(s => ['REFUNDED', 'DELETED'].includes(s)) && !(refunded || cancelled);
   let next: PaymentAttemptStatus = paid ? 'APPROVED' : refunded ? 'REFUNDED' : cancelled ? 'CANCELLED' : declined ? 'DECLINED' : 'PENDING';
   if (attempt.status === 'REFUND_PENDING' && !refunded) next = 'REFUND_PENDING';
@@ -141,9 +162,19 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
     ...(primary.instructions?.digitableLine ? { asaasDigitableLine: primary.instructions.digitableLine } : {}),
     ...(attempt.method === 'BOLETO' && primary.dueAt ? { asaasDueDate: new Date(primary.dueAt) } : {}) } });
   if (unknown || partial || late) {
-    await markPaymentReview(tx, attemptId, late ? 'LATE_PAYMENT' : partial ? 'PAYMENT_PARTIAL_REVERSAL_REVIEW' : 'PAYMENT_EXTERNAL_STATE_REVIEW');
+    if (chargebackReview) await tx.paymentOperation.updateMany({ where: { attemptId, status: 'READY' },
+      data: { lastErrorCode: 'PAYMENT_CHARGEBACK_REVIEW' } });
+    await markPaymentReview(tx, attemptId, chargebackReview ? 'PAYMENT_CHARGEBACK_REVIEW' : late ? 'LATE_PAYMENT' : partial ? 'PAYMENT_PARTIAL_REVERSAL_REVIEW' : 'PAYMENT_EXTERNAL_STATE_REVIEW');
     return { review: true, state: late ? attempt.status : next };
   }
+  if (!refunded && attempt.operations.some(op => op.lastErrorCode === 'PAYMENT_CHARGEBACK_REVIEW' && op.status !== 'COMPLETED')) {
+    await markPaymentReview(tx, attemptId, 'PAYMENT_CHARGEBACK_OPERATION_REVIEW');
+    return { review: true, state: next };
+  }
+  if (chargebackObserved) await tx.commerceOutbox.updateMany({ where: {
+    effectKey: { in: [`payment-review:${attemptId}:PAYMENT_CHARGEBACK_REVIEW`, `payment-review:${attemptId}:PAYMENT_CHARGEBACK_OPERATION_REVIEW`] },
+    commandType: 'PAYMENT_REVIEW', status: { in: ['READY','LEASED','DEAD_LETTER'] },
+  }, data: { status: 'COMPLETED', completedAt: now, lastErrorCode: null, leaseOwner: null, leaseExpiresAt: null } });
   if ((paid && attempt.order.status === 'PENDING') || ((refunded || cancelled || declined) && ['PENDING', 'PAID'].includes(attempt.order.status))) {
     const result = await transitionOrder({ orderId: attempt.orderId, lojaID: attempt.order.lojaID,
       newStatus: paid ? 'PAID' : 'CANCELLED', performedById: 'ASAAS_GATEWAY', actor: { type: 'SYSTEM', code: 'PAYMENT_RECONCILIATION' },
@@ -152,9 +183,11 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
   }
   if (refunded && ['SHIPPED', 'DELIVERED'].includes(attempt.order.status)) {
     if (attempt.order.userID) await refundOrderPoints({ lojaID: attempt.order.lojaID, orderId: attempt.orderId, reason: 'Estorno integral conciliado; estoque aguarda retorno físico.' }, tx);
-    await markPaymentReview(tx, attemptId, 'PHYSICAL_RETURN_REQUIRED');
-    // A financial refund does not prove that physical inventory returned.
-    return { review: true, state: next };
+    if (!await physicalReturnCompleted(tx, attempt.orderId, attemptId)) {
+      await markPaymentReview(tx, attemptId, 'PHYSICAL_RETURN_REQUIRED');
+      // Only the audited physical receipt can close this review.
+      return { review: true, state: next };
+    }
   }
   if (paid) {
     const effectKey = 'payment-confirmation:' + attempt.orderId;
