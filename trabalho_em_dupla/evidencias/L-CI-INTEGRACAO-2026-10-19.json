@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-19T18:15:22.278196+00:00",
+  "source": "GitHub REST API and Git objects",
+  "status": "INTEGRATED_CI_PASSED_REMOTE_DEPLOYMENT_UNVERIFIED",
+  "pullRequest": {
+    "number": 8,
+    "html_url": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/8",
+    "merged": true,
+    "merged_at": "2026-10-19T17:35:01Z",
+    "merge_commit_sha": "d63ad8a1ab2d712153177155eae518d3eddcdc86"
+  },
+  "runs": [
+    {
+      "id": 39284614540,
+      "event": "pull_request",
+      "head_sha": "d78fdaea03ab5ce96952a71b66914500a000a178",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39284614540",
+      "updated_at": "2026-10-19T16:45:44Z"
+    },
+    {
+      "id": 39295357722,
+      "event": "push",
+      "head_sha": "d63ad8a1ab2d712153177155eae518d3eddcdc86",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722",
+      "updated_at": "2026-10-19T17:56:54Z"
+    }
+  ],
+  "codeCommits": [
+    "d78fdaea03ab5ce96952a71b66914500a000a178",
+    "d63ad8a1ab2d712153177155eae518d3eddcdc86"
+  ],
+  "identicalCodeTree": "04572c84ac59ea06172c4fd47e005e426ce5db9e",
+  "publication": {
+    "status": "AWAITING_VANDERLEI_EVIDENCE",
+    "project": "continental-511812",
+    "region": "southamerica-east1",
+    "service": "continental-hml",
+    "publishedCommit": null,
+    "imageDigest": null,
+    "revision": null,
+    "testUrl": null,
+    "traffic": null
+  },
+  "limits": [
+    "CI is not remote operational acceptance",
+    "No Cloud Run deployment, traffic change, provider operation or database mutation performed by this documentation update",
+    "Historical consolidation manifests remain unchanged"
+  ],
+  "nextOwner": "Vanderlei: publish and return evidence from replanning section 66; Leno: compare financial evidence and prepare G6 supervision review"
+}

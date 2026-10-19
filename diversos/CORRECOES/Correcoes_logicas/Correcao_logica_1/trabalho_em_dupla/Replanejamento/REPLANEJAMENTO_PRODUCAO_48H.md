@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Direcionamento vigente para Vanderlei — 19/10:** o [PR #8](https://github.com/ViniMoia/Sistema-E-Commerce/pull/8) foi integrado à `homologacao_teste` em **`d63ad8a1ab2d712153177155eae518d3eddcdc86`**. A [CI após integração](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722) passou, assim como a CI da candidata `d78fdae`; as árvores de arquivos são idênticas. Dashboard/fidelidade, retorno físico integral e resultado de chargeback estão integrados. **Publicação e aceite dessa revisão no Cloud Run ainda não foram comprovados.** Executar as atribuições e devolver as evidências da **[seção 66](#66-publicação-da-candidata-e-atribuições-de-vanderlei--19102026)**. A próxima atualização de Git contém somente documentação; o SHA acima continua identificando o código aprovado. Os avisos antigos abaixo descrevem seus respectivos momentos e não substituem este direcionamento.
+
 **Atendimento G3 preparado — 16/10:** [roteiro de revisão financeira, devolução após entrega e chargeback](../../../../../../trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md) e modelo de caso disponíveis. Revisão do código confirmou que reconciliação é mutação, retorno físico não tem comando específico de encerramento e chargeback entra em revisão sem ciclo próprio completo. Ajuste de estoque e outbox de revisão não substituem, respectivamente, encerramento físico e alerta ao responsável. Nenhuma operação executada; G3/G6 permanecem abertos. Seção 62.
 
 **Aceite remoto preparado — 16/10:** [ficha de dashboard e fidelidade](../../../../../../trabalho_em_dupla/ACEITE_REMOTO_DASHBOARD_FIDELIDADE.md) e [modelo de registro](../../../../../../trabalho_em_dupla/modelos/ACEITE_DASHBOARD_FIDELIDADE.json) disponíveis para a candidata `55a3003`. Definidos identidade da revisão/loja, baseline independente, campos e critérios de comparação, cache, telas e resultado. Estado remoto permanece **não executado**; nenhum saldo de fidelidade foi presumido e os números financeiros de 16/10 são somente referência histórica. Seção 61.
@@ -1775,3 +1777,61 @@ Concluída a primeira ação do roadmap, a pedido do operador: conferência das 
 **Rastreabilidade:** os 18 hashes da evidência de chargeback correspondem aos arquivos atuais. Na evidência anterior de retorno físico, nove hashes ainda coincidem; três arquivos compartilhados foram posteriormente ampliados por chargeback (`payment-evidence.service.ts`, `OrderDetailDrawer.tsx` e seleção de suítes). As evidências históricas foram preservadas; o manifesto atual registra essa sucessão, sem atribuir os testes antigos a arquivos diferentes. Nenhum código foi modificado nesta consolidação, portanto não foram repetidas as suítes já aprovadas. Conferidos JSON, links locais adicionados, whitespace e inclusão das quatro novas suítes na seleção da CI. Busca de padrões de credenciais nos trechos adicionados/arquivos novos não encontrou ocorrências; não equivale a certificação de todos os segredos do projeto. Nenhum arquivo `.env` foi lido ou incluído no conjunto.
 
 **Próxima ação concreta:** registrar o conjunto revisado em commit na branch de revisão, publicar essa branch e atualizar a proposta de integração destinada à homologação. A CI atual dispara para pull requests destinados a `homologacao_teste` e para pushes nessa branch; um push isolado na branch `revisao/...` não garante execução sem PR correspondente ou disparo explícito. Registrar a referência efetivamente testada pela CI (inclusive o merge sintético do PR) e conferir sua equivalência ao artefato publicado. Se a base remota mudar antes da integração, repetir a comparação e as verificações afetadas. Esta etapa não criou commit, não alterou o index, não fez push, merge, deploy ou escrita em banco compartilhado. Nova candidata ainda sem SHA próprio/CI/aceite remoto; G3/G6/G8 permanecem abertos.
+
+## 66. Publicação da candidata e atribuições de Vanderlei — 19/10/2026
+
+### Estado comprovado e referência de publicação
+
+- PR #8 integrado em 19/10 às 14:35:01 BRT / 17:35:01 UTC. Commit de integração: **`d63ad8a1ab2d712153177155eae518d3eddcdc86`**, branch `homologacao_teste`.
+- CI da candidata **`d78fdaea03ab5ce96952a71b66914500a000a178`**: [39284614540](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39284614540), aprovada. CI após integração: [39295357722](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722), aprovada, registro atualizado às 14:56:54 BRT / 17:56:54 UTC. SHA de árvore comum: `04572c84ac59ea06172c4fd47e005e426ce5db9e`.
+- Registro consultado diretamente no GitHub: [evidência de integração/CI](../../../../../../trabalho_em_dupla/evidencias/L-CI-INTEGRACAO-2026-10-19.json). Não alterar o manifesto histórico de consolidação para fazê-lo parecer um registro de deploy.
+- **Código integrado não é código publicado.** A última distribuição de tráfego conhecida é histórica e precisa ser consultada novamente. Aguardar SHA/digest/revisão/URL efetivos antes do aceite.
+- Esta atualização é documental. Publicar o código fixado em `d63ad8a`, ou registrar explicitamente um sucessor e sua comparação/validação; não construir um HEAD mutável sem registrar qual commit foi usado.
+
+### Atribuições de Vanderlei: preparar e publicar em homologação
+
+1. **Confirmar o destino existente:** projeto `continental-511812`, região `southamerica-east1`, serviço `continental-hml`. URL principal conhecida: `https://continental-hml-15531616695.southamerica-east1.run.app`. Conferir configuração efetiva, identidade do banco de homologação e Asaas Sandbox por referências sanitizadas. Não inferir ambiente pelo nome do arquivo `.env`, não copiar conexões da main e não divulgar valores de segredos.
+2. **Registrar a situação anterior:** revisão/digest e tráfego atuais, referências das versões de segredos, migrations aplicadas, destino do webhook e acionadores conhecidos. Preservar a revisão anterior recuperável. O checklist registra migration `20261016193000_order_reporting_exclusion` aplicada anteriormente; conferir o estado atual, sem reset/db push ou repetição de classificação. Retorno físico/chargeback não acrescentam migration.
+3. **Construir o artefato identificado:** usar checkout limpo do commit aprovado, lockfile e processo de build existente. Registrar SHA, digest imutável e origem da imagem. Se usar outro commit, explicar a diferença e relacionar a CI correspondente. Não incorporar arquivos de ambiente, backups ou evidências privadas na imagem.
+4. **Criar a revisão sem promoção inicial de tráfego:** manter `APP_MAINTENANCE_MODE=false` para inspeção e `CHECKOUT_PAUSED=true`. Preservar bindings e controles financeiros combinados. Enquanto Vercel ainda for responsável pelo webhook/processamento, seguir a separação de responsabilidades do [procedimento Cloud Run](../../../../../../infra/cloudrun/README.md). Se o inventário atual divergir, registrar a divergência e coordenar a troca antes de alterar flags; `PAYMENT_WORKER_ENABLED=false` também afeta a recepção de webhooks. Não habilitar um segundo acionador nesta publicação.
+5. **Conferir acesso à revisão candidata:** garantir que a URL de teste resolva a loja correta, usando aliases exatos quando necessários. Verificar inicialização/conexão, catálogo e imagens, login/logout, Admin e ausência de erros inesperados. Sem promover tráfego, enviar a URL de teste e identidade da revisão para Leno.
+6. **Preparar a recuperação:** em falha de inicialização, isolamento, dados ou comportamento crítico, preservar o tráfego anterior e registrar o erro sanitizado. Não remover migrations aditivas nem restaurar o banco somente para trocar a revisão da aplicação. Promoção de tráfego depende da conferência conjunta; ainda não libera vendas em produção.
+
+### Conferência conjunta depois da publicação
+
+| Responsável | Verificação | Evidência necessária |
+|---|---|---|
+| Vanderlei | SHA/digest/revisão/URL e configuração efetiva | Identidade da candidata, distribuição de tráfego, conta/ambiente por referência e estado das flags, sem segredos. |
+| Leno | Dashboard, clientes e fidelidade | Baseline fresco e cálculo independente; diferenças explicadas; cobertura parcial de pendências reais preservada. Usar a [ficha existente](../../../../../../trabalho_em_dupla/ACEITE_REMOTO_DASHBOARD_FIDELIDADE.md) com o SHA sucessor e registrar separadamente o relatório de clientes. |
+| Leno + Vanderlei | Admin e retorno físico | Permissões, elegibilidade, leitura do comprovante; ensaio de mutação somente em caso de homologação previamente identificado e planejado. Conferir estoque disponível/indisponível, reservas e efeitos únicos. |
+| Leno + Vanderlei | Chargeback | Resultado por parcela e evidência financeira correlacionados; revisão quando incompleto, ausência de outro estorno e separação do retorno físico. Distinguir resultado isolado de consulta/evento real disponível no Sandbox. |
+| Vanderlei + Leno | Infraestrutura operacional | Registrar o que já está implantado de acionadores, canais de alerta, e-mail, Storage e recuperação; separar provas disponíveis das pendências de G5/G6/G8. |
+
+Não repetir os estornos #4/#5, reenviar eventos, rearmar #3, pagar/cancelar #8 ou criar fatos por SQL somente para fazer a tela passar. Os casos antigos são evidências históricas; novos ensaios precisam de identidade e baseline próprios. GET de consulta não autoriza POST de reconciliação, retorno ou operação financeira. Se o Sandbox não oferecer um caso de chargeback, registrar a limitação em vez de declará-lo homologado.
+
+### Retorno que Vanderlei deve enviar
+
+Preencher com dados observados; `pendente` significa não conferido:
+
+```text
+Commit publicado:
+CI vinculada:
+Imagem / digest:
+Projeto / região / serviço:
+Revisão candidata / URL de teste sem parâmetros secretos:
+Tráfego atual (revisões e percentuais):
+Revisão anterior recuperável:
+Banco identificado como homologação / migrations conferidas:
+APP_MAINTENANCE_MODE / CHECKOUT_PAUSED:
+Estado efetivo das flags financeiras e acionadores:
+Destino atual do webhook (host e caminho, sem token):
+Resultado de login/logout, tenant, catálogo, Admin e logs:
+Pendências / bloqueios / próxima ação:
+Executor / horário UTC:
+```
+
+### Trabalho de Leno enquanto aguarda e limites desta etapa
+
+Leno prepara a revisão de **supervisão e alertas G6**, reaproveitando os manifestos existentes: mapear pagamento incerto, estorno retido, chargeback, filas sem progresso e falhas de envio; verificar cobertura antes de implementar lacunas. `PAYMENT_REVIEW` registra a pendência, mas não envia notificação ao atendimento por si. A frente ainda não foi implementada por esta atualização documental. Vanderlei informa os canais/recursos efetivos disponíveis; preparação no Git não comprova alerta entregue.
+
+Leno também complementa o roteiro de aceite e o procedimento de atendimento com responsável, próxima ação, prazo e evidência. Envio de disputa/documentos ao Asaas, retomada controlada de estorno retido e retorno parcial permanecem pendentes. Transferência de webhook/acionadores exige inventário e janela coordenada próprios; não está incluída no simples deploy desta candidata. Main e banco principal permanecem somente leitura. G1–G8 só fecham pelas respectivas evidências, e a exceção de expiração do boleto continua limitada ao teste já aceito como adiado.

@@ -1,5 +1,7 @@
 # Checklist de produção G1–G8
 
+**Estado vigente — 19/10:** PR #8 integrado à `homologacao_teste` em **`d63ad8a1ab2d712153177155eae518d3eddcdc86`**, com [CI após integração aprovada](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722). A candidata contém dashboard/fidelidade, retorno físico integral e resultado de chargeback. Publicação e aceite no Cloud Run seguem pendentes de comprovação por Vanderlei. Atribuições e formato do retorno estão na **seção 66 do replanejamento**; [evidência GitHub](evidencias/L-CI-INTEGRACAO-2026-10-19.json). As referências a `55a3003` e à preparação sem commit abaixo são históricas e foram superadas nesse aspecto; não são novos bloqueios de integração.
+
 Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produção](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md), inclusive decisões posteriores à matriz original. **Produção ainda sem aceite.** Este documento organiza evidências e condições de fechamento; não autoriza operações remotas nem altera o escopo comercial.
 
 ## Candidata e alcance das provas
@@ -101,6 +103,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 ## G8 — Candidata, infraestrutura e operação
 
+- [x] PR #8 integrado em `d63ad8a`; CI do PR e CI após integração aprovadas. Árvores de arquivos de `d78fdae` e `d63ad8a` idênticas. A publicação deve identificar esse código ou um sucessor explicitamente comparado/validado; a atualização documental não comprova deploy.
 - [x] Candidata integrada `55a3003` com CI verde. Revisões de domínio/logout de Vanderlei preservadas; migration aditiva já comprovada na homologação.
 - [x] Consolidação local em 19/10 do conjunto de retorno físico/chargeback e documentação pendente: [manifesto de caminhos e hashes](evidencias/L-CANDIDATA-CONSOLIDACAO-2026-10-19.json), seção 65 do plano. A base já contém toda a homologação remota conferida; não foi necessário merge nem ajuste adicional de runtime. Conjunto ainda sem commit próprio e sem CI remota correspondente; os testes locais permanecem identificados pelas evidências anteriores.
 - [ ] Publicar/conferir o conjunto atual, registrando SHA, digest efetivo, revisão, migrations, versão da configuração e tráfego. A revisão de `eff10bf` não substitui essa conferência. Reusar a migration já aplicada após verificar o estado, sem reclassificar pedidos.
@@ -112,14 +115,14 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 1. **Leno — G2, preparação concluída em 16/10.** [Pacote revisado](PACOTE_ABERTURA_G2.md), comparação antes/depois e roteiro de recuperação independente preparados; ensaio na candidata atual aprovado. Restam baseline fresco, saldo comercial, executor final para destino autorizado e prova por operador alternativo. Não aplicar tratamento ao banco principal.
 2. **Leno — G3/G4, preparação concluída.** [Ficha de aceite remoto](ACEITE_REMOTO_DASHBOARD_FIDELIDADE.md) e modelo preenchível prontos. Aguardar identificação da candidata publicada, capturar baseline fresco e executar a comparação. Preservar os casos financeiros concluídos; nenhum novo estorno é necessário para conferir relatório.
-3. **Leno — G1/G3, retorno integral e resultado de chargeback implementados localmente em 19/10.** [Procedimentos e lacunas](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md) atualizados. Próximo avanço: integrar as alterações à candidata, executar a CI correspondente e coordenar publicação/aceite no destino. Alerta/atendimento, envio de disputa, retornos parciais e validação da conta ainda exigem trabalho e prova operacional. Não remover revisão por SQL nem tratar documento como recurso implantado.
+3. **Leno — G1/G3/G6, retorno integral e resultado de chargeback integrados e aprovados na CI em 19/10.** [Procedimentos e lacunas](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md) atualizados. Enquanto Vanderlei publica, revisar cobertura de supervisão/alertas existentes, preparar os ensaios necessários e completar o roteiro de aceite. Alertas efetivamente entregues, envio de disputa, retornos parciais e validação da conta ainda exigem trabalho e prova operacional. Não remover revisão por SQL nem tratar documento como recurso implantado.
 4. **Vanderlei com revisão de Leno, quando disponível — G5–G8.** Publicação/conferência da candidata, configurações efetivas, inventário/transferência de acionadores, recuperação por outro operador e validação operacional. Não são dados que o checklist possa presumir ou substituir.
 
 ## Registro necessário para o aceite final
 
 | Campo | Estado nesta consolidação |
 |---|---|
-| SHA com CI aprovada | `55a300313570f2a504a8f042ba7f228cd7382e58` |
+| SHA com CI aprovada | `d63ad8a1ab2d712153177155eae518d3eddcdc86` (CI após integração); atualização documental posterior não muda esse código de referência |
 | Digest/revisão publicada dessa candidata | Pendente |
 | Configuração e migrations da abertura produtiva | Pendente; homologação tem prova separada |
 | Baseline e comparação da abertura | Ensaiados em clone; execução final pendente |
