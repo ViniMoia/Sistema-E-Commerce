@@ -74,6 +74,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 ## G4 — Pontos, produtos e estoque
 
+- [x] Comparação dos valores em 19/10: 56 campos das capturas de dashboard/fidelidade e 19 métricas da API autenticada coincidem com baseline fresco somente leitura. API retornou 200, identidade verificada e `private/no-store`. [Registro](evidencias/L-ACEITE-D63AD8A-2026-10-19.json). Este fechamento é restrito aos valores comparados; apresentação móvel, demais verificações de acesso/identidade e limites temporais permanecem abertos.
 - [x] Regressões isoladas de ledger, lotes, concorrência, expiração, reserva e identidade de variantes disponíveis; CI atual aprovada. A classificação comercial não apaga dívidas nem movimentos.
 - [x] Relatório de fidelidade corrigido: valores monetários históricos, bruto/devolvido/diferença, zero válido, cobertura parcial e testes explicitamente classificados. API e widget usam a mesma leitura; cache corrigido. [Evidência](evidencias/L-FIDELIDADE-RELATORIO-2026-10-16.json), seções 57–58.
 - [ ] Conferir `/admin/fidelidade` e widget na revisão publicada com a mesma loja/base temporal: saldos/dívidas completos, escopo comercial separado e avisos de cobertura presentes. Validação de `eff10bf` não inclui essa mudança.
@@ -88,6 +89,8 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 ## G6 — Execução automática
 
+- [x] Ampliação local em 19/10: observador somente GET, sinais de revisão/chargeback/retorno físico/operações retidas/e-mail/atraso e manifestos de alerta. 21 testes de ferramentas, quatro novos de supervisão, 56 de execução durável, TypeScript, lint e build aprovados. [Evidência e limites](evidencias/L-G6-SUPERVISAO-2026-10-19.json). Ainda sem commit, CI remota ou implantação desta alteração; não faz parte de `d63ad8a`.
+- [ ] Integrar G6 em candidata identificada e aprovada na CI. Comparar recursos existentes, confirmar destinatário nominal/substituto, medir custo/cadência e comprovar atenção, falha, ausência e recuperação no canal real. Fechamento automático do incidente não encerra o caso financeiro. [Procedimento](../infra/cloudrun/README.md#aceite-operacional-g6--responsabilidade-conjunta).
 - [x] Manifestos, consumidor, reinício e recuperação passaram na CI isolada. Worker Cloudflare observado em 16/10 às 19:43:37 UTC com `state=disabled`; apenas essa invocação está comprovadamente sem processamento.
 - [x] Projeto/região de homologação conhecidos: `continental-511812` / `southamerica-east1`. Não solicitar novamente esses dados. [Inventário de Vanderlei](evidencias/V-ACIONADORES-2026-10-16.json) registrou ausência de Jobs na consulta e API Scheduler desabilitada, com listagem de agendas incompleta.
 - [ ] Terminar inventário de acionadores e requisições em voo. Ausência de cron na tela ou um evento desabilitado não comprova ausência global de execução.

@@ -1,0 +1,982 @@
+{
+  "schemaVersion": 1,
+  "kind": "REMOTE_DASHBOARD_LOYALTY_ACCEPTANCE_RECORD",
+  "status": "VALUES_MATCH_MOBILE_HEADER_OVERLAP_FIX_VALIDATED_LOCALLY_DEPLOYMENT_PENDING",
+  "targetEnvironment": "HOMOLOGATION",
+  "expectedCandidateSha": "d63ad8a1ab2d712153177155eae518d3eddcdc86",
+  "effectiveDeployment": {
+    "sha": null,
+    "digest": null,
+    "revision": null,
+    "testedOriginWithoutSecretQuery": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+    "trafficPercent": null,
+    "identityEvidenceReference": null,
+    "classificationMigrationVerified": true,
+    "checkoutPaused": null
+  },
+  "scope": {
+    "expectedLojaId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "verifiedLojaId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "currency": "BRL",
+    "financialTimezone": "America/Sao_Paulo",
+    "financialTimeBasis": "FACT_CREATED_AT",
+    "loyaltyScope": "Historical commercial movements; all store wallets preserved",
+    "identityEvidenceSource": "Read-only database reference plus user-supplied authenticated reference-order check in the origin-bound console script"
+  },
+  "baseline": {
+    "capturedAtUtc": "2026-10-20T01:30:00.046Z",
+    "readOnlyTransactionVerified": true,
+    "independentCalculationReference": "artifacts/dashboard-review/compare-acceptance.py (local offline Decimal calculation; no application reporting service imported)",
+    "sanitizedFingerprintReference": "636837bab6d61b6de5b90930abb63030171540bd3eb5c15e903fdc15278ec2d8",
+    "commercialOrderCount": 8,
+    "excludedOrderCount": 0,
+    "financialFactCount": 34,
+    "financialExpected": {
+      "today": {
+        "recognizedGross": "0.00",
+        "settledGross": "0.00",
+        "confirmedRefunds": "0.00",
+        "netRecognized": "0.00"
+      },
+      "month": {
+        "recognizedGross": "542.67",
+        "settledGross": "124.75",
+        "confirmedRefunds": "417.92",
+        "netRecognized": "124.75",
+        "recognizedOrders": 5,
+        "settledOrders": 3,
+        "refundedOrders": 2
+      },
+      "allTime": {
+        "recognizedGross": "542.67",
+        "settledGross": "124.75",
+        "confirmedRefunds": "417.92",
+        "netRecognized": "124.75",
+        "recognizedOrders": 5,
+        "settledOrders": 3,
+        "refundedOrders": 2
+      },
+      "composition": {
+        "products": "419.15",
+        "shipping": "12.30",
+        "financing": "61.32",
+        "withoutCompleteComposition": "49.90"
+      },
+      "coverage": "PARTIAL",
+      "unverifiedOrders": 0,
+      "financialReviewOrders": 1,
+      "totalOrders": 8,
+      "recognizedOrdersCount": 5,
+      "recognizedOrdersPercentageDisplayed": 63,
+      "recognizedTicketAfterRefunds": "24.95",
+      "pendingAmount": "49.90",
+      "cancelledWithoutRecognitionCount": 2,
+      "cancelledWithoutRecognitionAmount": "99.80"
+    },
+    "loyaltyExpected": {
+      "circulatingPoints": 161,
+      "debtPoints": 0,
+      "estimatedRedemptionValue": "8.05",
+      "activeWallets": 1,
+      "commercial": {
+        "earnedPoints": 231,
+        "reversedEarnedPoints": 171,
+        "redeemedPoints": 599,
+        "returnedPoints": 100,
+        "netRedeemedPoints": 499,
+        "redeemedValue": "29.95",
+        "returnedValue": "5.00",
+        "netRedeemedValue": "24.95"
+      },
+      "apiAdditionalExpected": {
+        "totalLifetimeEarnedPoints": 660,
+        "legacyWallets": 0,
+        "missingMonetaryValues": 0,
+        "unlinkedTransactions": 0,
+        "coverage": "COMPLETE"
+      }
+    },
+    "scopeIdentityVerified": true,
+    "connectionSelection": ".env.local DIRECT_URL checked against audited homologation allowlist; reference order and Sandbox account verified in read-only transaction",
+    "timeLimit": "Screenshots precede baseline; equal aggregates do not prove absence of intermediate changes or deployed-image identity.",
+    "scriptSha256": "a5e91e3c56671640cc39063344ea466a7d2fe08c5adc149de6538039c52ad714",
+    "captureScriptSha256": "424f6aa6cc8772713b63ca8da1369700720c270bde3107e40434d4fa1ac02016"
+  },
+  "observations": {
+    "startedAtUtc": null,
+    "finishedAtUtc": null,
+    "dashboardDisplayedAsOf": "2026-10-19T16:59:17-03:00",
+    "loyaltyApiCapturedAtUtc": null,
+    "dashboardCacheConsidered": null,
+    "concurrentChangesExcludedOrReconciled": null,
+    "loyaltyApiHttpStatus": 200,
+    "loyaltyApiSuccess": true,
+    "loyaltyApiPrivateNoStore": true,
+    "financialObserved": {
+      "source": "User-provided dashboard screenshots; displayed amounts, not an independent database calculation",
+      "today": {
+        "recognizedGross": "0.00",
+        "settledGross": "0.00",
+        "confirmedRefunds": "0.00",
+        "netRecognized": "0.00"
+      },
+      "month": {
+        "recognizedGross": "542.67",
+        "settledGross": "124.75",
+        "confirmedRefunds": "417.92",
+        "netRecognized": "124.75",
+        "recognizedOrders": 5,
+        "settledOrders": 3,
+        "refundedOrders": 2
+      },
+      "allTime": {
+        "recognizedGross": "542.67",
+        "settledGross": "124.75",
+        "confirmedRefunds": "417.92",
+        "netRecognized": "124.75",
+        "recognizedOrders": 5,
+        "settledOrders": 3,
+        "refundedOrders": 2
+      },
+      "composition": {
+        "products": "419.15",
+        "shipping": "12.30",
+        "financing": "61.32",
+        "withoutCompleteComposition": "49.90"
+      },
+      "coverage": "PARTIAL",
+      "unverifiedOrders": 0,
+      "financialReviewOrders": 1,
+      "pendingAmount": "49.90",
+      "cancelledWithoutRecognitionCount": 2,
+      "cancelledWithoutRecognitionAmount": "99.80",
+      "recognizedTicketAfterRefunds": "24.95",
+      "recognizedOrdersPercentageDisplayed": 63,
+      "recognizedOrdersCount": 5,
+      "totalOrders": 8
+    },
+    "loyaltyApiMetricsObserved": {
+      "totalCirculatingPoints": 161,
+      "totalDebtPoints": 0,
+      "projectedFinancialLiability": 8.05,
+      "activeCustomersWithPoints": 1,
+      "totalLifetimeEarnedPoints": 660,
+      "legacyWallets": 0,
+      "totalRedeemedPoints": 599,
+      "totalRedeemedMonetaryValue": 29.95,
+      "commercial": {
+        "earnedPoints": 231,
+        "reversedEarnedPoints": 171,
+        "redeemedPoints": 599,
+        "returnedPoints": 100,
+        "netRedeemedPoints": 499,
+        "redeemedValue": 29.95,
+        "returnedValue": 5,
+        "netRedeemedValue": 24.95,
+        "missingMonetaryValues": 0,
+        "unlinkedTransactions": 0,
+        "coverage": "COMPLETE"
+      }
+    },
+    "loyaltyPageObserved": {
+      "circulatingPoints": 161,
+      "estimatedRedemptionValue": "8.05",
+      "activeWallets": 1,
+      "commercial": {
+        "earnedPoints": 231,
+        "reversedEarnedPoints": 171,
+        "redeemedPoints": 599,
+        "redeemedValue": "29.95",
+        "returnedPoints": 100,
+        "returnedValue": "5.00",
+        "netRedeemedPoints": 499,
+        "netRedeemedValue": "24.95"
+      },
+      "debtPoints": 0
+    },
+    "loyaltyWidgetObserved": {
+      "circulatingPoints": 161,
+      "estimatedRedemptionValue": "8.05",
+      "activeWallets": 1,
+      "commercial": {
+        "earnedPoints": 231,
+        "reversedEarnedPoints": 171,
+        "redeemedPoints": 599,
+        "redeemedValue": "29.95",
+        "returnedPoints": 100,
+        "returnedValue": "5.00",
+        "netRedeemedPoints": 499,
+        "netRedeemedValue": "24.95"
+      },
+      "debtPoints": 0,
+      "currentPointValue": "0.05",
+      "minimumRedemptionPoints": 100,
+      "spendPerEarnedPoint": "2.00",
+      "defaultValidityDays": 365
+    },
+    "loyaltyApiProbeStartedAtUtc": "2026-10-20T01:35:44.241Z"
+  },
+  "comparisons": [
+    {
+      "field": "financial.today.recognizedGross",
+      "expected": "0.00",
+      "observed": "0.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.today.settledGross",
+      "expected": "0.00",
+      "observed": "0.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.today.confirmedRefunds",
+      "expected": "0.00",
+      "observed": "0.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.today.netRecognized",
+      "expected": "0.00",
+      "observed": "0.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.recognizedGross",
+      "expected": "542.67",
+      "observed": "542.67",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.settledGross",
+      "expected": "124.75",
+      "observed": "124.75",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.confirmedRefunds",
+      "expected": "417.92",
+      "observed": "417.92",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.netRecognized",
+      "expected": "124.75",
+      "observed": "124.75",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.recognizedOrders",
+      "expected": 5,
+      "observed": 5,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.settledOrders",
+      "expected": 3,
+      "observed": 3,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.month.refundedOrders",
+      "expected": 2,
+      "observed": 2,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.recognizedGross",
+      "expected": "542.67",
+      "observed": "542.67",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.settledGross",
+      "expected": "124.75",
+      "observed": "124.75",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.confirmedRefunds",
+      "expected": "417.92",
+      "observed": "417.92",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.netRecognized",
+      "expected": "124.75",
+      "observed": "124.75",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.recognizedOrders",
+      "expected": 5,
+      "observed": 5,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.settledOrders",
+      "expected": 3,
+      "observed": 3,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.allTime.refundedOrders",
+      "expected": 2,
+      "observed": 2,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.composition.products",
+      "expected": "419.15",
+      "observed": "419.15",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.composition.shipping",
+      "expected": "12.30",
+      "observed": "12.30",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.composition.financing",
+      "expected": "61.32",
+      "observed": "61.32",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.composition.withoutCompleteComposition",
+      "expected": "49.90",
+      "observed": "49.90",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.coverage",
+      "expected": "PARTIAL",
+      "observed": "PARTIAL",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.unverifiedOrders",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.financialReviewOrders",
+      "expected": 1,
+      "observed": 1,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.totalOrders",
+      "expected": 8,
+      "observed": 8,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.recognizedOrdersCount",
+      "expected": 5,
+      "observed": 5,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.recognizedOrdersPercentageDisplayed",
+      "expected": 63,
+      "observed": 63,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.recognizedTicketAfterRefunds",
+      "expected": "24.95",
+      "observed": "24.95",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.pendingAmount",
+      "expected": "49.90",
+      "observed": "49.90",
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.cancelledWithoutRecognitionCount",
+      "expected": 2,
+      "observed": 2,
+      "result": "MATCH"
+    },
+    {
+      "field": "financial.cancelledWithoutRecognitionAmount",
+      "expected": "99.80",
+      "observed": "99.80",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.circulatingPoints",
+      "expected": 161,
+      "observed": 161,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.debtPoints",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.estimatedRedemptionValue",
+      "expected": "8.05",
+      "observed": "8.05",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.activeWallets",
+      "expected": 1,
+      "observed": 1,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.earnedPoints",
+      "expected": 231,
+      "observed": 231,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.reversedEarnedPoints",
+      "expected": 171,
+      "observed": 171,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.redeemedPoints",
+      "expected": 599,
+      "observed": 599,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.returnedPoints",
+      "expected": 100,
+      "observed": 100,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.netRedeemedPoints",
+      "expected": 499,
+      "observed": 499,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.redeemedValue",
+      "expected": "29.95",
+      "observed": "29.95",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.returnedValue",
+      "expected": "5.00",
+      "observed": "5.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyPage.commercial.netRedeemedValue",
+      "expected": "24.95",
+      "observed": "24.95",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.circulatingPoints",
+      "expected": 161,
+      "observed": 161,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.debtPoints",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.estimatedRedemptionValue",
+      "expected": "8.05",
+      "observed": "8.05",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.activeWallets",
+      "expected": 1,
+      "observed": 1,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.earnedPoints",
+      "expected": 231,
+      "observed": 231,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.reversedEarnedPoints",
+      "expected": 171,
+      "observed": 171,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.redeemedPoints",
+      "expected": 599,
+      "observed": 599,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.returnedPoints",
+      "expected": 100,
+      "observed": 100,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.netRedeemedPoints",
+      "expected": 499,
+      "observed": 499,
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.redeemedValue",
+      "expected": "29.95",
+      "observed": "29.95",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.returnedValue",
+      "expected": "5.00",
+      "observed": "5.00",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyWidget.commercial.netRedeemedValue",
+      "expected": "24.95",
+      "observed": "24.95",
+      "result": "MATCH"
+    },
+    {
+      "field": "loyaltyApi.totalCirculatingPoints",
+      "expected": 161,
+      "observed": 161,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.totalDebtPoints",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.projectedFinancialLiability",
+      "expected": "8.05",
+      "observed": 8.05,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.activeCustomersWithPoints",
+      "expected": 1,
+      "observed": 1,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.totalLifetimeEarnedPoints",
+      "expected": 660,
+      "observed": 660,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.legacyWallets",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.totalRedeemedPoints",
+      "expected": 599,
+      "observed": 599,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.totalRedeemedMonetaryValue",
+      "expected": "29.95",
+      "observed": 29.95,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.earnedPoints",
+      "expected": 231,
+      "observed": 231,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.reversedEarnedPoints",
+      "expected": 171,
+      "observed": 171,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.redeemedPoints",
+      "expected": 599,
+      "observed": 599,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.returnedPoints",
+      "expected": 100,
+      "observed": 100,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.netRedeemedPoints",
+      "expected": 499,
+      "observed": 499,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.redeemedValue",
+      "expected": "29.95",
+      "observed": 29.95,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.returnedValue",
+      "expected": "5.00",
+      "observed": 5,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.netRedeemedValue",
+      "expected": "24.95",
+      "observed": 24.95,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.missingMonetaryValues",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.unlinkedTransactions",
+      "expected": 0,
+      "observed": 0,
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    },
+    {
+      "field": "loyaltyApi.commercial.coverage",
+      "expected": "COMPLETE",
+      "observed": "COMPLETE",
+      "result": "MATCH",
+      "evidenceReference": "User-supplied authenticated console result starting at 2026-10-20T01:35:44.241Z"
+    }
+  ],
+  "comparisonRecordShape": {
+    "id": null,
+    "field": null,
+    "periodOrScope": null,
+    "expected": null,
+    "observed": null,
+    "difference": null,
+    "result": "NOT_EXECUTED",
+    "evidenceReference": null
+  },
+  "uiAndAccess": {
+    "dashboardDesktop": "SCREENSHOTS_REVIEWED_PENDING_FULL_ACCEPTANCE",
+    "dashboard390px": "HEADER_OVERLAP_OBSERVED_REMOTE_FIX_PENDING_DEPLOYMENT",
+    "loyaltyDesktop": "SCREENSHOT_REVIEWED_ORIGIN_AND_BASELINE_PENDING",
+    "loyalty390px": "HEADER_OVERLAP_OBSERVED_REMOTE_FIX_PENDING_DEPLOYMENT",
+    "anonymousDenied": "PASSED_IN_VANDERLEI_VERSIONED_REPORT_D63AD8A",
+    "logoutSameHostAndAccessRevoked": "PASSED_IN_VANDERLEI_VERSIONED_REPORT_D63AD8A",
+    "noUnexplainedErrors": "NOT_EXECUTED",
+    "applicableWarningsVerified": "NOT_EXECUTED"
+  },
+  "review": {
+    "executor": null,
+    "reviewer": null,
+    "reviewedAtUtc": null,
+    "result": "CALCULATION_COMPARISONS_PASSED_MOBILE_FIX_PENDING_DEPLOYMENT",
+    "openDifferences": [],
+    "notApplicableItemsWithReason": [],
+    "sanitizedEvidenceReferences": [
+      "User-relayed Vanderlei deployment report; configuration/image identity still require independent verification",
+      "Dashboard screenshots with review URL and displayed report time; separate loyalty page screenshot without URL",
+      "User-supplied loyalty API probe: 200, private/no-store, identity verified, 19 metric fields match baseline"
+    ],
+    "productionApproved": false
+  },
+  "instructions": [
+    "Copy this template to record a real run; null is unknown, not zero or approval.",
+    "Record all applicable comparisons; an empty array is not a passed run.",
+    "Record financial values in BRL with cent-based comparison, points and counts as integers.",
+    "Never include credentials, cookies, raw customer payloads or secret URL queries.",
+    "This template does not query, mutate, deploy or prove any remote state.",
+    "Reported deployment fields are kept separate from verified effectiveDeployment fields.",
+    "Use the review URL, confirm store/session, capture fresh read-only baseline and compare before acceptance.",
+    "Do not use historical financial or loyalty totals as a current expected baseline without proving equivalence.",
+    "No traffic promotion, merge, provider command or database mutation is authorized by this acceptance record."
+  ],
+  "recordedAtUtc": "2026-10-19T19:52:01.276875+00:00",
+  "deploymentReport": {
+    "source": "Vanderlei report relayed by the user in this conversation",
+    "independentlyVerified": false,
+    "deployedAtUtc": null,
+    "sha": "d63ad8a1ab2d712153177155eae518d3eddcdc86",
+    "digest": "sha256:ba883be27218190f2f5256134b586e891b853afdee9ff577053abbf66f25c455",
+    "revision": "continental-hml-d63ad8a-review",
+    "testOrigin": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+    "candidateMainTrafficPercent": 0,
+    "previousRevisionMainTrafficPercent": 100,
+    "previousRevisionName": null,
+    "checkoutPaused": true,
+    "financialControls": "preserved; exact effective values not supplied",
+    "webhookAndSchedulers": "unchanged; not independently checked",
+    "reportedPassed": [
+      "catalog",
+      "login",
+      "logout",
+      "Admin access",
+      "loyalty page access"
+    ],
+    "pendingFunctionalAcceptance": [
+      "dashboard calculations",
+      "loyalty calculations",
+      "physical return",
+      "chargeback"
+    ]
+  },
+  "codeValidation": {
+    "source": "GitHub API previously checked in this conversation",
+    "candidateCi": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722",
+    "g6": {
+      "sha": "fc2eefcfc3b58c4a0edb7d389a6989dcf36f2359",
+      "pr": 9,
+      "ci": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39307567422",
+      "conclusion": "success",
+      "includedInReportedImage": false,
+      "deployed": false
+    }
+  },
+  "publicProbe": {
+    "observedAtUtc": "2026-10-19T19:52:11.974881+00:00",
+    "method": "GET",
+    "authenticated": false,
+    "path": "/",
+    "httpStatus": 429,
+    "releaseIdentityVerified": false,
+    "meaning": "This unauthenticated probe did not verify deployment or functional behavior; it does not disprove executor checks."
+  },
+  "screenshotChecks": {
+    "source": "Conversation images; no customer identity or contact data transcribed",
+    "dashboardOriginVisible": true,
+    "storeLabel": "Continental - Homologacao",
+    "releaseShaAndDigestIndependentlyVerified": false,
+    "loyaltyPageOriginVisible": false,
+    "dashboardDisplayedAsOfSource": "19/10/2026, 16:59:17 in screenshot; report timezone America/Sao_Paulo",
+    "arithmeticChecks": [
+      {
+        "calculation": "54267 - 41792 = 12475 centavos",
+        "passed": true
+      },
+      {
+        "calculation": "41915 + 1230 + 6132 + 4990 = 54267 centavos",
+        "passed": true
+      },
+      {
+        "calculation": "12475 / 5 = 2495 centavos per recognized order",
+        "passed": true
+      },
+      {
+        "calculation": "5 / 8 = 62.5 percent, displayed rounded as 63 percent",
+        "passed": true
+      },
+      {
+        "calculation": "599 - 100 = 499 points; 2995 - 500 = 2495 centavos",
+        "passed": true
+      },
+      {
+        "calculation": "161 points * 5 centavos = 805 centavos",
+        "passed": true
+      }
+    ],
+    "loyaltyPageAndWidgetVisibleMetricsMatch": true,
+    "remainingChecks": [
+      "Mobile presentation and remaining access checks",
+      "Independent deployed-image identity verification",
+      "Concurrent changes/cache reconciliation",
+      "Recent-order loyalty labels semantic review"
+    ],
+    "presentationFollowUp": {
+      "finding": "Recent orders display +24 points for pending/cancelled orders and +149 for refunded order; these must not be interpreted as current credited balance.",
+      "localCodeSource": "RecentOrdersEnhancedTable renders order.pointsEarned, populated from Order.pointsEarned by dashboard.service.",
+      "status": "SEMANTIC_REVIEW_PENDING_NOT_A_CONFIRMED_BALANCE_ERROR"
+    }
+  },
+  "apiProbePrepared": {
+    "path": "PACOTE_REVISAO_VANDERLEI/VALIDAR_FIDELIDADE_D63AD8A.js",
+    "syntaxValidation": "passed",
+    "authenticatedExecution": "USER_REPORTED_SUCCESS",
+    "methods": [
+      "GET",
+      "GET"
+    ],
+    "printsCustomerData": false,
+    "mutations": false
+  },
+  "authenticatedApiEvidence": {
+    "source": "User-supplied output of VALIDAR_FIDELIDADE_D63AD8A.js",
+    "phase": "loyalty_report_read",
+    "at": "2026-10-20T01:35:44.241Z",
+    "atMeaning": "Client script start; response completion time was not emitted",
+    "processingAttempted": false,
+    "mutationAttempted": false,
+    "identityVerified": true,
+    "ok": true,
+    "code": "LOYALTY_API_MATCHES_BASELINE",
+    "httpStatus": 200,
+    "privateNoStore": true,
+    "baselineAt": "2026-10-20T01:30:00.046Z",
+    "metrics": {
+      "totalCirculatingPoints": 161,
+      "totalDebtPoints": 0,
+      "projectedFinancialLiability": 8.05,
+      "activeCustomersWithPoints": 1,
+      "totalLifetimeEarnedPoints": 660,
+      "legacyWallets": 0,
+      "totalRedeemedPoints": 599,
+      "totalRedeemedMonetaryValue": 29.95,
+      "commercial": {
+        "earnedPoints": 231,
+        "reversedEarnedPoints": 171,
+        "redeemedPoints": 599,
+        "returnedPoints": 100,
+        "netRedeemedPoints": 499,
+        "redeemedValue": 29.95,
+        "returnedValue": 5,
+        "netRedeemedValue": 24.95,
+        "missingMonetaryValues": 0,
+        "unlinkedTransactions": 0,
+        "coverage": "COMPLETE"
+      }
+    },
+    "differences": []
+  },
+  "mobileReview": {
+    "source": "User-provided mobile screenshots following requested 390px check",
+    "observed": "Visible cards remain readable; fixed menu button overlays both page headings",
+    "coverageLimit": "Dashboard financial section and loyalty commercial movements not fully visible in submitted mobile screenshots",
+    "localFix": "Reserve mobile navigation space using a header in the column layout; desktop retains row layout",
+    "deployed": false,
+    "includedInG6ApprovedCi": false,
+    "validation": {
+      "browserSuites": [
+        "dashboard-financial-browser",
+        "loyalty-reporting-browser"
+      ],
+      "passedTests": 2,
+      "failedTests": 0,
+      "runId": "885911921852b8c20581fc91be7da3c7",
+      "checks": [
+        "Menu geometry above main content at 390px on both pages",
+        "No document horizontal overflow on both pages",
+        "Mobile menu opens and closes",
+        "Financial and loyalty reporting assertions retained"
+      ],
+      "typecheck": "passed",
+      "focusedLint": {
+        "errors": 0,
+        "warnings": 1,
+        "warning": "Pre-existing next/no-img-element on admin avatar"
+      },
+      "initialHarnessAttempt": "Docker engine unavailable; started Docker Desktop, then isolated suites passed"
+    },
+    "remoteRecheck": "Publish identified successor and recheck headings, full financial panel and loyalty summary on mobile; do not infer deployment from local test success",
+    "sourceHashes": {
+      "app/admin/layout.tsx": "584dc4c9940af6edbd8b5e7a3b421a4f3f044b75ec106f40bd126f91b9c56f27",
+      "components/admin/AdminSidebar.tsx": "3d497e661678544093adfc72da1e588ba9d677f3862f6a75db05a06d497fd79a",
+      "tests/integration/loyalty-reporting-browser.test.ts": "166f05bee08e18bd7042ab2345241e2554451ec6c27774a3607618a6628ab828"
+    },
+    "submission": {
+      "pullRequest": 9,
+      "targetBranch": "homologacao_teste",
+      "newCiRequired": true,
+      "deployed": false
+    },
+    "ciFollowUp": {
+      "failedRun": 39355276601,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39355276601",
+      "headSha": "bcf27aae542e352a7a7fc6f8e9e609655ab71c78",
+      "conclusion": "failure",
+      "failedStep": "Verify Isolated Database and HTTP Server",
+      "unitTestsPassed": 843,
+      "integrationTestsPassed": 405,
+      "integrationTestsFailed": 1,
+      "failure": "BROWSER_EXPECTATION_TIMEOUT waiting for mobile menu aria-expanded=true on dashboard",
+      "diagnosis": "Test clicked after SSR text became visible without waiting for React onClick readiness; fixture diagnostics show page and layout chunks loading. Consistent with a pre-hydration click.",
+      "correction": "Wait for React onClick readiness before clicking mobile menu and ledger tab, using existing browser fixture convention. No retries of clicks, increased timeout, skipped assertion or application code change.",
+      "localValidation": {
+        "runId": "baa114a2dbb2aafd91f35fdcf33fd410",
+        "passedBrowserTests": 2,
+        "failedBrowserTests": 0,
+        "typecheck": "passed",
+        "focusedLint": "passed without warnings"
+      },
+      "testSourceSha256Lf": "90307de3d419055c87ae30228bb3a5a19ebbcc818fb64f1b57b829852c39d7fb",
+      "previousSourceHashes": "Historical hashes above refer to the prior local validation and remain unchanged.",
+      "fullCiRequired": true,
+      "deployed": false
+    },
+    "cleanupCiFollowUp": {
+      "run": 39356614989,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39356614989",
+      "headSha": "2fdcdef0a276b98870513200009ca3dc7cc94905",
+      "conclusion": "failure",
+      "integrationTestsPassed": 406,
+      "integrationTestsFailed": 0,
+      "failurePhase": "Post-test teardown: ENOTEMPTY removing temporary .next/dev/cache",
+      "diagnosis": "Runner sent SIGTERM without awaiting process close before removing the temporary project.",
+      "correction": "Await child close with 15 second bound; preserve project on unverified shutdown; limited filesystem retries within existing validated temporary directory scope.",
+      "localValidation": {
+        "runId": "ae8d0d61a8f8a7d8b3a10aca08e6f1ea",
+        "platform": "win32",
+        "browserTestsPassed": 2,
+        "standalonePackageTestsPassed": 4,
+        "runnerExitCode": 0,
+        "syntaxChecks": "passed",
+        "focusedLint": "passed"
+      },
+      "linuxShutdownVerification": "Pending complete CI on Linux; Windows local run does not prove Linux signal behavior.",
+      "sourceHashesLf": {
+        "scripts/run-isolated-tests.mjs": "82015b5bc24428725de7e17d867ece32719054b5e5498634817fdb5f0f60eda3",
+        "scripts/lib/isolated-project.mjs": "a65b1c20e0620fd269a260ccfff4937fb62a0ef82bc4a98c2a20af53e9bea083"
+      },
+      "deployed": false
+    }
+  },
+  "publicationEvidenceReceived": {
+    "sourceCommit": "7882aea2651166902d90bcb0ee2865e88e11027a",
+    "report": "trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_D63AD8A_2026-10-19.md",
+    "evidence": "trabalho_em_dupla/evidencias/V-CLOUDRUN-D63AD8A-2026-10-19.json",
+    "evidenceSha256": "0976d2e5d1df6d3e979d5b11d1f1f860314bc4342a0617bac4bb91c76c22712e",
+    "attribution": "Executor evidence received and read; no new Cloud Run configuration query by this work",
+    "anonymousAdminDenied": "PASSED_IN_EXECUTOR_REPORT",
+    "logoutAndSessionRevocation": "PASSED_IN_EXECUTOR_REPORT",
+    "deploymentStillTargets": "d63ad8a1ab2d712153177155eae518d3eddcdc86"
+  }
+}

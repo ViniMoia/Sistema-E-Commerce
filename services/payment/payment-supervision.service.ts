@@ -4,20 +4,51 @@ import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { CommerceLocks } from '@/lib/commerce/locks';
 import { createHash } from 'node:crypto';
 
+/** Installation-wide aggregate snapshot. No customer IDs, payloads or mutations.
+ * The configured scope identifies the installation; mismatched stored accounts
+ * are reported explicitly rather than silently hidden by a scope filter. */
 export async function paymentBacklog() {
-  const now = await prisma.$transaction(paymentNow);
-  const [inbox, outbox, uncertain, overdue, abandoned, operations, legacy] = await Promise.all([
-    prisma.paymentInbox.groupBy({ by: ['status'], _count: true }),
-    prisma.commerceOutbox.groupBy({ by: ['status'], _count: true }),
-    prisma.paymentAttempt.count({ where: { status: { in: ['SUBMITTING','UNKNOWN'] }, provider: 'ASAAS' } }),
-    prisma.paymentAttempt.count({ where: { provider: 'ASAAS', reviewAfter: { lte: now }, status: { in: ['SUBMITTING','UNKNOWN','CANCEL_PENDING','REFUND_PENDING'] } } }),
-    prisma.paymentAttempt.count({ where: { leaseExpiresAt: { lte: now } } }),
-    prisma.paymentOperation.groupBy({ by: ['status','kind'], _count: true }),
-    prisma.order.count({ where: { status: 'PENDING', asaasPaymentId: { not: null }, paymentAttempts: { none: {} } } }),
-  ]);
-  const oldestInbox = await prisma.paymentInbox.findFirst({ where: { status: { in: ['READY','LEASED','DEAD_LETTER'] } }, orderBy: { receivedAt: 'asc' }, select: { receivedAt: true } });
-  return { schemaVersion: 1, at: now.toISOString(), accountScope: paymentAccountScope(), inbox, outbox, uncertain,
-    overdue, abandonedLeases: abandoned, operations, untrackedLegacyOrders: legacy, oldestUnresolvedInboxAt: oldestInbox?.receivedAt.toISOString() ?? null };
+  const accountScope = paymentAccountScope();
+  return prisma.$transaction(async tx => {
+    await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+    const now = await paymentNow(tx);
+    const pending = ['READY', 'LEASED', 'DEAD_LETTER'] as const;
+    const [inbox, outbox, uncertain, overdue, abandoned, operations, legacy,
+      oldestInbox, oldestOutbox, reviewGroups, heldOperations, emailDeadLetters,
+      oldestEmail, inboxLeases, outboxLeases, foreignAccounts, due] = await Promise.all([
+      tx.paymentInbox.groupBy({ by: ['status'], _count: true }),
+      tx.commerceOutbox.groupBy({ by: ['status'], _count: true }),
+      tx.paymentAttempt.count({ where: { status: { in: ['SUBMITTING','UNKNOWN'] }, provider: 'ASAAS' } }),
+      tx.paymentAttempt.count({ where: { provider: 'ASAAS', reviewAfter: { lte: now }, status: { in: ['SUBMITTING','UNKNOWN','CANCEL_PENDING','REFUND_PENDING'] } } }),
+      tx.paymentAttempt.count({ where: { leaseExpiresAt: { lte: now }, leaseOwner: { not: null } } }),
+      tx.paymentOperation.groupBy({ by: ['status','kind'], _count: true }),
+      tx.order.count({ where: { status: 'PENDING', asaasPaymentId: { not: null }, paymentAttempts: { none: {} } } }),
+      tx.paymentInbox.findFirst({ where: { status: { in: [...pending] } }, orderBy: { receivedAt: 'asc' }, select: { receivedAt: true } }),
+      tx.commerceOutbox.findFirst({ where: { status: { in: [...pending] } }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+      tx.paymentAttempt.groupBy({ by: ['failureCode'], where: { failureCode: { not: null } }, _count: true }),
+      tx.paymentOperation.count({ where: { status: { not: 'COMPLETED' }, lastErrorCode: { not: null } } }),
+      tx.commerceOutbox.count({ where: { commandType: 'PAYMENT_CONFIRMATION_EMAIL', status: 'DEAD_LETTER' } }),
+      tx.commerceOutbox.findFirst({ where: { commandType: 'PAYMENT_CONFIRMATION_EMAIL', status: { in: [...pending] } }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+      tx.paymentInbox.count({ where: { status: 'LEASED', leaseExpiresAt: { lte: now } } }),
+      tx.commerceOutbox.count({ where: { status: 'LEASED', leaseExpiresAt: { lte: now } } }),
+      tx.paymentAttempt.count({ where: { provider: 'ASAAS', OR: [{ providerAccount: null }, { providerAccount: { not: accountScope } }] } }),
+      tx.$queryRaw<Array<{ oldest: Date | null }>>`SELECT MIN(COALESCE("reconcileAfter", "createdAt")) AS oldest
+        FROM "PaymentAttempt" WHERE provider='ASAAS' AND status NOT IN ('DECLINED','CANCELLED','REFUNDED')
+        AND COALESCE("reconcileAfter", "createdAt") <= ${now}`,
+    ]);
+    const chargebackReviews = reviewGroups.filter(g => g.failureCode?.startsWith('PAYMENT_CHARGEBACK_')).reduce((n,g) => n + g._count, 0);
+    const physicalReturnReviews = reviewGroups.filter(g => g.failureCode === 'PHYSICAL_RETURN_REQUIRED').reduce((n,g) => n + g._count, 0);
+    return { schemaVersion: 1, at: now.toISOString(), accountScope, inbox, outbox, uncertain,
+      overdue, abandonedLeases: abandoned, operations, untrackedLegacyOrders: legacy,
+      oldestUnresolvedInboxAt: oldestInbox?.receivedAt.toISOString() ?? null,
+      supervision: { schemaVersion: 1, reviewAttempts: reviewGroups.reduce((n,g) => n + g._count, 0),
+        chargebackReviews, physicalReturnReviews, heldOperations, emailDeadLetters,
+        expiredQueueLeases: inboxLeases + outboxLeases, foreignAccountAttempts: foreignAccounts,
+        oldestUnresolvedOutboxAt: oldestOutbox?.createdAt.toISOString() ?? null,
+        oldestPendingEmailAt: oldestEmail?.createdAt.toISOString() ?? null,
+        oldestDueReconciliationAt: due[0]?.oldest?.toISOString() ?? null },
+    };
+  }, { isolationLevel: 'RepeatableRead', timeout: 20000 });
 }
 
 export async function requestPaymentReconciliation(input: { orderId: string; lojaID: string; userId: string; commandId: string }) {

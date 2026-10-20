@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T18:42:36.113192+00:00",
+  "status": "LOCAL_VALIDATION_PASSED_CI_AND_DEPLOYMENT_PENDING",
+  "gate": "G6",
+  "branch": "trabalho/g6-supervisao-20261019",
+  "baseCommit": "e644b011b6ed4a2c96cac3c5b777049313314d47",
+  "mainReadOnlyReference": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "previousCandidateStillAwaitingDeploymentEvidence": "d63ad8a1ab2d712153177155eae518d3eddcdc86",
+  "changes": [
+    "Read-only repeatable-read status snapshot with aggregate review, held operations, email, lease, reconciliation and account-mismatch coverage",
+    "Independent supervision consumer mode sends one authenticated GET and no processing POST",
+    "Uncertain payments and incomplete supervision coverage produce explicit attention reasons",
+    "Third job/schedule and separate heartbeat/failure policies prepared by existing manifest renderer",
+    "Failure filter recognizes promoted LogEntry severity as well as JSON severity and attention outcome",
+    "G6 acceptance runbook and test suite selection updated"
+  ],
+  "validation": {
+    "operations": {
+      "command": "npm run test:operations",
+      "passed": 21,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "initialIntegration": {
+      "command": "npm run test:integration:isolated -- tests/integration/payment-durable-execution.test.ts tests/integration/payment-supervision.test.ts",
+      "runId": "65a24853cb22e2a6d03fc53403e51447",
+      "passed": 59,
+      "failed": 1,
+      "exitCode": 1,
+      "durableExecutionPassed": 56,
+      "supervisionPassed": 3,
+      "failure": "HTTP test incorrectly expected cache-control from a helper that omits response headers; consumer sanitized the thrown assertion as CONSUMER_TRANSPORT_UNCERTAIN",
+      "resolution": "Test now verifies isolated server identity then returns its native fetch Response, asserting actual cache headers after observation"
+    },
+    "supervisionRepeat": {
+      "command": "npm run test:integration:isolated -- tests/integration/payment-supervision.test.ts",
+      "runId": "0622cac7509ea52ad277d7acb5b9654c",
+      "passed": 4,
+      "failed": 0,
+      "exitCode": 0,
+      "database": "Disposable local PostgreSQL, isolated HTTP server; no application database",
+      "verified": [
+        "Authenticated GET only; missing/wrong credential returns 401",
+        "Repeated snapshots preserve order, stock, financial facts, points and audit",
+        "Review and held operations visible without active outbox",
+        "Physical-return review on terminal attempt, expired leases, delayed email and foreign account visible",
+        "Uncertain/reconciliation delay attention then healthy observation after fixture recovery",
+        "Private no-store response; no buyer IDs or raw financial payload in snapshot"
+      ]
+    },
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "scope": "Changed service, consumer, renderer, suite selector and tests",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "npm run build:isolated",
+      "exitCode": 0,
+      "scope": "Application runtime changes; subsequent changes only test transport, alert manifest filter and documentation"
+    },
+    "remoteCi": {
+      "status": "NOT_RUN_FOR_G6"
+    }
+  },
+  "remoteActions": {
+    "deployed": false,
+    "schedulersActivated": false,
+    "notificationsSent": false,
+    "providerCommandsSent": false,
+    "sharedDatabaseWrites": false,
+    "mainModified": false
+  },
+  "limits": [
+    "Template generation and isolated tests do not prove deployed resources or notification delivery",
+    "CRON_SECRET is shared with processing endpoints; read-only mode is program behavior, not a read-only credential",
+    "Snapshot is installation-wide; configured account scope does not prove database environment isolation",
+    "Minute schedule and 300-second delay threshold require measured latency/cost and operational acceptance",
+    "Repeated observations are not durable per-case notification deduplication; Monitoring rate limit requires remote verification",
+    "Monitoring auto-close is not financial case resolution",
+    "Observer health cannot replace independent processor heartbeats or automatic progress evidence"
+  ],
+  "nextSteps": [
+    {
+      "owner": "Leno",
+      "action": "Review, commit candidate, run CI and compare with any subsequent Vanderlei changes before integration"
+    },
+    {
+      "owner": "Vanderlei",
+      "action": "Return section 66 deployment identity and effective scheduler/policy/channel inventory without secrets"
+    },
+    {
+      "owner": "Vanderlei and Leno",
+      "action": "Name primary/substitute recipients, compare manifests and measure cadence/cost before coordinated activation"
+    },
+    {
+      "owner": "Leno and Vanderlei",
+      "action": "Prove GET-only observation, attention delivery, assigned case, absence/failure and recovery on controlled homologation case"
+    },
+    {
+      "owner": "Vanderlei and Leno",
+      "action": "Complete coordinated financial ownership transfer and demonstrate automatic processing without manual execution"
+    }
+  ],
+  "officialReferences": [
+    "https://docs.cloud.google.com/run/docs/logging",
+    "https://docs.cloud.google.com/logging/docs/alerting/log-based-alerts",
+    "https://docs.cloud.google.com/monitoring/alerts/log-based-incidents"
+  ],
+  "hashFormat": "SHA-256 of UTF-8 bytes with CRLF normalized to LF; evidence file excluded",
+  "files": [
+    {
+      "path": "services/payment/payment-supervision.service.ts",
+      "sha256": "f1effac977e88ff070d9cbfe14887031e21307fb7c4e855cef773230df76de12"
+    },
+    {
+      "path": "scripts/cloudrun-consumer.mjs",
+      "sha256": "a480e3fe8aab7d8953017b1155369b8f2ffe94d34b50ecfef777b1705ef0f30b"
+    },
+    {
+      "path": "scripts/render-cloudrun.mjs",
+      "sha256": "eaca60219081c9cd3b77c45859fe2b6644bfe8b27a1a8aac520e934ce8898ee8"
+    },
+    {
+      "path": "scripts/lib/homologation-suites.mjs",
+      "sha256": "0202d45be36f69275b350a2f716cccf892ff30974e26b5dca315e0587283362f"
+    },
+    {
+      "path": "tests/integration/payment-supervision.test.ts",
+      "sha256": "c28dd6b306f8940ae64f4a8597767c31797ca26515b966d79d866a18d086a774"
+    },
+    {
+      "path": "tests/scripts/cloudrun-consumer.test.mjs",
+      "sha256": "5af95ba792d7c37f863515935e3c444703d0c7cc38a652e3ee70167d96ed65cd"
+    },
+    {
+      "path": "tests/scripts/cloudrun-manifests.test.mjs",
+      "sha256": "4d033a98ac3856da4dd83ed7599cf9e2cd9abd6d74915cf81cfd128fda7ef826"
+    },
+    {
+      "path": "infra/cloudrun/README.md",
+      "sha256": "9d93590798441ee36512e164e69f64fc2dc9a4297182b4f679ebb3de49b91628"
+    },
+    {
+      "path": "trabalho_em_dupla/CHECKLIST_PRODUCAO_G1_G8.md",
+      "sha256": "e0e8d4c4b4526798e51928605e93cfa30dc5a0a454e03977fae4add1e8f9cc94"
+    },
+    {
+      "path": "diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md",
+      "sha256": "0d7e62a278a0bfd91d4736e936f4746f95cd0bf41a63157dc54c156392cca488"
+    }
+  ],
+  "publicationPreparation": {
+    "targetBranch": "homologacao_teste",
+    "reviewBranch": "trabalho/g6-supervisao-20261019",
+    "remoteBaseVerified": "e644b011b6ed4a2c96cac3c5b777049313314d47",
+    "note": "Commit identity is recorded by Git; remote CI and deployment require separate evidence."
+  }
+}

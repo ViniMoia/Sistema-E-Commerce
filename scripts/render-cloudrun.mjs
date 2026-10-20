@@ -36,7 +36,7 @@ export function cloudRunManifests(c) {
     } }, traffic: [{ latestRevision: true, percent: 100 }],
   } };
   artifacts['web-invoker-policy.json'] = { bindings: [{ role: 'roles/run.invoker', members: ['allUsers'] }] };
-  for (const mode of ['payments', 'loyalty']) {
+  for (const mode of ['payments', 'loyalty', 'supervision']) {
     const job = `${c.service}-${mode}`;
     artifacts[`${mode}-job.json`] = { apiVersion: 'run.googleapis.com/v1', kind: 'Job', metadata: metadata(job), spec: {
       template: { spec: { parallelism: 1, taskCount: 1, template: { spec: {
@@ -50,25 +50,26 @@ export function cloudRunManifests(c) {
     artifacts[`${mode}-invoker-policy.json`] = { bindings: [{ role: 'roles/run.invoker', members: ['serviceAccount:' + sa('scheduler')] }] };
     artifacts[`${mode}-scheduler.json`] = {
       name: `projects/${c.project}/locations/${c.region}/jobs/${job}`,
-      schedule: mode === 'payments' ? '* * * * *' : '17 * * * *', timeZone: 'Etc/UTC', attemptDeadline: '30s',
+      schedule: mode === 'loyalty' ? '17 * * * *' : '* * * * *', timeZone: 'Etc/UTC', attemptDeadline: '30s',
       retryConfig: { retryCount: 0 }, httpTarget: { httpMethod: 'POST',
         uri: `https://run.googleapis.com/v2/projects/${c.project}/locations/${c.region}/jobs/${job}:run`,
         oauthToken: { serviceAccountEmail: sa('scheduler'), scope: 'https://www.googleapis.com/auth/cloud-platform' } },
     };
-    const filter = `resource.type="cloud_run_job" AND resource.labels.job_name="${job}"`;
+    const filter = `resource.type="cloud_run_job" AND resource.labels.project_id="${c.project}" AND resource.labels.location="${c.region}" AND resource.labels.job_name="${job}"`;
     const metric = `${job}-completed`;
     artifacts[`${mode}-heartbeat-metric.json`] = { name: metric, filter: `${filter} AND jsonPayload.event="consumer_completed"`,
       metricDescriptor: { metricKind: 'DELTA', valueType: 'INT64', unit: '1', displayName: metric } };
     artifacts[`${mode}-heartbeat-alert.json`] = { displayName: `${job}: execução ausente`, enabled: true, combiner: 'OR',
       notificationChannels: c.notificationChannels, conditions: [{ displayName: 'Sem conclusão do consumidor', conditionAbsent: {
         filter: `resource.type="cloud_run_job" AND metric.type="logging.googleapis.com/user/${metric}"`,
-        duration: mode === 'payments' ? '600s' : '7200s', trigger: { count: 1 },
+        duration: mode === 'loyalty' ? '7200s' : '600s', trigger: { count: 1 },
         aggregations: [{ alignmentPeriod: '60s', perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_SUM' }],
       } }] };
     artifacts[`${mode}-failure-alert.json`] = { displayName: `${job}: falha ou falta de progresso`, enabled: true, combiner: 'OR',
+      documentation: { mimeType: 'text/markdown', content: 'Conferir modo, conta, attentionReasons e contagens do consumer_completed. Consultar os casos pela aplicacao autorizada; nao rearmar operacoes nem limpar revisoes por SQL. Fechamento automatico deste incidente de monitoramento nao comprova resolucao financeira. Registrar responsavel, proxima acao e evidencia do caso.' },
       notificationChannels: c.notificationChannels, alertStrategy: { notificationRateLimit: { period: '300s' }, autoClose: '86400s' },
       conditions: [{ displayName: 'Falha, revisão, retry ou atraso', conditionMatchedLog: {
-        filter: `${filter} AND (jsonPayload.severity="ERROR" OR jsonPayload.outcome="attention")`,
+        filter: `${filter} AND (severity>=ERROR OR jsonPayload.severity="ERROR" OR jsonPayload.outcome="attention")`,
       } }] };
   }
   artifacts['readiness.json'] = { productionReady: false, schedulesApproved: false, resourcesProvisioned: false,

@@ -7,6 +7,7 @@ import { selectIsolatedSuites } from './lib/homologation-suites.mjs';
 const files = selectIsolatedSuites(process.argv.slice(2));
 const fixture = await provisionPostgres();
 let server;
+let serverClosed;
 let serverProject;
 try {
   console.log(`[isolated] PostgreSQL descartável ${fixture.database}; sem conexão com o banco da aplicação.`);
@@ -28,6 +29,7 @@ try {
     env, cwd: serverProject, shell: false, windowsHide: true, detached: process.platform !== 'win32',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  serverClosed = new Promise(resolve => server.once('close', resolve));
   // Avoid dumping provider config or DB URLs from framework startup diagnostics.
   let serverFailure;
   server.on('error', error => { serverFailure = error; });
@@ -62,14 +64,30 @@ try {
   console.error(error.message);
   process.exitCode = 1;
 } finally {
-  if (server && server.exitCode === null) {
-    // taskkill targets only the PID we launched, including its Next child.
-    if (process.platform === 'win32') {
-      await command('taskkill', ['/PID', String(server.pid), '/T', '/F'], { capture: true }).catch(() => {});
-    } else {
-      try { process.kill(-server.pid, 'SIGTERM'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+  let stopped = !server;
+  try {
+    if (server?.pid && server.exitCode === null && server.signalCode === null) {
+      // taskkill targets only the PID we launched, including its Next child.
+      if (process.platform === 'win32') {
+        await command('taskkill', ['/PID', String(server.pid), '/T', '/F'], { capture: true }).catch(() => {});
+      } else {
+        try { process.kill(-server.pid, 'SIGTERM'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+      }
     }
+    // SIGTERM is asynchronous: Next may still be flushing its development cache.
+    // Wait for the child and its stdio to close before removing the owned project.
+    if (serverClosed) {
+      let timer;
+      try {
+        await Promise.race([
+          serverClosed,
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('ISOLATED_SERVER_STOP_TIMEOUT: temporary project preserved')), 15000); }),
+        ]);
+        stopped = true;
+      } finally { clearTimeout(timer); }
+    }
+  } finally {
+    try { await fixture.dispose(); }
+    finally { if (stopped && serverProject) await discardIsolatedProject(serverProject); }
   }
-  await fixture.dispose();
-  if (serverProject) await discardIsolatedProject(serverProject);
 }

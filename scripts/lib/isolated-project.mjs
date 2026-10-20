@@ -34,5 +34,7 @@ export async function discardIsolatedProject(directory) {
   const dependencies = path.join(resolved, 'node_modules');
   const stat = await fs.lstat(dependencies).catch(error => { if (error.code !== 'ENOENT') throw error; });
   if (stat?.isSymbolicLink()) await fs.unlink(dependencies);
-  await fs.rm(resolved, { recursive: true, force: true });
+  // Bounded retries for transient cache/filesystem handles after shutdown.
+  // Exhausted retries still fail; the validated temporary scope is unchanged.
+  await fs.rm(resolved, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }

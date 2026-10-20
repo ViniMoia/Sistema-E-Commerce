@@ -203,14 +203,19 @@ export function AdminSidebar(props: AdminSidebarProps) {
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-[#050B14]/90 border border-catalog-gold/40 backdrop-blur-md text-catalog-gold"
-        aria-label="Abrir menu admin"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Keep mobile navigation in the layout, above the page heading. */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050B14] border-b border-catalog-gold/20">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-2.5 rounded-xl border border-catalog-gold/40 text-catalog-gold"
+          aria-label="Abrir menu admin"
+          aria-expanded={mobileOpen}
+          aria-controls="admin-mobile-navigation"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="text-catalog-gold text-xs font-mono uppercase tracking-wider">Painel Admin</span>
+      </header>
 
       {/* Mobile overlay */}
       {mobileOpen && (
@@ -222,6 +227,7 @@ export function AdminSidebar(props: AdminSidebarProps) {
 
       {/* Mobile drawer */}
       <aside
+        id="admin-mobile-navigation"
         className={`
           md:hidden fixed inset-y-0 left-0 z-50 w-72
           bg-[#050B14] border-r border-catalog-gold/20
