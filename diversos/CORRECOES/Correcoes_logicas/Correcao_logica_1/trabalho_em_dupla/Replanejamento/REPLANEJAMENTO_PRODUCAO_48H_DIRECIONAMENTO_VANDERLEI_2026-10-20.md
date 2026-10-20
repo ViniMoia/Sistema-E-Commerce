@@ -1,5 +1,7 @@
 # Replanejamento para produção em até 48 horas
 
+**Decisão vigente sobre imagens — 20/10/2026:** por determinação explícita do operador, **usuários e administradores não poderão fazer upload de imagens**. As imagens dos produtos vêm da Nuvemshop; o projeto deve trabalhar com suas referências externas, sem armazenar arquivos/binários de imagem no banco nem provisionar Object Storage para esse fluxo. **Vanderlei não deve criar buckets, cadastrar segredos de Storage ou habilitar upload para atender às pendências antigas deste documento.** Esses requisitos foram retirados do escopo e substituídos pela conferência das referências importadas, carregamento das imagens e bloqueio de upload na interface e nas APIs. Ver **seção 70**, que prevalece sobre menções anteriores conflitantes. A decisão está registrada; o bloqueio efetivo no código ainda precisa ser verificado. E-mail e recuperação de senha continuam pendentes, de forma independente.
+
 **Clientes mobile — complemento do PR #10:** captura do operador mostrou “Ver Perfil” fora da largura inicial da tabela. A lista recebe cartões no celular com identificação, contato, pedidos, LTV, datas e acesso ao perfil dentro da largura. A opção responsiva de `DataTable` é habilitada somente para a lista de clientes; a tabela desktop e o histórico de pedidos do perfil mantêm o comportamento anterior. Vanderlei deve publicar o último SHA aprovado do PR, retornando SHA/digest/revisão/URL. Leno inclui `/admin/customers` na conferência, abrindo e fechando o perfil correto sem alterar dados. Métricas financeiras e aceite completo permanecem sujeitos às evidências próprias, não apenas à aparência dos cartões.
 
 Também corrigido o deslocamento de 32 px da lista quando o aviso “Consultando base...” surgia ao recuperar foco, fazendo o toque atingir o rótulo acima do botão. O aviso passa a ter espaço reservado. TypeScript/lint e quatro testes de navegador aprovados, incluindo toque em 320/390 pixels, desktop e regressões financeiras. [Registro da validação e limites](../../../../../../trabalho_em_dupla/evidencias/L-CLIENTES-MOBILE-2026-10-20.json).
@@ -237,7 +239,7 @@ Em 12/10 o usuário informou dados de teste; em 15/10 esclareceu que **o destino
 
 As contagens de 04/10 — 24 pedidos, 33 itens sem variante e duas carteiras — são históricas e sobrepostas. Não repetir saneamento com base nelas. O gate WF-18 do escopo exige inventário atual, conservação e tratamento das exceções; não exige fabricar fatos retroativos para zerar uma lista.
 
-Matriz mínima de produto no candidato: produto sem variação (`Único/Padrão` e leitura dos neutros legados), produto com variações, edição conservando IDs, combinação repetida recusada, variante sem estoque indisponível, ajuste de estoque com revisão, edição concorrente com reserva e retirada de variante com carrinho/pedido vinculado. Verificar imagem/upload e permissões. Usar `lib/product-variants.ts`; conservar vínculos e separar o ID persistido da chave interna do formulário. Backup e auditoria antecedem qualquer reparo real.
+Matriz mínima de produto no candidato: produto sem variação (`Único/Padrão` e leitura dos neutros legados), produto com variações, edição conservando IDs, combinação repetida recusada, variante sem estoque indisponível, ajuste de estoque com revisão, edição concorrente com reserva e retirada de variante com carrinho/pedido vinculado. Verificar referências de imagens importadas da Nuvemshop, carregamento e bloqueio de upload na interface e nas APIs, conforme seção 70. Usar `lib/product-variants.ts`; conservar vínculos e separar o ID persistido da chave interna do formulário. Backup e auditoria antecedem qualquer reparo real.
 
 ## 7. Infraestrutura e segurança que entram no primeiro dia
 
@@ -245,7 +247,7 @@ Matriz mínima de produto no candidato: produto sem variação (`Único/Padrão`
 
 ### Configuração e executor
 
-- Identificar projeto, região, domínio/TLS, imagem, segredos por referência, pool, limites de instâncias, conta Asaas e tenant. Isolar Sandbox e produção inclusive armazenamento de imagens.
+- Identificar projeto, região, domínio/TLS, imagem de implantação, segredos por referência, pool, limites de instâncias, conta Asaas e tenant. Isolar Sandbox e produção; conferir a origem das referências externas de imagens sem provisionar Storage para upload, conforme seção 70.
 - Integrar/revisar a correção local de 12/10 da política financeira (seção 14) antes do Sandbox em Google Cloud. Sem declaração explícita, `lib/config/asaas-environment.mjs` conserva a inferência anterior de PRODUCTION de `NODE_ENV=production` fora do Preview Vercel. Não simular Vercel nem usar runtime de desenvolvimento como contorno.
 - Ensaiar Host/proxy/origem canônica/cookies no destino real. Cabeçalhos encaminhados não podem permitir escolher tenant arbitrário; origem e links de reset não vêm de entrada não confiável.
 - Reusar inbox/outbox/leases. Escolher **um executor durável principal**, com recuperação; não redesenhar todo o sistema de filas. Webhook que grava READY não basta, nem Promise solta após resposta HTTP.
@@ -255,7 +257,7 @@ Matriz mínima de produto no candidato: produto sem variação (`Único/Padrão`
 
 ### Segurança e continuidade mínimas
 
-Verificar acesso alheio por ID/tenant em pedidos, carteira, catálogo/Admin e upload; papel administrativo, último Admin e revogação de sessão; reset de uso único e email real; proteção contra requisições de mutação de origem indevida; credenciais de webhook e rejeição de evento falso; limitação de abuso em login/reset/checkout. Conferir DTO público/Admin, caches e logs sem segredos ou dados sensíveis desnecessários. Rotação de credencial já exposta precisa de prova, não apenas remoção do texto.
+Verificar acesso alheio por ID/tenant em pedidos, carteira e catálogo/Admin; recusa de upload para usuários e administradores, inclusive por chamada direta às APIs, conforme seção 70; papel administrativo, último Admin e revogação de sessão; reset de uso único e email real; proteção contra requisições de mutação de origem indevida; credenciais de webhook e rejeição de evento falso; limitação de abuso em login/reset/checkout. Conferir DTO público/Admin, caches e logs sem segredos ou dados sensíveis desnecessários. Rotação de credencial já exposta precisa de prova, não apenas remoção do texto.
 
 Domínio/remetente da loja, links e entrega externa de confirmação/reset fazem parte do lançamento. Prepará-los em H+0, não ao final. Não transportar payload de email Sandbox para cliente real.
 
@@ -302,7 +304,7 @@ Estado consolidado, fontes e condições de fechamento em 16/10: [checklist G1�
 | G5 — segurança | Vanderlei / Leno | Tenant/ownership/Admin/reset/cookies/webhook/segredos/cartão aprovados; exposição crítica resolvida. |
 | G6 — execução automática | Vanderlei + Leno | Pagamentos, emails e rotinas de expiração progridem; reinício recupera trabalho; alertas testados e responsável disponível. |
 | G7 — experiência e capacidade | Vanderlei / Leno | Fluxo mobile/desktop e operação comercial corretos; limites de latência/carga registrados e sustentáveis. |
-| G8 — candidato e operação | Vanderlei / Leno | Revisão cruzada, mesmo artefato, domínio/email/storage/configuração corretos, procedimento de contenção/recuperação ensaiado e aceite do escopo. |
+| G8 — candidato e operação | Vanderlei / Leno | Revisão cruzada, mesmo artefato, domínio/e-mail/configuração corretos, imagens externas e bloqueio de upload conforme seção 70, procedimento de contenção/recuperação ensaiado e aceite do escopo. |
 
 **Não liberam produção:** Preview Ready, testes locais verdes sozinhos, `uncertain=0` com revisão não atendida, “refund solicitado”, estoque apenas visual para validar concorrência, ocultar botão, ignorar retorno de gateway, desabilitar testes ou ajustar saldo/status por SQL.
 
@@ -1540,6 +1542,8 @@ APP_MAINTENANCE_MODE=false
 
 ### Storage existente e lacuna real
 
+**Registro histórico superado pela decisão da seção 70 em 20/10:** as instruções abaixo descrevem a hipótese anterior de uso de Storage e não devem ser executadas. A presença de código ou configuração herdada não autoriza habilitar upload nem criar buckets/segredos.
+
 Na candidata, `lib/supabase/storage.ts` resolve **`SUPABASE_URL || NEXT_PUBLIC_SUPABASE_URL`**, junto de **`SUPABASE_SERVICE_ROLE_KEY`** no servidor. Na main de referência, o código herdado usava `NEXT_PUBLIC_SUPABASE_URL`. Localmente, o fallback e a chave estão presentes; presença não valida autenticação, permissões ou isolamento do projeto.
 
 O gerador Cloud Run referencia `SUPABASE_URL` explicitamente como segredo: preencher essa configuração com a URL do projeto de Storage confirmado, e a chave correspondente, pelo mecanismo de segredos. A existência do fallback no código não cria uma versão ausente no Secret Manager. Conferir buckets `products` e `avatars`, permissões e acesso às imagens. `STORAGE_BUCKET_URL` isolada não substitui a URL/chave usadas pelo cliente de upload; não foi encontrada implementação alternativa baseada nela no código executável pesquisado.
@@ -2041,3 +2045,44 @@ Referências sanitizadas de evidência:
 ```
 
 **Limites da solicitação:** manter `CHECKOUT_PAUSED=true`, `APP_MAINTENANCE_MODE=false` e os três controles financeiros `false` conforme a publicação documentada; não promover tráfego, habilitar processamento, alterar webhook, reenviar eventos ou enviar disputa/documentos nesta coleta. Main e banco principal continuam somente leitura. Caso a configuração encontrada divergir, relatar antes de executar a transferência; não substituir silenciosamente uma configuração para coincidir com o modelo.
+
+## 70. Imagens da Nuvemshop, sem upload ou Object Storage — decisão de 20/10/2026
+
+**Fonte:** determinação explícita do operador nesta conversa, após a leitura da devolutiva de Vanderlei. Atualização documental baseada na `homologacao_teste` em `dfcb3b7d4e8e5bdbec64319d6a96ed858b9eba9e`. Não houve auditoria nova de runtime ou banco nesta atualização.
+
+### Escopo definido
+
+- Imagens de produtos são importadas da Nuvemshop. Conferir o fluxo para que mantenha referências externas válidas às imagens, sem copiar os arquivos para armazenamento próprio.
+- Usuários e administradores não poderão enviar arquivos de imagem. A conferência abrange formulários e endpoints existentes, inclusive produtos e avatares, se houver esses caminhos.
+- Não salvar arquivos/binários de imagem no banco da aplicação. Referências/URLs não são os arquivos de imagem e devem permanecer vinculadas aos produtos corretos.
+- Retirar das pendências de produção o provisionamento de Object Storage, a criação de buckets e a configuração de credenciais destinadas a habilitar upload. Não solicitar `SUPABASE_SERVICE_ROLE_KEY` ou URL de Storage para viabilizar esse recurso.
+- A ausência de Object Storage não comprova que o upload esteja bloqueado. A restrição precisa ser efetiva na interface e no servidor, sem depender de falha por credencial ausente.
+
+### Atribuições e devolutiva
+
+| Responsável | Ação | Retorno esperado |
+|---|---|---|
+| Vanderlei | Aplicar esta decisão ao planejamento de infraestrutura; não executar as antigas tarefas de provisionar/configurar Storage para imagens. | Confirmar retirada dessas tarefas. Se já houver recurso ou segredo configurado, informar somente referência e dependências conhecidas; esta atualização não solicita apagar recursos. |
+| Leno | Conferir importação Nuvemshop e vínculo das URLs com os produtos, reaproveitando decisões existentes e mantendo main/banco principal somente leitura. | Identificar arquivos/rotas e evidências de carregamento no catálogo e nos detalhes; registrar URLs quebradas ou dependências de armazenamento próprio que precisem de correção. |
+| Leno | Auditar controles de upload e APIs, corrigindo o que contrariar a decisão em uma entrega própria. | Registrar caminhos encontrados, comportamento esperado e testes de recusa para usuário e Admin, incluindo requisições diretas, sem gravar arquivos em serviços compartilhados. |
+| Vanderlei + Leno | Após eventual correção de código, publicar/conferir a candidata aprovada na homologação. | SHA, revisão/URL e resultado da conferência: imagens externas carregam e upload indisponível para ambos os perfis. |
+
+Formato de retorno de Vanderlei:
+
+```text
+Política de imagens da seção 70 recebida: sim/não
+Tarefas antigas de provisionar/configurar Storage para upload: retiradas/pendência
+Recurso ou segredo preexistente relacionado, se houver: referência, sem valor
+Dependência conhecida que exige revisão: nenhuma conhecida/descrever/não conferida
+Revisão/URL atualmente disponível para a conferência de imagens:
+Pendências de e-mail/remetente/recuperação de senha, tratadas separadamente:
+```
+
+### Critérios de fechamento e limites
+
+1. Imagens de produtos carregam por referências externas provenientes do fluxo Nuvemshop, no catálogo e nos detalhes.
+2. Interface não oferece upload aos usuários ou administradores; chamadas diretas às rotas de upload também são recusadas.
+3. Conferência do fluxo não encontra persistência de arquivos/binários no banco nem cópia para Object Storage próprio.
+4. Evidências identificam código/revisão e distinguem testes locais de validação remota. **Nesta atualização, esses critérios permanecem pendentes de verificação; somente a decisão de escopo foi concluída.**
+
+As instruções históricas de criar/configurar Storage, buckets `products`/`avatars` e validar upload permitido deixam de ser tarefas de Vanderlei. Isso também atualiza a interpretação das pendências antigas de G4/G5/G8 e da devolutiva de infraestrutura. **E-mail real, remetente, recuperação de senha e demais gates continuam necessários.** Nenhum código, segredo, bucket, banco, tráfego ou implantação foi alterado por esta atualização documental.
