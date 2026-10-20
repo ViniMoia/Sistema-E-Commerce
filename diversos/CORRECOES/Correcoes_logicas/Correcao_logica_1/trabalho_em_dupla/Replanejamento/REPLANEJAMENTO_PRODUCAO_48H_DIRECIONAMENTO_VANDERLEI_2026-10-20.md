@@ -1,5 +1,18 @@
 # Replanejamento para produção em até 48 horas
 
+**Devolutiva de Vanderlei — 20/10, 14:30 BRT:** PR #10 já integrado e publicado
+no SHA `ae9ec9c62b80d927ea9a59de626c62b1e1ca3f60`, com CI própria aprovada.
+Revisão `continental-hml-ae9ec9c-review`, 0% de tráfego;
+[URL de teste](https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app).
+Checkout pausado, controles financeiros desligados e 100% na revisão anterior.
+Conferências de login/logout/Admin e cartões em 320/390 px aprovadas, sem
+alterar produtos ou pedidos. Tarefas de provisionar Storage retiradas do
+gerador e planejamento. [Identidade completa, evidências e pendências](../../../../../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+Leno conserva a auditoria/correção de imagens e uploads da seção 70 e os
+aceites de negócio. G6 e e-mail real continuam pendentes; esta entrega não
+aprova produção nem ativa agendas. Avisos de publicação pendente do PR #10
+abaixo são históricos.
+
 **Decisão vigente sobre imagens — 20/10/2026:** por determinação explícita do operador, **usuários e administradores não poderão fazer upload de imagens**. As imagens dos produtos vêm da Nuvemshop; o projeto deve trabalhar com suas referências externas, sem armazenar arquivos/binários de imagem no banco nem provisionar Object Storage para esse fluxo. **Vanderlei não deve criar buckets, cadastrar segredos de Storage ou habilitar upload para atender às pendências antigas deste documento.** Esses requisitos foram retirados do escopo e substituídos pela conferência das referências importadas, carregamento das imagens e bloqueio de upload na interface e nas APIs. Ver **seção 70**, que prevalece sobre menções anteriores conflitantes. A decisão está registrada; o bloqueio efetivo no código ainda precisa ser verificado. E-mail e recuperação de senha continuam pendentes, de forma independente.
 
 **Clientes mobile — complemento do PR #10:** captura do operador mostrou “Ver Perfil” fora da largura inicial da tabela. A lista recebe cartões no celular com identificação, contato, pedidos, LTV, datas e acesso ao perfil dentro da largura. A opção responsiva de `DataTable` é habilitada somente para a lista de clientes; a tabela desktop e o histórico de pedidos do perfil mantêm o comportamento anterior. Vanderlei deve publicar o último SHA aprovado do PR, retornando SHA/digest/revisão/URL. Leno inclui `/admin/customers` na conferência, abrindo e fechando o perfil correto sem alterar dados. Métricas financeiras e aceite completo permanecem sujeitos às evidências próprias, não apenas à aparência dos cartões.

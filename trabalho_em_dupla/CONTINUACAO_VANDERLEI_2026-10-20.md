@@ -1,5 +1,19 @@
 # Continuação das pendências de Vanderlei — 20/10/2026
 
+**Atualização às 14:30 BRT:** correções desta rodada integradas ao PR #10 e
+publicadas na candidata `ae9ec9c`, com CI integral aprovada e 0% de tráfego.
+E-mail sem chave já falha corretamente em produção nessa candidata; entrega
+real permanece pendente. [Publicação e validação mobile](PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+As menções abaixo a CI/build/publicação pendentes são o histórico anterior.
+
+**Decisão posterior — seção 70 do direcionamento:** retiradas as solicitações
+abaixo de configurar Storage/buckets/credenciais e validar upload permitido.
+Imagens devem usar referências externas da Nuvemshop, sem upload por usuário
+ou Admin. O diagnóstico de ausência de credenciais abaixo é histórico, não
+um bloqueio a resolver por provisionamento. Leno verifica/corrige importação e
+recusa de upload; Vanderlei confere a candidata e não apaga recursos antigos.
+E-mail, remetente e recuperação de senha continuam pendentes.
+
 Referência vigente: seção 69 da cópia de direcionamento de 20/10, originada em
 `3c3bf725e96f33bcb38143cfd2e3f4c017298049`. A publicação de `17fd1a7` está
 concluída; as referências antigas a deploy pendente não são novas tarefas.
@@ -82,8 +96,9 @@ de reset em logs; não foi provocada solicitação de reset para demonstrá-lo.
 A correção desta rodada só terá efeito remoto quando uma nova candidata
 aprovada for publicada em etapa coordenada.
 
-Próxima ação do operador: confirmar remetente e projeto Storage de homologação
-no arquivo privado. Vanderlei prepara referências/versionamento dos segredos,
+Próxima ação do operador: confirmar chave Resend válida e remetente de homologação
+no arquivo privado. Storage foi retirado do escopo pela seção 70.
+Vanderlei prepara referências/versionamento dos segredos de e-mail,
 compara a configuração atual e executa a alteração na janela revisada. A
 presença de chave local não aprova domínio/remetente, entrega nem reset.
 

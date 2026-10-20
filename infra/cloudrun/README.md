@@ -1,7 +1,8 @@
 # Cloud Run — pacote de preparação do Vanderlei
 
 **Estado em 20/10/2026:** código de supervisão integrado e publicado na candidata
-`17fd1a7`, com CI aprovada, sem promoção de tráfego. Os avisos de preparação
+`ae9ec9c`, com CI aprovada, sem promoção de tráfego. [Publicação e identidade](../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+Os avisos de preparação
 local abaixo preservam o histórico de 19/10. Jobs, agendas e alertas reais
 continuam sem aceite operacional. Ver [devolutiva G6](../../trabalho_em_dupla/DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md)
 e [continuação de Vanderlei](../../trabalho_em_dupla/CONTINUACAO_VANDERLEI_2026-10-20.md).
@@ -125,10 +126,15 @@ agendadores usam os respectivos corpos da API. Não há comando de aplicação a
 - `DATABASE_URL` deve usar o endpoint/pool aprovado do ambiente; dimensionar
   `connection_limit` e timeout em conjunto com as duas instâncias e os consumidores.
   `DIRECT_URL` é separado. Não executar migrations na inicialização de instâncias.
-- `SUPABASE_URL` é a configuração de Storage no servidor. O código mantém o fallback
-  legado `NEXT_PUBLIC_SUPABASE_URL`, sem exigir chave privilegiada em build.
-- Conferir `EMAIL_FROM`, domínio Resend, destinatários, buckets e permissões no
-  ambiente separado. Ativação de upload permanece uma decisão de capacidade.
+- Imagens usam referências externas da Nuvemshop, conforme seção 70 do
+  direcionamento de 20/10. Não provisionar buckets nem credenciais de Storage
+  para upload. O gerador não exige esses segredos. Recursos antigos não devem
+  ser apagados por esta mudança; registrar referências e dependências existentes.
+- O bloqueio de upload em UI/APIs e a importação/vinculação das URLs são a
+  entrega de Leno. Credenciais ausentes ou a flag temporária de upload desligada
+  não comprovam cumprimento integral da política permanente.
+- Conferir `EMAIL_FROM`, domínio Resend, destinatários e entrega real em etapa
+  própria. E-mail/reset permanecem requisitos independentes da política de imagens.
 
 As capacidades financeiras dos manifestos começam desativadas. Após aceite, Leno
 conduz configuração de métodos/lojas e Vanderlei aplica a configuração de runtime

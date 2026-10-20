@@ -1,13 +1,14 @@
 # Checklist de produção G1–G8
 
 **Atualização de 20/10 — prevalece sobre avisos históricos abaixo:** a candidata
-`17fd1a7`, com menu móvel e código G6, foi publicada na revisão
-`continental-hml-17fd1a7-review`, com 0% do tráfego e URL de teste disponível.
-Publicação, migrations existentes e acesso básico estão documentados na seção
-68 do Replanejamento. A [devolutiva da seção 69](DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md)
+`ae9ec9c`, incluindo PR #10, foi publicada na revisão
+`continental-hml-ae9ec9c-review`, com 0% do tráfego e URL de teste disponível.
+CI, migrations existentes, acesso e cartões mobile estão documentados na
+[nova publicação](PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+A [devolutiva da seção 69](DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md)
 e a [continuação de Vanderlei](CONTINUACAO_VANDERLEI_2026-10-20.md) distinguem
 entregas concluídas das pendências atuais. Permanecem abertos aceite de negócio,
-operação G6, e-mail/Storage, capacidade e recuperação por outro operador.
+operação G6, e-mail, política de imagens externas, capacidade e recuperação por outro operador.
 Os itens antigos de integrar/publicar essa candidata estão superados; não
 repetir deploy ou migration para fechar documentação.
 
@@ -45,7 +46,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 | G5 — segurança | Regressões aprovadas; configuração real pendente | Vanderlei / Leno | Revisão de acessos, segredos, cookies/reset, webhook e dados de cartão na configuração efetiva. |
 | G6 — execução automática | Preparação aprovada; transferência pendente | Vanderlei + Leno | Inventário completo, acionador coordenado, recuperação e alertas reais, sem depender de execução manual. |
 | G7 — experiência e capacidade | Ensaios isolados e parciais remotos | Vanderlei / Leno | Aceite de compra/entrega, frete oferecido e limites sustentáveis de desempenho no destino. |
-| G8 — candidata e operação | CI verde; publicação atual e aceite pendentes | Vanderlei / Leno | Mesmo artefato conferido, domínio/e-mail/Storage, contenção/recuperação e revisão cruzada final. |
+| G8 — candidata e operação | ae9ec9c publicada com CI verde e 0% de tráfego; aceite pendente | Vanderlei / Leno | E-mail/imagens externas, contenção/recuperação e revisão cruzada final. |
 
 ## G1 — Escopo e bloqueios
 
@@ -95,7 +96,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 - [x] CI e ensaios existentes cobrem isolamento, permissões, ownership e controles de identidade. Vanderlei conferiu login/logout e recusa de sessão revogada em `eff10bf`, sem promover tráfego.
 - [ ] Vincular a revisão cruzada de tenant/Admin/cookies/Origin/reset à candidata e ao domínio efetivo; comprovar entrega real de recuperação de senha e rejeições relevantes. Reutilizar testes válidos, sem criar acessos persistentes de teste.
-- [ ] Conferir permissões mínimas de banco/serviço/Storage, bindings dos segredos e separação de contas/ambientes. Concluir rotação do segredo de bypass exposto e atualizar seu uso coordenadamente; nunca copiá-lo para este documento.
+- [ ] Conferir permissões mínimas de banco/serviço, bindings dos segredos e separação de contas/ambientes. Pela seção 70, não provisionar Storage para uploads; inventariar dependências antigas sem apagar recursos. Concluir rotação do segredo de bypass exposto e atualizar seu uso coordenadamente; nunca copiá-lo para este documento.
 - [ ] Validar autenticação do webhook no destino, proteção dos endpoints de consumidores e ausência de PAN/CVV em persistência/logs/armazenamento do navegador. Resultado de teste isolado não certifica todas as configurações remotas.
 
 ## G6 — Execução automática
@@ -120,8 +121,8 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 - [x] PR #8 integrado em `d63ad8a`; CI do PR e CI após integração aprovadas. Árvores de arquivos de `d78fdae` e `d63ad8a` idênticas. A publicação deve identificar esse código ou um sucessor explicitamente comparado/validado; a atualização documental não comprova deploy.
 - [x] Candidata integrada `55a3003` com CI verde. Revisões de domínio/logout de Vanderlei preservadas; migration aditiva já comprovada na homologação.
 - [x] Consolidação local em 19/10 do conjunto de retorno físico/chargeback e documentação pendente: [manifesto de caminhos e hashes](evidencias/L-CANDIDATA-CONSOLIDACAO-2026-10-19.json), seção 65 do plano. A base já contém toda a homologação remota conferida; não foi necessário merge nem ajuste adicional de runtime. Conjunto ainda sem commit próprio e sem CI remota correspondente; os testes locais permanecem identificados pelas evidências anteriores.
-- [ ] Publicar/conferir o conjunto atual, registrando SHA, digest efetivo, revisão, migrations, versão da configuração e tráfego. A revisão de `eff10bf` não substitui essa conferência. Reusar a migration já aplicada após verificar o estado, sem reclassificar pedidos.
-- [ ] Validar domínio/tenant, e-mail real e Storage com upload/leitura/autorização pertinentes. Imagens antigas carregando não comprovam upload; modelo `.env.example` não comprova bindings efetivos.
+- [x] Publicar/conferir `ae9ec9c`, com SHA, digest efetivo, revisão, migrations e configuração/tráfego registrados na [publicação de 20/10](PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md). 34 migrations existentes conferidas sem reaplicação; sem classificação de pedidos ou promoção.
+- [ ] Validar domínio/tenant e e-mail real. Pela seção 70, conferir imagens Nuvemshop por referências externas e recusa de upload em UI/API para usuário/Admin; importação e bloqueio são a entrega de Leno. Não criar buckets/segredos de upload. Modelo `.env.example` não comprova bindings efetivos.
 - [ ] Ensaiar contenção e retomada no ingresso real: pausa de compras, congelamento de todos os escritores quando necessário, drenagem e recuperação. Sondas inválidas e manutenção isolada são provas parciais. Rollback de aplicação não deve remover a migration aditiva nem apagar dados.
 - [ ] Registrar revisão cruzada e aceite final do escopo, responsáveis de operação, alertas e recuperação. Relacionar exceções explicitamente aceitas, em especial a expiração do boleto, com responsável e acompanhamento.
 

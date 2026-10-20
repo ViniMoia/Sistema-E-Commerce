@@ -1,5 +1,14 @@
 # Replanejamento para produção em até 48 horas
 
+**Atualização de Vanderlei — 20/10, 14:30 BRT:** candidata do PR #10 publicada
+em `ae9ec9c`, com CI aprovada e 0% de tráfego, preservando pausa/controles e
+revisões anteriores. [Publicação, digest, URL, testes e pendências](../../../../../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+A seção 70 da cópia de direcionamento retira provisionamento/credenciais de
+Storage: referências Nuvemshop e nenhum upload por usuário/Admin. O gerador e
+planejamento foram ajustados; Leno conserva auditoria/correção de UI/API/importação.
+Pedidos históricos de configurar Storage estão superados. E-mail real, G6 e
+aceites de negócio permanecem abertos; não houve promoção ou ativação financeira.
+
 **CI de `2fdcdef` — testes aprovados, encerramento pendente:** a execução [39356614989](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39356614989) aprovou os 406 testes de integração, inclusive interação e geometria do menu móvel. A etapa falhou depois, com `ENOTEMPTY` ao remover `.next/dev/cache` do projeto temporário. O harness enviava SIGTERM sem aguardar o encerramento do servidor. Ajustado para aguardar `close` com limite de 15 segundos e preservar o diretório se não confirmar a parada; descarte mantém escopo temporário validado e recebe tentativas limitadas para erros transitórios de filesystem. Ainda exige nova CI integral; build/runtime posteriores não foram executados nessa rodada. A captura móvel enviada continua mostrando a apresentação anterior: nenhuma publicação da correção do cabeçalho ocorreu.
 
 **CI do PR #9 — correção do teste de interação:** a execução [39355276601](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39355276601), head `bcf27aa`, falhou ao esperar a abertura do menu móvel: o teste clicava após encontrar o HTML, sem aguardar o handler do React. Foram aprovados 843 unitários e 405 de 406 testes de integração; as etapas posteriores de build/runtime não executaram. Corrigida a sincronização do teste para aguardar o handler antes do clique, também na aba do extrato. As verificações de geometria, ausência de transbordamento e abertura/fechamento foram preservadas. Dois testes de navegador isolados, TypeScript e lint passaram localmente após o ajuste. Exige nova CI integral aprovada antes da integração/publicação; não considerar `bcf27aa` aprovado. Nenhuma mudança adicional no código da aplicação, banco compartilhado, tráfego ou controles financeiros nesta correção.

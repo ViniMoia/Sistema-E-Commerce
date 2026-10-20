@@ -1,5 +1,18 @@
 # Devolutiva de Vanderlei — seção 69 — 20/10/2026
 
+**Atualização às 14:30 BRT:** houve nova publicação do PR #10 integrado,
+`ae9ec9c`, sem promoção de tráfego. A [devolutiva da nova candidata](PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md)
+substitui a identidade/URL da parte A abaixo. A CI do código publicado está
+aprovada. O inventário da parte B mantém seus horários e limitações; Jobs na
+região e estado da API Scheduler foram reconferidos sem mudança. Não houve
+ativação G6, transferência de webhook ou processamento financeiro.
+
+**Escopo atualizado pela seção 70:** a política de imagens foi recebida.
+Provisionar/configurar Storage para uploads foi retirado das tarefas de Vanderlei.
+Usar referências externas Nuvemshop; Leno verifica importação e bloqueio em UI/API.
+Nenhum recurso antigo será excluído por esta decisão. E-mail/reset e G6 mantêm
+as pendências próprias descritas abaixo.
+
 Referência consultada: branch `docs/aceite-e-devolutiva-20261020`, commit
 `3c3bf725e96f33bcb38143cfd2e3f4c017298049`, seção 69 do Replanejamento.
 Consulta por `git show`, sem integrar essa branch ou repetir a publicação.

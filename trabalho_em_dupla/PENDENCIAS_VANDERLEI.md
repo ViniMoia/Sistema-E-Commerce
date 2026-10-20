@@ -1,12 +1,39 @@
 # O que falta para Vanderlei
 
-**Atualizado em:** 15/10/2026.
+**Atualizado em:** 20/10/2026.
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
 
-## Situação vigente em 15/10 — base 8632514
+## Situação vigente em 20/10 — candidata ae9ec9c
 
-Esta seção prevalece sobre os registros históricos abaixo. [Relatório desta continuação](EXECUCAO_VANDERLEI_2026-10-15.md).
+Esta seção prevalece sobre as listas históricas abaixo. [Publicação,
+verificações e pendências com responsáveis](PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
+
+- [x] Publicar o PR #10 integrado em candidata com CI do SHA aprovado: `ae9ec9c`,
+  revisão `continental-hml-ae9ec9c-review`, 0% de tráfego.
+- [x] Preservar 100% na revisão anterior, checkout pausado e controles
+  financeiros desligados, sem transferência de webhook ou acionadores.
+- [x] Conferir catálogo, loja, login/logout, Admin e cartões mobile de
+  produtos/clientes/pedidos em 320/390 px; remover contas temporárias.
+- [x] Retirar provisionamento/credenciais de Storage do gerador e planejamento,
+  conforme seção 70; nenhum recurso antigo apagado.
+- [x] Entregar inventário e proposta G6 com fontes, limitações e recuperação.
+- [ ] Publicar/conferir a futura correção de imagens/uploads de Leno após
+  aprovação. Amostra da home não encerra auditoria das referências Nuvemshop.
+- [ ] Configurar e validar e-mail/reset após chave válida e remetente
+  confirmado pelo operador. A correção de falso sucesso já está publicada.
+- [ ] Concluir G6 com inventário externo, responsável/substituto, permissões,
+  custo/cadência e janela coordenada; provar alerta recebido e recuperação.
+- [ ] Receber aceites de negócio/dados/financeiro de Leno e concluir gates
+  externos antes de promover tráfego ou liberar compras.
+
+Projeto de homologação confirmado: `continental-511812`, região
+`southamerica-east1`. As antigas solicitações de identificar esse projeto e
+republicar candidatas já entregues não são pendências atuais. Main somente leitura.
+
+## Histórico da situação de 15/10 — base 8632514
+
+Registro histórico. [Relatório daquela continuação](EXECUCAO_VANDERLEI_2026-10-15.md).
 
 - [x] Incorporar as entregas publicadas por Leno até `8632514`, preservando main e pedidos encerrados.
 - [x] Rever os encerramentos documentados: #4 estorno integral 12x, #5 estorno 1x, #6 boleto pago/e-mail e #7 boleto cancelado sem pagamento. Não repetir essas operações.
@@ -56,7 +83,7 @@ Estas definições permitem avançar na infraestrutura e nas integrações sem e
 - [ ] **Domínio:** endereço da loja e da homologação, responsável pelo DNS e configuração de TLS.
 - [ ] **Frete:** transportadora, contrato/conta, origem, cobertura, tarifas e pesos/dimensões do catálogo aprovados pela loja.
 - [ ] **E-mail:** domínio, remetente e recursos separados para homologação e produção.
-- [ ] **Arquivos:** serviço/buckets, permissões e separação entre os ambientes.
+- [ ] **Imagens — seção 70:** conferir a candidata com referências Nuvemshop e bloqueio de upload entregue por Leno. Retirado o provisionamento de Storage/buckets/credenciais; não apagar recursos antigos.
 - [ ] **Alertas:** canais de recebimento, responsáveis pelo atendimento e limites de atraso/falha.
 - [ ] **Operação com Leno:** cadência do consumidor, limites de execução/conexões, orçamento Neon e procedimento de contenção.
 
@@ -73,7 +100,7 @@ Registrar identificadores e referências de configuração; manter valores secre
 | **V-04 — Frete** | Homologar cotação e cobertura da transportadora escolhida, validade, indisponibilidade e assinatura entre instâncias; conferir origem, tarifas, pesos e medidas. | Contrato e dados reais aprovados pela loja. | Cotação externa válida e aceita no checkout; expiração/erros sem frete fictício; mesma regra entre instâncias. |
 | **V-05 — Admin e operação comercial** | Conferir catálogo e ajustes de estoque no candidato/Preview correspondente; validar expedição, rastreio, retirada e métricas com fatos financeiros aprovados. | Carga de abertura e contratos/fatos de devolução, pontos e financeiro de Leno. | IDs e rascunhos preservados, alterações persistidas/auditadas e indicadores conciliados com os fatos. |
 | **V-06 — Infraestrutura Cloud Run** | Aplicar a configuração declarativa no destino definido, conferir IAM/billing/secrets, domínio e banco isolado, e ensaiar a imagem/configuração implantadas. | Projeto/região/domínio confirmados; contrato de dados e migration de Leno; etapa externa autorizada. | Revisão identificada, runtime funcional, permissões adequadas e configuração de homologação/produção separada. |
-| **V-07 — Executor, alertas, custo e e-mail** | Configurar Job/Scheduler autenticados e observar progresso/retomada; testar alertas recebidos; validar remetente, entrega de e-mail e Storage; medir backlog, conexões, sobreposição e custo. | Infraestrutura disponível e limites/contratos operacionais acordados com Leno. | Trabalho durável processado sem navegador, falhas detectadas, retomada demonstrada e limites sustentáveis. |
+| **V-07 — Executor, alertas, custo e e-mail** | Configurar Job/Scheduler autenticados e observar progresso/retomada; testar alertas recebidos; validar remetente e entrega de e-mail; medir backlog, conexões, sobreposição e custo. Storage para upload retirado pela seção 70. | Infraestrutura disponível e limites/contratos operacionais acordados com Leno. | Trabalho durável processado sem navegador, falhas detectadas, retomada demonstrada e limites sustentáveis. |
 | **V-08 — Candidato e CI** | Revisar as alterações locais, publicar na branch existente e obter CI remota; identificar SHA, digest e configuração; concluir regressão/capacidade no destino e revisão recíproca. | Revisão de Leno; infraestrutura e integrações disponíveis; aceite financeiro/dados L-08 para fechamento. | Evidências associadas ao mesmo candidato/configuração e parecer conjunto dos critérios aplicáveis. |
 | **V-09 — Implantação** | Coordenar janela e decisão de liberação, executar procedimentos ensaiados e deploy, conferir integrações e observar a operação técnica após a abertura. | Gates anteriores aceitos e procedimentos de dados/financeiro L-09 entregues. | Implantação e recuperação verificadas, runtime acompanhado e ciclos de negócio conciliados com Leno. |
 
@@ -96,9 +123,9 @@ O caso histórico de estorno #3 cancelado/em revisão não comprova devolução 
 
 ## 4. Ordem sugerida de execução
 
-1. **Confirmar entradas externas:** projeto/região/domínio, transportadora, e-mail, Storage e canais de alerta.
+1. **Confirmar entradas externas:** projeto/região/domínio, transportadora, e-mail e canais de alerta; reaproveitar os identificadores já conferidos. Não solicitar credenciais de Storage para upload.
 2. **Preparar a publicação do trabalho local:** revisar arquivos e configuração, manter `homologacao_teste` e obter a CI remota. Não é necessário criar outra branch ou reinstalar Docker como tarefa inicial.
-3. **Configurar e ensaiar homologação no destino:** aplicar o pacote de infraestrutura e validar segurança, frete, e-mail, Storage, consumidor e alertas em etapa autorizada.
+3. **Configurar e ensaiar homologação no destino:** aplicar o pacote de infraestrutura e validar segurança, frete, e-mail, imagens externas, consumidor e alertas em etapa autorizada. Upload deve ser recusado em UI/API conforme entrega de Leno.
 4. **Integrar as entregas financeiras de Leno:** débito, demais métodos, estados, devolução e indicadores. As atividades independentes de infraestrutura podem continuar enquanto esses contratos são concluídos.
 5. **Fechar o candidato:** mesma revisão/artefato/configuração, regressão pertinente, capacidade no destino e revisão cruzada. Medir 30–80 usuários e 2–5 checkouts/minuto somente em ambiente isolado e com provedores controlados.
 6. **Implantar após os aceites:** combinar janela, executar V-09 e acompanhar a operação técnica com a conciliação financeira de Leno.

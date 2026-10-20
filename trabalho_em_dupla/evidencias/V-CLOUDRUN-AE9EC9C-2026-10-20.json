@@ -1,0 +1,695 @@
+{
+  "recordedAt": "2026-10-20T17:30:02.691692+00:00",
+  "executor": "Vanderlei",
+  "scope": "PR10 publication and infrastructure image-policy update; no production or G6 acceptance",
+  "project": "continental-511812",
+  "region": "southamerica-east1",
+  "sourceCommit": "ae9ec9c62b80d927ea9a59de626c62b1e1ca3f60",
+  "sourceArchive": "git archive of the exact approved SHA; no private environment files or local modifications",
+  "ci": {
+    "headSha": "ae9ec9c62b80d927ea9a59de626c62b1e1ca3f60",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39462623396"
+  },
+  "image": {
+    "imageTag": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store:ae9ec9c",
+    "digest": "sha256:d15b9cc7f1ee450df2c5d1e49ad8dc44f453cf6c45601e7d7bdece2c343b8f69",
+    "sourceLabel": "ae9ec9c62b80d927ea9a59de626c62b1e1ca3f60",
+    "os": "linux",
+    "architecture": "amd64",
+    "user": "node"
+  },
+  "cloudRun": {
+    "revision": "continental-hml-ae9ec9c-review",
+    "testUrl": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+    "traffic": [
+      {
+        "revisionName": "continental-hml-17fd1a7-review",
+        "tag": "review-17fd1a7",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      },
+      {
+        "revisionName": "continental-hml-ae9ec9c-review",
+        "tag": "review-ae9ec9c",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-d63ad8a-review",
+        "tag": "review-d63ad8a",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-eff10bf-dashboard",
+        "tag": "dashboard-eff10bf",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+      }
+    ],
+    "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0165e678e299c6f6fc6169ca675fa9f6f42f7bc11c5840bbf9803944759788b0",
+    "resolvedDigest": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0165e678e299c6f6fc6169ca675fa9f6f42f7bc11c5840bbf9803944759788b0",
+    "ready": true,
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+    },
+    "previousBindingsAndTrafficPreserved": true
+  },
+  "database": {
+    "at": "2026-10-20T17:23:32.782Z",
+    "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+    "database": "neondb",
+    "store": {
+      "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "slug": "continental-homologacao",
+      "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app"
+    },
+    "appliedMigrations": 34,
+    "pending": [],
+    "failed": [],
+    "checksumMismatches": [],
+    "readOnly": true,
+    "migrationExecuted": false
+  },
+  "smoke": {
+    "at": "2026-10-20T17:28:16.282Z",
+    "checks": [
+      {
+        "base": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/loja/active",
+        "status": 200,
+        "location": null,
+        "expectedTenant": true
+      },
+      {
+        "base": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 307,
+        "location": "/login"
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/products",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/loja/active",
+        "status": 200,
+        "location": null,
+        "expectedTenant": true
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/admin",
+        "status": 307,
+        "location": "/login"
+      },
+      {
+        "path": "/api/checkout",
+        "method": "POST",
+        "status": 503,
+        "checkoutPaused": true
+      }
+    ],
+    "passed": true
+  },
+  "admin": {
+    "startedAt": "2026-10-20T17:29:12.148Z",
+    "temporaryAdminExplicitlyAuthorized": true,
+    "checks": [
+      {
+        "label": "homologation identity",
+        "passed": true
+      },
+      {
+        "label": "temporary admin login",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "secure admin session",
+        "passed": true
+      },
+      {
+        "label": "/admin",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/products",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/orders",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/customers",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/settings",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/admin/fidelidade",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/users",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/orders",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/freight",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "/api/admin/loyalty/reports",
+        "passed": true,
+        "status": 200
+      },
+      {
+        "label": "browser login form",
+        "passed": true
+      },
+      {
+        "label": "loaded home images not broken",
+        "passed": true
+      },
+      {
+        "label": "browser /admin",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/products",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/orders",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/customers",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/settings",
+        "passed": true
+      },
+      {
+        "label": "browser /admin/fidelidade",
+        "passed": true
+      },
+      {
+        "label": "mobile layout /admin",
+        "passed": true
+      },
+      {
+        "label": "mobile menu open close /admin",
+        "passed": true
+      },
+      {
+        "label": "mobile layout /admin/fidelidade",
+        "passed": true
+      },
+      {
+        "label": "mobile menu open close /admin/fidelidade",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/products",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/products 320",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "selected product in confirmation",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct product editor",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/customers",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/customers 320",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct customer profile",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/orders",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/orders 320",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct order detail",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/fidelidade",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/settings",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/products",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/products 390",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "selected product in confirmation",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct product editor",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/customers",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/customers 390",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct customer profile",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/orders",
+        "passed": true
+      },
+      {
+        "label": "mobile cards /admin/orders 390",
+        "passed": true
+      },
+      {
+        "label": "visible control reachable",
+        "passed": true
+      },
+      {
+        "label": "correct order detail",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/fidelidade",
+        "passed": true
+      },
+      {
+        "label": "WhatsApp absent /admin/settings",
+        "passed": true
+      },
+      {
+        "label": "no business mutation requested",
+        "passed": true
+      },
+      {
+        "label": "browser admin session revoked",
+        "passed": true,
+        "status": 401
+      },
+      {
+        "label": "relative logout redirect",
+        "passed": true
+      },
+      {
+        "label": "revoked API session rejected",
+        "passed": true
+      },
+      {
+        "label": "anonymous denied after logout",
+        "passed": true,
+        "status": 401
+      }
+    ],
+    "browser": [
+      {
+        "path": "/admin",
+        "heading": "Dashboard",
+        "title": "Dashboard | Painel Administrativo",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/products",
+        "heading": "Produtos & Variantes",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/orders",
+        "heading": "Gestão de Pedidos",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/customers",
+        "heading": "Clientes Continental",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/settings",
+        "heading": "PIX, Contato & Logística",
+        "title": "Painel Admin | Continental — Homologação",
+        "errorPage": false
+      },
+      {
+        "path": "/admin/fidelidade",
+        "heading": "Fidelidade & Pontos",
+        "title": "Fidelidade & Pontos | Admin Continental | Admin — Continental — Homologação",
+        "errorPage": false
+      }
+    ],
+    "cleanup": true,
+    "homeImages": {
+      "total": 69,
+      "loaded": 22,
+      "broken": 0
+    },
+    "mobile": [
+      {
+        "route": "/admin",
+        "geometry": {
+          "width": 390,
+          "pageWidth": 390,
+          "menuWidth": 42,
+          "menuBottom": 54,
+          "mainTop": 67
+        },
+        "openClosePassed": true
+      },
+      {
+        "route": "/admin/fidelidade",
+        "geometry": {
+          "width": 390,
+          "pageWidth": 390,
+          "menuWidth": 42,
+          "menuBottom": 54,
+          "mainTop": 67
+        },
+        "openClosePassed": true
+      }
+    ],
+    "mobileCards": [
+      {
+        "route": "/admin/products",
+        "width": 320,
+        "geometry": {
+          "width": 320,
+          "pageWidth": 320,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 41,
+              "right": 156,
+              "width": 115,
+              "height": 44
+            },
+            {
+              "left": 164,
+              "right": 279,
+              "width": 115,
+              "height": 44
+            }
+          ]
+        }
+      },
+      {
+        "route": "/admin/customers",
+        "width": 320,
+        "geometry": {
+          "width": 320,
+          "pageWidth": 320,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 42,
+              "right": 278,
+              "width": 236,
+              "height": 44
+            }
+          ]
+        }
+      },
+      {
+        "route": "/admin/orders",
+        "width": 320,
+        "geometry": {
+          "width": 320,
+          "pageWidth": 320,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 41,
+              "right": 279,
+              "width": 238,
+              "height": 44
+            }
+          ]
+        }
+      },
+      {
+        "route": "/admin/products",
+        "width": 390,
+        "geometry": {
+          "width": 390,
+          "pageWidth": 390,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 41,
+              "right": 191,
+              "width": 150,
+              "height": 44
+            },
+            {
+              "left": 199,
+              "right": 349,
+              "width": 150,
+              "height": 44
+            }
+          ]
+        }
+      },
+      {
+        "route": "/admin/customers",
+        "width": 390,
+        "geometry": {
+          "width": 390,
+          "pageWidth": 390,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 42,
+              "right": 348,
+              "width": 306,
+              "height": 44
+            }
+          ]
+        }
+      },
+      {
+        "route": "/admin/orders",
+        "width": 390,
+        "geometry": {
+          "width": 390,
+          "pageWidth": 390,
+          "display": "grid",
+          "controls": [
+            {
+              "left": 41,
+              "right": 349,
+              "width": 308,
+              "height": 44
+            }
+          ]
+        }
+      }
+    ],
+    "blockedBusinessWrites": [],
+    "browserCleanup": true,
+    "finishedAt": "2026-10-20T17:29:35.632Z"
+  },
+  "cleanupVerification": {
+    "at": "2026-10-20T17:29:58.422Z",
+    "readOnly": true,
+    "temporaryAdminCount": 0,
+    "temporaryBrowserProfiles": 0
+  },
+  "firstAttempt": {
+    "result": "Harness checked the order title before the detail read completed",
+    "fix": "Wait for the loaded order title; no application change",
+    "temporaryAdminRemoved": true,
+    "temporaryBrowserProfileRemoved": true,
+    "businessMutationRequests": []
+  },
+  "operationalInventory": {
+    "at": "2026-10-20T17:30:09.046355+00:00",
+    "jobs": [],
+    "schedulerApiEnabled": false,
+    "changes": false
+  },
+  "imagePolicy": {
+    "received": true,
+    "storageProvisioningTasksRemoved": true,
+    "storageSecretBindingsRemovedFromGenerator": [
+      "SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY"
+    ],
+    "storageBindingsPresentInCandidate": false,
+    "resourcesCreatedOrDeleted": false,
+    "unboundResourcesElsewhere": "NOT_CHECKED",
+    "legacyDependenciesForLeno": [
+      "app/api/upload/route.ts",
+      "lib/supabase/storage.ts"
+    ],
+    "permanentUiAndApiUploadDenialAcceptance": "PENDING_LENO",
+    "fullNuvemshopReferenceAudit": "PENDING_LENO"
+  },
+  "postSourceGeneratorValidation": {
+    "operationsTestsPassed": 27,
+    "operationsTestsFailed": 0,
+    "changedGeneratorAndTestLint": "PASS",
+    "includedInDeployedImage": false
+  },
+  "preserved": {
+    "previousTraffic": true,
+    "previousRevisions": true,
+    "vercelDomain": true,
+    "webhookUntouched": true,
+    "triggersUntouched": true,
+    "financialProcessingDisabled": true,
+    "mainReadOnly": true,
+    "sharedSchemaUnchanged": true
+  },
+  "limits": [
+    "Mobile browser emulation, not acceptance on every physical device.",
+    "Home sample: 22 loaded images, no broken loaded images; 69 total elements does not prove all images.",
+    "Basic UI navigation is not independent financial or business acceptance.",
+    "Temporary authorized admin and sessions were the only intentional shared data writes.",
+    "Cloud Scheduler API disabled: absence of regional Cloud Run Jobs does not prove no other triggers exist.",
+    "Vercel, Cloudflare, webhook, alert delivery and general IAM not re-audited in this publication.",
+    "Email delivery/reset, permanent image upload denial and G6 operational acceptance remain pending."
+  ]
+}

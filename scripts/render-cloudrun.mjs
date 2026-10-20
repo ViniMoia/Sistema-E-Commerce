@@ -32,7 +32,7 @@ export function cloudRunManifests(c) {
           value('INSTALLMENT_MONTHLY_RATE', '0.0299'), value('INSTALLMENT_MIN_VALUE', '20'),
           value('ASAAS_API_URL', c.environment === 'SANDBOX' ? 'https://api-sandbox.asaas.com/v3' : 'https://api.asaas.com/v3'),
           ...['DATABASE_URL', 'DIRECT_URL', 'SESSION_SECRET', 'FREIGHT_QUOTE_SECRET', 'CRON_SECRET', 'ASAAS_API_KEY',
-            'ASAAS_WEBHOOK_TOKEN', 'ASAAS_ENABLED_LOJA_IDS', 'RESEND_API_KEY', 'EMAIL_FROM', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].map(secret)] }],
+            'ASAAS_WEBHOOK_TOKEN', 'ASAAS_ENABLED_LOJA_IDS', 'RESEND_API_KEY', 'EMAIL_FROM'].map(secret)] }],
     } }, traffic: [{ latestRevision: true, percent: 100 }],
   } };
   artifacts['web-invoker-policy.json'] = { bindings: [{ role: 'roles/run.invoker', members: ['allUsers'] }] };
