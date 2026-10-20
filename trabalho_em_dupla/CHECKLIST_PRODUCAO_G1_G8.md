@@ -1,5 +1,16 @@
 # Checklist de produção G1–G8
 
+**Atualização de 20/10 — prevalece sobre avisos históricos abaixo:** a candidata
+`17fd1a7`, com menu móvel e código G6, foi publicada na revisão
+`continental-hml-17fd1a7-review`, com 0% do tráfego e URL de teste disponível.
+Publicação, migrations existentes e acesso básico estão documentados na seção
+68 do Replanejamento. A [devolutiva da seção 69](DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md)
+e a [continuação de Vanderlei](CONTINUACAO_VANDERLEI_2026-10-20.md) distinguem
+entregas concluídas das pendências atuais. Permanecem abertos aceite de negócio,
+operação G6, e-mail/Storage, capacidade e recuperação por outro operador.
+Os itens antigos de integrar/publicar essa candidata estão superados; não
+repetir deploy ou migration para fechar documentação.
+
 **Estado vigente — 19/10:** PR #8 integrado à `homologacao_teste` em **`d63ad8a1ab2d712153177155eae518d3eddcdc86`**, com [CI após integração aprovada](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39295357722). A candidata contém dashboard/fidelidade, retorno físico integral e resultado de chargeback. Publicação e aceite no Cloud Run seguem pendentes de comprovação por Vanderlei. Atribuições e formato do retorno estão na **seção 66 do replanejamento**; [evidência GitHub](evidencias/L-CI-INTEGRACAO-2026-10-19.json). As referências a `55a3003` e à preparação sem commit abaixo são históricas e foram superadas nesse aspecto; não são novos bloqueios de integração.
 
 Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produção](../diversos/CORRECOES/Correcoes_logicas/Correcao_logica_1/trabalho_em_dupla/Replanejamento/REPLANEJAMENTO_PRODUCAO_48H.md), inclusive decisões posteriores à matriz original. **Produção ainda sem aceite.** Este documento organiza evidências e condições de fechamento; não autoriza operações remotas nem altera o escopo comercial.

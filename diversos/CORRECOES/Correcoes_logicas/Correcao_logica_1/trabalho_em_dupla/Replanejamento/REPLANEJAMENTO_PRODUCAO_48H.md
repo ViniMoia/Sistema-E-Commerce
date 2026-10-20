@@ -1948,3 +1948,23 @@ Inventário antes e depois: nenhum Cloud Run Job e API Scheduler desativada. A l
 As verificações acima cobrem acesso e a regressão básica do menu. A conferência conjunta móvel dos relatórios, apuração independente, aceite de retorno físico e chargeback continuam separados. Não foram repetidos estornos, rearmado o pedido #3, pago/cancelado o #8 ou criado caso financeiro para gerar sinais.
 
 **Evidência sanitizada:** [V-CLOUDRUN-17FD1A7-2026-10-20.json](../../../../../../trabalho_em_dupla/evidencias/V-CLOUDRUN-17FD1A7-2026-10-20.json). Artefatos auxiliares locais em `artifacts/cloudrun-17fd1a7-20261020/`, ignorados pelo Git. Próxima ação: Leno e Vanderlei usam a URL de teste para a conferência móvel e os aceites planejados; promoção de tráfego, abertura de compras e ativação operacional G6 permanecem etapas próprias.
+
+
+## 70. Continuação de Vanderlei: CI, e-mail e inventário operacional — 20/10/2026
+
+A seção 69 foi consultada na cópia de direcionamento de 20/10, proveniente de
+`3c3bf725e96f33bcb38143cfd2e3f4c017298049`. Devolutiva e inventário disponíveis em
+[DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md](../../../../../../trabalho_em_dupla/DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md).
+A publicação da seção 68 está preservada; nenhum novo deploy nesta rodada.
+
+Corrigidas lacunas do harness de navegador (prontidão, diagnóstico sanitizado e
+encerramento), a inclusão indevida de artefatos antigos em TypeScript/lint e o
+fallback de e-mail que simulava sucesso em produção sem chave Resend. A falta de
+chave/remetente e credenciais Storage vinculados à candidata foi conferida por
+leitura. A correção de código ainda exige publicação coordenada para ter efeito
+no serviço existente. Não se afirmou exposição efetiva de um token remoto.
+
+[Entregas, validação e bloqueios desta rodada](../../../../../../trabalho_em_dupla/CONTINUACAO_VANDERLEI_2026-10-20.md).
+Permanecem pendentes acessos externos, destinatário/substituto, configuração de
+e-mail/Storage, ensaio G6 revisado com Leno e demais aceites G1–G8. Nenhuma
+ativação financeira, alteração de webhook, promoção ou escrita no banco principal.

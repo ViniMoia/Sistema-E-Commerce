@@ -15,8 +15,10 @@ export function getEmailService(): IEmailService {
     return currentEmailService;
   }
 
-  // Se houver chave do Resend configurada e não estivermos explicitamente em teste, usa Resend
-  if (process.env.RESEND_API_KEY && process.env.NODE_ENV !== "test") {
+  // Production must never acknowledge a simulated delivery. The real provider
+  // returns a configuration failure when its key is missing, without email data.
+  if (process.env.NODE_ENV === "production" ||
+    (process.env.RESEND_API_KEY && process.env.NODE_ENV !== "test")) {
     currentEmailService = new ResendEmailService();
   } else {
     currentEmailService = new DevEmailService();

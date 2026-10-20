@@ -1,0 +1,317 @@
+{
+  "at": "2026-10-20T14:38:00.302712+00:00",
+  "executor": "Vanderlei",
+  "sourceDocumentCommit": "3c3bf725e96f33bcb38143cfd2e3f4c017298049",
+  "sourceDocumentSection": 69,
+  "branchConsulted": "docs/aceite-e-devolutiva-20261020",
+  "changes": {
+    "deployed": false,
+    "trafficChanged": false,
+    "flagsChanged": false,
+    "apiEnabled": false,
+    "webhookChanged": false,
+    "financialProcessingInvoked": false,
+    "jobInvoked": false,
+    "notificationsSent": false
+  },
+  "runtime": {
+    "at": "2026-10-20T14:31:49.624280+00:00",
+    "sourceCommit": "17fd1a7456441fd98c32957116c7f1247c68be22",
+    "revision": "continental-hml-17fd1a7-review",
+    "latestReadyRevision": "continental-hml-17fd1a7-review",
+    "ready": true,
+    "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:fc46874ed4993a46c1e4e4c601483650356c5619fd6123201d71abbf5dd02368",
+    "testUrl": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+    },
+    "traffic": [
+      {
+        "revisionName": "continental-hml-17fd1a7-review",
+        "tag": "review-17fd1a7",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      },
+      {
+        "revisionName": "continental-hml-d63ad8a-review",
+        "tag": "review-d63ad8a",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-eff10bf-dashboard",
+        "tag": "dashboard-eff10bf",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+      }
+    ],
+    "comparedTo": "V-CLOUDRUN-17FD1A7-2026-10-20.json",
+    "sameImage": true,
+    "sameFlags": true,
+    "sameEnvironmentExceptAliases": true,
+    "sameAliases": true,
+    "sameTraffic": true,
+    "publicCloudRunInvoker": true,
+    "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com"
+  },
+  "access": {
+    "at": "2026-10-20T14:35:00.156006+00:00",
+    "authenticatedLoginRepeated": false,
+    "checks": [
+      {
+        "path": "/",
+        "status": 200,
+        "redirectPath": ""
+      },
+      {
+        "path": "/login",
+        "status": 200,
+        "redirectPath": ""
+      },
+      {
+        "path": "/admin",
+        "status": 307,
+        "redirectPath": "/login"
+      },
+      {
+        "path": "/api/admin/users",
+        "status": 401,
+        "redirectPath": ""
+      }
+    ]
+  },
+  "infrastructure": {
+    "at": "2026-10-20T14:32:36.457539+00:00",
+    "enabledRelevantApis": [
+      "iam.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
+      "run.googleapis.com",
+      "secretmanager.googleapis.com"
+    ],
+    "jobs": {
+      "ok": true,
+      "data": [],
+      "complete": true,
+      "source": "gcloud run jobs list without region filter",
+      "at": "2026-10-20T14:34:58.449439+00:00"
+    },
+    "channels": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": []
+    },
+    "policies": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": []
+    },
+    "serviceAccounts": [
+      {
+        "email": "15531616695-compute@developer.gserviceaccount.com",
+        "disabled": false
+      },
+      {
+        "email": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "disabled": false
+      }
+    ],
+    "serviceAccountProjectRoles": [],
+    "cronSecretServiceAccountBindings": [
+      {
+        "role": "roles/secretmanager.secretAccessor",
+        "members": [
+          "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+        ]
+      }
+    ],
+    "loggingMetrics": [],
+    "schedulerJobs": {
+      "ok": false,
+      "reason": "SERVICE_DISABLED",
+      "status": "not_checked"
+    },
+    "readFailures": {
+      "projectIam": "SERVICE_DISABLED"
+    },
+    "changes": false
+  },
+  "applicationReadOnly": {
+    "at": "2026-10-20T14:31:52.583355+00:00",
+    "method": "GET_ONLY",
+    "applicationBacklog": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "schemaVersion": 1,
+        "at": "2026-10-20T14:31:49.360Z",
+        "accountScope": "sandbox-hml",
+        "inbox": [
+          {
+            "_count": 30,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "READY"
+          }
+        ],
+        "outbox": [
+          {
+            "_count": 22,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "DEAD_LETTER"
+          }
+        ],
+        "uncertain": 0,
+        "overdue": 1,
+        "abandonedLeases": 0,
+        "operations": [
+          {
+            "_count": 13,
+            "status": "COMPLETED",
+            "kind": "REFUND"
+          },
+          {
+            "_count": 2,
+            "status": "COMPLETED",
+            "kind": "CANCEL"
+          },
+          {
+            "_count": 1,
+            "status": "PENDING",
+            "kind": "REFUND"
+          }
+        ],
+        "untrackedLegacyOrders": 0,
+        "oldestUnresolvedInboxAt": "2026-10-17T07:01:24.694Z",
+        "supervision": {
+          "schemaVersion": 1,
+          "reviewAttempts": 1,
+          "chargebackReviews": 0,
+          "physicalReturnReviews": 0,
+          "heldOperations": 1,
+          "emailDeadLetters": 0,
+          "expiredQueueLeases": 0,
+          "foreignAccountAttempts": 0,
+          "oldestUnresolvedOutboxAt": "2026-10-10T00:59:17.814Z",
+          "oldestPendingEmailAt": null,
+          "oldestDueReconciliationAt": "2026-10-15T16:32:06.938Z"
+        }
+      }
+    },
+    "asaasWebhooks": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "hasMore": false,
+        "totalCount": 1,
+        "webhooks": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "enabled": true,
+            "interrupted": false,
+            "sendType": "SEQUENTIALLY",
+            "apiVersion": 3,
+            "alertsEmailConfigured": true
+          }
+        ]
+      }
+    },
+    "financialProcessingInvoked": false,
+    "jobInvoked": false,
+    "changes": false
+  },
+  "localSchedulers": {
+    "at": "2026-10-20T14:35:43.4392831Z",
+    "ok": true,
+    "scope": "This Windows computer; task names and action arguments matching project/payment scripts",
+    "tasks": []
+  },
+  "costProposal": {
+    "at": "2026-10-20T14:35:00.172430+00:00",
+    "source": "https://cloud.google.com/run/pricing",
+    "region": "southamerica-east1",
+    "billing": "Jobs / instance-based",
+    "cpuUsdPerVcpuSecond": 2.16e-05,
+    "memoryUsdPerGibSecond": 2.4e-06,
+    "minimumSecondsPerExecution": 60,
+    "vcpu": 1,
+    "gib": 0.5,
+    "runMinimumUsd": 0.0013679999999999999,
+    "pilot60RunsComputeUsd": 0.08208,
+    "monthly30DaysEveryMinuteComputeUsd": 59.09759999999999,
+    "monthly30DaysEvery5MinutesComputeUsd": 11.819519999999999,
+    "monthly30DaysHourlyComputeUsd": 0.98496,
+    "freeTierApplied": false,
+    "otherCostsIncluded": false
+  },
+  "externalInventory": {
+    "cloudflare": {
+      "name": "continental-pagamentos-hml",
+      "currentState": "NOT_VERIFIED_NO_AUTHENTICATED_ACCESS",
+      "historicalState": "disabled",
+      "historicalObservedAt": "2026-10-16T19:43:37Z",
+      "historicalSource": "operator report recorded in repository",
+      "repositoryConfig": {
+        "crons": [],
+        "enabled": false,
+        "mode": "status"
+      },
+      "invokedThisStage": false
+    },
+    "vercel": {
+      "project": "continental-prototipo",
+      "schedulerState": "NOT_VERIFIED_NO_AUTHENTICATED_ACCESS",
+      "webhookTargetVerifiedByAsaas": true
+    },
+    "manualProcessing": {
+      "script": "scripts/homologation/process-payments-once.ps1",
+      "invokedThisStage": false,
+      "lastExecution": "NOT_VERIFIED"
+    },
+    "otherMachines": "NOT_VERIFIED"
+  },
+  "proposedWindow": {
+    "date": "2026-10-21",
+    "startBrt": "14:00",
+    "endBrt": "15:00",
+    "approved": false,
+    "scheduled": false,
+    "mode": "supervision",
+    "intervalSeconds": 60,
+    "requiredBeforeStart": [
+      "external trigger inventory",
+      "approved read-only case/baseline",
+      "resources and least-privilege IAM",
+      "notification channel and nominal responsible/substitute",
+      "operator availability"
+    ]
+  },
+  "alertOwnership": {
+    "acceptedPrimary": "NOT_DEFINED",
+    "acceptedSubstitute": "NOT_DEFINED",
+    "proposedTechnicalOwner": "Vanderlei",
+    "proposedFinancialReviewer": "Leno"
+  },
+  "limits": [
+    "Backlog snapshot is installation-wide and does not identify individual cases.",
+    "No financial processing, queue replay, or operational G6 acceptance.",
+    "Missing leases at one instant does not exclude all in-flight requests.",
+    "Asaas interrupted=false does not prove empty delivery queue.",
+    "A historical disabled event does not prove the present Cloudflare state."
+  ]
+}

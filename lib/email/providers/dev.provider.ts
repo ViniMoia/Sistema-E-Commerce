@@ -17,6 +17,9 @@ export class DevEmailService implements IEmailService {
   public sentEmails: RecordedEmail[] = [];
 
   async sendEmail(options: SendEmailOptions): Promise<EmailResult> {
+    if (process.env.NODE_ENV === "production") {
+      return { success: false, error: "DEV_EMAIL_DISABLED_IN_PRODUCTION" };
+    }
     const messageId = `dev-email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     this.sentEmails.push({
       options,
@@ -25,13 +28,7 @@ export class DevEmailService implements IEmailService {
     });
 
     if (process.env.NODE_ENV !== "test") {
-      console.log(`\n================== [DEV TRANSACTIONAL EMAIL] ==================`);
-      console.log(`Para: ${Array.isArray(options.to) ? options.to.join(", ") : options.to}`);
-      console.log(`Assunto: ${options.subject}`);
-      console.log(`De: ${options.from || "default"}`);
-      console.log(`---------------------------------------------------------------`);
-      console.log(options.text || "(Apenas corpo HTML fornecido)");
-      console.log(`===============================================================\n`);
+      console.log("[DEV_EMAIL_RECORDED] Simulated locally; no delivery.");
     }
 
     return {

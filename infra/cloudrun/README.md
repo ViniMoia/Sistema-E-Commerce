@@ -1,5 +1,11 @@
 # Cloud Run — pacote de preparação do Vanderlei
 
+**Estado em 20/10/2026:** código de supervisão integrado e publicado na candidata
+`17fd1a7`, com CI aprovada, sem promoção de tráfego. Os avisos de preparação
+local abaixo preservam o histórico de 19/10. Jobs, agendas e alertas reais
+continuam sem aceite operacional. Ver [devolutiva G6](../../trabalho_em_dupla/DEVOLUTIVA_VANDERLEI_SECAO_69_2026-10-20.md)
+e [continuação de Vanderlei](../../trabalho_em_dupla/CONTINUACAO_VANDERLEI_2026-10-20.md).
+
 ## Transição com Vercel e Cloud Run simultâneos
 
 `TENANT_HOST_ALIASES` é uma variável somente do servidor: um objeto JSON de hosts

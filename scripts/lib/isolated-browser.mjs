@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer, request as httpRequest } from 'node:http';
 import { testServerConfig } from '../../lib/testing/database-policy.ts';
 import { browserExecutable } from './browser-executable.mjs';
 import { browserProtocol } from './browser-protocol.mjs';
+import { observeBrowserProcess, waitForBrowserPage, waitForBrowserStop } from './browser-startup.mjs';
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 /** Fixture-only browser/proxy. Never attaches to a user's browser/profile or
@@ -58,32 +59,36 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
   const origin = 'http://127.0.0.1:' + proxy.address().port;
   const child = spawn(executable, ['--headless=new', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--user-data-dir=' + profile,
     '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--disable-sync',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost', 'about:blank'], { shell: false, windowsHide: true, stdio: 'ignore' });
-  let spawnError;
-  child.on('error', error => { spawnError = error; });
+    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost', 'about:blank'], { shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+  const processState = observeBrowserProcess(child);
   let socket, send;
   const close = async () => {
     if (socket?.readyState === 1) { try { await send('Browser.close', {}, undefined, 3000); } catch {} socket.close(); }
-    for (let i=0; child.exitCode === null && i<30; i++) await pause(100);
-    if (child.exitCode === null) {
+    if (child.pid && !await waitForBrowserStop(processState)) {
       if (process.platform === 'win32') await new Promise(resolve => { const kill = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore', shell: false }); kill.on('exit', resolve); kill.on('error', resolve); });
       else child.kill('SIGTERM');
     }
+    let stopped = await waitForBrowserStop(processState);
+    if (!stopped && child.pid && process.platform !== 'win32') {
+      child.kill('SIGKILL');
+      stopped = await waitForBrowserStop(processState);
+    }
     for (const socket of upgradeSockets) socket.destroy();
     proxy.closeAllConnections(); await new Promise(resolve => proxy.close(resolve));
+    if (!stopped) throw new Error('BROWSER_STOP_TIMEOUT: owned temporary profile preserved');
     const absolute = path.resolve(profile), base = path.resolve(tmpdir());
     if (path.dirname(absolute) !== base || !path.basename(absolute).startsWith('commerce-browser-')) throw new Error('BROWSER_CLEANUP_SCOPE_INVALID');
-    await rm(absolute, { recursive: true, force: true }).catch(() => {});
+    await rm(absolute, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   };
   const events = new Map(); const diagnostics = [];
   try {
-    let port;
-    for (let i=0; i<100; i++) { if (spawnError) throw spawnError; try { port = Number((await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); if (port) break; } catch {} await pause(100); }
-    if (!port) throw new Error('BROWSER_START_FAILED');
-    const tabs = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json();
-    const page = tabs.find(tab => tab.type === 'page'); if (!page) throw new Error('BROWSER_PAGE_MISSING');
+    const page = await waitForBrowserPage({ child, state: processState, profile });
     socket = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { socket.close(); reject(new Error('BROWSER_DEBUG_SOCKET_TIMEOUT')); }, 3000);
+      socket.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
+      socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('BROWSER_DEBUG_SOCKET_FAILED')); }, { once: true });
+    });
     send = browserProtocol(socket);
     socket.addEventListener('message', event => {
       const message = JSON.parse(event.data);
@@ -117,5 +122,9 @@ export async function isolatedBrowser({ host, intercept = async (_request) => nu
       click: async text => evaluate('(() => { const e=[...document.querySelectorAll("button")].find(e=>e.textContent.includes(' + JSON.stringify(text) + ')); if(!e||e.disabled) throw Error("button unavailable"); e.click(); })()'),
       on: (method, callback) => { const callbacks = events.get(method) ?? []; callbacks.push(callback); events.set(method, callbacks); },
     };
-  } catch (error) { await close(); throw error; }
+  } catch (error) {
+    try { await close(); }
+    catch (cleanupError) { throw new AggregateError([error, cleanupError], 'BROWSER_START_AND_CLEANUP_FAILED'); }
+    throw error;
+  }
 }

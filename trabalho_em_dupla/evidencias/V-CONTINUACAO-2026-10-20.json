@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-20T15:00:24.898090+00:00",
+  "revision": "continental-hml-17fd1a7-review",
+  "checks": [
+    {
+      "variable": "SUPABASE_URL",
+      "binding": null,
+      "deployedPresent": false,
+      "privateFilePresent": false,
+      "matchesPrivateFile": false,
+      "deployedHost": null,
+      "privateHost": null
+    },
+    {
+      "variable": "SUPABASE_SERVICE_ROLE_KEY",
+      "binding": null,
+      "deployedPresent": false,
+      "privateFilePresent": false,
+      "matchesPrivateFile": false
+    },
+    {
+      "variable": "RESEND_API_KEY",
+      "binding": null,
+      "deployedPresent": false,
+      "privateFilePresent": true,
+      "matchesPrivateFile": false
+    },
+    {
+      "variable": "EMAIL_FROM",
+      "binding": null,
+      "deployedPresent": false,
+      "privateFilePresent": false,
+      "matchesPrivateFile": false
+    }
+  ],
+  "writes": false,
+  "externalProviderCalls": false,
+  "localValidation": {
+    "unit": 846,
+    "toolTests": 27,
+    "browserTests": 9,
+    "typescript": "passed",
+    "lint": {
+      "errors": 0,
+      "warnings": 17
+    },
+    "negativeIsolation": "passed",
+    "disposablePostgresRemoved": true
+  },
+  "changes": {
+    "deployed": false,
+    "trafficChanged": false,
+    "financialProcessingInvoked": false,
+    "providerCalls": false
+  },
+  "generatedAt": "2026-10-20T15:05:50.767679+00:00"
+}
