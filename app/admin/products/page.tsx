@@ -12,7 +12,6 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  Tag,
 } from "lucide-react";
 
 interface ProductVariant {
@@ -138,8 +137,8 @@ export default function AdminProductsPage() {
       {/* Tabela de Produtos Canônica Continental */}
       <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
+          <table className="block w-full text-left border-collapse md:table">
+            <thead className="hidden md:table-header-group">
               <tr className="bg-[#050B14] border-b border-catalog-gold/30">
                 <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold">
                   Produto / Foto
@@ -158,7 +157,7 @@ export default function AdminProductsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-catalog-gold/15 text-xs font-mono">
+            <tbody className="block divide-y divide-catalog-gold/15 text-xs font-mono md:table-row-group">
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="py-16 text-center">
@@ -191,10 +190,11 @@ export default function AdminProductsPage() {
                   return (
                     <tr
                       key={p.id}
-                      className="hover:bg-white/[0.02] transition-colors group"
+                      data-product-id={p.id}
+                      className="grid grid-cols-2 hover:bg-white/[0.02] transition-colors group md:table-row"
                     >
                       {/* Foto sobre Palco Branco + Nome */}
-                      <td className="py-3.5 px-6">
+                      <td className="block col-span-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="w-14 h-14 bg-white rounded-xl p-1.5 object-contain shrink-0 shadow-sm border border-white/10 flex items-center justify-center overflow-hidden">
                             {p.imageUrl ? (
@@ -208,7 +208,7 @@ export default function AdminProductsPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-white uppercase tracking-tight group-hover:text-catalog-gold transition-colors truncate max-w-md">
+                            <p className="text-sm font-semibold text-white uppercase tracking-tight group-hover:text-catalog-gold transition-colors break-words md:truncate md:max-w-md">
                               {p.name}
                             </p>
                             <p className="text-[11px] text-catalog-muted truncate max-w-sm mt-0.5 font-light">
@@ -219,7 +219,8 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Preço em Destaque Ouro */}
-                      <td className="py-3.5 px-6">
+                      <td className="block min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                        <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Preço base</span>
                         <span className="text-sm font-bold text-catalog-gold tracking-tight">
                           {new Intl.NumberFormat("pt-BR", {
                             style: "currency",
@@ -229,7 +230,8 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Estoque */}
-                      <td className="py-3.5 px-6">
+                      <td className="block min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                        <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Estoque geral</span>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold border ${
                             effectiveStock > 10
@@ -253,13 +255,14 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Variantes de Grade */}
-                      <td className="py-3.5 px-6">
+                      <td className="block col-span-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                        <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Variantes de grade</span>
                         {p.productVariants && p.productVariants.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 max-w-xs">
                             {p.productVariants.slice(0, 3).map((v) => (
                               <span
                                 key={v.id}
-                                className="px-2 py-0.5 rounded-md bg-[#0B132B]/80 border border-catalog-gold/30 text-[10px] text-slate-300"
+                                className="max-w-full break-words px-2 py-0.5 rounded-md bg-[#0B132B]/80 border border-catalog-gold/30 text-[10px] text-slate-300"
                               >
                                 {v.size} {v.color !== "Padrão" && `• ${v.color}`} ({v.stock})
                               </span>
@@ -276,22 +279,26 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Ações */}
-                      <td className="py-3.5 px-6 text-right">
+                      <td className="block col-span-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/admin/products/${p.id}/edit`}
-                            className="w-9 h-9 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/70 hover:bg-catalog-gold/15 text-slate-300 hover:text-catalog-gold transition-colors flex items-center justify-center cursor-pointer shadow-sm"
+                            className="flex-1 min-h-11 gap-2 px-3 md:flex-none md:w-11 md:px-0 rounded-xl border border-catalog-gold/30 bg-[#0B132B]/70 hover:bg-catalog-gold/15 text-slate-300 hover:text-catalog-gold transition-colors flex items-center justify-center cursor-pointer shadow-sm"
                             title="Editar Produto"
+                            aria-label={`Editar ${p.name}`}
                           >
                             <Edit className="w-4 h-4" />
+                            <span className="md:hidden">Editar</span>
                           </Link>
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(p)}
-                            className="w-9 h-9 rounded-xl border border-red-500/30 bg-red-950/40 hover:bg-red-900/40 text-red-400 transition-colors flex items-center justify-center cursor-pointer shadow-sm"
+                            className="flex-1 min-h-11 gap-2 px-3 md:flex-none md:w-11 md:px-0 rounded-xl border border-red-500/30 bg-red-950/40 hover:bg-red-900/40 text-red-400 transition-colors flex items-center justify-center cursor-pointer shadow-sm"
                             title="Excluir Produto"
+                            aria-label={`Excluir ${p.name}`}
                           >
                             <Trash2 className="w-4 h-4" />
+                            <span className="md:hidden">Excluir</span>
                           </button>
                         </div>
                       </td>
@@ -307,13 +314,13 @@ export default function AdminProductsPage() {
       {/* Modal de Confirmação de Exclusão */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-catalog-card border border-catalog-gold/45 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-product-title" className="bg-catalog-card border border-catalog-gold/45 rounded-3xl p-6 sm:p-8 max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto shadow-2xl space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-red-950/60 border border-red-500/50 flex items-center justify-center text-red-400 shrink-0">
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white uppercase font-mono tracking-tight">
+                <h3 id="delete-product-title" className="text-lg font-bold text-white uppercase font-mono tracking-tight">
                   Excluir Produto
                 </h3>
                 <p className="text-xs text-catalog-muted mt-0.5">
@@ -332,7 +339,7 @@ export default function AdminProductsPage() {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}

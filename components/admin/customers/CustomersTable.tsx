@@ -3,10 +3,9 @@
 import * as React from 'react'
 import {
   DataTable,
-  ColumnDef,
-  EmptyState
+  ColumnDef
 } from '@/components/ui'
-import { User, Phone, Mail, ShoppingBag, Calendar, Eye, Search } from 'lucide-react'
+import { Phone, Mail, Eye, Search } from 'lucide-react'
 
 import type { CustomerRow } from '@/services/customer.service'
 import { CUSTOMER_METRICS_TIMEZONE } from '@/lib/commerce/customer-metrics-contract'
@@ -38,7 +37,7 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
     {
       key: 'name',
       header: 'Cliente',
-      render: (val, row) => {
+      render: (val) => {
         const initials = String(val)
           .split(' ')
           .slice(0, 2)
@@ -52,12 +51,8 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
               {initials}
             </div>
             <div className="min-w-0">
-              <span className="font-semibold text-white block truncate hover:text-catalog-gold transition-colors">
+              <span className="font-semibold text-white block break-words md:truncate hover:text-catalog-gold transition-colors">
                 {String(val)}
-              </span>
-              <span className="text-[11px] text-catalog-muted font-mono flex items-center gap-1 sm:hidden">
-                <Mail className="w-3 h-3 text-catalog-gold/70" />
-                {row.email}
               </span>
             </div>
           </div>
@@ -71,7 +66,7 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
         <div className="space-y-0.5">
           <div className="text-neutral-300 font-mono text-xs flex items-center gap-1.5">
             <Mail className="w-3 h-3 text-catalog-gold/70 shrink-0" />
-            <span className="truncate max-w-[200px]">{String(val)}</span>
+            <span className="min-w-0 break-words md:truncate md:max-w-[200px]">{String(val)}</span>
           </div>
           {row.phone && (
             <div className="text-catalog-muted font-mono text-[11px] flex items-center gap-1.5">
@@ -147,8 +142,10 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
       align: 'center',
       render: (_, row) => (
         <button
+          type="button"
+          aria-label={`Ver perfil de ${row.name}`}
           onClick={() => onSelectCustomer(row.id)}
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-mono font-semibold bg-white/5 border border-catalog-gold/30 text-white hover:text-catalog-gold hover:border-catalog-gold hover:bg-catalog-gold/10 transition-all shadow-[0_0_10px_rgba(240,180,14,0.05)] hover:shadow-[0_0_15px_rgba(240,180,14,0.25)] cursor-pointer"
+          className="inline-flex w-full md:w-auto min-h-11 justify-center items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-mono font-semibold bg-white/5 border border-catalog-gold/30 text-white hover:text-catalog-gold hover:border-catalog-gold hover:bg-catalog-gold/10 transition-all shadow-[0_0_10px_rgba(240,180,14,0.05)] hover:shadow-[0_0_15px_rgba(240,180,14,0.25)] cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5 text-catalog-gold" />
           <span>Ver Perfil</span>
@@ -160,6 +157,7 @@ export function CustomersTable({ data, isLoading, onSelectCustomer }: CustomersT
   return (
     <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
       <DataTable
+        mobileCards
         columns={columns}
         data={data}
         keyExtractor={(row) => row.id}

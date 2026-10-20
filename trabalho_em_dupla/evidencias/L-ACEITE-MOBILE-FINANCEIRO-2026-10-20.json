@@ -1,0 +1,92 @@
+{
+  "recordedDate": "2026-10-20",
+  "source": "Cinco capturas enviadas pelo operador nesta conversa; sem acesso remoto ou nova consulta ao banco nesta rodada.",
+  "scope": "Conferencia visual do dashboard em celular e comparacao com os agregados historicos.",
+  "candidateContext": {
+    "reportedCommit": "17fd1a7456441fd98c32957116c7f1247c68be22",
+    "publicationEvidence": "V-CLOUDRUN-17FD1A7-2026-10-20.json",
+    "originVisibleInScreenshots": false,
+    "revisionIndependentlyVerifiedFromScreenshots": false,
+    "displayedConsultedAt": "20/10/2026, 11:19:37",
+    "captureTimestampKnown": false
+  },
+  "observations": {
+    "mobileMenu": "Faixa PAINEL ADMIN separada do titulo; sobreposicao anterior nao aparece nos recortes recebidos.",
+    "floatingWhatsApp": "Sobrepoe valor de estorno e textos durante a rolagem; ajuste necessario no Admin.",
+    "financialCoverage": {
+      "status": "PARTIAL",
+      "ordersWithoutHistoricalEvidence": 0,
+      "ordersUnderReview": 1
+    },
+    "today": {
+      "recognizedGross": 0,
+      "settledGross": 0,
+      "confirmedRefunds": 0,
+      "netRecognized": 0
+    },
+    "monthAndAllTime": {
+      "recognizedGross": 542.67,
+      "settledGross": 124.75,
+      "confirmedRefunds": 417.92,
+      "netRecognized": 124.75,
+      "recognizedOrders": 5,
+      "settledOrders": 3,
+      "refundedOrders": 2
+    },
+    "composition": {
+      "productsAfterDiscounts": 419.15,
+      "freight": 12.3,
+      "financingCharges": 61.32,
+      "recognizedWithoutCompleteComposition": 49.9
+    },
+    "otherIndicators": {
+      "openAmount": 49.9,
+      "cancelledWithoutRecognitionCount": 2,
+      "cancelledWithoutRecognitionAmount": 99.8,
+      "recognizedTicketAfterRefunds": 24.95,
+      "recognizedOrdersPercentage": 63,
+      "orders": 8,
+      "paidOrders": 3,
+      "pendingOrders": 1,
+      "cancelledOrders": 4,
+      "contractedFreight": 12.3
+    }
+  },
+  "comparison": {
+    "historicalEvidence": "L-ACEITE-D63AD8A-2026-10-19.json",
+    "visibleAggregatesMatchHistoricalReference": true,
+    "arithmeticInCents": {
+      "netRecognized": "54267 - 41792 = 12475",
+      "composition": "41915 + 1230 + 6132 + 4990 = 54267",
+      "ticket": "12475 / 5 = 2495"
+    },
+    "limits": [
+      "Capturas em diferentes posicoes de rolagem nao comprovam snapshot atomico, identidade do deployment ou ausencia de alteracoes entre leituras.",
+      "Coincidencia com o historico nao substitui conciliacao atual com banco e provedor.",
+      "Reconhecido menos estornos nao representa lucro ou saldo bancario disponivel.",
+      "Pedido em revisao permanece pendente; fidelidade mobile e aceite completo nao foram encerrados."
+    ]
+  },
+  "followUp": {
+    "change": "Ocultar somente o botao global de suporte da loja em /admin e suas subrotas; preservar suporte na vitrine e links de contato dos pedidos.",
+    "status": "LOCAL_VALIDATION_PASSED_REMOTE_PENDING",
+    "localValidation": {
+      "typescript": "PASS",
+      "eslint": "PASS",
+      "isolatedRunId": "90aff4ac181d27a69a3630a8f3636070",
+      "command": "npm run test:integration:isolated -- tests/integration/loyalty-reporting-browser.test.ts tests/integration/dashboard-financial-browser.test.ts",
+      "testsPassed": 2,
+      "exitCode": 0,
+      "scope": "Banco PostgreSQL descartavel; Admin e fidelidade sem botao global apos rolar; vitrine mantem o botao visivel e link WhatsApp.",
+      "earlierAttempts": [
+        "Provisionamento inicial interrompido antes dos testes porque Docker Desktop estava parado.",
+        "Primeira rodada executada: 1/2 aprovado; assercao de rolagem leu scrollY antes de concluir animacao CSS. Teste ajustado para rolagem instantanea e espera por scrollY > 250; rodada final 2/2 aprovada."
+      ]
+    },
+    "remoteValidation": "Depois da CI e publicacao da revisao sucessora, conferir dashboard e fidelidade no celular, inclusive apos rolar a pagina."
+  },
+  "sharedDatabaseMutationAttempted": false,
+  "financialProcessingAttempted": false,
+  "deploymentAttempted": false,
+  "productionAcceptance": false
+}

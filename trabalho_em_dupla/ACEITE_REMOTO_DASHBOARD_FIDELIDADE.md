@@ -1,5 +1,19 @@
 # Ficha de aceite remoto — dashboard e fidelidade
 
+## Atualização de 20/10 — dashboard no celular
+
+Esta atualização substitui as pendências antigas de CI/publicação do menu descritas no histórico abaixo. A [evidência de Vanderlei para `17fd1a7`](evidencias/V-CLOUDRUN-17FD1A7-2026-10-20.json) registra CI aprovada e publicação de revisão de teste, sem promoção de tráfego. As cinco capturas recebidas agora mostram a faixa **PAINEL ADMIN** separada do título e os agregados financeiros coincidentes com a referência anterior: reconhecido R$ 542,67; liquidação R$ 124,75; estornos R$ 417,92; reconhecido menos estornos R$ 124,75. O aviso de **um pedido em revisão** continua correto e pendente.
+
+**Ajuste adicional:** o botão flutuante de WhatsApp cobre valores e textos durante a rolagem. Correção preparada para ocultar o suporte global da loja em `/admin` e suas subrotas, preservando a vitrine e os links próprios de contato dos pedidos. A mudança exige CI e publicação de revisão sucessora antes da nova conferência remota; as capturas não comprovam essa correção.
+
+Validação local: TypeScript, lint e os dois testes de navegador (dashboard financeiro e fidelidade) aprovados; execução isolada `90aff4ac181d27a69a3630a8f3636070`, saída 0. O teste cobre ausência do botão após rolagem nas duas páginas administrativas e presença do suporte na vitrine.
+
+O [registro desta coleta](evidencias/L-ACEITE-MOBILE-FINANCEIRO-2026-10-20.json) contém valores, limites e estado da validação. A barra de endereço não aparece nas imagens: `17fd1a7` é o contexto informado, não identidade demonstrada pelas capturas. O horário de consulta exibido é **20/10/2026, 11:19:37**; não houve nova consulta ao banco ou ao provedor nesta rodada. A coincidência dos valores não encerra conciliação financeira nem aceite de produção.
+
+**Próxima coleta do operador:** página **Fidelidade & Pontos** no celular, incluindo movimentação comercial e parte inferior. Depois da publicação do ajuste do WhatsApp, conferir também a rolagem das duas páginas na URL da revisão informada por Vanderlei.
+
+## Histórico anterior — preservar datas e revisões de cada rodada
+
 **Retorno da CI de `bcf27aa`:** execução `39355276601` falhou na abertura do menu do teste de fidelidade, após clique sem espera pela hidratação. Ajustada somente a sincronização do teste com o handler real do botão, mantendo as asserções existentes. Rodada local `baa114a2dbb2aafd91f35fdcf33fd410`: dois testes de navegador aprovados, TypeScript e lint aprovados. Aguardar nova CI integral; aprovação local não libera publicação nem encerra o aceite móvel. Detalhes em `mobileReview.ciFollowUp` da evidência vinculada abaixo.
 
 **Evidência de publicação recebida no Git:** o commit de Vanderlei `7882aea` acrescenta [identidade, configuração e acesso de d63ad8a](PUBLICACAO_HOMOLOGACAO_D63AD8A_2026-10-19.md), incluindo recusa de Admin anônimo e revogação após logout. Reaproveitar essa prova no escopo documentado; não solicitar novamente verificações já registradas sem mudança relevante. A correção móvel está sendo enviada no PR #9 e exige nova CI/publicação, seguida de conferência móvel da revisão sucessora. Não atribuir à imagem d63ad8a a correção ainda em revisão.

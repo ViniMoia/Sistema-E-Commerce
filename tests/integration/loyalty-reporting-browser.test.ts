@@ -56,6 +56,10 @@ describe('loyalty reporting on authenticated pages', () => {
       await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "true"');
       await browser.evaluate('document.querySelector(\'button[aria-label="Fechar menu"]\').click()');
       await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "false"');
+      await browser.evaluate('window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" })');
+      await browser.waitFor('window.scrollY > 250');
+      expect(await browser.evaluate('window.scrollY')).toBeGreaterThan(250);
+      expect(await browser.evaluate('document.querySelector(".whatsapp-btn") === null')).toBe(true);
     }
     await browser.navigate('/admin/fidelidade');
     await browser.waitFor(panel + '?.textContent.includes("Resgates devolvidos")', 60000);
@@ -65,5 +69,11 @@ describe('loyalty reporting on authenticated pages', () => {
     await browser.waitFor('document.body.textContent.includes("Pedido de teste")');
     expect(await prisma.loyaltyTransaction.count({ where: { lojaID: f.lojaID } })).toBe(4);
     expect(await prisma.loyaltyWallet.count({ where: { lojaID: f.lojaID } })).toBe(0);
+    // Customer-facing support still appears after scrolling the storefront.
+    await browser.navigate('/');
+    await browser.waitFor('!!document.querySelector(".whatsapp-btn")', 60000);
+    await browser.evaluate('window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" })');
+    await browser.waitFor('!!document.querySelector(".whatsapp-btn.visible")');
+    expect(await browser.evaluate('document.querySelector(".whatsapp-btn").getAttribute("href")')).toMatch(/^https:\/\/wa\.me\//);
   }, 120000);
 });

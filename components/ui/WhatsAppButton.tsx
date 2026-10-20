@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export function WhatsAppButton({ phoneNumber }: { phoneNumber?: string | null }) {
+  const pathname = usePathname();
+  // Store support must not cover administrative reports or order controls.
+  if (pathname === "/admin" || pathname?.startsWith("/admin/")) return null;
+  return <StoreWhatsAppButton phoneNumber={phoneNumber} />;
+}
+
+function StoreWhatsAppButton({ phoneNumber }: { phoneNumber?: string | null }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isTooltipActive, setIsTooltipActive] = useState(false);
   const [hasPrompted, setHasPrompted] = useState(false);

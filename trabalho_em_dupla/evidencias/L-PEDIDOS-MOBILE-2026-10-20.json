@@ -1,0 +1,40 @@
+{
+  "recordedDate": "2026-10-20",
+  "source": "Captura do operador: colunas de status, total e detalhes fora da area inicialmente visivel da lista de pedidos no celular.",
+  "remoteRevisionVisibleInScreenshot": false,
+  "change": {
+    "component": "components/admin/orders/OrdersTable.tsx",
+    "mobile": "Cartoes com numero/data e status no topo, cliente/contato, envio, total e botao Detalhes dentro da largura.",
+    "desktop": "Tabela de seis colunas preservada.",
+    "businessRulesChanged": false
+  },
+  "validation": {
+    "typescript": "PASS",
+    "eslint": "PASS",
+    "diffCheck": "PASS",
+    "isolatedRunId": "95e3da2f9cf0edcaf14397a7a7e41530",
+    "command": "npm run test:integration:isolated -- tests/integration/admin-orders-mobile-browser.test.ts tests/integration/order-reporting-browser.test.ts",
+    "testsPassed": 2,
+    "exitCode": 0,
+    "viewportWidths": [320, 390, 1440],
+    "checks": [
+      "Todos os campos dentro da largura, sem overflow horizontal em 320/390 pixels, inclusive nome/email extensos.",
+      "Cinco estados visiveis: Pendente, Pago, Enviado, Entregue e Cancelado.",
+      "Valor e modalidade de envio exibidos.",
+      "Clique por coordenadas no botao Detalhes abre o pedido correto e consulta seu endpoint.",
+      "A consulta nao envia comandos de alteracao; pedido e versao preservados.",
+      "Desktop mantem tabela.",
+      "Regressao existente aprovada para busca, filtros, paginacao, historico de testes e isolamento entre lojas."
+    ],
+    "limits": "Banco descartavel; prova de acesso aos detalhes nao constitui aceite completo do conteudo do drawer ou dos fluxos financeiros."
+  },
+  "review": {
+    "pullRequest": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/10",
+    "fullCi": "PENDING_FOR_NEW_HEAD",
+    "remoteAcceptance": "PENDING_AFTER_PUBLICATION",
+    "next": "Depois da CI/publicacao, conferir pedidos no celular na URL da nova revisao, incluindo status, total, filtros e abertura de detalhes sem alterar o pedido."
+  },
+  "sharedDatabaseMutationAttempted": false,
+  "deploymentAttempted": false,
+  "productionAcceptance": false
+}
