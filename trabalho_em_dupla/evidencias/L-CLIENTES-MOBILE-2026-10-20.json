@@ -1,0 +1,58 @@
+{
+  "recordedDate": "2026-10-20",
+  "source": "Captura e relato do operador: a tabela de clientes corta as colunas seguintes e deixa Ver Perfil fora da largura visivel.",
+  "remoteRevisionVisibleInScreenshot": false,
+  "change": {
+    "route": "/admin/customers",
+    "mobile": "Cartoes com identificacao, contato, pedidos, LTV, datas e Ver Perfil dentro da largura; nomes e emails longos podem quebrar linha.",
+    "desktop": "Tabela preservada.",
+    "sharedComponent": "DataTable recebe opcao mobileCards, desativada por padrao e habilitada somente na lista de clientes.",
+    "refresh": "Espaco reservado para Consultando base evita deslocar o botao ao atualizar a lista por foco.",
+    "financialRulesChanged": false
+  },
+  "validation": {
+    "status": "LOCAL_PASSED_REMOTE_PENDING",
+    "typescript": "PASS",
+    "eslint": "PASS",
+    "diffCheck": "PASS",
+    "finalRun": {
+      "isolatedRunId": "7087347dd7f1fb38a52fb760b928c9b7",
+      "command": "npm run test:integration:isolated -- tests/integration/admin-customers-mobile-browser.test.ts tests/integration/customer-financial-metrics-browser.test.ts",
+      "testsPassed": 4,
+      "exitCode": 0,
+      "viewportWidths": [320, 390, 1440],
+      "checks": [
+        "Dados e botao Ver Perfil dentro da largura, incluindo nome/email extensos.",
+        "Toque por coordenadas abre o perfil correto em 320 e 390 pixels.",
+        "Perfil e metricas consultados pelo ID esperado; retorno a listagem.",
+        "Nenhuma requisicao de alteracao de cliente; dados do cliente e pedido preservados.",
+        "Tabela desktop e comportamento padrao do historico de pedidos do perfil preservados.",
+        "Tres regressoes financeiras existentes aprovadas."
+      ]
+    },
+    "financialRegression": {
+      "isolatedRunId": "135cf792de687717268c654330a31f0b",
+      "file": "tests/integration/customer-financial-metrics-browser.test.ts",
+      "testsPassed": 3,
+      "scope": "LTV da lista/perfil, atualizacao apos estorno confirmado, base parcial e recuperacao apos falha de leitura.",
+      "overallRunExitCode": 1,
+      "reason": "Teste mobile interrompido na preparacao: cliente ficticio teve email alterado antes de criar pedido com a identidade original. Ordem da preparacao corrigida."
+    },
+    "mobileEarlierAttempt": {
+      "isolatedRunId": "39f64b36e2f76d86cea66330e329a6b1",
+      "result": "TIMEOUT_OPENING_PROFILE",
+      "followUp": "Espera por pintura e toque por coordenadas nao resolveram. Diagnostico posterior identificou deslocamento real de 32px quando Consultando base aparecia ao recuperar foco; pagina corrigida para reservar esse espaco.",
+      "additionalDiagnosticRuns": ["c8fabc454db0f9bccb702270c85505c8", "7b5c5e6f4306f010e258f07ee699d6fa", "4342e1fb19246be3a276d2b831f006dd"]
+    },
+    "limits": "Banco descartavel; acesso ao perfil validado nao significa aceite completo de todos os seus blocos, historico ou indicadores remotos."
+  },
+  "review": {
+    "pullRequest": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/10",
+    "fullCi": "PENDING_FOR_NEW_HEAD",
+    "remoteAcceptance": "PENDING_AFTER_PUBLICATION",
+    "next": "Conferir a lista de clientes na URL da revisao sucessora, abrir e fechar o perfil correto sem alterar dados."
+  },
+  "sharedDatabaseMutationAttempted": false,
+  "deploymentAttempted": false,
+  "productionAcceptance": false
+}

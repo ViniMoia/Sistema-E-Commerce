@@ -152,12 +152,12 @@ export default function CustomersPage() {
           />
         </div>
 
-        {isLoading && (
-          <div className="flex items-center gap-2 text-xs font-mono text-catalog-gold animate-pulse self-start sm:self-auto">
+        <div role="status" className="min-h-4 flex items-center gap-2 text-xs font-mono text-catalog-gold self-start sm:self-auto">
+          {isLoading && <>
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             <span>Consultando base...</span>
-          </div>
-        )}
+          </>}
+        </div>
       </div>
 
       {/* Tabela Canônica de Clientes */}

@@ -25,6 +25,7 @@ export interface DataTableProps<T> {
   keyExtractor: (row: T) => string
   isLoading?: boolean
   emptyState?: React.ReactNode
+  mobileCards?: boolean
 }
 
 export function DataTable<T>({
@@ -33,11 +34,12 @@ export function DataTable<T>({
   keyExtractor,
   isLoading = false,
   emptyState,
+  mobileCards = false,
 }: DataTableProps<T>) {
   return (
     <div className="w-full overflow-x-auto rounded-xl border border-white/5 bg-zinc-950/40 backdrop-blur-md shadow-sm">
-      <Table className="w-full text-sm">
-        <TableHeader className="bg-white/[0.02] border-b border-white/5">
+      <Table className={cn('w-full text-sm', mobileCards && 'block md:table')}>
+        <TableHeader className={cn('bg-white/[0.02] border-b border-white/5', mobileCards && 'hidden md:table-header-group')}>
           <TableRow className="border-b border-white/5 hover:bg-transparent">
             {columns.map((col) => (
               <TableHead
@@ -53,7 +55,7 @@ export function DataTable<T>({
             ))}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className={cn(mobileCards && 'block md:table-row-group')}>
           {isLoading ? (
             Array.from({ length: 5 }).map((_, index) => (
               <SkeletonRow key={`skeleton-${index}`} columns={columns.length} />
@@ -71,9 +73,11 @@ export function DataTable<T>({
             data.map((row) => (
               <TableRow
                 key={keyExtractor(row)}
+                data-row-id={keyExtractor(row)}
                 className={cn(
                   'group transition-colors duration-200 ease-in-out border-b border-white/5 bg-transparent',
-                  'hover:bg-white/[0.02]'
+                  'hover:bg-white/[0.02]',
+                  mobileCards && 'grid grid-cols-1 md:table-row'
                 )}
               >
                 {columns.map((col) => (
@@ -81,10 +85,12 @@ export function DataTable<T>({
                     key={String(col.key)}
                     className={cn(
                       'p-4 align-middle text-zinc-200 text-sm',
-                      col.align === 'center' && 'text-center',
-                      col.align === 'right' && 'text-right'
+                      col.align === 'center' && (mobileCards ? 'md:text-center' : 'text-center'),
+                      col.align === 'right' && (mobileCards ? 'md:text-right' : 'text-right'),
+                      mobileCards && 'block min-w-0 md:table-cell'
                     )}
                   >
+                    {mobileCards && <span className="block mb-2 text-[10px] font-mono uppercase text-catalog-muted md:hidden">{col.header}</span>}
                     {col.render
                       ? col.render(row[col.key], row)
                       : String(row[col.key])}
