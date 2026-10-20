@@ -1886,3 +1886,65 @@ Os manifestos passam a preparar um terceiro Job/agenda para observação, separa
 O ensaio deve registrar SHA/digest/revisão, modo, runId, horários UTC, contagens/motivos, incidente/canal, recebimento, executor, responsável pelo caso, próxima ação e evidência de resolução. Alertas por ausência exigem uma série inicial; testar tanto o observador quanto os processadores. Não limpar revisão, rearmar estornos ou alterar pedidos históricos por SQL para gerar sinal. Baseline e mutações de teste devem pertencer a caso descartável identificado em homologação.
 
 **Não comprovado:** provisionamento, entrega real, destinatário/substituto, custo e cadência sustentáveis, transferência dos acionadores, aceite remoto ou produção. A publicação de `d63ad8a` pode seguir seu procedimento próprio; não presumir que contenha G6. Envio de disputa/documentos ao Asaas e demais lacunas de atendimento continuam separados desta supervisão.
+
+## 68. PR #9 integrado e publicado para teste no Cloud Run — 20/10/2026
+
+**Executor: Vanderlei. Estado: revisão pronta, com 0% de tráfego.** Esta seção atualiza a identidade da candidata e a situação de publicação da seção 67. O código da supervisão G6 e a correção do menu mobile estão publicados; a execução automática, os alertas e a recuperação operacional de G6 continuam reservados à etapa coordenada própria.
+
+### Integração e identidade do artefato
+
+- [PR #9](https://github.com/ViniMoia/Sistema-E-Commerce/pull/9), origem `trabalho/g6-supervisao-20261019`, head `079bc9c4fef4e35f33abf00b615d007796eb9302`.
+- [CI do PR 39359261390](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39359261390): `success`, conferida antes do merge.
+- Merge em `homologacao_teste` às **11:44:37 UTC / 08:44:37 BRT**, commit **`17fd1a7456441fd98c32957116c7f1247c68be22`**.
+- [CI do merge 39417132437](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39417132437): `completed/success`, aguardada antes de enviar a imagem e publicar. Tipagem, lint, unitários, migrations, integração, duas instâncias, manutenção/recuperação, standalone, capacidade isolada e contêiner Linux aprovados.
+- Árvore do merge idêntica à do head aprovado do PR: `c04188add6573f6f1f03c5a8f36de5564fe13516`.
+- Build local Linux/amd64 do `git archive` desse SHA, com Dockerfile/lockfile existentes, Node 22.23.3 e usuário `node`. Arquivos privados de ambiente ficaram fora do contexto da imagem.
+- Projeto / região / serviço: **`continental-511812` / `southamerica-east1` / `continental-hml`**.
+- Repositório da imagem: `southamerica-east1-docker.pkg.dev/continental-511812/releases/store`.
+- Digest do índice enviado: `sha256:adbd6a8f7fd245355344f2b9dd82baa73a92829877fac7e996559b4d0c0b386e`.
+- **Digest Linux/amd64 efetivamente resolvido no Cloud Run:** `sha256:fc46874ed4993a46c1e4e4c601483650356c5619fd6123201d71abbf5dd02368`.
+- **Revisão:** `continental-hml-17fd1a7-review`, Ready=True.
+- **URL de teste:** https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app
+
+### Configuração e tráfego preservados
+
+Distribuição reconferida às **12:17:47 UTC / 09:17:47 BRT**:
+
+| Revisão | Tráfego | Tag |
+|---|---:|---|
+| `continental-hml-896dc56-logout` | 100% | Endereço principal |
+| `continental-hml-eff10bf-dashboard` | 0% | `dashboard-eff10bf`, preservada |
+| `continental-hml-d63ad8a-review` | 0% | `review-d63ad8a`, preservada |
+| `continental-hml-17fd1a7-review` | 0% | `review-17fd1a7`, nova |
+
+Publicação com digest fixado e `--no-traffic`. Acrescentado somente o alias exato do novo host para a loja de homologação `3a82b33c-3646-4272-9a89-80bb1ba327a5`; aliases anteriores e domínio da Vercel preservados. Comparação das demais variáveis/bindings antes e depois e conferência da conta do serviço aprovadas.
+
+```dotenv
+CHECKOUT_PAUSED=true
+APP_MAINTENANCE_MODE=false
+PAYMENT_REMOTE_ENABLED=false
+PAYMENT_WORKER_ENABLED=false
+PAYMENT_EXPIRATION_ENABLED=false
+PAYMENT_DEPLOYMENT_ENVIRONMENT=SANDBOX
+ASAAS_ACCOUNT_SCOPE=sandbox-hml
+```
+
+Fonte privada considerada: `.env.homologacao`. Consulta ao banco em transação somente leitura confirmou loja `continental-homologacao`, 34 migrations aplicadas, nenhuma pendência/falha/divergência de checksum. O diff de `prisma` entre `d63ad8a` e `17fd1a7` é vazio. Não houve migration, classificação, carga ou alteração de dados comerciais.
+
+Inventário antes e depois: nenhum Cloud Run Job e API Scheduler desativada. A limitação anterior de inventário de agendas permanece; não se presume ausência global de acionadores. Nenhum Job/agenda foi criado ou habilitado, nenhuma supervisão ou fila foi invocada, e o webhook permaneceu fora das alterações desta rodada. Recursos e recebimento de alertas G6 continuam sem aceite operacional.
+
+**Ocorrência de publicação resolvida:** a espera local do comando atingiu 240 segundos enquanto o Cloud Run finalizava a prontidão/rotas. Os logs mostraram inicialização do Next.js e sonda TCP aprovada. Sem repetir o deploy, consultas posteriores confirmaram Ready=True, URL HTTP 200, digest correto e distribuição de tráfego preservada. O resultado remoto confirmado, e não o timeout local, fundamenta o estado acima.
+
+### Verificações de acesso
+
+- URL candidata e principal: home, produtos, loja ativa e login retornaram 200; tenant correto; Admin anônimo redirecionou ao login com 307.
+- **29 verificações autenticadas aprovadas**, incluindo login por API/formulário real, cookies HttpOnly/Secure/SameSite=Lax, páginas/APIs do Admin e acesso à fidelidade.
+- Home observada com 69 elementos de imagem, 22 carregados e nenhum quebrado; imagens ainda em lazy loading não foram consideradas validadas.
+- Em **390 × 844 px**, `/admin` e `/admin/fidelidade` apresentaram largura de página de 390 px, botão do menu terminando em 54 px e conteúdo principal iniciando em 67 px. Menu abriu/fechou, sem sobreposição nem transbordamento horizontal nesse ensaio.
+- Logout com 303 e destino relativo `/`; sessões revogadas e acesso anônimo recusados com 401.
+- POST vazio ao checkout recusado com **503 / `CHECKOUT_PAUSED`**, sem compra criada.
+- Administrador sintético previamente autorizado e sessões removidos; consulta somente leitura posterior confirmou zero contas temporárias desse ensaio.
+
+As verificações acima cobrem acesso e a regressão básica do menu. A conferência conjunta móvel dos relatórios, apuração independente, aceite de retorno físico e chargeback continuam separados. Não foram repetidos estornos, rearmado o pedido #3, pago/cancelado o #8 ou criado caso financeiro para gerar sinais.
+
+**Evidência sanitizada:** [V-CLOUDRUN-17FD1A7-2026-10-20.json](../../../../../../trabalho_em_dupla/evidencias/V-CLOUDRUN-17FD1A7-2026-10-20.json). Artefatos auxiliares locais em `artifacts/cloudrun-17fd1a7-20261020/`, ignorados pelo Git. Próxima ação: Leno e Vanderlei usam a URL de teste para a conferência móvel e os aceites planejados; promoção de tráfego, abertura de compras e ativação operacional G6 permanecem etapas próprias.
