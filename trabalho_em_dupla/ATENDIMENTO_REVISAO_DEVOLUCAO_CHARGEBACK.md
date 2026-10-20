@@ -1,5 +1,9 @@
 # G3 — Atendimento de revisão financeira, devolução e chargeback
 
+**Publicação recebida em 20/10:** Vanderlei registrou `17fd1a7`, revisão `continental-hml-17fd1a7-review`, CI do merge aprovada e teste móvel básico aprovado. Fonte: [evidência do executor](evidencias/V-CLOUDRUN-17FD1A7-2026-10-20.json), commit `3eb4023`. Usar [a nova URL de teste](https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/admin/orders) para a coleta, após conferir alterações posteriores e acesso. A entrega de retorno físico/chargeback ainda precisa do aceite por cenário abaixo; implantação não preenche o modelo de coleta.
+
+**Próxima rodada preparada:** a seção 8 contém a matriz de aceite por cenário e o [modelo de coleta remota](modelos/ACEITE_RETORNO_CHARGEBACK.json). Preparação documental, sem execução remota. As regras e os dois painéis consultados não diferem entre `d63ad8a` e `079bc9c`; a correção do layout móvel pertence ao PR #9. A publicação de `d63ad8a` está [documentada por Vanderlei](PUBLICACAO_HOMOLOGACAO_D63AD8A_2026-10-19.md); as afirmações anteriores de publicação pendente abaixo são históricas. A existência da revisão não encerra o aceite desses fluxos.
+
 Preparação de 16/10/2026, baseada na candidata `55a300313570f2a504a8f042ba7f228cd7382e58`. Consultados o código atual e `origin/main` `7f9b26e062ec2654420fecffb6dd78ad3ba1e017` somente leitura. **Procedimento preparado, ainda sem ensaio operacional no destino ou aceite de produção.** Complementa o [checklist G1–G8](CHECKLIST_PRODUCAO_G1_G8.md).
 
 **Atualização de 19/10/2026:** implementados localmente o retorno físico integral e o tratamento de resultados de chargeback descritos abaixo. Essas alterações ainda precisam integrar a candidata publicada; as lacunas de código registradas na preparação de 16/10 são históricas. Envio de disputa/documentos, retornos parciais e aceite operacional continuam pendentes.
@@ -101,6 +105,45 @@ Sequência operacional proposta:
 Os ensaios isolados do retorno integral estão em `physical-return-atomicity.test.ts`, `physical-return-browser.test.ts` e na regressão financeira de `payment-durable-execution.test.ts`. O resultado de chargeback possui `chargeback-results.test.ts` e `chargeback-browser.test.ts`, além das regressões financeiras. O aceite remoto exige a candidata atual publicada. Envio de disputa e acompanhamento de prazo/documentação continuam fora do runtime desta etapa. Reutilizar os testes existentes quando não houver mudança.
 
 **Estado desta entrega:** roteiro e modelo preparados; retorno integral e tratamento dos resultados de chargeback implementados localmente em 19/10. Os 16 testes finais de chargeback, incluindo navegador e rollback, passaram; a rodada anterior aprovou 97 testes de integração/regressão. [Registro técnico e hashes](evidencias/L-CHARGEBACK-RESULTADOS-2026-10-19.json). Operações de teste ficam restritas a fixtures descartáveis. Nenhum evento reenviado, comando financeiro/estoque executado em banco compartilhado, disputa enviada ou produção liberada. G3/G6 continuam abertos conforme suas evidências.
+
+## 8. Matriz da próxima rodada de aceite remoto
+
+Esta rodada começa por **leitura de casos existentes**. Não criar uma contestação, devolver mercadoria fictícia, alterar status ou reenviar eventos para fazer aparecer um painel. A declaração de inspeção física é uma ação de estoque, mesmo com o processamento financeiro desativado.
+
+### Identidade e seleção dos casos
+
+1. Receber de Vanderlei SHA, digest, revisão, URL de teste, tráfego e CI correspondentes. Preencher `deployment` no modelo; o SHA da branch não comprova a imagem servida. Para o aceite móvel, usar a sucessora com a correção publicada, não `review-d63ad8a`.
+2. Em `/admin/orders`, identificar casos existentes da loja de homologação. Anotar somente IDs técnicos, estado e horário em registro privado. Consultar o detalhe por GET e, para a parte física, `GET /api/admin/orders/{orderId}/physical-return`. Ambas as consultas exigem sessão autorizada da loja; a resposta completa do pedido contém dados pessoais e não deve ser compartilhada.
+3. Selecionar, se existirem, um caso `PHYSICAL_RETURN_REQUIRED`, um comprovante físico concluído e uma contestação por cobrança/parcela. O detalhe administrativo expõe `chargebacks`; a tentativa e seu `failureCode` precisam de conferência complementar somente leitura — não são campos expostos diretamente por essa resposta.
+4. Sem caso correspondente, marcar **PENDING_NO_CASE**, com o cenário e sua evidência isolada. Painel ausente em pedido sem contestação/retorno não é falha por si, nem comprova o fluxo positivo. Os estornos #4/#5 com mercadoria ainda na loja não substituem devolução após envio/entrega.
+5. Registrar o horário de cada leitura. A API física usa transação somente leitura e `private, no-store`; isso não garante um snapshot conjunto com o detalhe do pedido, estoque, pontos ou provedor.
+
+### Consultas e resultados esperados
+
+| ID | Caso / consulta | Resultado a conferir | Evidência e limite |
+|---|---|---|---|
+| RF-01 | Pedido sem retorno aplicável, GET físico | `eligible=false`, `completed=false`, `receipt=null` quando não há comprovante; painel físico ausente após terminar a consulta. | HTTP 200, identidade e booleanos; aprova apenas o controle negativo. |
+| RF-02 | SHIPPED/DELIVERED com retorno pendente | Formulário exibe todos os itens, quantidades e aviso de reposição anterior; botão de registro desabilitado enquanto a declaração não está marcada. | Conferir `eligible=true` com tentativa REFUNDED e revisão física. **Não marcar/enviar.** A elegibilidade do GET não substitui todas as validações do comando. |
+| RF-03 | Comprovante físico já existente | `completed=true`, recibo com data e destinos por item; mensagem de histórico da entrega preservado; sem formulário para uma nova reposição. | Reabrir o detalhe e confirmar o mesmo recibo. Não emitir outro POST para testar duplicidade no banco compartilhado. |
+| RF-04 | Consistência de comprovante existente | Por item, `received = available + unavailable`; total recebido corresponde à quantidade integral. Versão avança uma vez, status SHIPPED/DELIVERED é preservado, reservas RETURNED e auditoria única. | Comparação com baseline anterior/auditoria. Sem baseline ou histórico completo, não afirmar “estoque/pontos não mudaram”. Produtos/variantes retirados destinam tudo ao indisponível. |
+| CB-01 | Contestação REQUESTED/IN_DISPUTE | Rótulo “Contestação em andamento”, estado da cobrança, parcela e aviso de revisão; seção de chargeback sem botões de ação financeira. | Comparar `chargebacks` com o painel. É a última evidência conciliada, não consulta atual ao Asaas. |
+| CB-02 | REVERSED com cobrança CONFIRMED/RECEIVED e sem REFUNDED anterior | “Contestação revertida; pagamento confirmado”. Não duplicar reconhecimento, pontos ou comunicação de pagamento. | Conferir proveniência e histórico além do rótulo; ausência de resposta atual não comprova vitória. |
+| CB-03 | DISPUTE_LOST/DONE com cobrança REFUNDED | “Devolução financeira confirmada”; fato REFUNDED correlacionado e único. Após envio/entrega, preservar estado físico e aguardar retorno. | Comprovação financeira por cobrança, sem chamar REFUND. Um resultado parcial não encerra o contrato. |
+| CB-04 | Estado terminal sem resultado financeiro compatível, resposta incompleta ou desconhecida | “Aguardando confirmação do resultado financeiro” ou “Evidência incompleta; conferência necessária”, conforme `outcome`, mantendo revisão. | Não liberar por ausência de metadata; cobrança anteriormente REFUNDED não volta automaticamente a paga. |
+| CB-05 | Apenas uma parcela devolvida ou REFUND local retido | Apenas o valor comprovado da parcela; revisão do restante. Operação retida não volta automaticamente ao envio após reversão favorável. | Conferência somente leitura de fatos/operações; não limpar erro, trocar commandId nem processar filas. |
+| UI-01 | Detalhes de retorno/chargeback em desktop e 390 px | Textos, estado, quantidades, avisos e recibos legíveis; nenhum controle cobre informação ou impede leitura. | Capturas recortadas dos painéis, sem nomes, endereços ou documentos. Comparar na revisão efetivamente publicada. |
+
+Registrar `PASS`, `FAIL`, `PENDING_NO_CASE` ou `PENDING_EVIDENCE` para cada cenário. `PASS` vale somente para o escopo observado. O modelo começa com todos os cenários `NOT_EXECUTED`; não preencher observados com valores esperados.
+
+### O que reaproveitar e o que continua aberto
+
+- As provas locais de atomicidade, concorrência, replay, rollback, quantidade inválida, segregação de loja e proteção de pontos/estoque estão nas evidências [retorno físico](evidencias/L-RETORNO-FISICO-2026-10-19.json) e [chargeback](evidencias/L-CHARGEBACK-RESULTADOS-2026-10-19.json). Conferir diferença de código antes de reaproveitar; não repetir testes destrutivos em pedidos compartilhados.
+- Um caso real ausente pode ser ensaiado em ambiente descartável com dados sintéticos e provedor controlado. Isso valida aplicação/contrato, mas permanece prova isolada, sem afirmar transporte Asaas ou operação real no destino. O cenário remoto continua pendente.
+- Havendo um caso real de retorno a executar, preparar antes identidade, baseline de estoque/reserva/pontos/fatos, operador, inspeção efetiva, prova de ausência de reposição anterior e comando exato. Essa execução operacional é uma etapa posterior à coleta de leitura.
+- O envio de disputa/documentos não está implementado nesta entrega. Não preencher protocolo ou prazo sem fonte do caso; a consulta documental histórica não comprova disponibilidade na conta. Canal, responsável/substituto, prazo e comprovante de envio continuam pendentes.
+- Alerta recebido e recuperação pertencem a G6. A presença de um aviso no Admin não comprova notificação entregue ao atendimento. G3/G4/G6/G8 não são fechados pela preparação deste roteiro.
+
+**Entrega de Leno:** registro preenchido com revisão/loja/horários, casos disponíveis, esperado versus observado, referências sanitizadas e pendências por cenário. **Revisão de Vanderlei:** identidade do artefato/ambiente e correlação com a publicação. A próxima ação após receber a URL é identificar os casos existentes por leitura; se não houver caso elegível, registrar a lacuna antes de planejar um ensaio isolado.
 
 ## Fontes de código revisadas
 

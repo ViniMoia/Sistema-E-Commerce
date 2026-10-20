@@ -1,5 +1,9 @@
 # Replanejamento para produção em até 48 horas
 
+**Direcionamento vigente — 20/10/2026:** PR #9 integrado em `17fd1a7`, CI aprovada e publicação para teste documentada por Vanderlei no commit `3eb4023`. A revisão `continental-hml-17fd1a7-review` já contém a correção móvel e G6; não solicitar outro deploy para repetir essa entrega. [Admin da candidata](https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/admin). A seção 68 preserva a evidência do executor; a **[seção 69](#69-devolutiva-pendente-de-vanderlei-e-divisão-da-próxima-rodada--20102026)** define tarefas restantes e o formato do retorno. Avisos anteriores de CI/publicação pendentes são históricos. Aceite de negócio, promoção de tráfego e operação G6 continuam separados.
+
+**Frente de Leno enquanto aguarda publicação:** preparada a [matriz de aceite remoto de retorno físico e chargeback](../../../../../../trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#8-matriz-da-próxima-rodada-de-aceite-remoto), com dez verificações, resultados esperados, fontes de prova e [modelo de coleta](../../../../../../trabalho_em_dupla/modelos/ACEITE_RETORNO_CHARGEBACK.json). Próxima ação: após identificar a revisão publicada, localizar casos existentes por GET e registrar evidências sanitizadas; sem caso, manter cenário pendente e planejar ensaio descartável separado. Regras/painéis comparados entre `d63ad8a` e `079bc9c` não mudaram; reaproveitar as provas isoladas já registradas. Preparação documental não comprova execução no destino, envio de disputa/documentos ou alertas G6. Nenhuma operação remota nesta etapa.
+
 **CI de `2fdcdef` — testes aprovados, encerramento pendente:** a execução [39356614989](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39356614989) aprovou os 406 testes de integração, inclusive interação e geometria do menu móvel. A etapa falhou depois, com `ENOTEMPTY` ao remover `.next/dev/cache` do projeto temporário. O harness enviava SIGTERM sem aguardar o encerramento do servidor. Ajustado para aguardar `close` com limite de 15 segundos e preservar o diretório se não confirmar a parada; descarte mantém escopo temporário validado e recebe tentativas limitadas para erros transitórios de filesystem. Ainda exige nova CI integral; build/runtime posteriores não foram executados nessa rodada. A captura móvel enviada continua mostrando a apresentação anterior: nenhuma publicação da correção do cabeçalho ocorreu.
 
 **CI do PR #9 — correção do teste de interação:** a execução [39355276601](https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39355276601), head `bcf27aa`, falhou ao esperar a abertura do menu móvel: o teste clicava após encontrar o HTML, sem aguardar o handler do React. Foram aprovados 843 unitários e 405 de 406 testes de integração; as etapas posteriores de build/runtime não executaram. Corrigida a sincronização do teste para aguardar o handler antes do clique, também na aba do extrato. As verificações de geometria, ausência de transbordamento e abertura/fechamento foram preservadas. Dois testes de navegador isolados, TypeScript e lint passaram localmente após o ajuste. Exige nova CI integral aprovada antes da integração/publicação; não considerar `bcf27aa` aprovado. Nenhuma mudança adicional no código da aplicação, banco compartilhado, tráfego ou controles financeiros nesta correção.
@@ -1948,3 +1952,78 @@ Inventário antes e depois: nenhum Cloud Run Job e API Scheduler desativada. A l
 As verificações acima cobrem acesso e a regressão básica do menu. A conferência conjunta móvel dos relatórios, apuração independente, aceite de retorno físico e chargeback continuam separados. Não foram repetidos estornos, rearmado o pedido #3, pago/cancelado o #8 ou criado caso financeiro para gerar sinais.
 
 **Evidência sanitizada:** [V-CLOUDRUN-17FD1A7-2026-10-20.json](../../../../../../trabalho_em_dupla/evidencias/V-CLOUDRUN-17FD1A7-2026-10-20.json). Artefatos auxiliares locais em `artifacts/cloudrun-17fd1a7-20261020/`, ignorados pelo Git. Próxima ação: Leno e Vanderlei usam a URL de teste para a conferência móvel e os aceites planejados; promoção de tráfego, abertura de compras e ativação operacional G6 permanecem etapas próprias.
+
+## 69. Devolutiva pendente de Vanderlei e divisão da próxima rodada — 20/10/2026
+
+### O que já recebemos e não precisa ser repetido
+
+O commit `3eb4023bdc1842b7389e4736a122bef69316e8d9` contém a seção 68 e a evidência `V-CLOUDRUN-17FD1A7-2026-10-20.json`. Esta atualização leu esse registro; não é uma nova consulta independente ao Cloud Run.
+
+- SHA publicado: `17fd1a7456441fd98c32957116c7f1247c68be22`; CI do PR e CI do merge aprovadas.
+- Revisão: `continental-hml-17fd1a7-review`; [URL de teste](https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app); Ready=True e digest Linux/amd64 registrado na seção 68.
+- Tráfego observado às 09:17:47 BRT de 20/10: revisão `896dc56-logout` com 100%; candidata com 0%, acessível pela tag.
+- Banco/loja de homologação e 34 migrations conferidos; nenhum reset, carga ou migration executado nessa publicação.
+- Acesso autenticado, logout, recusa de acesso anônimo e checkout pausado conferidos. Menu testado nas duas páginas a 390 px, com abertura/fechamento e espaço acima do conteúdo.
+- Nenhum Cloud Run Job encontrado; API Scheduler desativada. Isso não inventaria agendas de outras plataformas nem comprova que não existe acionador externo.
+
+Referenciar essas provas na devolutiva. Só repetir uma verificação se houver alteração posterior, divergência ou informação necessária fora do escopo já registrado. Não reconstruir a imagem para incorporar esta documentação.
+
+### A. Retorno imediato para liberar a conferência de Leno
+
+| Atribuição de Vanderlei | O que retornar |
+|---|---|
+| Informar se houve mudança após a seção 68 | “Sem mudanças desde o registro” ou lista das mudanças, com revisão/SHA/flags/tráfego afetados e horário. Não presumir que o estado observado em 20/10 permanece atual indefinidamente. |
+| Confirmar o acesso que Leno deve usar | URL exata da candidata e eventual restrição de acesso. Não enviar senha, cookie ou token. Reaproveitar as verificações de acesso já registradas. |
+| Manter a revisão disponível para o aceite | Confirmar checkout pausado e controles financeiros preservados. A URL principal continua na revisão anterior enquanto não houver promoção coordenada. |
+| Informar bloqueios concretos | Para cada bloqueio: qual etapa impede, responsável, próxima ação e previsão; quando não houver previsão, escrever “a definir”. |
+
+**Leno assume a partir desse retorno:** conferência visual móvel do conteúdo completo em `/admin` e `/admin/fidelidade`; seleção por leitura dos casos existentes em `/admin/orders`; matriz de [retorno físico/chargeback](../../../../../../trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#8-matriz-da-próxima-rodada-de-aceite-remoto) e [modelo de coleta](../../../../../../trabalho_em_dupla/modelos/ACEITE_RETORNO_CHARGEBACK.json). A confirmação de revisão/acesso permite começar essa parte mesmo que o levantamento G6 abaixo ainda esteja pendente. Falta de caso elegível deve ser registrada como pendência, sem fabricar contestação, retorno ou fato financeiro.
+
+O script `VALIDAR_FIDELIDADE_D63AD8A.js` está deliberadamente vinculado à revisão antiga. Não deve ser executado na nova URL como se fosse um coletor genérico; a comparação nova precisa de identidade e baseline próprios quando necessária. As 75 comparações anteriores permanecem provas da rodada anterior, não da nova revisão.
+
+### B. Levantamento de Vanderlei para preparar G6
+
+Esta parte é inventário e proposta. Não inclui ativação de Jobs/agendas, invocação de consumidores, transferência de webhook nem teste de alerta com efeito financeiro.
+
+1. **Mapear acionadores e receptor do webhook:** retornar plataforma, nome, ambiente, modo (processamento ou supervisão), destino sem parâmetros secretos, estado habilitado/desabilitado, agenda/fuso e última execução com resultado, quando disponíveis. Distinguir evento agendado de processamento efetivo; o log histórico `state=disabled` não prova execução financeira. Incluir Vercel, Cloudflare, Google Cloud e rotinas externas conhecidas; execuções manuais devem ser identificadas como manuais. Quando não tiver acesso, declarar a lacuna e quem pode conferi-la. Não habilitar a API Scheduler somente para preencher a planilha sem coordenar essa mudança.
+2. **Informar o receptor atual do Asaas:** host e caminho do webhook, ambiente Sandbox, fila ativa/interrompida e fonte/horário da consulta, se puder conferir somente leitura. “Não alterado nesta publicação” não é uma consulta atual ao destino. Não reenviar evento nem incluir bypass/token na devolutiva.
+3. **Inventariar alertas existentes:** referências dos canais/políticas e se estão apenas propostos, configurados ou com entrega comprovada. Indicar destinatário responsável e substituto; referências de contato sensíveis ficam no canal privado combinado. Se não existirem, retornar “não configurado”, sem registrar recebimento fictício.
+4. **Propor o ensaio G6:** recursos existentes a reaproveitar, componentes faltantes, permissões/identidade de execução necessárias, intervalo proposto, estimativa de custo com premissas, janela sugerida e critérios de parada/recuperação. Separar observador `CONSUMER_MODE=supervision` dos processadores financeiros e de pontos. Cadência proposta não é agenda aprovada.
+5. **Explicitar a transição:** quem suspende o acionador antigo, como comprovar ausência de execução em voo, quem habilita o novo e como retornar ao estado anterior se o ensaio falhar. A proposta será revisada com Leno antes de executar. Ausência de Jobs no Cloud Run não basta para declarar exclusividade de processamento.
+
+Aceite futuro de G6 exige execução automática comprovada, alerta realmente recebido, responsável pelo caso, próxima ação/prazo e recuperação verificada. Logs do observador ou políticas criadas isoladamente não fecham o gate.
+
+### C. Formato da devolutiva
+
+Enviar o bloco preenchido por etapas; não esperar concluir todo G6 para liberar o acesso da parte A. Usar `não conferido`, `sem acesso` ou `não configurado` onde couber, com responsável pela pendência.
+
+```text
+Executor / data e horário da conferência:
+
+A — Revisão disponível para Leno
+Referência recebida: seção 68 / commit 3eb4023 / evidência V-CLOUDRUN-17FD1A7-2026-10-20.json
+Mudanças após esse registro: nenhuma / descrever
+SHA / revisão efetivamente disponível:
+URL de teste:
+Restrição de acesso, se houver:
+Tráfego atual ou referência do último estado conferido, com horário:
+CHECKOUT_PAUSED / APP_MAINTENANCE_MODE:
+PAYMENT_REMOTE_ENABLED / PAYMENT_WORKER_ENABLED / PAYMENT_EXPIRATION_ENABLED:
+Bloqueios para Leno consultar a candidata:
+
+B — Inventário e proposta G6 (sem ativação)
+Acionadores: plataforma | nome | modo | destino | habilitado? | agenda/fuso | última execução/resultado | fonte/horário
+Plataformas não conferidas / responsável por conferir:
+Webhook Sandbox: host/caminho | fila ativa/interrompida | fonte/horário
+Canais e políticas: referência | proposto/configurado/entrega comprovada
+Responsável pelos alertas / substituto:
+Recursos e permissões faltantes:
+Cadência / custo estimados e premissas:
+Janela proposta / executor / revisor:
+Contenção do acionador antigo / prevenção de execução simultânea:
+Critérios de parada / recuperação:
+Pendências: item | responsável | próxima ação | previsão
+Referências sanitizadas de evidência:
+```
+
+**Limites da solicitação:** manter `CHECKOUT_PAUSED=true`, `APP_MAINTENANCE_MODE=false` e os três controles financeiros `false` conforme a publicação documentada; não promover tráfego, habilitar processamento, alterar webhook, reenviar eventos ou enviar disputa/documentos nesta coleta. Main e banco principal continuam somente leitura. Caso a configuração encontrada divergir, relatar antes de executar a transferência; não substituir silenciosamente uma configuração para coincidir com o modelo.

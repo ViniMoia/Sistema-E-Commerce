@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "kind": "REMOTE_PHYSICAL_RETURN_CHARGEBACK_ACCEPTANCE_TEMPLATE",
+  "status": "NOT_EXECUTED",
+  "scope": "READ_EXISTING_HOMOLOGATION_CASES",
+  "preparedAgainstCommit": "079bc9c4fef4e35f33abf00b615d007796eb9302",
+  "deployment": {
+    "sha": null,
+    "digest": null,
+    "revision": null,
+    "originWithoutSecretQuery": null,
+    "trafficPercent": null,
+    "ciEvidenceReference": null,
+    "executorEvidenceReference": null,
+    "identityVerifiedAtUtc": null,
+    "checkoutPaused": null,
+    "financialControlsPreserved": null
+  },
+  "expectedLojaId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+  "verifiedLojaId": null,
+  "operator": null,
+  "reviewer": null,
+  "startedAtUtc": null,
+  "finishedAtUtc": null,
+  "cases": [],
+  "caseRecordShape": {
+    "caseReference": null,
+    "orderId": null,
+    "attemptId": null,
+    "providerPaymentIds": [],
+    "chargebackId": null,
+    "scenarioIds": [],
+    "orderVersion": null,
+    "orderStatus": null,
+    "attemptStatus": null,
+    "failureCode": null,
+    "physicalReturn": {
+      "eligible": null,
+      "completed": null,
+      "receiptAtUtc": null,
+      "movements": []
+    },
+    "chargebacks": [],
+    "readAtUtc": null,
+    "baselineReference": null,
+    "privateEvidenceReferences": []
+  },
+  "checks": [
+    {
+      "id": "RF-01",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "RF-02",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "RF-03",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "RF-04",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "CB-01",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "CB-02",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "CB-03",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "CB-04",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "CB-05",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    },
+    {
+      "id": "UI-01",
+      "status": "NOT_EXECUTED",
+      "caseReference": null,
+      "expectedReference": "../ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md",
+      "observed": null,
+      "observedAtUtc": null,
+      "evidenceReferences": [],
+      "difference": null,
+      "pendingReason": null
+    }
+  ],
+  "allowedCheckStatuses": [
+    "NOT_EXECUTED",
+    "PASS",
+    "FAIL",
+    "PENDING_NO_CASE",
+    "PENDING_EVIDENCE"
+  ],
+  "mutations": {
+    "physicalReturnSubmitted": false,
+    "financialOperationSubmitted": false,
+    "reconciliationRequested": false,
+    "webhookReplayed": false,
+    "disputeSubmitted": false
+  },
+  "isolatedEvidenceReferences": [
+    "../evidencias/L-RETORNO-FISICO-2026-10-19.json",
+    "../evidencias/L-CHARGEBACK-RESULTADOS-2026-10-19.json"
+  ],
+  "remainingOperationalEvidence": {
+    "liveProviderCorrelation": "PENDING",
+    "disputeChannelAndDeadline": "PENDING",
+    "documentSubmission": "PENDING",
+    "alertDeliveryAndRecoveryG6": "PENDING"
+  },
+  "outcome": {
+    "remoteAcceptance": "PENDING",
+    "productionGateApproved": false,
+    "remainingIssues": [],
+    "nextAction": null,
+    "reviewedAtUtc": null
+  },
+  "instructions": [
+    "Template only: expected behavior is not observed evidence.",
+    "Fill only from identified deployed revision and authorized store session.",
+    "No eligible case means PENDING_NO_CASE, not PASS.",
+    "Existing GET receipt and chargeback snapshot do not prove current provider state or unchanged stock without a baseline.",
+    "Store completed case records privately; share only sanitized references and necessary technical identifiers.",
+    "Never include customer names, email, addresses, documents, credentials, cookies or secret URL parameters.",
+    "This read-only collection does not authorize financial processing or physical return submission."
+  ]
+}
