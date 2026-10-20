@@ -37,6 +37,16 @@ describe('loyalty reporting on authenticated pages', () => {
       for (const expected of ['1,00','0,40','0,60','105 pts','40 pts','65 pts','Apuração parcial']) expect(text).toContain(expected);
       await browser.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
       await browser.waitFor(panel + '.clientWidth>0 && ' + panel + '.scrollWidth<=' + panel + '.clientWidth');
+      await browser.evaluate('window.scrollTo(0, 0)');
+      expect(await browser.evaluate(`(() => {
+        const menu = document.querySelector('button[aria-label="Abrir menu admin"]').getBoundingClientRect();
+        const main = document.querySelector('main').getBoundingClientRect();
+        return menu.width > 0 && menu.bottom <= main.top && document.documentElement.scrollWidth <= innerWidth;
+      })()`)).toBe(true);
+      await browser.evaluate('document.querySelector(\'button[aria-label="Abrir menu admin"]\').click()');
+      await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "true"');
+      await browser.evaluate('document.querySelector(\'button[aria-label="Fechar menu"]\').click()');
+      await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "false"');
     }
     await browser.navigate('/admin/fidelidade');
     await browser.waitFor(panel + '?.textContent.includes("Resgates devolvidos")', 60000);
