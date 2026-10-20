@@ -917,6 +917,30 @@
       "targetBranch": "homologacao_teste",
       "newCiRequired": true,
       "deployed": false
+    },
+    "ciFollowUp": {
+      "failedRun": 39355276601,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39355276601",
+      "headSha": "bcf27aae542e352a7a7fc6f8e9e609655ab71c78",
+      "conclusion": "failure",
+      "failedStep": "Verify Isolated Database and HTTP Server",
+      "unitTestsPassed": 843,
+      "integrationTestsPassed": 405,
+      "integrationTestsFailed": 1,
+      "failure": "BROWSER_EXPECTATION_TIMEOUT waiting for mobile menu aria-expanded=true on dashboard",
+      "diagnosis": "Test clicked after SSR text became visible without waiting for React onClick readiness; fixture diagnostics show page and layout chunks loading. Consistent with a pre-hydration click.",
+      "correction": "Wait for React onClick readiness before clicking mobile menu and ledger tab, using existing browser fixture convention. No retries of clicks, increased timeout, skipped assertion or application code change.",
+      "localValidation": {
+        "runId": "baa114a2dbb2aafd91f35fdcf33fd410",
+        "passedBrowserTests": 2,
+        "failedBrowserTests": 0,
+        "typecheck": "passed",
+        "focusedLint": "passed without warnings"
+      },
+      "testSourceSha256Lf": "90307de3d419055c87ae30228bb3a5a19ebbcc818fb64f1b57b829852c39d7fb",
+      "previousSourceHashes": "Historical hashes above refer to the prior local validation and remain unchanged.",
+      "fullCiRequired": true,
+      "deployed": false
     }
   },
   "publicationEvidenceReceived": {

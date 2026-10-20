@@ -23,6 +23,14 @@ beforeAll(async () => {
 }, 120000);
 afterAll(async () => { if (browser) await browser.close(); await cleanupFixtureStores(); await prisma.$disconnect(); }, 30000);
 const panel = 'document.querySelector(\'[data-testid="loyalty-commercial-summary"]\')';
+// Server-rendered text can be visible before React attaches the click handler.
+// Keep this readiness check in the browser fixture, as in catalog navigation.
+const clickReady = (element: string) => `(() => {
+  const button = ${element};
+  const key = button && Object.keys(button).find(key => key.startsWith('__reactProps'));
+  return key && typeof button[key].onClick === 'function';
+})()`;
+const openMenu = 'document.querySelector(\'button[aria-label="Abrir menu admin"]\')';
 describe('loyalty reporting on authenticated pages', () => {
   it('report and dashboard share historical amounts and partial warning, including mobile and preserved test history', async () => {
     const headers = { host: f.host, cookie: `session_id=${f.session.id}` };
@@ -43,14 +51,17 @@ describe('loyalty reporting on authenticated pages', () => {
         const main = document.querySelector('main').getBoundingClientRect();
         return menu.width > 0 && menu.bottom <= main.top && document.documentElement.scrollWidth <= innerWidth;
       })()`)).toBe(true);
-      await browser.evaluate('document.querySelector(\'button[aria-label="Abrir menu admin"]\').click()');
+      await browser.waitFor(clickReady(openMenu));
+      await browser.evaluate(openMenu + '.click()');
       await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "true"');
       await browser.evaluate('document.querySelector(\'button[aria-label="Fechar menu"]\').click()');
       await browser.waitFor('document.querySelector(\'button[aria-label="Abrir menu admin"]\').getAttribute("aria-expanded") === "false"');
     }
     await browser.navigate('/admin/fidelidade');
     await browser.waitFor(panel + '?.textContent.includes("Resgates devolvidos")', 60000);
-    await browser.evaluate('Array.from(document.querySelectorAll("button")).find(b => b.textContent.includes("Últimas Movimentações"))?.click()');
+    const ledgerButton = 'Array.from(document.querySelectorAll("button")).find(b => b.textContent.includes("Últimas Movimentações"))';
+    await browser.waitFor(clickReady(ledgerButton));
+    await browser.evaluate(ledgerButton + '.click()');
     await browser.waitFor('document.body.textContent.includes("Pedido de teste")');
     expect(await prisma.loyaltyTransaction.count({ where: { lojaID: f.lojaID } })).toBe(4);
     expect(await prisma.loyaltyWallet.count({ where: { lojaID: f.lojaID } })).toBe(0);
