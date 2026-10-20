@@ -1,0 +1,41 @@
+{
+  "recordedDate": "2026-10-20",
+  "source": "Captura e relato do operador: a lista de Produtos & Variantes no celular nao permite acessar facilmente editar/excluir.",
+  "remoteRevisionVisibleInScreenshot": false,
+  "diagnosis": "Tabela com cinco colunas; acoes na ultima coluna fora da largura inicial do celular.",
+  "change": {
+    "route": "/admin/products",
+    "mobile": "Cada linha apresentada como cartao com nome, preco, estoque, variantes e acoes Editar/Excluir dentro da largura visivel.",
+    "desktop": "Tabela preservada.",
+    "confirmation": "Botoes empilhados em telas estreitas e dialogo limitado a altura da janela, com rolagem interna.",
+    "businessRulesChanged": false
+  },
+  "validation": {
+    "typescript": "PASS",
+    "eslint": "PASS_WITH_EXISTING_IMG_WARNING",
+    "diffCheck": "PASS",
+    "isolatedRunId": "99200966f9f70a7e2020ad928e8fd374",
+    "command": "npm run test:integration:isolated -- tests/integration/admin-products-mobile-browser.test.ts",
+    "testsPassed": 1,
+    "exitCode": 0,
+    "viewportWidths": [320, 390, 1440],
+    "checks": [
+      "Acoes dentro da largura, areas de toque de pelo menos 44 pixels e pagina sem overflow horizontal em 320/390 pixels.",
+      "Estoque agregado e variantes exibidos.",
+      "Clique por coordenadas abre dialogo do produto correto e permite cancelar.",
+      "Nenhuma requisicao DELETE ao abrir/cancelar; produto e duas variantes preservados.",
+      "Editar navega para o formulario do produto correto.",
+      "Desktop mantem linhas e cabecalho de tabela."
+    ],
+    "limits": "Banco descartavel; nao testa confirmacao real de exclusao nem altera catalogo compartilhado. Salvamento e regras de variantes nao foram modificados."
+  },
+  "review": {
+    "pullRequest": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/10",
+    "fullCi": "PENDING_FOR_NEW_HEAD",
+    "remoteAcceptance": "PENDING_AFTER_PUBLICATION",
+    "next": "Publicar candidata apos CI; conferir lista e abertura das acoes no celular, cancelando a exclusao na validacao visual."
+  },
+  "sharedDatabaseMutationAttempted": false,
+  "deploymentAttempted": false,
+  "productionAcceptance": false
+}
