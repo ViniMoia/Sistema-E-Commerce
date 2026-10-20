@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { OrderStatus } from '@prisma/client'
-import { Eye, Truck, Store, Clock, CheckCircle2, XCircle, Package } from 'lucide-react'
+import { Eye, Truck, Store, Package } from 'lucide-react'
 
 export interface OrderRow {
   isTest?: boolean
@@ -27,8 +27,8 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
   return (
     <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
+        <table className="block w-full text-left border-collapse md:table">
+          <thead className="hidden md:table-header-group">
             <tr className="bg-[#050B14] border-b border-catalog-gold/30">
               <th className="py-4 px-6 text-[11px] font-mono font-bold uppercase tracking-wider text-catalog-gold">
                 Pedido / Data
@@ -50,7 +50,7 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-catalog-gold/15 text-xs font-mono">
+          <tbody className="block divide-y divide-catalog-gold/15 text-xs font-mono md:table-row-group">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="py-16 text-center text-catalog-muted">
@@ -82,11 +82,12 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                 return (
                   <tr
                     key={order.id}
-                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                    data-order-id={order.id}
+                    className="grid grid-cols-2 hover:bg-white/[0.02] transition-colors group cursor-pointer md:table-row"
                     onClick={() => onSelectOrder(order.id)}
                   >
                     {/* Número do Pedido e Data */}
-                    <td className="py-3.5 px-6">
+                    <td className="block order-1 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
                       <span className="font-bold text-sm text-white font-mono group-hover:text-catalog-gold transition-colors block">
                         #{order.orderNumber}
                       </span>
@@ -97,17 +98,19 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                     </td>
 
                     {/* Cliente e E-mail */}
-                    <td className="py-3.5 px-6">
-                      <span className="font-semibold text-white block max-w-xs truncate">
+                    <td className="block order-3 col-span-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                      <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Cliente & Contato</span>
+                      <span className="font-semibold text-white block break-words md:max-w-xs md:truncate">
                         {order.customerName}
                       </span>
-                      <span className="text-[11px] text-catalog-muted truncate block max-w-xs mt-0.5">
+                      <span className="text-[11px] text-catalog-muted break-words block md:max-w-xs md:truncate mt-0.5">
                         {order.customerEmail || 'Sem e-mail'}
                       </span>
                     </td>
 
                     {/* Modalidade de Envio */}
-                    <td className="py-3.5 px-6">
+                    <td className="block order-4 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                      <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Envio</span>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold bg-[#0B132B] border border-catalog-gold/30 text-slate-300">
                         {order.deliveryType === 'DELIVERY' ? (
                           <>
@@ -124,7 +127,8 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                     </td>
 
                     {/* Badges de Status Canônicas */}
-                    <td className="py-3.5 px-6">
+                    <td data-order-status={order.status} className="block order-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                      <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Status</span>
                       {order.status === 'PAID' && (
                         <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 font-mono text-[10px] uppercase font-bold inline-block">
                           Pago
@@ -153,7 +157,8 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                     </td>
 
                     {/* Total em Destaque Ouro */}
-                    <td className="py-3.5 px-6">
+                    <td className="block order-5 min-w-0 py-3.5 px-4 md:table-cell md:px-6">
+                      <span className="block mb-2 text-[10px] text-catalog-muted uppercase md:hidden">Total</span>
                       <span className="text-sm font-bold text-catalog-gold tracking-tight">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
@@ -163,11 +168,12 @@ export function OrdersTable({ data, isLoading, onSelectOrder }: OrdersTableProps
                     </td>
 
                     {/* Botão Ver Detalhes */}
-                    <td className="py-3.5 px-6 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="block order-6 col-span-2 min-w-0 py-3.5 px-4 md:table-cell md:px-6 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         onClick={() => onSelectOrder(order.id)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-catalog-gold/30 bg-[#0B132B]/80 hover:bg-catalog-gold/15 text-slate-300 hover:text-catalog-gold transition-colors text-xs font-mono uppercase tracking-wider cursor-pointer"
+                        aria-label={`Ver detalhes do pedido #${order.orderNumber}`}
+                        className="inline-flex w-full md:w-auto min-h-11 justify-center items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-catalog-gold/30 bg-[#0B132B]/80 hover:bg-catalog-gold/15 text-slate-300 hover:text-catalog-gold transition-colors text-xs font-mono uppercase tracking-wider cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Detalhes</span>
