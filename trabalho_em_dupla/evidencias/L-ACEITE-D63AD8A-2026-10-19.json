@@ -941,6 +941,32 @@
       "previousSourceHashes": "Historical hashes above refer to the prior local validation and remain unchanged.",
       "fullCiRequired": true,
       "deployed": false
+    },
+    "cleanupCiFollowUp": {
+      "run": 39356614989,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39356614989",
+      "headSha": "2fdcdef0a276b98870513200009ca3dc7cc94905",
+      "conclusion": "failure",
+      "integrationTestsPassed": 406,
+      "integrationTestsFailed": 0,
+      "failurePhase": "Post-test teardown: ENOTEMPTY removing temporary .next/dev/cache",
+      "diagnosis": "Runner sent SIGTERM without awaiting process close before removing the temporary project.",
+      "correction": "Await child close with 15 second bound; preserve project on unverified shutdown; limited filesystem retries within existing validated temporary directory scope.",
+      "localValidation": {
+        "runId": "ae8d0d61a8f8a7d8b3a10aca08e6f1ea",
+        "platform": "win32",
+        "browserTestsPassed": 2,
+        "standalonePackageTestsPassed": 4,
+        "runnerExitCode": 0,
+        "syntaxChecks": "passed",
+        "focusedLint": "passed"
+      },
+      "linuxShutdownVerification": "Pending complete CI on Linux; Windows local run does not prove Linux signal behavior.",
+      "sourceHashesLf": {
+        "scripts/run-isolated-tests.mjs": "82015b5bc24428725de7e17d867ece32719054b5e5498634817fdb5f0f60eda3",
+        "scripts/lib/isolated-project.mjs": "a65b1c20e0620fd269a260ccfff4937fb62a0ef82bc4a98c2a20af53e9bea083"
+      },
+      "deployed": false
     }
   },
   "publicationEvidenceReceived": {
