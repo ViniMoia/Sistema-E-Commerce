@@ -1,5 +1,21 @@
 # G2 — Pacote de abertura do banco existente
 
+## Inventário atualizado — 21/10/2026
+
+Leitura da origem às **12:05:26 BRT / 15:05:26 UTC**, com identidade da loja conferida e transação `REPEATABLE READ / READ ONLY` verificada. Fonte de conexão: `.env`; `.env.local` já aponta para outro destino e não foi usado na auditoria. Nenhuma credencial é registrada. [Evidência sanitizada](evidencias/L-G2-INVENTARIO-ORIGEM-2026-10-21.json). Código de origem `7f9b26e`, candidata integrada `9495ff9`.
+
+| Item | Observação atual | Pendência de abertura |
+|---|---|---|
+| Catálogo | 522 produtos, 528 variantes, 18 marcas e 10 categorias; contagens coincidem com 15/10. | Conferir estoque comercial físico e identidade dos itens; contagens iguais não comprovam linhas inalteradas. |
+| Quatro produtos de teste | IDs previstos encontrados, dez variantes; divergências de estoque preservadas: aspirador vermelho 1/10, calça 13/30, camisa branca 16/30, camisa preta 8/30. Cinco produtos protegidos encontrados. | Retirada não comprovada na origem. Valor nulo nesta coleta não distingue coluna ausente de campo vazio, nem comprova disponibilidade na aplicação. Conferir identificação/imagem e vínculos no cutoff antes da ação autorizada. |
+| Pedidos | 24 pedidos, 33 itens, todos sem histórico de status; 33 itens sem vínculo de variante. Dez pendentes, quatro pagos e dez cancelados. Duas referências de pagamento remoto. | Separar classificação de teste de obrigações reais. Consultar privadamente as duas referências no provedor antes da abertura; rótulo legado do meio não prova estado financeiro. Nenhuma consulta do provedor nesta rodada. |
+| Carteiras | Duas, com saldos 0 e 475; dois movimentos; pending=0. Campos modernos de dívida/accountingReady ausentes no schema de origem. | Não interpretar campo ausente como dívida zero ou carteira conciliada. Validar ledger e classificação antes de ajuste; não reutilizar números históricos como autorização. |
+| Estrutura | 40 registros de migrations, 20 nomes distintos repetidos, todos concluídos e com checksums compatíveis. Quinze migrations da candidata ainda não constam aplicadas. Tabelas modernas de operações/fatos/reservas/lotes ausentes; quatro eventos na tabela legada de webhook. | Novo backup e ensaio da cadeia atual em clone. Duplicações no histórico já existiam no inventário antigo; não remover registros. Não aplicar somente a migration de boleto na origem antiga. |
+
+As contagens e divergências agregadas coincidem com o inventário anterior, mas não foi demonstrada igualdade integral entre as linhas antigas e atuais. Foram guardadas impressões para comparação futura; esta leitura não substitui backup ou captura no cutoff. O schema legado não permite inferir ausência de obrigações pela ausência de filas modernas. Os estados dos pedidos são locais, sem confirmação financeira nova.
+
+**Próxima ação G2:** preparar backup fresco e ensaio da cadeia atual em clone isolado, junto da conferência privada das obrigações e da prova de recuperação por operador alternativo. A abertura exige comparação antes/depois, responsável e janela definidos. Main/banco de origem não receberam migrations, classificação, ajustes de estoque/pontos ou qualquer outra mutação nesta rodada. Nenhum teste de recuperação foi repetido agora e G2 permanece aberto. As seções abaixo conservam os detalhes dos ensaios históricos.
+
 Revisão de 16/10/2026. Complementa o [checklist G1–G8](CHECKLIST_PRODUCAO_G1_G8.md), o [procedimento de implantação](../diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md) e o [procedimento de recuperação](../diversos/AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md). **Preparação e ensaio em clone; abertura produtiva não executada.**
 
 ## Identidades e limites
