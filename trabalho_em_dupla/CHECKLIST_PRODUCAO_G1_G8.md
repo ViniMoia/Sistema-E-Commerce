@@ -1,5 +1,9 @@
 # Checklist de produção G1–G8
 
+**Implementação de boleto pago — 21/10, sem publicação:** fluxo durável específico, link privado para o pagador no Admin, proteção contra repetição e manutenção da separação entre devolução financeira e retorno físico. Migration nova exige atualização coordenada de web/consumidores antes do ensaio. [Implementação e validações](evidencias/L-BOLETO-DEVOLUCAO-2026-10-21.json) e [procedimento](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#implementação-de-boleto-pago--21102026-ainda-sem-publicação). Código/testes isolados não aprovam o comportamento da conta, transporte ou atendimento. G3/G6 continuam abertos.
+
+**Triagem de G3 — 21/10, 10:23–10:24 BRT:** [leitura local/provedor e próximos passos](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#triagem-vigente--21102026). PIX #3 segue com devolução CANCELLED no histórico do Asaas; boleto #6 está RECEIVED e sem devolução comprovada; nenhum chargeback encontrado na conta Sandbox. #8 está PENDING local e OVERDUE no provedor, sem processamento nesta etapa. [Evidência](evidencias/L-G3-TRIAGEM-2026-10-21.json). Débito foi adiado pelo usuário nesta etapa e não deve impedir essa triagem. A falta de resposta do suporte permanece registrada; não equivale a capacidade habilitada. G3/G6 seguem abertos.
+
 **Atualização de 21/10:** [preparação operacional implantada](EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md):
 Job de supervisão pronto e sem execuções, conta consumer com acesso somente
 ao segredo de cron, métrica, canal e duas políticas criados. Canal/políticas
@@ -37,7 +41,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 ## Decisões vigentes
 
-1. PIX, crédito de 1x até 12x, boleto, débito, pontos e entrega compõem o escopo exigido. Débito continua dependente da resposta do Asaas e de implementação/homologação próprias; não houve decisão posterior de retirá-lo do lançamento.
+1. PIX, crédito de 1x até 12x, boleto, pontos e entrega seguem na frente atual. Em 21/10 o usuário adiou a prioridade do débito; não aguardar o suporte para avançar em G3. O requisito histórico de débito deve ser lido junto dessa decisão posterior: ele permanece indisponível e sem homologação, com retomada futura e escopo final de abertura a registrar.
 2. O operador aceitou **somente o teste de expiração do boleto pendente após a abertura**, conforme seção 36 do plano. O pedido #8 permanece como cenário, com elegibilidade registrada para 20/10/2026 às 00:00 BRT. A exceção não transforma o teste em aprovado nem dispensa outras obrigações do boleto.
 3. PIX manual/WhatsApp e capacidades não homologadas permanecem bloqueados conforme o plano. Esconder a opção não substitui bloqueio no servidor, inclusive para intenções antigas e chamadas diretas.
 4. Os quatro produtos de teste devem ficar indisponíveis na abertura, preservando histórico: **Aspirador de Pó automotivo vermelho**, Calça Jeans, Camisa Branca e Camisa Preta. Os outros três aspiradores comerciais não entram nessa seleção. IDs devem ser conferidos por ambiente; nomes não bastam.
@@ -47,9 +51,9 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 
 | Gate | Situação | Dono / revisor | Condição principal ainda aberta |
 |---|---|---|---|
-| G1 — escopo e bloqueios | Parcial; débito bloqueado externamente | Leno / Vanderlei | Fechar as capacidades obrigatórias e comprovar bloqueios efetivos na candidata/configuração de abertura. |
+| G1 — escopo e bloqueios | Parcial; débito adiado nesta etapa | Leno / Vanderlei | Fechar as capacidades da abertura e comprovar bloqueios efetivos na candidata/configuração; registrar o adiamento do débito no escopo final. |
 | G2 — dados restauráveis | Ensaiado em clone; abertura pendente | Leno / Vanderlei | Backup recuperável por outro operador, inventário fresco, tratamento de legados e estoque real no destino. |
-| G3 — financeiro | Casos Sandbox concluídos; aceite parcial | Leno / Vanderlei | Devolução PIX concluída, lacunas de boleto/débito e procedimentos de devolução após entrega/chargeback; transporte no destino. |
+| G3 — financeiro | Casos Sandbox concluídos; aceite parcial | Leno / Vanderlei | Devolução PIX concluída, devolução de boleto pago e atendimento após entrega/chargeback; transporte no destino. Débito adiado nesta etapa. |
 | G4 — pontos e produtos | Código e ensaios aprovados; destino pendente | Leno / Vanderlei | Conferir fidelidade publicada e abertura consistente de catálogo, estoque, carteiras e vínculos. |
 | G5 — segurança | Regressões aprovadas; configuração real pendente | Vanderlei / Leno | Revisão de acessos, segredos, cookies/reset, webhook e dados de cartão na configuração efetiva. |
 | G6 — execução automática | Preparação aprovada; transferência pendente | Vanderlei + Leno | Inventário completo, acionador coordenado, recuperação e alertas reais, sem depender de execução manual. |
@@ -61,7 +65,7 @@ Consolidado em **16/10/2026, 19:28 BRT**, a partir do [Replanejamento de produç
 - [x] Decisões de parcelamento, entrega, boleto, débito e exceção da expiração identificadas nas seções 15, 17 e 36 do plano. Não reaplicar a exclusão histórica de boleto da matriz original.
 - [x] Pausa no Preview observada: três comandos vazios recusados com 503/`CHECKOUT_PAUSED`/`no-store`, recuperação do #7 preservada; aviso visual e retorno da proposta também registrados. [Evidência de contenção](evidencias/L-CONTENCAO-CHECKOUT-2026-10-15.json), seção 43. Não prova congelamento geral ou bloqueio de uma confirmação válida em todas as revisões.
 - [ ] Registrar matriz final de capacidades e flags por ambiente/revisão, incluindo limites de parcelas e recusa de métodos não homologados antes de reserva/cobrança. Reaproveitar os testes isolados e conferir o ingresso efetivo de abertura.
-- [ ] Fechar suporte e implementação do débito ou obter uma decisão explícita de mudança do escopo. Ausência de resposta do suporte não é aceite.
+- [x] Registrar decisão de 21/10: débito sem prioridade nesta etapa; suporte ainda sem resposta. Não bloquear a triagem de PIX/boleto/chargeback por essa dependência. Implementação/homologação de débito não foram concluídas; mantê-lo indisponível e refletir o adiamento no escopo final de abertura.
 
 ## G2 — Dados restauráveis e abertura
 

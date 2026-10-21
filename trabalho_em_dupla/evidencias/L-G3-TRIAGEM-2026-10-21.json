@@ -1,0 +1,438 @@
+{
+  "kind": "G3_READ_ONLY_TRIAGE",
+  "date": "2026-10-21",
+  "codeRevision": "cc405e8f41a403b4608d98585c53b968b2f359af",
+  "mainRevisionReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "environment": "HOMOLOGATION_ASAAS_SANDBOX",
+  "database": {
+    "startedAt": "2026-10-21T13:23:01.136Z",
+    "finishedAt": "2026-10-21T13:23:04.411Z",
+    "isolation": "RepeatableRead",
+    "readOnlyVerified": true,
+    "referenceIdentityVerified": true
+  },
+  "scope": {
+    "priority": [
+      "PIX_REFUND",
+      "PAID_BOLETO_REFUND",
+      "CHARGEBACK_ATTENDANCE"
+    ],
+    "debit": "DEFERRED_THIS_STAGE_BY_USER",
+    "debitSupportReplyReceived": false,
+    "domain": "DEFERRED_BY_USER"
+  },
+  "mutationsAttempted": false,
+  "remoteCommandsAttempted": false,
+  "deployed": false,
+  "orders": [
+    {
+      "orderNumber": 3,
+      "orderId": "5b5bef57-2fd2-4f88-83fd-bf3d76238c40",
+      "status": "PAID",
+      "version": 1,
+      "financialTotal": "49.9",
+      "paymentMethod": "PIX",
+      "updatedAt": "2026-10-09T19:29:11.795Z",
+      "attempts": [
+        {
+          "attemptId": "03422a6b-8223-41eb-9240-089c6dd9cf22",
+          "provider": "ASAAS",
+          "providerAccount": "sandbox-hml",
+          "method": "PIX",
+          "status": "REFUND_PENDING",
+          "failureCode": "PAYMENT_REFUND_CANCELLED_REVIEW",
+          "installments": 1,
+          "chargeCount": 1,
+          "operations": [
+            {
+              "kind": "REFUND",
+              "status": "PENDING",
+              "lastErrorCode": "PAYMENT_REFUND_CANCELLED_REVIEW",
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "facts": {
+        "AUTHORIZED": {
+          "count": 1,
+          "amount": 49.9
+        },
+        "SETTLED": {
+          "count": 1,
+          "amount": 49.9
+        },
+        "REFUNDED": {
+          "count": 0,
+          "amount": 0
+        }
+      },
+      "reservations": [
+        {
+          "status": "COMMITTED",
+          "quantity": 1
+        }
+      ],
+      "providerReadPerformed": true
+    },
+    {
+      "orderNumber": 4,
+      "orderId": "ae14cb17-49fa-47ae-98eb-b48ef3f8ada1",
+      "status": "CANCELLED",
+      "version": 2,
+      "financialTotal": "360.72",
+      "paymentMethod": "CREDIT_CARD",
+      "updatedAt": "2026-10-15T16:31:03.651Z",
+      "attempts": [
+        {
+          "attemptId": "41ede05c-40fd-4542-800c-311af6b25cb8",
+          "provider": "ASAAS",
+          "providerAccount": "sandbox-hml",
+          "method": "CREDIT_CARD",
+          "status": "REFUNDED",
+          "failureCode": null,
+          "installments": 12,
+          "chargeCount": 12,
+          "operations": [
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            },
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-15T15:47:52.502Z"
+            }
+          ]
+        }
+      ],
+      "facts": {
+        "AUTHORIZED": {
+          "count": 12,
+          "amount": 360.72
+        },
+        "SETTLED": {
+          "count": 0,
+          "amount": 0
+        },
+        "REFUNDED": {
+          "count": 12,
+          "amount": 360.72
+        }
+      },
+      "reservations": [
+        {
+          "status": "RETURNED",
+          "quantity": 6
+        }
+      ],
+      "providerReadPerformed": false
+    },
+    {
+      "orderNumber": 5,
+      "orderId": "bb3f722b-8392-4a23-863b-d2d428444faa",
+      "status": "CANCELLED",
+      "version": 2,
+      "financialTotal": "57.2",
+      "paymentMethod": "CREDIT_CARD",
+      "updatedAt": "2026-10-14T16:10:38.746Z",
+      "attempts": [
+        {
+          "attemptId": "9255971c-e963-43f5-888c-3bec74ae1ab3",
+          "provider": "ASAAS",
+          "providerAccount": "sandbox-hml",
+          "method": "CREDIT_CARD",
+          "status": "REFUNDED",
+          "failureCode": null,
+          "installments": 1,
+          "chargeCount": 1,
+          "operations": [
+            {
+              "kind": "REFUND",
+              "status": "COMPLETED",
+              "lastErrorCode": null,
+              "completedAt": "2026-10-14T16:08:08.763Z"
+            }
+          ]
+        }
+      ],
+      "facts": {
+        "AUTHORIZED": {
+          "count": 1,
+          "amount": 57.2
+        },
+        "SETTLED": {
+          "count": 0,
+          "amount": 0
+        },
+        "REFUNDED": {
+          "count": 1,
+          "amount": 57.2
+        }
+      },
+      "reservations": [
+        {
+          "status": "RETURNED",
+          "quantity": 1
+        }
+      ],
+      "providerReadPerformed": false
+    },
+    {
+      "orderNumber": 6,
+      "orderId": "0f0a05ff-2a24-4e6f-93ef-be13451388c9",
+      "status": "PAID",
+      "version": 1,
+      "financialTotal": "49.9",
+      "paymentMethod": "BOLETO",
+      "updatedAt": "2026-10-14T20:38:48.678Z",
+      "attempts": [
+        {
+          "attemptId": "39fa8608-e1c5-4ac5-8689-3a3dcb904a26",
+          "provider": "ASAAS",
+          "providerAccount": "sandbox-hml",
+          "method": "BOLETO",
+          "status": "APPROVED",
+          "failureCode": null,
+          "installments": 1,
+          "chargeCount": 1,
+          "operations": []
+        }
+      ],
+      "facts": {
+        "AUTHORIZED": {
+          "count": 1,
+          "amount": 49.9
+        },
+        "SETTLED": {
+          "count": 1,
+          "amount": 49.9
+        },
+        "REFUNDED": {
+          "count": 0,
+          "amount": 0
+        }
+      },
+      "reservations": [
+        {
+          "status": "COMMITTED",
+          "quantity": 1
+        }
+      ],
+      "providerReadPerformed": true
+    },
+    {
+      "orderNumber": 8,
+      "orderId": "a7f348d4-7a75-41c1-a309-3b750b1a896e",
+      "status": "PENDING",
+      "version": 0,
+      "financialTotal": "49.9",
+      "paymentMethod": "BOLETO",
+      "updatedAt": "2026-10-15T16:31:07.337Z",
+      "attempts": [
+        {
+          "attemptId": "115916a2-ea28-4b74-8fb9-6f46ed4aa219",
+          "provider": "ASAAS",
+          "providerAccount": "sandbox-hml",
+          "method": "BOLETO",
+          "status": "PENDING",
+          "failureCode": null,
+          "installments": 1,
+          "chargeCount": 1,
+          "operations": []
+        }
+      ],
+      "facts": {
+        "AUTHORIZED": {
+          "count": 0,
+          "amount": 0
+        },
+        "SETTLED": {
+          "count": 0,
+          "amount": 0
+        },
+        "REFUNDED": {
+          "count": 0,
+          "amount": 0
+        }
+      },
+      "reservations": [
+        {
+          "status": "RESERVED",
+          "quantity": 1
+        }
+      ],
+      "providerReadPerformed": true
+    }
+  ],
+  "provider": {
+    "startedAt": "2026-10-21T13:24:13.482Z",
+    "host": "api-sandbox.asaas.com",
+    "method": "GET",
+    "mutationAttempted": false,
+    "payments": [
+      {
+        "orderNumber": 6,
+        "paymentId": "pay_blfexx8zkousw431",
+        "readAt": "2026-10-21T13:24:13.980Z",
+        "httpStatus": 200,
+        "identityVerified": true,
+        "billingType": "BOLETO",
+        "status": "RECEIVED",
+        "value": 49.9,
+        "deleted": false,
+        "dueDate": "2026-10-15",
+        "paymentDate": "2026-10-14",
+        "refundsFieldPresent": true,
+        "refunds": null,
+        "chargebackPresent": false,
+        "refundHistory": {
+          "readAt": "2026-10-21T13:24:39.241Z",
+          "httpStatus": 200,
+          "shape": "list",
+          "hasMore": false,
+          "totalCount": 0,
+          "complete": false,
+          "records": null
+        }
+      },
+      {
+        "orderNumber": 3,
+        "paymentId": "pay_cra35xq1ltkb6oka",
+        "readAt": "2026-10-21T13:24:14.336Z",
+        "httpStatus": 200,
+        "identityVerified": true,
+        "billingType": "PIX",
+        "status": "RECEIVED",
+        "value": 49.9,
+        "deleted": false,
+        "dueDate": "2026-10-10",
+        "paymentDate": "2026-10-09",
+        "refundsFieldPresent": true,
+        "refunds": null,
+        "chargebackPresent": false,
+        "refundHistory": {
+          "readAt": "2026-10-21T13:24:38.969Z",
+          "httpStatus": 200,
+          "shape": "list",
+          "hasMore": false,
+          "totalCount": 1,
+          "complete": true,
+          "records": [
+            {
+              "status": "CANCELLED",
+              "value": 49.9,
+              "dateCreated": "2026-10-09 16:29:08"
+            }
+          ]
+        }
+      },
+      {
+        "orderNumber": 8,
+        "paymentId": "pay_9czuud2frrqpzov4",
+        "readAt": "2026-10-21T13:24:14.586Z",
+        "httpStatus": 200,
+        "identityVerified": true,
+        "billingType": "BOLETO",
+        "status": "OVERDUE",
+        "value": 49.9,
+        "deleted": false,
+        "dueDate": "2026-10-16",
+        "paymentDate": null,
+        "refundsFieldPresent": true,
+        "refunds": null,
+        "chargebackPresent": false
+      }
+    ],
+    "chargebacks": {
+      "readAt": "2026-10-21T13:24:14.745Z",
+      "httpStatus": 200,
+      "totalCount": 0,
+      "hasMore": false,
+      "returnedCount": 0,
+      "statusCounts": {},
+      "complete": true
+    },
+    "finishedAt": "2026-10-21T13:24:39.241Z"
+  },
+  "collectionNotes": [
+    "Two initial reference GETs returned 401 because the local collector did not parse the nonstandard comment lines before API_KEY_ASAAS. Parsing was corrected in memory; the environment file was not changed. Authenticated reference/payment/history/chargeback GETs then returned 200. The initial 401 is not evidence of an invalid configured key.",
+    "The boleto refund list reported totalCount=0 and hasMore=false, but the collector did not identify a records array. It does not certify the complete empty-list contract."
+  ],
+  "limits": [
+    "Database and provider reads are sequential, not an atomic cross-system snapshot.",
+    "No fresh remote payment reads for orders 4 and 5; previous evidence retained.",
+    "No runtime, traffic, webhook or scheduler inspection in this collection.",
+    "No chargeback found in the sandbox account at this time; dispute/alert/result handling is not thereby validated.",
+    "No customer, document, credential, invoice URL, refund request URL or raw provider payload retained.",
+    "G3 and G6 remain open."
+  ],
+  "sources": [
+    "https://docs.asaas.com/reference/estornar-boleto",
+    "https://docs.asaas.com/reference/listar-estornos-de-uma-cobranca",
+    "https://docs.asaas.com/reference/listar-chargebacks"
+  ]
+}

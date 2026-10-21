@@ -69,6 +69,11 @@ export async function provisionPostgres({ majorVersion = 16 } = {}) {
     const env = { ...process.env, TEST_RUN_ID: runId, TEST_DATABASE_URL: url,
       DATABASE_URL: url, DIRECT_URL: url, TEST_HTTP_TOKEN: randomBytes(32).toString('hex'),
       FREIGHT_QUOTE_SECRET: randomBytes(32).toString('hex'),
+      // Optimized Next runtimes still use Sandbox fixtures. Declare the same
+      // payment environment/account for the app, build and test-side workers;
+      // do not inherit a hosting tier from the machine running the harness.
+      PAYMENT_DEPLOYMENT_ENVIRONMENT: 'SANDBOX', ASAAS_ACCOUNT_SCOPE: 'primary',
+      VERCEL: '', VERCEL_ENV: '',
       ASAAS_API_KEY: '', ASAAS_WEBHOOK_TOKEN: randomBytes(32).toString('hex'), CRON_SECRET: randomBytes(32).toString('hex'),
       RESEND_API_KEY: '', NUVEMSHOP_ACCESS_TOKEN: '', NUVEMSHOP_STORE_ID: '',
       JTEXPRESS_API_KEY: '', CORREIOS_PASSWORD: '' };

@@ -883,6 +883,9 @@ model PaymentOperation {
   completedAt    DateTime?
   lastErrorCode  String? @db.VarChar(96)
 
+  // Private payer action link. Exposed only by the scoped Admin refund read.
+  refundRequestUrl String? @db.Text
+
   @@unique([chargeId, kind])
   @@index([attemptId, status])
 }

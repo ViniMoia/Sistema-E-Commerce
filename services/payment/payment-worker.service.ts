@@ -12,6 +12,8 @@ import { logger } from '@/lib/logger';
 import { paymentEvidenceTransactionOptions, paymentRetryCode } from './payment-execution-policy';
 import { moneyCents } from './installment.service';
 import { savedChargeback, chargebackPaymentStatuses } from './chargeback';
+import { boletoRefundUrl } from '@/lib/commerce/boleto-refund';
+import { expectedAsaasEnvironment } from '@/lib/config/asaas-environment.mjs';
 
 export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter, chargebackHints: string[] = []): Promise<PaymentInspection> {
   const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
@@ -137,12 +139,15 @@ async function fenceAttempt(tx: import('@prisma/client').Prisma.TransactionClien
 }
 
 async function dispatchPaymentOperations(attemptId: string, owner: string, gateway: PaymentGateway) {
-  const operations = await prisma.paymentOperation.findMany({ where: { attemptId, status: 'READY', lastErrorCode: null }, include: { charge: true } });
+  const operations = await prisma.paymentOperation.findMany({ where: { attemptId, status: { in: ['READY', 'BOLETO_READY'] }, lastErrorCode: null }, include: { charge: true } });
   const reference = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
   const contractRefund = reference.method === 'CREDIT_CARD' && reference.installments > 1 && operations.some(op => op.kind === 'REFUND');
   if (contractRefund) {
     if (await dispatchInstallmentRefund(attemptId, owner, gateway)) return true;
   } else for (const operation of operations) {
+    const boletoRefund = reference.method === 'BOLETO' && operation.kind === 'REFUND';
+    if (boletoRefund !== (operation.status === 'BOLETO_READY')) throw new Error('PAYMENT_OPERATION_STATE_CONFLICT');
+    if (boletoRefund && !gateway.refundBoleto) throw new Error('PAYMENT_BOLETO_REFUND_UNAVAILABLE');
     const submit = await prisma.$transaction(async tx => {
       const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
       await new CommerceLocks(tx).acquire('order', [attempt.orderId]); await fenceAttempt(tx, attemptId, owner);
@@ -151,7 +156,7 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
       if (current.failureCode?.startsWith('PAYMENT_CHARGEBACK_')) return false;
       const stateValid = operation.kind === 'CANCEL' ? current.status === 'CANCEL_PENDING' && order.status === 'PENDING' : current.status === 'REFUND_PENDING';
       if (!stateValid) return false;
-      const applied = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'READY', lastErrorCode: null }, data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
+      const applied = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: operation.status, submittedAt: null, lastErrorCode: null }, data: { status: 'SUBMITTING', submittedAt: await paymentNow(tx) } });
       return applied.count === 1;
     });
     if (!submit) continue;
@@ -159,13 +164,33 @@ async function dispatchPaymentOperations(attemptId: string, owner: string, gatew
       if (operation.kind === 'CANCEL') {
         if (!gateway.cancelPayment) throw new Error('PAYMENT_CANCEL_UNAVAILABLE');
         await gateway.cancelPayment(operation.charge.providerPaymentId);
+      } else if (boletoRefund) {
+        const result = await gateway.refundBoleto!(operation.charge.providerPaymentId);
+        const requestUrl = boletoRefundUrl(result?.requestUrl, expectedAsaasEnvironment(process.env));
+        if (!requestUrl) throw new Error('PAYMENT_BOLETO_REFUND_UNRESOLVED');
+        // Persist the one response under the same order lock used by evidence.
+        // A concurrent completed webhook must not be reverted to PENDING.
+        await prisma.$transaction(async tx => {
+          await new CommerceLocks(tx).acquire('order', [reference.orderId]);
+          await fenceAttempt(tx, attemptId, owner);
+          const saved = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'SUBMITTING' },
+            data: { status: 'PENDING', refundRequestUrl: requestUrl } });
+          if (saved.count) await tx.auditLog.create({ data: { actorType: 'SYSTEM', systemActor: 'PAYMENT_RECONCILIATION',
+            entity: 'Order', entityId: reference.orderId, action: 'BOLETO_REFUND_REQUEST_STARTED',
+            effectKey: 'boleto-refund-start:' + operation.id, metadata: { attemptId, operationId: operation.id } } });
+        }, paymentEvidenceTransactionOptions);
       } else {
         if (!gateway.refundPayment) throw new Error('PAYMENT_REFUND_UNAVAILABLE');
         await gateway.refundPayment(operation.charge.providerPaymentId, Number(operation.charge.amount));
       }
       await prisma.paymentOperation.updateMany({ where: { id: operation.id, status: 'SUBMITTING' }, data: { status: 'PENDING' } });
     } catch {
-      await prisma.paymentOperation.updateMany({ where: { id: operation.id, status: 'SUBMITTING' }, data: { status: 'UNKNOWN', lastErrorCode: 'PAYMENT_OPERATION_UNRESOLVED' } });
+      await prisma.$transaction(async tx => {
+        await new CommerceLocks(tx).acquire('order', [reference.orderId]);
+        const code = boletoRefund ? 'PAYMENT_REFUND_LINK_REVIEW' : 'PAYMENT_OPERATION_UNRESOLVED';
+        const changed = await tx.paymentOperation.updateMany({ where: { id: operation.id, status: 'SUBMITTING' }, data: { status: 'UNKNOWN', lastErrorCode: code } });
+        if (boletoRefund && changed.count) await markPaymentReview(tx, attemptId, code);
+      }, paymentEvidenceTransactionOptions);
     }
   }
   // Merely returning 200 for a DELETE/refund is not proof of final settlement.

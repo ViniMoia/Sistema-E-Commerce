@@ -9,6 +9,8 @@ import { parseRefundHistory, refundHistoryReview } from './refund-history';
 import { physicalReturnCompleted } from '@/services/physical-return.service';
 import { classifyChargeback, savedChargeback } from './chargeback';
 import { createHash } from 'node:crypto';
+import { boletoRefundUrl } from '@/lib/commerce/boleto-refund';
+import { expectedAsaasEnvironment } from '@/lib/config/asaas-environment.mjs';
 
 const chargeSchema = z.object({ paymentId: z.string().min(1).max(128), externalReference: z.string().min(1).max(128),
   method: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']), ordinal: z.number().int().positive(), value: z.number().finite().positive(),
@@ -68,7 +70,12 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
     if (chargeback?.review || chargeback?.outcome === 'REFUNDED') continue;
     const parsedHistory = parseRefundHistory(row.refundHistory?.records);
     const history = { ...parsedHistory, complete: row.refundHistory?.complete === true && parsedHistory.complete };
-    const reason = refundHistoryReview(history, row.status, Number(charge.amount), operation.submittedAt !== null);
+    // Boleto can await payer input before a refund history record exists.
+    // The saved POST result permits waiting, never recognition of a refund.
+    const awaitingBoletoInput = attempt.method === 'BOLETO' && operation.status === 'PENDING' && operation.submittedAt !== null &&
+      boletoRefundUrl(operation.refundRequestUrl, expectedAsaasEnvironment(process.env)) !== null &&
+      row.status === 'RECEIVED' && history.complete && history.records.length === 0;
+    const reason = awaitingBoletoInput ? null : refundHistoryReview(history, row.status, Number(charge.amount), operation.submittedAt !== null);
     const heldForReview = operation.lastErrorCode?.startsWith('PAYMENT_REFUND_') && operation.lastErrorCode.endsWith('_REVIEW');
     if (reason || (heldForReview && row.status !== 'REFUNDED')) {
       const code = reason ?? operation.lastErrorCode ?? 'PAYMENT_REFUND_HISTORY_REVIEW';
@@ -125,7 +132,7 @@ export async function applyPaymentEvidence(tx: Prisma.TransactionClient, attempt
           amount: charge.amount, occurredAt: row.paidAt ? new Date(row.paidAt) : now }, update: {} });
     }
     if (!chargeback?.review && (state === 'DELETED' || state === 'REFUNDED')) await tx.paymentOperation.updateMany({ where: { chargeId: charge.id,
-      kind: state === 'DELETED' ? 'CANCEL' : 'REFUND', status: { not: 'COMPLETED' } }, data: { status: 'COMPLETED', completedAt: now, lastErrorCode: null } });
+      kind: state === 'DELETED' ? 'CANCEL' : 'REFUND', status: { not: 'COMPLETED' } }, data: { status: 'COMPLETED', completedAt: now, lastErrorCode: null, refundRequestUrl: null } });
   }
   const paid = !chargebackReview && inspection.contractApproved !== false && chargeStates.every(s => ['CONFIRMED', 'RECEIVED'].includes(s));
   const refunded = !chargebackReview && chargeStates.every(s => s === 'REFUNDED');
