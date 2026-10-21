@@ -1,5 +1,13 @@
 # Checklist de produção G1–G8
 
+**Atualização de 21/10:** [preparação operacional implantada](EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md):
+Job de supervisão pronto e sem execuções, conta consumer com acesso somente
+ao segredo de cron, métrica, canal e duas políticas criados. Canal/políticas
+desabilitados e nenhuma agenda criada; G6 continua sem aceite. IAM do projeto
+consultado; revisão dos acessos preexistentes permanece aberta. E-mail/reset
+segue bloqueado por 401 da chave disponível e ausência de remetente/bindings.
+Serviço web e tráfego preservados; demais gates não foram encerrados.
+
 **Atualização de 20/10 — prevalece sobre avisos históricos abaixo:** a candidata
 `ae9ec9c`, incluindo PR #10, foi publicada na revisão
 `continental-hml-ae9ec9c-review`, com 0% do tráfego e URL de teste disponível.

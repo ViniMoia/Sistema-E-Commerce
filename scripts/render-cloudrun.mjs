@@ -74,7 +74,7 @@ export function cloudRunManifests(c) {
   }
   artifacts['readiness.json'] = { productionReady: false, schedulesApproved: false, resourcesProvisioned: false,
     requiredAccounts: ['web', 'consumer', 'scheduler'].map(sa),
-    requiredReview: ['G1-G8', 'Neon compute/pool budget', 'financial deadlines', 'IAM/Secret Manager', 'DNS/TLS/Host', 'Resend/storage', 'notification delivery'],
+    requiredReview: ['G1-G8', 'Neon compute/pool budget', 'financial deadlines', 'IAM/Secret Manager', 'DNS/TLS/Host', 'Resend/email delivery', 'external images/upload disabled', 'notification delivery'],
     warning: 'Schedules are a candidate for measurement, not approved Neon Free operation. Activate only after coordinated acceptance.' };
   return artifacts;
 }

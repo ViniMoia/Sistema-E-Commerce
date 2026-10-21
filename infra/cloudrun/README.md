@@ -1,5 +1,11 @@
 # Cloud Run — pacote de preparação do Vanderlei
 
+**Avanço de 21/10/2026:** [execução operacional](../../trabalho_em_dupla/EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md)
+criou Job de supervisão sem execução/agenda, conta consumer, métrica, canal e
+duas políticas. Canal e políticas permanecem desabilitados. A ausência histórica
+de recursos abaixo foi superada somente nesse escopo; G6 ainda exige ensaio,
+recebimento real, responsáveis, recuperação e aceite de cadência/custo.
+
 **Estado em 20/10/2026:** código de supervisão integrado e publicado na candidata
 `ae9ec9c`, com CI aprovada, sem promoção de tráfego. [Publicação e identidade](../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).
 Os avisos de preparação

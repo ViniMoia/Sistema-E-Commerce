@@ -1,0 +1,364 @@
+{
+  "at": "2026-10-21T12:39:46.542066+00:00",
+  "executor": "Codex - execucao da frente Vanderlei solicitada pelo operador",
+  "sourceCommit": "d8cbcfbfc779e49893f4f986db17d26a1cf5908c",
+  "originMainConsulted": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "mainAccess": "local origin/main documentation, read only; no source database access",
+  "changes": {
+    "resourceManagerApiEnabled": true,
+    "consumerServiceAccountCreated": true,
+    "cronSecretAccessorGrantedToConsumer": true,
+    "supervisionJobCreated": true,
+    "completionMetricCreated": true,
+    "disabledNotificationChannelCreated": true,
+    "disabledAlertPoliciesCreated": 2,
+    "schedulerApiEnabled": false,
+    "scheduleCreated": false,
+    "jobInvoked": false,
+    "emailSent": false,
+    "webServiceChanged": false,
+    "trafficChanged": false,
+    "webhookChanged": false,
+    "financialProcessingInvoked": false
+  },
+  "email": {
+    "at": "2026-10-21T12:34:32.866Z",
+    "source": ".env.homologacao",
+    "keyPresent": true,
+    "senderPresent": false,
+    "sent": false,
+    "providerHttpStatus": 401,
+    "runtimeKeyPresent": false,
+    "runtimeSenderPresent": false
+  },
+  "baselineInfrastructure": {
+    "at": "2026-10-21T12:34:51.847911+00:00",
+    "enabledRelevantApis": [
+      "iam.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
+      "run.googleapis.com",
+      "secretmanager.googleapis.com"
+    ],
+    "jobs": {
+      "ok": true,
+      "complete": true,
+      "source": "gcloud run jobs list (no region filter)",
+      "data": []
+    },
+    "channels": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": []
+    },
+    "policies": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": []
+    },
+    "serviceAccounts": [
+      {
+        "email": "15531616695-compute@developer.gserviceaccount.com",
+        "disabled": false
+      },
+      {
+        "email": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "disabled": false
+      }
+    ],
+    "serviceAccountProjectRoles": [],
+    "cronSecretServiceAccountBindings": [
+      {
+        "role": "roles/secretmanager.secretAccessor",
+        "members": [
+          "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+        ]
+      }
+    ],
+    "loggingMetrics": [],
+    "schedulerJobs": {
+      "ok": false,
+      "reason": "SERVICE_DISABLED",
+      "status": "not_checked"
+    },
+    "readFailures": {
+      "projectIam": "SERVICE_DISABLED"
+    },
+    "changes": false
+  },
+  "applicationReadOnly": {
+    "at": "2026-10-21T12:35:05.505867+00:00",
+    "method": "GET_ONLY",
+    "applicationBacklog": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "schemaVersion": 1,
+        "at": "2026-10-21T12:35:04.297Z",
+        "accountScope": "sandbox-hml",
+        "inbox": [
+          {
+            "_count": 30,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "READY"
+          }
+        ],
+        "outbox": [
+          {
+            "_count": 22,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "DEAD_LETTER"
+          }
+        ],
+        "uncertain": 0,
+        "overdue": 1,
+        "abandonedLeases": 0,
+        "operations": [
+          {
+            "_count": 13,
+            "status": "COMPLETED",
+            "kind": "REFUND"
+          },
+          {
+            "_count": 2,
+            "status": "COMPLETED",
+            "kind": "CANCEL"
+          },
+          {
+            "_count": 1,
+            "status": "PENDING",
+            "kind": "REFUND"
+          }
+        ],
+        "untrackedLegacyOrders": 0,
+        "oldestUnresolvedInboxAt": "2026-10-17T07:01:24.694Z",
+        "supervision": {
+          "schemaVersion": 1,
+          "reviewAttempts": 1,
+          "chargebackReviews": 0,
+          "physicalReturnReviews": 0,
+          "heldOperations": 1,
+          "emailDeadLetters": 0,
+          "expiredQueueLeases": 0,
+          "foreignAccountAttempts": 0,
+          "oldestUnresolvedOutboxAt": "2026-10-10T00:59:17.814Z",
+          "oldestPendingEmailAt": null,
+          "oldestDueReconciliationAt": "2026-10-15T16:32:06.938Z"
+        }
+      }
+    },
+    "asaasWebhooks": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "hasMore": false,
+        "totalCount": 1,
+        "webhooks": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "enabled": true,
+            "interrupted": false,
+            "sendType": "SEQUENTIALLY",
+            "apiVersion": 3,
+            "alertsEmailConfigured": true
+          }
+        ]
+      }
+    },
+    "financialProcessingInvoked": false,
+    "jobInvoked": false,
+    "changes": false
+  },
+  "verification": {
+    "at": "2026-10-21T12:38:27.604342+00:00",
+    "serviceUnchanged": true,
+    "trafficUnchanged": true,
+    "latestReadyRevision": "continental-hml-ae9ec9c-review",
+    "job": {
+      "name": "continental-hml-supervision",
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "scripts/cloudrun-consumer.mjs"
+            ],
+            "command": [
+              "node"
+            ],
+            "env": [
+              {
+                "name": "PAYMENT_DEPLOYMENT_ENVIRONMENT",
+                "value": "SANDBOX"
+              },
+              {
+                "name": "ASAAS_ACCOUNT_SCOPE",
+                "value": "sandbox-hml"
+              },
+              {
+                "name": "CONSUMER_ORIGIN",
+                "value": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+              },
+              {
+                "name": "CONSUMER_MODE",
+                "value": "supervision"
+              },
+              {
+                "name": "CONSUMER_MAX_BATCHES",
+                "value": "1"
+              },
+              {
+                "name": "CONSUMER_REQUEST_TIMEOUT_MS",
+                "value": "30000"
+              },
+              {
+                "name": "CONSUMER_BACKLOG_WARNING_SECONDS",
+                "value": "300"
+              },
+              {
+                "name": "CRON_SECRET",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "1",
+                    "name": "continental-hml-cron-secret"
+                  }
+                }
+              }
+            ],
+            "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0165e678e299c6f6fc6169ca675fa9f6f42f7bc11c5840bbf9803944759788b0",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "512Mi"
+              }
+            }
+          }
+        ],
+        "maxRetries": 0,
+        "serviceAccountName": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+        "timeoutSeconds": "60"
+      },
+      "executionCount": 0,
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-10-21T12:36:21.390570Z",
+          "status": "True",
+          "type": "Ready"
+        }
+      ],
+      "iamBindings": []
+    },
+    "consumerUserManagedKeyCount": 0,
+    "consumerProjectRoles": [],
+    "consumerCronSecretRoles": [
+      "roles/secretmanager.secretAccessor"
+    ],
+    "projectRolesRequiringReview": [
+      {
+        "role": "roles/editor",
+        "memberCount": 1,
+        "defaultCompute": true
+      },
+      {
+        "role": "roles/owner",
+        "memberCount": 1,
+        "defaultCompute": false
+      }
+    ]
+  },
+  "monitoring": {
+    "at": "2026-10-21T12:39:17.955713+00:00",
+    "channel": {
+      "name": "projects/continental-511812/notificationChannels/3617580342119339067",
+      "enabled": false,
+      "type": "email",
+      "verificationStatus": null
+    },
+    "policies": [
+      {
+        "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+        "enabled": false,
+        "displayName": "continental-hml-supervision: execução ausente",
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "conditions": [
+          {
+            "conditionAbsent": {
+              "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-supervision-completed\"",
+              "duration": "600s",
+              "trigger": {
+                "count": 1
+              },
+              "aggregations": [
+                {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_DELTA",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              ]
+            },
+            "displayName": "Sem conclusão do consumidor",
+            "name": "projects/continental-511812/alertPolicies/16768859373754969259/conditions/16768859373754967910"
+          }
+        ],
+        "alertStrategy": null
+      },
+      {
+        "name": "projects/continental-511812/alertPolicies/2245739515294212144",
+        "enabled": false,
+        "displayName": "continental-hml-supervision: falha ou falta de progresso",
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "conditions": [
+          {
+            "displayName": "Falha, revisão, retry ou atraso",
+            "name": "projects/continental-511812/alertPolicies/2245739515294212144/conditions/2245739515294212365",
+            "conditionMatchedLog": {
+              "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND (severity>=ERROR OR jsonPayload.severity=\"ERROR\" OR jsonPayload.outcome=\"attention\")"
+            }
+          }
+        ],
+        "alertStrategy": {
+          "notificationRateLimit": {
+            "period": "300s"
+          },
+          "autoClose": "86400s"
+        }
+      }
+    ],
+    "metric": {
+      "name": "continental-hml-supervision-completed",
+      "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND jsonPayload.event=\"consumer_completed\"",
+      "metricDescriptor": {
+        "name": "projects/continental-511812/metricDescriptors/logging.googleapis.com/user/continental-hml-supervision-completed",
+        "metricKind": "DELTA",
+        "valueType": "INT64",
+        "unit": "1",
+        "displayName": "continental-hml-supervision-completed",
+        "type": "logging.googleapis.com/user/continental-hml-supervision-completed"
+      }
+    },
+    "alertsDelivered": false
+  },
+  "pending": [
+    "Valid Resend key, verified EMAIL_FROM and reset test account/recipient",
+    "Named on-call owner and substitute, assisted window and cost/cadence acceptance",
+    "Cloudflare/Vercel/manual inventory and financial handoff with Leno",
+    "Automatic execution, real alert receipt, failure/absence/recovery proof",
+    "G5 security review including existing compute Editor role and bypass rotation",
+    "G7 freight and destination capacity/cost",
+    "G2/G8 restore by alternate operator and final acceptance"
+  ],
+  "g6Accepted": false,
+  "productionReady": false
+}

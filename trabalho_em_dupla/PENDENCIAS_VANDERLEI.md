@@ -1,8 +1,23 @@
 # O que falta para Vanderlei
 
-**Atualizado em:** 20/10/2026.
+**Atualizado em:** 21/10/2026.
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
+
+## Avanço de 21/10 — preparação operacional
+
+[Execução e evidências](EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md): Job de
+supervisão e conta consumer criados, acesso restrito ao segredo de cron,
+métrica de conclusão, canal e duas políticas criados. Canal/políticas
+desabilitados; zero execuções e nenhuma agenda criada. Serviço e tráfego
+preservados. IAM do projeto consultado após habilitar Resource Manager.
+**G6 permanece aberto** até janela, responsáveis/substituto e provas reais.
+
+E-mail/reset permanece bloqueado: chave privada consultada retornou 401 e
+`EMAIL_FROM` está ausente; ambos os bindings continuam ausentes no runtime.
+Operador precisa fornecer entradas válidas pelo arquivo privado.
+Referências históricas a zero Jobs/canais/políticas abaixo foram superadas
+apenas quanto aos recursos de supervisão aqui criados, sem aceite operacional.
 
 ## Situação vigente em 20/10 — candidata ae9ec9c
 
