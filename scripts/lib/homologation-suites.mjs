@@ -10,7 +10,7 @@ export const homologationSuites = [
   'customer-financial-metrics-browser', 'legacy-commerce-compatibility',
   'cart-drawer-browser', 'registration-browser', 'storefront-readiness-browser', 'catalog-navigation-browser',
   'payment-process-recovery', 'payment-lifecycle-homologation', 'physical-return-atomicity', 'physical-return-browser',
-  'chargeback-results', 'chargeback-browser', 'payment-supervision',
+  'chargeback-results', 'chargeback-browser', 'boleto-refund', 'boleto-refund-browser', 'payment-supervision',
 ].map(name => `tests/integration/${name}.test.ts`);
 
 export function selectIsolatedSuites(args) {

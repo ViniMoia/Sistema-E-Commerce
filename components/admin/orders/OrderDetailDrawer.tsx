@@ -17,6 +17,7 @@ import { orderOperationDetailSchema } from '@/lib/validators/order.validators'
 import { getTrackingInfo } from '@/lib/freight/tracking-url'
 import { PhysicalReturnPanel } from './PhysicalReturnPanel'
 import { ChargebackPanel } from './ChargebackPanel'
+import { BoletoRefundPanel } from './BoletoRefundPanel'
 import type { ChargebackSnapshot } from '@/services/payment/chargeback'
 
 export interface OrderDetail {
@@ -494,6 +495,7 @@ export function OrderDetailDrawer({ orderId, onClose, onStatusUpdate }: OrderDet
               </section>
 
               <ChargebackPanel charges={order.chargebacks ?? []} />
+              {order.paymentMethod === 'BOLETO' && <BoletoRefundPanel key={order.id} orderId={order.id} />}
               {['SHIPPED', 'DELIVERED'].includes(order.status) && <PhysicalReturnPanel
                 key={`${order.id}:${order.version}`} orderId={order.id}
                 onCompleted={() => { void loadOrder(); onStatusUpdate() }} />}

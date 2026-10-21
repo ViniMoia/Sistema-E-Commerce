@@ -113,6 +113,8 @@ export interface PaymentGateway {
   inspectAttempt?(input: { externalReference: string; paymentIds: string[]; method: PaymentMethod; installments: number; refundPaymentIds?: string[]; chargebackPaymentIds?: string[] }): Promise<PaymentInspection>;
   cancelPayment?(paymentId: string): Promise<void>;
   refundPayment?(paymentId: string, amount: number): Promise<void>;
+  /** Starts the full boleto refund; the payer link is not financial completion. */
+  refundBoleto?(paymentId: string): Promise<{ requestUrl: string }>;
   /** Full installment contract refund; no per-charge amount or automatic retry. */
   refundInstallment?(contractId: string): Promise<void>;
   capabilities(lojaID: string): Promise<{ configured: boolean; methods: PaymentMethod[]; maximumInstallments: number }>;

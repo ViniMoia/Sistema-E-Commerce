@@ -7,7 +7,8 @@ import type {
   AsaasCreateCustomerPayload,
   AsaasBoletoIdentificationFieldResponse,
 } from '@/types/asaas.types';
-import { asaasConfigurationReady } from '@/lib/config/asaas-environment.mjs';
+import { asaasConfigurationReady, asaasGatewayTarget } from '@/lib/config/asaas-environment.mjs';
+import { boletoRefundUrl } from '@/lib/commerce/boleto-refund';
 
 export class AsaasClientError extends Error {
   public statusCode?: number;
@@ -105,6 +106,18 @@ export class AsaasClient {
     const response = await this.request(this.baseUrl + '/payments/' + encodeURIComponent(id) + '/refunds?limit=100&offset=0');
     if (!response.ok) throw new AsaasClientError('PAYMENT_REFUND_LOOKUP_UNAVAILABLE', response.status);
     return response.json();
+  }
+
+  async refundBoleto(id: string): Promise<{ requestUrl: string }> {
+    // No retry or generic refund fallback, including after an invalid response.
+    const response = await this.request(this.baseUrl + '/payments/' + encodeURIComponent(id) + '/bankSlip/refund',
+      { method: 'POST', body: '{}', redirect: 'error' });
+    if (!response.ok) throw new AsaasClientError('PAYMENT_BOLETO_REFUND_UNRESOLVED', response.status);
+    const body: unknown = await response.json();
+    const requestUrl = boletoRefundUrl(body && typeof body === 'object' ? (body as { requestUrl?: unknown }).requestUrl : null,
+      asaasGatewayTarget(this.baseUrl));
+    if (!requestUrl) throw new AsaasClientError('PAYMENT_BOLETO_REFUND_UNRESOLVED');
+    return { requestUrl };
   }
 
   async getPaymentChargeback(id: string): Promise<unknown> {
