@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { Trash2, Plus, Loader2, Sparkles, Check, ArrowLeft, Layers, Image as ImageIcon, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
+import { ProductImageUrl } from "@/components/admin/ProductImageUrl";
+import { externalImageUrlSchema } from "@/lib/validators/image-url";
 import { InventoryPanel, type InventorySnapshot } from '@/components/admin/InventoryPanel';
 import {
   Form,
@@ -24,10 +25,10 @@ const productSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
   description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
   price: z.number().min(0.01, "Preço deve ser maior que R$ 0,00"),
-  imageUrl: z.string().url("Insira uma URL de imagem válida"),
+  imageUrl: externalImageUrlSchema,
   stock: z.number().int().min(0, "Estoque inválido"),
   variants: productVariantsSchema,
-  galleryUrls: z.array(z.object({ url: z.string().url("Insira uma URL válida") })),
+  galleryUrls: z.array(z.object({ url: externalImageUrlSchema })),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -338,7 +339,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <ProductImageUpload
+                  <ProductImageUrl
                     value={field.value}
                     onChange={field.onChange}
                     label="Foto Principal"

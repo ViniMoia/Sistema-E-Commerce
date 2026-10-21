@@ -1,5 +1,21 @@
 # Replanejamento para produção em até 48 horas
 
+**Atualização de Leno — 21/10/2026: imagens sem upload, implementação para revisão.**
+Removidos o seletor de arquivo do produto e o adaptador de escrita em Storage.
+A API de upload e a ação de avatar recusam envio por usuário/Admin, inclusive
+com a flag antiga habilitada e em testes. Campos de imagem aceitam referências
+HTTP(S), recusando `data:`, `blob:` e credenciais na URL. URLs externas existentes
+e recursos estáticos são preservados; o QR de pagamento não faz parte desta mudança.
+Auditoria em transações somente leitura confirmou 522 imagens principais externas
+na origem (518 Nuvemshop/4 Cloudinary) e 519 na homologação (518/1), sem imagens
+embutidas nos campos consultados. Não houve importação, migration ou alteração de dados.
+42 testes unitários, seis de integração/navegador isolados, três de seleção de suítes,
+TypeScript e lint aprovados. CI integral e publicação ainda pendentes; a candidata
+`ae9ec9c` não contém esta correção. Vanderlei deverá publicar o SHA aprovado e conferir
+produto/perfil e recusa HTTP na candidata, preservando checkout/controles/tráfego.
+[Evidências e limites](../../../../../../trabalho_em_dupla/evidencias/L-IMAGENS-SEM-UPLOAD-2026-10-21.json).
+Esta entrega não encerra G5/G8, e-mail, G6 ou disponibilidade de todas as imagens na CDN.
+
 **Atualização de Vanderlei — 20/10, 14:30 BRT:** candidata do PR #10 publicada
 em `ae9ec9c`, com CI aprovada e 0% de tráfego, preservando pausa/controles e
 revisões anteriores. [Publicação, digest, URL, testes e pendências](../../../../../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_AE9EC9C_2026-10-20.md).

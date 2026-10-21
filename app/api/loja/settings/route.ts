@@ -3,6 +3,7 @@ import { requireAdmin, requirePurchaseAdmin } from "@/lib/auth/guards";
 import { getLojaSettings, updateLojaSettings } from "@/services/loja.service";
 import { z } from "zod";
 import { toAdminLojaDTO } from '@/lib/loja-dto';
+import { externalImageUrlSchema } from '@/lib/validators/image-url';
 
 const updateLojaSettingsSchema = z.object({
   enableManualPix: z.boolean().optional(), enablePix: z.boolean().optional(),
@@ -13,7 +14,7 @@ const updateLojaSettingsSchema = z.object({
   name: z.string().min(2, "Nome da loja deve ter pelo menos 2 caracteres").optional(),
   slug: z.string().min(2, "Slug da loja deve ter pelo menos 2 caracteres").optional(),
   description: z.string().optional(),
-  coverImageUrl: z.union([z.literal(''), z.string().url()], { error: 'URL da logomarca/capa inválida' }).optional(),
+  coverImageUrl: z.union([z.literal(''), externalImageUrlSchema], { error: 'URL da logomarca/capa inválida' }).optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor primária inválida (deve ser hex #RRGGBB)").nullable().optional(),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Cor secundária inválida (deve ser hex #RRGGBB)").nullable().optional(),
   customDomain: z.string().nullable().optional(),

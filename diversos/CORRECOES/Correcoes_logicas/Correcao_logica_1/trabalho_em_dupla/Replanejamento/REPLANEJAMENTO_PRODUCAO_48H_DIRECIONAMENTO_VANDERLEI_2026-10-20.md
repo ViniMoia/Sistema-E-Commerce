@@ -1,5 +1,18 @@
 # Replanejamento para produção em até 48 horas
 
+**21/10/2026 — entrega de Leno para cumprir a política de imagens da seção 70.**
+Upload de produto/avatar recusado permanentemente no servidor, sem flag de reativação;
+seletor de arquivo e adaptador de Storage removidos. URLs HTTP(S) externas continuam
+permitidas; imagens embutidas em campos de URL são recusadas. Auditoria somente leitura
+de origem/homologação e testes locais aprovados constam na
+[evidência de imagens](../../../../../../trabalho_em_dupla/evidencias/L-IMAGENS-SEM-UPLOAD-2026-10-21.json).
+**Atribuição seguinte de Vanderlei:** após CI/revisão/integração desta entrega, publicar
+o SHA aprovado e conferir o editor de produtos, perfil e recusa da API na candidata.
+Registrar SHA/digest/URL/resultados; manter checkout pausado, controles financeiros e
+tráfego existentes. Não criar Storage, copiar imagens ou executar nova importação.
+A candidata `ae9ec9c` ainda não contém este bloqueio. Disponibilidade completa das
+imagens na CDN, e-mail, G6 e demais aceites continuam separados.
+
 **Devolutiva de Vanderlei — 20/10, 14:30 BRT:** PR #10 já integrado e publicado
 no SHA `ae9ec9c62b80d927ea9a59de626c62b1e1ca3f60`, com CI própria aprovada.
 Revisão `continental-hml-ae9ec9c-review`, 0% de tráfego;
