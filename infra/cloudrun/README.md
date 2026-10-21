@@ -1,5 +1,12 @@
 # Cloud Run — pacote de preparação do Vanderlei
 
+**Publicação de 21/10, 12:16–12:18 BRT:** [candidata `9495ff9`](../../trabalho_em_dupla/PUBLICACAO_HOMOLOGACAO_9495FF9_2026-10-21.md),
+com migration de boleto aplicada após backup/restore. Aplicação, supervisão e
+Job de pagamentos compartilham o digest aprovado para esta publicação. Jobs
+sem execução/agenda, candidata com 0% de tráfego, checkout pausado e controles
+financeiros desligados. Token de webhook configurado na candidata; destino no
+Asaas continua na Vercel. Alertas desabilitados e ensaio G6 ainda pendente.
+
 **Avanço de 21/10/2026:** [execução operacional](../../trabalho_em_dupla/EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md)
 criou Job de supervisão sem execução/agenda, conta consumer, métrica, canal e
 duas políticas. Canal e políticas permanecem desabilitados. A ausência histórica

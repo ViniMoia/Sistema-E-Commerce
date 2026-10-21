@@ -1,5 +1,15 @@
 # Checklist de produção G1–G8
 
+**Publicação de 21/10, 12:16–12:18 BRT — prevalece sobre os registros anteriores:**
+[`9495ff9` publicada](PUBLICACAO_HOMOLOGACAO_9495FF9_2026-10-21.md), CI integral
+aprovada; migration de boleto aplicada após backup criptografado e restore drill,
+35 migrations sem pendência e dados preservados. Aplicação, supervisão e Job de
+conciliação/inbox usam o mesmo digest. Candidata com 0% de tráfego, Jobs sem
+execução/agenda e controles financeiros desligados. Webhook permanece na Vercel;
+autenticação conferida por sondas inválidas, sem eventos/pedidos. Exclusividade
+dos acionadores externos, entrega de alertas e cenários financeiros ainda sem
+aceite. Os avisos abaixo de boleto sem publicação são históricos nesse aspecto.
+
 **Implementação de boleto pago — 21/10, sem publicação:** fluxo durável específico, link privado para o pagador no Admin, proteção contra repetição e manutenção da separação entre devolução financeira e retorno físico. Migration nova exige atualização coordenada de web/consumidores antes do ensaio. [Implementação e validações](evidencias/L-BOLETO-DEVOLUCAO-2026-10-21.json) e [procedimento](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#implementação-de-boleto-pago--21102026-ainda-sem-publicação). Código/testes isolados não aprovam o comportamento da conta, transporte ou atendimento. G3/G6 continuam abertos.
 
 **Triagem de G3 — 21/10, 10:23–10:24 BRT:** [leitura local/provedor e próximos passos](ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md#triagem-vigente--21102026). PIX #3 segue com devolução CANCELLED no histórico do Asaas; boleto #6 está RECEIVED e sem devolução comprovada; nenhum chargeback encontrado na conta Sandbox. #8 está PENDING local e OVERDUE no provedor, sem processamento nesta etapa. [Evidência](evidencias/L-G3-TRIAGEM-2026-10-21.json). Débito foi adiado pelo usuário nesta etapa e não deve impedir essa triagem. A falta de resposta do suporte permanece registrada; não equivale a capacidade habilitada. G3/G6 seguem abertos.

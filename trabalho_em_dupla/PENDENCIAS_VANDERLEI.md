@@ -4,6 +4,17 @@
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
 
+## Publicação de 21/10, 12:16–12:18 BRT — candidata 9495ff9
+
+[Migration, backup, artefato e inventário](PUBLICACAO_HOMOLOGACAO_9495FF9_2026-10-21.md).
+CI aprovada; migration de boleto aplicada com restore drill e comparação dos
+dados; aplicação, supervisão e novo Job de pagamentos no mesmo digest.
+Checkout/flags/tráfego preservados; Jobs não executados e sem agenda criada.
+Token de webhook vinculado à candidata; receptor efetivo continua na Vercel.
+Faltam inventário administrativo Vercel/Cloudflare, exclusividade/transferência,
+responsável/substituto, ativação coordenada e prova de alertas e novos cenários.
+E-mail/reset mantém bloqueio próprio. G3/G6/G8 não foram encerrados.
+
 ## Avanço de 21/10 — preparação operacional
 
 [Execução e evidências](EXECUCAO_OPERACIONAL_VANDERLEI_2026-10-21.md): Job de

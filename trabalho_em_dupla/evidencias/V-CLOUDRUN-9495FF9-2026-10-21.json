@@ -1,0 +1,884 @@
+{
+  "recordedAt": "2026-10-21T15:19:17.423786+00:00",
+  "executor": "Codex - preparacao da frente Vanderlei solicitada pelo operador",
+  "sourceCommit": "9495ff942e832db6588219e57163982b246e16d7",
+  "originMainConsulted": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "sourceArchive": "git archive of exact SHA; private files excluded from Docker context",
+  "ci": {
+    "headSha": "9495ff942e832db6588219e57163982b246e16d7",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39619498248"
+  },
+  "ciJobs": [
+    {
+      "name": "Validation, Security & Quality Gates",
+      "conclusion": "success",
+      "completedAt": "2026-10-21T15:14:33Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout Repository",
+          "conclusion": "success"
+        },
+        {
+          "name": "Setup Node.js",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install Dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Local Evidence Directory",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate Prisma Schema",
+          "conclusion": "success"
+        },
+        {
+          "name": "TypeScript Typecheck",
+          "conclusion": "success"
+        },
+        {
+          "name": "Lint",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Unit Tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate Consumer and Deployment Manifests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Rebuild and Verify Runtime Migration History",
+          "conclusion": "success"
+        },
+        {
+          "name": "Reject Missing or Mismatched Test Database Sentinel",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify Isolated Database and HTTP Server",
+          "conclusion": "success"
+        },
+        {
+          "name": "Production Build and Two-Instance Runtime Regression",
+          "conclusion": "success"
+        },
+        {
+          "name": "Full Maintenance and Recovery in Isolated Production Runtime",
+          "conclusion": "success"
+        },
+        {
+          "name": "Relocated Standalone Package and Runtime Regression",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bounded Capacity Pilot with Disposable Providers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build Cloud Run Image",
+          "conclusion": "success"
+        },
+        {
+          "name": "Validate Linux Container, Assets, Restart and Consumer",
+          "conclusion": "success"
+        },
+        {
+          "name": "Retain Evidence for This Revision",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout Repository",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "image": {
+    "imageTag": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store:9495ff9",
+    "digest": "sha256:3444783bf8f5f3e41df033ef69f2e5a54252a3fb5ff1dc67e8bb8e53bc3d4155",
+    "sourceLabel": "9495ff942e832db6588219e57163982b246e16d7",
+    "os": "linux",
+    "architecture": "amd64",
+    "user": "node"
+  },
+  "localContainerValidation": {
+    "startedAt": "2026-10-21T15:08:51.716Z",
+    "finishedAt": "2026-10-21T15:08:58.601Z",
+    "imageId": "sha256:3444783bf8f5f3e41df033ef69f2e5a54252a3fb5ff1dc67e8bb8e53bc3d4155",
+    "runId": "632149958afb4fc928b788513c20d223",
+    "results": [
+      {
+        "sentinel": true,
+        "home": true,
+        "assets": true,
+        "cronAuth": true,
+        "uid": 1000,
+        "buildId": "lM5SJPBOTde6OapVVsH3F",
+        "launchToReadyMs": 1615.6568000000007
+      },
+      {
+        "sentinel": true,
+        "home": true,
+        "assets": true,
+        "cronAuth": true,
+        "uid": 1000,
+        "buildId": "lM5SJPBOTde6OapVVsH3F",
+        "launchToReadyMs": 1597.9409999999998
+      }
+    ],
+    "instances": 2,
+    "restart": true,
+    "consumerAuthenticated": true,
+    "externalProviders": false,
+    "productionReady": false
+  },
+  "cloudRun": {
+    "at": "2026-10-21T15:16:08.767290+00:00",
+    "sourceCommit": "9495ff942e832db6588219e57163982b246e16d7",
+    "revision": "continental-hml-9495ff9-review",
+    "testUrl": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+    "traffic": [
+      {
+        "revisionName": "continental-hml-17fd1a7-review",
+        "tag": "review-17fd1a7",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      },
+      {
+        "revisionName": "continental-hml-9495ff9-review",
+        "tag": "review-9495ff9",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-ae9ec9c-review",
+        "tag": "review-ae9ec9c",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-d63ad8a-review",
+        "tag": "review-d63ad8a",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-eff10bf-dashboard",
+        "tag": "dashboard-eff10bf",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+      }
+    ],
+    "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+    "resolvedDigest": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+    "ready": true,
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+    },
+    "previousBindingsAndTrafficPreserved": true,
+    "aliases": {
+      "continental-hml-15531616695.southamerica-east1.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app": "3a82b33c-3646-4272-9a89-80bb1ba327a5"
+    }
+  },
+  "mainTraffic": {
+    "at": "2026-10-21T15:18:12.744568+00:00",
+    "revision": "continental-hml-896dc56-logout",
+    "traffic": 100,
+    "flags": {
+      "APP_MAINTENANCE_MODE": "false",
+      "CHECKOUT_PAUSED": "true",
+      "PAYMENT_REMOTE_ENABLED": "false",
+      "PAYMENT_WORKER_ENABLED": "false",
+      "PAYMENT_EXPIRATION_ENABLED": "false",
+      "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+      "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+    },
+    "unchangedRevision": true
+  },
+  "database": {
+    "at": "2026-10-21T15:15:15.095Z",
+    "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+    "database": "neondb",
+    "store": {
+      "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "slug": "continental-homologacao",
+      "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app"
+    },
+    "appliedMigrations": 35,
+    "pending": [],
+    "failed": [],
+    "checksumMismatches": [],
+    "readOnly": true,
+    "migrationExecuted": false
+  },
+  "backup": {
+    "startedAt": "2026-10-21T15:06:34.393Z",
+    "runId": "ee9f404a92124b124c175696848eacaa",
+    "privateDir": "%LOCALAPPDATA%/continental-hml-backups/ee9f404a92124b124c175696848eacaa",
+    "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+    "database": "neondb",
+    "scope": "public schema; no roles/ACL/owner replay",
+    "sourceReadOnly": true,
+    "restored": true,
+    "rehearsed": true,
+    "cleanup": true,
+    "identity": {
+      "database": "neondb",
+      "readOnly": "on",
+      "version": "18.6 (fd34222)",
+      "tenant": "continental-homologacao"
+    },
+    "backup": {
+      "bytes": 387577,
+      "sha256": "d413a68d2eb01bbb49c356304d2172b9375dae7d28dd69aac0604bb49f91327e"
+    },
+    "restoredTables": 38,
+    "newUrlNullCount": 16,
+    "operationCount": 16,
+    "guardInstalled": true,
+    "existingDataPreserved": true,
+    "finishedAt": "2026-10-21T15:07:07.328Z"
+  },
+  "migration": {
+    "name": "20261021140000_boleto_refund_request",
+    "startedAt": "2026-10-21T15:14:55.002Z",
+    "finishedAt": "2026-10-21T15:15:13.940Z",
+    "record": {
+      "migration_name": "20261021140000_boleto_refund_request",
+      "checksum": "3453816b2ed7c329d8028bcb59d3ac1ade28ff78097f484dbf0dad30755f4229",
+      "finished_at": "2026-10-21T15:15:04.765Z",
+      "rolled_back_at": null
+    },
+    "deployExit": 0,
+    "statusExit": 0,
+    "diffExit": 0,
+    "changedExistingTables": [],
+    "constraints": [
+      {
+        "conname": "PaymentOperation_attemptId_fkey",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (\"attemptId\") REFERENCES \"PaymentAttempt\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "conname": "PaymentOperation_attemptId_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL \"attemptId\""
+      },
+      {
+        "conname": "PaymentOperation_chargeId_fkey",
+        "convalidated": true,
+        "definition": "FOREIGN KEY (\"chargeId\") REFERENCES \"PaymentCharge\"(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+      },
+      {
+        "conname": "PaymentOperation_chargeId_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL \"chargeId\""
+      },
+      {
+        "conname": "PaymentOperation_commandKey_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL \"commandKey\""
+      },
+      {
+        "conname": "PaymentOperation_createdAt_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL \"createdAt\""
+      },
+      {
+        "conname": "PaymentOperation_id_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL id"
+      },
+      {
+        "conname": "PaymentOperation_kind_check",
+        "convalidated": true,
+        "definition": "CHECK (((kind)::text = ANY ((ARRAY['CANCEL'::character varying, 'REFUND'::character varying])::text[])))"
+      },
+      {
+        "conname": "PaymentOperation_kind_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL kind"
+      },
+      {
+        "conname": "PaymentOperation_pkey",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "conname": "PaymentOperation_status_check",
+        "convalidated": true,
+        "definition": "CHECK (((status)::text = ANY ((ARRAY['READY'::character varying, 'BOLETO_READY'::character varying, 'SUBMITTING'::character varying, 'UNKNOWN'::character varying, 'PENDING'::character varying, 'COMPLETED'::character varying])::text[])))"
+      },
+      {
+        "conname": "PaymentOperation_status_not_null",
+        "convalidated": true,
+        "definition": "NOT NULL status"
+      }
+    ],
+    "guards": [
+      {
+        "tgname": "PaymentOperation_boleto_guard",
+        "tgenabled": "O"
+      }
+    ],
+    "urlCheck": {
+      "total": 16,
+      "filled": 0
+    },
+    "passed": true
+  },
+  "finalDatabaseVerification": {
+    "at": "2026-10-21T15:16:55.152Z",
+    "tablesCompared": 38,
+    "changedTablesSinceMigration": [],
+    "urlCheck": {
+      "total": 16,
+      "filled": 0
+    },
+    "passed": true
+  },
+  "consumers": {
+    "at": "2026-10-21T15:16:23.998748+00:00",
+    "artifact": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+    "origin": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+    "jobs": [
+      {
+        "name": "continental-hml-supervision",
+        "ready": true,
+        "spec": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "run.googleapis.com/client-name": "gcloud",
+                "run.googleapis.com/client-version": "573.0.0",
+                "run.googleapis.com/execution-environment": "gen2"
+              },
+              "labels": {
+                "client.knative.dev/nonce": "kug_jox_tum",
+                "environment": "homologacao",
+                "purpose": "g6-supervision"
+              }
+            },
+            "spec": {
+              "parallelism": 1,
+              "taskCount": 1,
+              "template": {
+                "spec": {
+                  "containers": [
+                    {
+                      "args": [
+                        "scripts/cloudrun-consumer.mjs"
+                      ],
+                      "command": [
+                        "node"
+                      ],
+                      "env": [
+                        {
+                          "name": "PAYMENT_DEPLOYMENT_ENVIRONMENT",
+                          "value": "SANDBOX"
+                        },
+                        {
+                          "name": "ASAAS_ACCOUNT_SCOPE",
+                          "value": "sandbox-hml"
+                        },
+                        {
+                          "name": "CONSUMER_ORIGIN",
+                          "value": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+                        },
+                        {
+                          "name": "CONSUMER_MODE",
+                          "value": "supervision"
+                        },
+                        {
+                          "name": "CONSUMER_MAX_BATCHES",
+                          "value": "1"
+                        },
+                        {
+                          "name": "CONSUMER_REQUEST_TIMEOUT_MS",
+                          "value": "30000"
+                        },
+                        {
+                          "name": "CONSUMER_BACKLOG_WARNING_SECONDS",
+                          "value": "300"
+                        },
+                        {
+                          "name": "CRON_SECRET",
+                          "valueFrom": {
+                            "secretKeyRef": {
+                              "key": "1",
+                              "name": "continental-hml-cron-secret"
+                            }
+                          }
+                        }
+                      ],
+                      "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+                      "resources": {
+                        "limits": {
+                          "cpu": "1",
+                          "memory": "512Mi"
+                        }
+                      }
+                    }
+                  ],
+                  "maxRetries": 0,
+                  "serviceAccountName": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+                  "timeoutSeconds": "60"
+                }
+              }
+            }
+          }
+        },
+        "executions": 0,
+        "iamBindings": []
+      },
+      {
+        "name": "continental-hml-payments",
+        "ready": true,
+        "spec": {
+          "template": {
+            "metadata": {
+              "annotations": {
+                "run.googleapis.com/client-name": "gcloud",
+                "run.googleapis.com/client-version": "573.0.0",
+                "run.googleapis.com/execution-environment": "gen2"
+              },
+              "labels": {
+                "client.knative.dev/nonce": "yes_civ_lah",
+                "environment": "homologacao",
+                "purpose": "payments-preparation"
+              }
+            },
+            "spec": {
+              "parallelism": 1,
+              "taskCount": 1,
+              "template": {
+                "spec": {
+                  "containers": [
+                    {
+                      "args": [
+                        "scripts/cloudrun-consumer.mjs"
+                      ],
+                      "command": [
+                        "node"
+                      ],
+                      "env": [
+                        {
+                          "name": "PAYMENT_DEPLOYMENT_ENVIRONMENT",
+                          "value": "SANDBOX"
+                        },
+                        {
+                          "name": "ASAAS_ACCOUNT_SCOPE",
+                          "value": "sandbox-hml"
+                        },
+                        {
+                          "name": "CONSUMER_MODE",
+                          "value": "payments"
+                        },
+                        {
+                          "name": "CONSUMER_MAX_BATCHES",
+                          "value": "5"
+                        },
+                        {
+                          "name": "CONSUMER_REQUEST_TIMEOUT_MS",
+                          "value": "240000"
+                        },
+                        {
+                          "name": "CONSUMER_BACKLOG_WARNING_SECONDS",
+                          "value": "300"
+                        },
+                        {
+                          "name": "CONSUMER_ORIGIN",
+                          "value": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+                        },
+                        {
+                          "name": "CRON_SECRET",
+                          "valueFrom": {
+                            "secretKeyRef": {
+                              "key": "1",
+                              "name": "continental-hml-cron-secret"
+                            }
+                          }
+                        }
+                      ],
+                      "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+                      "resources": {
+                        "limits": {
+                          "cpu": "1",
+                          "memory": "512Mi"
+                        }
+                      }
+                    }
+                  ],
+                  "maxRetries": 0,
+                  "serviceAccountName": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+                  "timeoutSeconds": "1800"
+                }
+              }
+            }
+          }
+        },
+        "executions": 0,
+        "iamBindings": []
+      }
+    ],
+    "jobsInvoked": false,
+    "schedulesCreated": false,
+    "financialFlagsChanged": false
+  },
+  "smoke": {
+    "at": "2026-10-21T15:16:36.761Z",
+    "checks": [
+      {
+        "base": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/loja/active",
+        "status": 200,
+        "location": null,
+        "expectedTenant": true
+      },
+      {
+        "base": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 307,
+        "location": "/login"
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/products",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/loja/active",
+        "status": 200,
+        "location": null,
+        "expectedTenant": true
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/login",
+        "status": 200,
+        "location": null
+      },
+      {
+        "base": "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/admin",
+        "status": 307,
+        "location": "/login"
+      },
+      {
+        "path": "/api/checkout",
+        "method": "POST",
+        "status": 503,
+        "checkoutPaused": true
+      }
+    ],
+    "passed": true
+  },
+  "candidateAuthentication": {
+    "at": "2026-10-21T15:16:47.573Z",
+    "checks": [
+      {
+        "route": "/api/webhooks/asaas",
+        "mode": "missing_token",
+        "status": 401,
+        "workerDisabled": false
+      },
+      {
+        "route": "/api/webhooks/asaas",
+        "mode": "wrong_token",
+        "status": 401,
+        "workerDisabled": false
+      },
+      {
+        "route": "/api/webhooks/asaas",
+        "mode": "private_token",
+        "status": 503,
+        "workerDisabled": true
+      },
+      {
+        "route": "/api/cron/payments/status",
+        "authenticated": false,
+        "status": 401
+      },
+      {
+        "route": "/api/cron/payments/status",
+        "authenticated": true,
+        "status": 200,
+        "accountScope": "sandbox-hml"
+      }
+    ],
+    "realEventsSent": false,
+    "ordersReferenced": false,
+    "processingInvoked": false,
+    "status": {
+      "at": "2026-10-21T15:16:51.086Z",
+      "accountScope": "sandbox-hml",
+      "inbox": [
+        {
+          "_count": 30,
+          "status": "COMPLETED"
+        },
+        {
+          "_count": 1,
+          "status": "READY"
+        }
+      ],
+      "outbox": [
+        {
+          "_count": 22,
+          "status": "COMPLETED"
+        },
+        {
+          "_count": 1,
+          "status": "DEAD_LETTER"
+        }
+      ],
+      "operations": [
+        {
+          "_count": 13,
+          "status": "COMPLETED",
+          "kind": "REFUND"
+        },
+        {
+          "_count": 2,
+          "status": "COMPLETED",
+          "kind": "CANCEL"
+        },
+        {
+          "_count": 1,
+          "status": "PENDING",
+          "kind": "REFUND"
+        }
+      ],
+      "supervision": {
+        "schemaVersion": 1,
+        "reviewAttempts": 1,
+        "chargebackReviews": 0,
+        "physicalReturnReviews": 0,
+        "heldOperations": 1,
+        "emailDeadLetters": 0,
+        "expiredQueueLeases": 0,
+        "foreignAccountAttempts": 0,
+        "oldestUnresolvedOutboxAt": "2026-10-10T00:59:17.814Z",
+        "oldestPendingEmailAt": null,
+        "oldestDueReconciliationAt": "2026-10-15T16:32:06.938Z"
+      }
+    },
+    "passed": true
+  },
+  "webhookInventoryBefore": {
+    "at": "2026-10-21T15:08:53.916722+00:00",
+    "boundSecretsMatchPrivateSource": {
+      "DATABASE_URL": true,
+      "DIRECT_URL": true,
+      "ASAAS_API_KEY": true,
+      "CRON_SECRET": true
+    },
+    "sandboxApiAuthenticated": true,
+    "sandboxHost": "api-sandbox.asaas.com",
+    "accountScope": "sandbox-hml",
+    "webhooks": [
+      {
+        "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+        "path": "/api/webhooks/asaas",
+        "enabled": true,
+        "interrupted": false,
+        "authTokenReturned": false,
+        "authTokenMatchesPrivate": null,
+        "queryContainsBypass": true,
+        "emailConfigured": true
+      }
+    ],
+    "cloudRunWebhookTokenBound": false,
+    "cloudRunWorkerEnabled": "false",
+    "providerWebhookChanged": false,
+    "remoteAuthProbed": false,
+    "externalTokensAvailableInProcess": []
+  },
+  "webhookAuthenticationAtCurrentReceiver": {
+    "at": "2026-10-21T15:09:59.196722+00:00",
+    "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+    "path": "/api/webhooks/asaas",
+    "bypassUsedFromExistingProviderUrl": true,
+    "payload": "malformed JSON, no event or order identifiers",
+    "checks": [
+      {
+        "mode": "missing_token",
+        "status": 401,
+        "json": true,
+        "category": "OTHER"
+      },
+      {
+        "mode": "private_token",
+        "status": 400,
+        "json": true,
+        "category": "OTHER"
+      },
+      {
+        "mode": "wrong_token",
+        "status": 401
+      }
+    ],
+    "realEventsSent": false,
+    "providerConfigurationChanged": false,
+    "invalidTokenRejectionVerified": true,
+    "atLastCheck": "2026-10-21T15:14:45.563197+00:00"
+  },
+  "vercelStatusReadOnly": {
+    "at": "2026-10-21T15:11:59.868862+00:00",
+    "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+    "statusReadOnly": true,
+    "processingInvoked": false,
+    "httpStatus": 200,
+    "accountScope": "sandbox-hml",
+    "schemaVersion": 1,
+    "abandonedLeases": 0,
+    "expiredQueueLeases": 0
+  },
+  "webhookSecretPreparation": {
+    "at": "2026-10-21T15:10:56.122606+00:00",
+    "secret": "continental-hml-asaas-webhook-token",
+    "version": "1",
+    "source": "private homologation token, accepted by current Vercel receiver auth probe",
+    "webSecretAccessorGranted": true,
+    "boundToRuntime": false,
+    "existingProviderWebhookChanged": false,
+    "boundToCandidate": true,
+    "reference": "continental-hml-asaas-webhook-token:1"
+  },
+  "operationalInventory": {
+    "at": "2026-10-21T15:17:25.287135+00:00",
+    "channels": [
+      {
+        "name": "projects/continental-511812/notificationChannels/3617580342119339067",
+        "type": "email",
+        "enabled": false,
+        "recipientMatchesPreviouslyRegisteredOperator": true,
+        "deliveryProven": false
+      }
+    ],
+    "policies": [
+      {
+        "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+        "displayName": "continental-hml-supervision: execução ausente",
+        "enabled": false,
+        "channels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ]
+      },
+      {
+        "name": "projects/continental-511812/alertPolicies/2245739515294212144",
+        "displayName": "continental-hml-supervision: falha ou falta de progresso",
+        "enabled": false,
+        "channels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ]
+      }
+    ],
+    "jobsAcrossProject": [
+      "continental-hml-payments",
+      "continental-hml-supervision"
+    ],
+    "schedulerApiEnabled": false,
+    "schedulerInventory": "NOT_CHECKED_API_DISABLED",
+    "vercelCloudflareAdministrativeInventory": "NO_AUTHENTICATED_CONTROL_PLANE_ACCESS",
+    "oldConcurrentTriggerExcluded": false,
+    "suggestedWindow": {
+      "start": "2026-10-21T14:00:00-03:00",
+      "end": "2026-10-21T15:30:00-03:00",
+      "confirmed": false,
+      "conditions": [
+        "Leno controlled-case baseline and published acceptance script",
+        "External trigger inventory and coordinated webhook/consumer handoff",
+        "Named owner and substitute available; alert channel activation and cost cadence accepted"
+      ]
+    }
+  },
+  "localTriggers": {
+    "at": "2026-10-21T15:18:12.7582754Z",
+    "scope": "Current Windows host only; does not prove external or historical executions",
+    "tasksChecked": true,
+    "tasks": []
+  },
+  "preserved": {
+    "mainBranchAndDatabaseUntouched": true,
+    "priorTrafficDistribution": true,
+    "checkoutPaused": true,
+    "financialControlsDisabled": true,
+    "providerWebhookDestination": true,
+    "oldOrdersNotOperated": true,
+    "noFinancialProcessing": true,
+    "jobsNotInvoked": true,
+    "noSchedulesCreated": true,
+    "alertChannelAndPoliciesDisabled": true
+  },
+  "acceptance": {
+    "environmentPublishedForReview": true,
+    "globalProcessorExclusivityProven": false,
+    "remoteFinancialScenariosExecuted": false,
+    "g6Accepted": false,
+    "productionReady": false
+  },
+  "limits": [
+    "No authenticated administrative access to Vercel/Cloudflare; endpoint authentication is not trigger inventory or proof of release SHA there.",
+    "Scheduler API remains disabled; no global absence of schedules asserted.",
+    "Backup restored by this Windows user, not by an alternate operator.",
+    "No alert delivery proved; no duty owner/substitute formally accepted.",
+    "Suggested window is conditional and unconfirmed.",
+    "Provider webhook still targets Vercel; new Cloud Run receiver intentionally rejects valid tokens with WORKER_DISABLED until coordinated handoff."
+  ]
+}
