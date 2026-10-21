@@ -1,0 +1,228 @@
+{
+  "at": "2026-10-21T15:05:26.254Z",
+  "readOnlyVerified": true,
+  "isolation": "repeatable read",
+  "storeIdentityVerified": true,
+  "localTargetMatchesSource": false,
+  "sourceConnectionFingerprint": "b48d26ff918cd0b90ef1b35e410e020d7db8314267b3c1ce8e7aadcb0addab24",
+  "counts": {
+    "products": 522,
+    "variants": 528,
+    "orders": 24,
+    "items": 33,
+    "wallets": 2,
+    "movements": 2,
+    "carts": 3,
+    "cartItems": 1,
+    "brands": 18,
+    "categories": 10
+  },
+  "orders": [
+    {
+      "status": "PENDING",
+      "paymentMethod": "WHATSAPP_PIX",
+      "count": 10,
+      "total": "1209.00",
+      "remotereferences": 0
+    },
+    {
+      "status": "PAID",
+      "paymentMethod": "PIX",
+      "count": 1,
+      "total": "49.99",
+      "remotereferences": 0
+    },
+    {
+      "status": "PAID",
+      "paymentMethod": "WHATSAPP_PIX",
+      "count": 3,
+      "total": "1020.00",
+      "remotereferences": 2
+    },
+    {
+      "status": "CANCELLED",
+      "paymentMethod": "WHATSAPP_PIX",
+      "count": 10,
+      "total": "580.00",
+      "remotereferences": 0
+    }
+  ],
+  "obligations": {
+    "ordersneedingclassificationorfollowup": 14,
+    "remotepaymentreferences": 2,
+    "missinghistory": 24,
+    "missingvariantlinks": 33
+  },
+  "wallets": [
+    {
+      "balance": 0,
+      "count": 1,
+      "accountingReady": "FIELD_ABSENT",
+      "pending": "0",
+      "debt": "FIELD_ABSENT"
+    },
+    {
+      "balance": 475,
+      "count": 1,
+      "accountingReady": "FIELD_ABSENT",
+      "pending": "0",
+      "debt": "FIELD_ABSENT"
+    }
+  ],
+  "inventory": {
+    "mismatchedproducts": 4,
+    "productswithoutvariants": 0
+  },
+  "testProducts": [
+    {
+      "id": "6178ba96-b383-4e50-be1d-93a506912011",
+      "stock": 16,
+      "retired": null,
+      "variants": 3,
+      "variantStock": 30,
+      "retiredVariants": 0,
+      "imageSha256": "725472563b9209d3864f5f543238a70646514a09e4cadcf0f852d6979203d6e8"
+    },
+    {
+      "id": "622731a7-0158-486c-9626-0a739b3ddb91",
+      "stock": 13,
+      "retired": null,
+      "variants": 3,
+      "variantStock": 30,
+      "retiredVariants": 0,
+      "imageSha256": "d323d3466c44bf18d95da48984b181608d35922d5115e68f51608f50cd2a4b1e"
+    },
+    {
+      "id": "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+      "stock": 1,
+      "retired": null,
+      "variants": 1,
+      "variantStock": 10,
+      "retiredVariants": 0,
+      "imageSha256": "d873b8f3465ffd7d2a531b94d74f937b59df32b4318ff23f54f48922f5f8ae0f"
+    },
+    {
+      "id": "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13",
+      "stock": 8,
+      "retired": null,
+      "variants": 3,
+      "variantStock": 30,
+      "retiredVariants": 0,
+      "imageSha256": "ea3c7a739f2fd78ae4a6c5add7c0897dfd384c5e8c140f0cc1e00a811b46ba31"
+    }
+  ],
+  "protectedProducts": [
+    {
+      "id": "0486f861-4e39-426a-81ce-8b39f60a177f",
+      "retired": null
+    },
+    {
+      "id": "5e86739a-6114-4df1-a15a-df88b7a349c3",
+      "retired": null
+    },
+    {
+      "id": "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+      "retired": null
+    },
+    {
+      "id": "bc076f2d-740c-45f3-84c5-9d0fb8657d84",
+      "retired": null
+    },
+    {
+      "id": "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+      "retired": null
+    }
+  ],
+  "modern": {
+    "PaymentAttempt": "TABLE_ABSENT",
+    "PaymentOperation": "TABLE_ABSENT",
+    "PaymentInbox": "TABLE_ABSENT",
+    "PaymentWebhookEvent": 4,
+    "PaymentOutbox": "TABLE_ABSENT",
+    "FinancialFact": "TABLE_ABSENT",
+    "InventoryReservation": "TABLE_ABSENT",
+    "LoyaltyLot": "TABLE_ABSENT",
+    "OrderReportingExclusion": "TABLE_ABSENT"
+  },
+  "fingerprints": {
+    "Order": "1cf3fe69043f368f219853bae01a64f9",
+    "OrderItem": "2014c30286c71379582465cdc5b0a3da",
+    "Product": "610a3157269dac4eb1861acf7a20c5ae",
+    "ProductVariants": "b18e6b7b76bc8c26eb0ce43ad7ffe24c",
+    "LoyaltyWallet": "12fb5c677061eaa8644ed887155e4164",
+    "LoyaltyTransaction": "ba80f7859a3b57109a265c005132e791"
+  },
+  "kind": "OPENING_SOURCE_READ_ONLY_INVENTORY",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "comparison": {
+    "baselineAt": "2026-10-15T18:45:06.160293+00:00",
+    "countDifferences": {},
+    "sameCountsDoNotProveUnchangedRows": true
+  },
+  "pendingCandidateMigrations": [
+    "20261003000000_complete_runtime_schema",
+    "20261004000000_commerce_contracts_expansion",
+    "20261005000000_purchase_tenant_scope",
+    "20261005010000_separate_guest_buyer",
+    "20261005020000_order_command_receipts",
+    "20261005030000_catalog_revision",
+    "20261005040000_cart_active_uniqueness",
+    "20261005050000_loyalty_lot_accounting",
+    "20261005060000_password_reset_lookup",
+    "20261005070000_freight_authority",
+    "20261005080000_payment_plan_authority",
+    "20261005090000_checkout_intent_authority",
+    "20261005100000_durable_payment_execution",
+    "20261016193000_order_reporting_exclusion",
+    "20261021140000_boleto_refund_request"
+  ],
+  "sharedDatabaseMutated": false,
+  "providerQueried": false,
+  "productionReady": false,
+  "migrationHistory": {
+    "rows": 40,
+    "distinctNames": 20,
+    "duplicateNames": [
+      "20260423214204_add_initial_tables",
+      "20260424231005_edit_address",
+      "20260427164311_implementacao_status_user",
+      "20260427211753_integracao_tabela_session",
+      "20260429214420_db_cart_schema",
+      "20260511165055_role_enum_add_schema",
+      "20260511213657_add_audit_log_model",
+      "20260512193716_add_audit_log_entity_fields",
+      "20260513004039_order_update",
+      "20260513203715_",
+      "20260520192856_add_pix_key_to_loja",
+      "20260520201129_add_pixkeyused_to_order",
+      "20260521000000_reconcile_schema_drift",
+      "20260522000000_monetary_decimal_and_check_constraints",
+      "20260523000000_performance_composite_indexes",
+      "20260524000000_add_order_idempotency_key",
+      "20260831000000_add_loyalty_engine",
+      "20260916000000_add_asaas_and_delivery_confirmation",
+      "20260916130000_add_cpf_cnpj_to_user_and_order",
+      "20260917000000_add_order_paid_at"
+    ],
+    "allFinished": true,
+    "anyRolledBack": false,
+    "allCandidateChecksumsMatch": true,
+    "note": "Duplicate names were also present in the historical inventory; no cleanup or deploy executed."
+  },
+  "queryScriptSHA256": "e0b1d8e89685b631980f35f3e29fc3d7774650a58ce1e3d1458eacc818e32349",
+  "limitations": [
+    "Source database only; no new remote provider or homologation database inspection.",
+    "Matching counts do not establish row equality or absence of activity since the old snapshot.",
+    "Missing modern tables/columns are not zero balances, zero debt or absence of obligations.",
+    "Stock in the database is not verified physical commercial stock.",
+    "No backup, restore, migration, classification, retirement or points adjustment executed."
+  ],
+  "nextActions": [
+    "Privately identify and resolve the two remote references before the opening window; legacy method labels alone are not provider proof.",
+    "Confirm exact test product identities and physical commercial inventory; preserve all links.",
+    "Prepare a fresh backup and rehearse current migration chain in an isolated clone before authorized opening.",
+    "Confirm independent recovery operator/access and measure recovery objectives.",
+    "Review exact wallet ledger and test-data classification before any adjustment."
+  ]
+}

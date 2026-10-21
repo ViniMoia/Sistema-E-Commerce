@@ -1,5 +1,37 @@
 # G2 — Pacote de abertura do banco existente
 
+## Backup fresco e ensaio de abertura — 21/10/2026
+
+**Restauração e abertura local aprovadas; G2 permanece aberto.** [Evidência sanitizada](evidencias/L-G2-BACKUP-ENSAIO-2026-10-21.json). Candidata de runtime `9495ff9`; checkout documental `f2a55eb`. A origem foi identificada antes da captura e acessada somente leitura; `.env` foi selecionado explicitamente para não herdar o outro destino de `.env.local`.
+
+- Captura/validação entre **12:12:30 e 12:13:20 BRT**; backup consistente do schema `public`, AES-256-GCM, chave DPAPI e ACL restrita, fora do repositório. Hash do dump: `e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a`. Localizador: `%LOCALAPPDATA%/logic-audit-backups/b0072bdd3f7e2302fea9dd8e49f91d6d`. Essa janela inclui restore/upgrade; o instante exato do snapshot do dump não foi registrado separadamente.
+- Dois restores equivalentes do backup persistido; restore sanitizado, histórico/checksums, constraints, dados e sequências preservados. Quinze migrations pendentes aplicadas **somente nos clones**; diff vazio e segunda aplicação sem alteração de dados.
+- Ensaio de abertura entre **12:13:35 e 12:15:24 BRT**, sem reconexão à origem: quatro produtos/dez variantes retirados, cinco produtos comerciais protegidos e 518 produtos ativos no clone. Estoques numéricos não foram reconciliados nem produtos excluídos.
+- Duas carteiras abertas com baixa auditada dos 475 pontos de teste, dois ajustes/duas auditorias, movimentos e 24 pedidos históricos preservados. Replay sem duplicar ajustes. Isso não altera nem autoriza baixa nos saldos do banco de origem.
+- Nove verificações HTTP passaram, incluindo catálogo, pedidos, carteiras e recusas de acesso. Três testes de abertura/compra passaram: 20 comandos legados recusados e uma compra controlada local; sem chamadas Asaas. Cinco testes das proteções do executor passaram. Clone descartado e ausência conferida.
+
+**Classificação dos pedidos no backup novo:** ainda não reensaiada. O classificador exige o hash aprovado do snapshot de 15/10; a proteção foi preservada. Revisar o manifesto e a impressão integral dos pedidos do backup novo antes de habilitar essa fase. A prova anterior continua identificada como histórica, não como execução no snapshot de 21/10.
+
+**Recuperação independente:** o usuário confirmou que será o operador alternativo. A execução acima ocorreu pela conta Windows atual e não demonstra acesso independente. Próxima prova: o usuário obtém o backup e a chave pelo mecanismo aprovado, em conta/ambiente cuja independência seja verificada, restaura em destino novo isolado e confere integridade. Não copiar `key.dpapi` supondo portabilidade. Ainda faltam definir/comprovar acesso independente, cópia fora desta máquina, retenção e RPO/RTO; tempos locais não são RPO/RTO aprovados.
+
+**Condições restantes de G2:** recuperação pelo operador alternativo; revisão do manifesto do snapshot fresco; obrigações das duas referências remotas e estoque comercial físico; backup/cutoff da janela final, contenção dos escritores, executor específico e comparação antes/depois no destino autorizado. Nenhuma migration, classificação, alteração de estoque/pontos ou abertura foi aplicada à origem/homologação compartilhada. Evidências e pendências do inventário abaixo conservam seu horário de coleta.
+
+## Inventário atualizado — 21/10/2026
+
+Leitura da origem às **12:05:26 BRT / 15:05:26 UTC**, com identidade da loja conferida e transação `REPEATABLE READ / READ ONLY` verificada. Fonte de conexão: `.env`; `.env.local` já aponta para outro destino e não foi usado na auditoria. Nenhuma credencial é registrada. [Evidência sanitizada](evidencias/L-G2-INVENTARIO-ORIGEM-2026-10-21.json). Código de origem `7f9b26e`, candidata integrada `9495ff9`.
+
+| Item | Observação atual | Pendência de abertura |
+|---|---|---|
+| Catálogo | 522 produtos, 528 variantes, 18 marcas e 10 categorias; contagens coincidem com 15/10. | Conferir estoque comercial físico e identidade dos itens; contagens iguais não comprovam linhas inalteradas. |
+| Quatro produtos de teste | IDs previstos encontrados, dez variantes; divergências de estoque preservadas: aspirador vermelho 1/10, calça 13/30, camisa branca 16/30, camisa preta 8/30. Cinco produtos protegidos encontrados. | Retirada não comprovada na origem. Valor nulo nesta coleta não distingue coluna ausente de campo vazio, nem comprova disponibilidade na aplicação. Conferir identificação/imagem e vínculos no cutoff antes da ação autorizada. |
+| Pedidos | 24 pedidos, 33 itens, todos sem histórico de status; 33 itens sem vínculo de variante. Dez pendentes, quatro pagos e dez cancelados. Duas referências de pagamento remoto. | Separar classificação de teste de obrigações reais. Consultar privadamente as duas referências no provedor antes da abertura; rótulo legado do meio não prova estado financeiro. Nenhuma consulta do provedor nesta rodada. |
+| Carteiras | Duas, com saldos 0 e 475; dois movimentos; pending=0. Campos modernos de dívida/accountingReady ausentes no schema de origem. | Não interpretar campo ausente como dívida zero ou carteira conciliada. Validar ledger e classificação antes de ajuste; não reutilizar números históricos como autorização. |
+| Estrutura | 40 registros de migrations, 20 nomes distintos repetidos, todos concluídos e com checksums compatíveis. Quinze migrations da candidata ainda não constam aplicadas. Tabelas modernas de operações/fatos/reservas/lotes ausentes; quatro eventos na tabela legada de webhook. | Novo backup e ensaio da cadeia atual em clone. Duplicações no histórico já existiam no inventário antigo; não remover registros. Não aplicar somente a migration de boleto na origem antiga. |
+
+As contagens e divergências agregadas coincidem com o inventário anterior, mas não foi demonstrada igualdade integral entre as linhas antigas e atuais. Foram guardadas impressões para comparação futura; esta leitura não substitui backup ou captura no cutoff. O schema legado não permite inferir ausência de obrigações pela ausência de filas modernas. Os estados dos pedidos são locais, sem confirmação financeira nova.
+
+**Próxima ação G2:** preparar backup fresco e ensaio da cadeia atual em clone isolado, junto da conferência privada das obrigações e da prova de recuperação por operador alternativo. A abertura exige comparação antes/depois, responsável e janela definidos. Main/banco de origem não receberam migrations, classificação, ajustes de estoque/pontos ou qualquer outra mutação nesta rodada. Nenhum teste de recuperação foi repetido agora e G2 permanece aberto. As seções abaixo conservam os detalhes dos ensaios históricos.
+
 Revisão de 16/10/2026. Complementa o [checklist G1–G8](CHECKLIST_PRODUCAO_G1_G8.md), o [procedimento de implantação](../diversos/AUDITORIAS/operations/operations/DEPLOYMENT-RUNBOOK.md) e o [procedimento de recuperação](../diversos/AUDITORIAS/operations/operations/BACKUP-RESTORE-RUNBOOK.md). **Preparação e ensaio em clone; abertura produtiva não executada.**
 
 ## Identidades e limites

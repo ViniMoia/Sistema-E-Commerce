@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "kind": "FINANCIAL_ACCEPTANCE_EXECUTION_TEMPLATE",
+  "status": "NOT_EXECUTED",
+  "preparedAgainstRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "environment": "SANDBOX",
+  "deployment": {
+    "actualRevisionSha": null,
+    "approvedCiReference": null,
+    "imageDigest": null,
+    "cloudRunRevision": null,
+    "reviewOriginWithoutSecrets": null,
+    "migrationEvidenceReference": null,
+    "backupEvidenceReference": null,
+    "accountScopeReference": null,
+    "webhookTargetEvidenceReference": null,
+    "consumerInventoryEvidenceReference": null,
+    "sameArtifactVerified": false
+  },
+  "window": {
+    "startsAtUtc": null,
+    "endsAtUtc": null,
+    "authorizationReference": null,
+    "executor": null,
+    "reviewer": null,
+    "businessOwner": null,
+    "alternateOwner": null,
+    "alertRecipientReference": null,
+    "containmentAndRecoveryReference": null,
+    "prerequisitesVerified": false
+  },
+  "scenarioResults": [
+    { "id": "PIX-01", "status": "NOT_EXECUTED", "privateCaseReference": null },
+    { "id": "BOL-01", "status": "NOT_EXECUTED", "privateCaseReference": null },
+    { "id": "FIS-01", "status": "NOT_EXECUTED", "privateCaseReference": null },
+    { "id": "CB-01", "status": "NOT_EXECUTED", "privateCaseReference": null }
+  ],
+  "scenarioRecordShape": {
+    "id": null,
+    "status": "NOT_EXECUTED",
+    "privateCaseReference": null,
+    "linkedScenarioId": null,
+    "baselineAtUtc": null,
+    "completedAtUtc": null,
+    "expectedResultReference": null,
+    "actualResultSummary": null,
+    "mutationsAttempted": [],
+    "evidenceReferences": {
+      "identityAndBaseline": [],
+      "providerPaymentAndHistory": [],
+      "eventAndConsumer": [],
+      "localOperationFactsAndAudit": [],
+      "loyaltyComparison": [],
+      "physicalInventoryComparison": [],
+      "privateInspectionReceipt": [],
+      "laterReadWithoutDuplicateEffects": [],
+      "alertReceiptAndAcknowledgment": [],
+      "customerCommunication": [],
+      "providerDisputeProtocol": [],
+      "sanitizedScreens": []
+    },
+    "coverage": {
+      "providerAccount": "NOT_ASSESSED",
+      "transport": "NOT_ASSESSED",
+      "financialEffects": "NOT_ASSESSED",
+      "loyaltyEffects": "NOT_ASSESSED",
+      "physicalEffects": "NOT_ASSESSED",
+      "automaticProcessing": "NOT_ASSESSED",
+      "recoveryAndAlerts": "NOT_ASSESSED",
+      "customerService": "NOT_ASSESSED"
+    },
+    "reusedIsolatedEvidence": [],
+    "limitationsAndRemainingIssues": [],
+    "nextAction": null,
+    "owner": null,
+    "nextCheckAtUtc": null,
+    "providerDeadlineAtUtc": null,
+    "deadlineEvidenceReference": null,
+    "reviewedBy": null,
+    "reviewedAtUtc": null
+  },
+  "closure": {
+    "effectiveConfigurationEvidenceReference": null,
+    "remainingIssues": [],
+    "g3Approved": false,
+    "g6Approved": false,
+    "productionApproved": false
+  },
+  "instructions": [
+    "Template only: null, false and empty arrays are not completed evidence.",
+    "Expand each scenario result with scenarioRecordShape in the authorized private record.",
+    "Record non-applicable coverage explicitly with a reason; never convert it to PASS.",
+    "Keep secrets, payer URLs, documents and customer data out of Git; use opaque private references.",
+    "A new PIX success does not close order 3; preserve existing orders 3 through 8.",
+    "Only sanitized summaries belong in Git. A completed scenario does not approve production."
+  ]
+}
