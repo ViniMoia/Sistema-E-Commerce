@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-21",
+  "baseCommit": "d8cbcfbfc779e49893f4f986db17d26a1cf5908c",
+  "mainCodeRead": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "scope": "Permanent application upload denial and external image references",
+  "audits": [
+    {
+      "environment": "main",
+      "at": "2026-10-21T11:57:50.258Z",
+      "readOnlyVerified": true,
+      "storeIdentityVerified": true,
+      "groups": {
+        "product": {
+          "total": 522,
+          "empty": 0,
+          "external": 522,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {
+            "dcdn-us.mitiendanube.com": 518,
+            "res.cloudinary.com": 4
+          }
+        },
+        "gallery": {
+          "total": 520,
+          "empty": 0,
+          "external": 520,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {
+            "dcdn-us.mitiendanube.com": 518,
+            "res.cloudinary.com": 2
+          }
+        },
+        "avatar": {
+          "total": 8,
+          "empty": 8,
+          "external": 0,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {}
+        },
+        "cover": {
+          "total": 1,
+          "empty": 0,
+          "external": 1,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {
+            "via.placeholder.com": 1
+          }
+        },
+        "brand": {
+          "total": 18,
+          "empty": 0,
+          "external": 0,
+          "embedded": 0,
+          "relative": 18,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {}
+        }
+      }
+    },
+    {
+      "environment": "homologacao",
+      "at": "2026-10-21T11:57:52.599Z",
+      "readOnlyVerified": true,
+      "storeIdentityVerified": true,
+      "groups": {
+        "product": {
+          "total": 519,
+          "empty": 0,
+          "external": 519,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {
+            "dcdn-us.mitiendanube.com": 518,
+            "res.cloudinary.com": 1
+          }
+        },
+        "gallery": {
+          "total": 518,
+          "empty": 0,
+          "external": 518,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {
+            "dcdn-us.mitiendanube.com": 518
+          }
+        },
+        "avatar": {
+          "total": 1,
+          "empty": 1,
+          "external": 0,
+          "embedded": 0,
+          "relative": 0,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {}
+        },
+        "cover": {
+          "total": 1,
+          "empty": 0,
+          "external": 0,
+          "embedded": 0,
+          "relative": 1,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {}
+        },
+        "brand": {
+          "total": 18,
+          "empty": 0,
+          "external": 0,
+          "embedded": 0,
+          "relative": 18,
+          "other": 0,
+          "withCredentials": 0,
+          "hosts": {}
+        }
+      }
+    }
+  ],
+  "changes": [
+    "Upload API and avatar action deny all uploads independent of flags/environment",
+    "Removed Storage write adapter and product file input",
+    "HTTP(S)-only image reference validation on product/gallery/store cover/avatar input",
+    "Preserved CDN URLs and existing assets; no data migration"
+  ],
+  "validation": {
+    "unit": {
+      "files": 4,
+      "passed": 42
+    },
+    "integration": {
+      "runId": "f5002defc30e5d0a109dd9e07b32da4c",
+      "files": 3,
+      "passed": 6,
+      "browserWidths": [
+        320,
+        390,
+        1440
+      ]
+    },
+    "suiteSelector": {
+      "passed": 3
+    },
+    "typescript": "PASS",
+    "eslint": "PASS",
+    "ci": "NOT_RUN",
+    "deployment": "NOT_PERFORMED"
+  },
+  "limits": [
+    "SQL inventory checks reference formats, not CDN availability, image contents or provenance of every item",
+    "Existing catalog import copies imageUrl/galleryUrls and Nuvemshop IDs; no remote import or sync executed",
+    "No shared data writes, uploads, bucket changes, migrations, payments or trigger changes",
+    "Remote acceptance and deployment pending; G5/G8 not fully closed"
+  ]
+}

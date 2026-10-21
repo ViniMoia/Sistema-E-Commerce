@@ -9,7 +9,7 @@ const harness = vi.hoisted(() => ({
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => harness.router }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: harness.toast }) }));
-vi.mock("@/components/admin/ProductImageUpload", () => ({ ProductImageUpload: () => null }));
+vi.mock("@/components/admin/ProductImageUrl", () => ({ ProductImageUrl: () => null }));
 vi.mock("@/components/admin/InventoryPanel", () => ({ InventoryPanel: (props: any) => {
   harness.inventoryRead = props.onInventoryRead;
   return null;

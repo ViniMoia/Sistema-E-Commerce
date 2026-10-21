@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { validateCpfCnpj } from "@/lib/validators/cpf-cnpj";
+import { externalImageUrlSchema } from "@/lib/validators/image-url";
 
 export const REGISTRATION_PASSWORD_MIN_LENGTH = 6;
 
@@ -30,7 +31,7 @@ export const registerSchema = z.object({
       (val) => !val || validateCpfCnpj(val),
       "CPF ou CNPJ inválido"
     ),
-  avatarImageUrl: z.string().url("URL de avatar inválida").optional().or(z.literal("")),
+  avatarImageUrl: externalImageUrlSchema.optional().or(z.literal("")),
   address: z
     .object({
       cep: z.string().min(8, "CEP inválido"),

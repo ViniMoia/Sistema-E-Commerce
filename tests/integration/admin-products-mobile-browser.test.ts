@@ -76,6 +76,9 @@ describe('Admin product actions on mobile', () => {
     await press(`${row()} a[title="Editar Produto"]`);
     await browser.waitFor(`location.pathname === '/admin/products/${productId}/edit' && !!document.querySelector('input[name="name"]')`, 60000);
     expect(await browser.evaluate('document.querySelector(\'input[name="name"]\').value')).toBe(productName);
+    expect(await browser.evaluate('document.querySelectorAll(\'input[type="file"]\').length')).toBe(0);
+    expect(await browser.evaluate('document.body.textContent.includes("Não é permitido enviar arquivos.")')).toBe(true);
+    expect(await browser.evaluate('!!document.querySelector(\'input[type="url"]\')')).toBe(true);
     expect(await prisma.productVariants.count({ where: { ProductID: productId } })).toBe(2);
     expect(await prisma.product.count({ where: { id: productId } })).toBe(1);
     expect(deleteRequests).toBe(0);
