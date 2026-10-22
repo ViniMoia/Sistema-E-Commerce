@@ -1,8 +1,33 @@
 # O que falta para Vanderlei
 
-**Atualizado em:** 21/10/2026.
+**Atualizado em:** 22/10/2026.
 
 **Projeto e branch:** Sistema-E-Commerce — `homologacao_teste`.
+
+## Preparação de 22/10 — estado vigente
+
+[Devolutiva, matriz de segurança e procedimentos executáveis](DEVOLUTIVA_VANDERLEI_PREPARACAO_PRODUCAO_2026-10-22.md).
+Release `9495ff9`, CI, digest, 35 migrations e contenção reconferidos sem novo deploy.
+Inventário GCP/Asaas e banco HML somente leitura concluídos; 73 testes unitários e
+sondas negativas/navegação desktop/mobile no alcance registrado aprovados.
+Planos de transferência, alertas, capacidade, implantação/retomada e e-mail preparados.
+
+Restam acessos administrativos Vercel/Cloudflare/Neon/budgets, triagem do backlog,
+exclusividade dos acionadores, revisão de permissões/role/pool, domínio canônico,
+embalagens/contratos de frete e ensaios coordenados. Alertas existentes cobrem somente
+supervisão; propostas próprias de pagamentos foram preparadas e não implantadas.
+Domínio/remetente, responsável/substituto e janela continuam indefinidos, conforme
+resposta do usuário. Proposta: 23/10, 14h–15h30 BRT, sem confirmação.
+
+**Correção de e-mail:** `401 restricted_api_key` em GET `/domains` não demonstra
+incapacidade de envio. Não exigir troca da chave por essa consulta; confirmar o
+remetente e a permissão necessária no ensaio controlado. Os bindings ainda faltam.
+O domínio da loja ainda aponta para Vercel e determina a origem do reset.
+
+G2: reaproveitar recuperação técnica informada no guia de 22/10 e metas RPO 15min /
+RTO 60min; falta receber o fechamento para conferir alcance/tempos e complementar
+custódia, acessos pessoais e cobertura externa. Não repetir restore idêntico.
+As listas históricas abaixo não substituem esta devolutiva nem autorizam produção.
 
 ## Publicação de 21/10, 12:16–12:18 BRT — candidata 9495ff9
 
@@ -24,9 +49,9 @@ desabilitados; zero execuções e nenhuma agenda criada. Serviço e tráfego
 preservados. IAM do projeto consultado após habilitar Resource Manager.
 **G6 permanece aberto** até janela, responsáveis/substituto e provas reais.
 
-E-mail/reset permanece bloqueado: chave privada consultada retornou 401 e
-`EMAIL_FROM` está ausente; ambos os bindings continuam ausentes no runtime.
-Operador precisa fornecer entradas válidas pelo arquivo privado.
+E-mail/reset: a consulta histórica retornou 401 na listagem de domínios;
+`EMAIL_FROM` e ambos os bindings estavam ausentes. A interpretação da credencial
+foi corrigida em 22/10 acima; não presumir incapacidade de envio ou exigir sua troca.
 Referências históricas a zero Jobs/canais/políticas abaixo foram superadas
 apenas quanto aos recursos de supervisão aqui criados, sem aceite operacional.
 

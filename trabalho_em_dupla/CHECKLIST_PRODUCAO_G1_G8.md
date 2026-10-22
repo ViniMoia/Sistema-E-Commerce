@@ -1,5 +1,25 @@
 # Checklist de produção G1–G8
 
+**Atualização de 22/10 — inspeção efetiva e preparação:**
+[devolutiva de Vanderlei](DEVOLUTIVA_VANDERLEI_PREPARACAO_PRODUCAO_2026-10-22.md),
+[evidência](evidencias/V-PREPARACAO-PRODUCAO-2026-10-22.json) e
+[propostas G6 não aplicadas](evidencias/V-PROPOSTAS-G6-2026-10-22.json).
+`9495ff9`/CI/digest e 35 migrations reconferidos; recursos/tráfego/banco preservados.
+Inventário GCP/Asaas, diagnóstico IAM/banco/frete, sondas negativas e navegação
+anônima desktop/mobile realizados; 73 unitários dirigidos aprovados. Planos de
+transferência/alertas/capacidade/retomada/e-mail preparados, sem execução financeira.
+Jobs com zero execuções; alertas só de supervisão, desabilitados. Exclusividade
+externa, entrega humana, capacidade e aceites comerciais continuam abertos.
+
+O usuário confirmou indefinição de domínio/remetente, responsável/substituto e
+janela. O `401 restricted_api_key` ao listar domínios **não comprova falha de envio**;
+as conclusões históricas que exigiam troca da chave estão superadas. Bindings e
+ensaio real ainda faltam; domínio canônico da loja aponta para Vercel.
+O guia de 22/10 informa recuperação técnica G2 realizada e metas RPO 15min/RTO 60min;
+o fechamento ainda não está nesta base. Reaproveitar a entrega, receber evidência e
+completar custódia/acessos/cobertura, sem repetir restore por lista histórica.
+Nenhum gate inteiro ou abertura de produção foi aprovado nesta atualização.
+
 **Publicação de 21/10, 12:16–12:18 BRT — prevalece sobre os registros anteriores:**
 [`9495ff9` publicada](PUBLICACAO_HOMOLOGACAO_9495FF9_2026-10-21.md), CI integral
 aprovada; migration de boleto aplicada após backup criptografado e restore drill,

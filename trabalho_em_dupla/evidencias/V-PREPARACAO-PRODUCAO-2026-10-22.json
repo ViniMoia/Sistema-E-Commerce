@@ -1,0 +1,1618 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-22T15:14:02.114186+00:00",
+  "scope": "Preparacao sem efeitos comerciais; inventario remoto e banco HML somente leitura; sondas negativas e navegacao anonima",
+  "branch": "homologacao_teste",
+  "workingHead": "443fd4e4fee8342f1ed4c1514f2d9e8457d99c4b",
+  "sourceCommit": "9495ff942e832db6588219e57163982b246e16d7",
+  "originMain": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "ci": {
+    "runId": 39619498248,
+    "headSha": "9495ff942e832db6588219e57163982b246e16d7",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39619498248",
+    "updatedAt": "2026-10-21T15:14:33Z"
+  },
+  "changes": {
+    "runtime": false,
+    "database": false,
+    "financialProcessing": false,
+    "providerWebhook": false,
+    "jobsExecuted": false,
+    "alertsSent": false,
+    "backupCreatedOrRestored": false,
+    "documentationAndLocalProposals": true
+  },
+  "runtime": {
+    "at": "2026-10-22T15:00:44.480685+00:00",
+    "revision": "continental-hml-9495ff9-review",
+    "testUrl": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+    "traffic": [
+      {
+        "revisionName": "continental-hml-17fd1a7-review",
+        "tag": "review-17fd1a7",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "percent": 100,
+        "revisionName": "continental-hml-896dc56-logout"
+      },
+      {
+        "revisionName": "continental-hml-9495ff9-review",
+        "tag": "review-9495ff9",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-ae9ec9c-review",
+        "tag": "review-ae9ec9c",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-d63ad8a-review",
+        "tag": "review-d63ad8a",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+      },
+      {
+        "revisionName": "continental-hml-eff10bf-dashboard",
+        "tag": "dashboard-eff10bf",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+      }
+    ],
+    "serviceAnnotations": {
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all"
+    },
+    "serviceIam": [
+      {
+        "role": "roles/run.invoker",
+        "serviceAccounts": [],
+        "humanMembers": 0,
+        "publicMembers": [
+          "allUsers"
+        ],
+        "conditional": false
+      }
+    ],
+    "revisions": [
+      {
+        "name": "continental-hml-896dc56-logout",
+        "createdAt": "2026-10-16T19:01:27.221878Z",
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "1",
+          "run.googleapis.com/cpu-throttling": "true",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "containerConcurrency": 20,
+        "timeoutSeconds": 60,
+        "resolvedDigest": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:00dde59c69248b51cd05cb402f835520e810cd6786912c91ce6cb7c2a185c686",
+        "ready": true,
+        "containers": [
+          {
+            "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:00dde59c69248b51cd05cb402f835520e810cd6786912c91ce6cb7c2a185c686",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "flags": {
+              "APP_MAINTENANCE_MODE": "false",
+              "CHECKOUT_PAUSED": "true",
+              "PAYMENT_REMOTE_ENABLED": "false",
+              "PAYMENT_WORKER_ENABLED": "false",
+              "PAYMENT_EXPIRATION_ENABLED": "false",
+              "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+              "ASAAS_ACCOUNT_SCOPE": "sandbox-hml",
+              "ASAAS_API_URL": "https://api-sandbox.asaas.com/v3",
+              "TRUSTED_PROXY_PROVIDER": null,
+              "NEXT_PUBLIC_APP_URL": "https://continental-hml-15531616695.southamerica-east1.run.app"
+            },
+            "secretBindings": {
+              "DATABASE_URL": {
+                "key": "1",
+                "name": "continental-hml-database-url"
+              },
+              "DIRECT_URL": {
+                "key": "1",
+                "name": "continental-hml-direct-url"
+              },
+              "ASAAS_API_KEY": {
+                "key": "1",
+                "name": "continental-hml-asaas-api-key"
+              },
+              "CRON_SECRET": {
+                "key": "1",
+                "name": "continental-hml-cron-secret"
+              },
+              "FREIGHT_QUOTE_SECRET": {
+                "key": "1",
+                "name": "continental-hml-freight-quote-secret"
+              }
+            },
+            "emailKeyBound": false,
+            "emailFromBound": false,
+            "otherVariableNames": [
+              "ASAAS_INSTALLMENTS_APPROVED",
+              "PAYMENT_REMOTE_ENABLED",
+              "TENANT_HOST_ALIASES"
+            ],
+            "command": null,
+            "args": null
+          }
+        ]
+      },
+      {
+        "name": "continental-hml-9495ff9-review",
+        "createdAt": "2026-10-21T15:15:36.988283Z",
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "1",
+          "run.googleapis.com/cpu-throttling": "true",
+          "run.googleapis.com/startup-cpu-boost": "true"
+        },
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "containerConcurrency": 20,
+        "timeoutSeconds": 60,
+        "resolvedDigest": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+        "ready": true,
+        "containers": [
+          {
+            "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "flags": {
+              "APP_MAINTENANCE_MODE": "false",
+              "CHECKOUT_PAUSED": "true",
+              "PAYMENT_REMOTE_ENABLED": "false",
+              "PAYMENT_WORKER_ENABLED": "false",
+              "PAYMENT_EXPIRATION_ENABLED": "false",
+              "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+              "ASAAS_ACCOUNT_SCOPE": "sandbox-hml",
+              "ASAAS_API_URL": "https://api-sandbox.asaas.com/v3",
+              "TRUSTED_PROXY_PROVIDER": null,
+              "NEXT_PUBLIC_APP_URL": "https://continental-hml-15531616695.southamerica-east1.run.app"
+            },
+            "secretBindings": {
+              "DATABASE_URL": {
+                "key": "1",
+                "name": "continental-hml-database-url"
+              },
+              "DIRECT_URL": {
+                "key": "1",
+                "name": "continental-hml-direct-url"
+              },
+              "ASAAS_API_KEY": {
+                "key": "1",
+                "name": "continental-hml-asaas-api-key"
+              },
+              "CRON_SECRET": {
+                "key": "1",
+                "name": "continental-hml-cron-secret"
+              },
+              "FREIGHT_QUOTE_SECRET": {
+                "key": "1",
+                "name": "continental-hml-freight-quote-secret"
+              },
+              "ASAAS_WEBHOOK_TOKEN": {
+                "key": "1",
+                "name": "continental-hml-asaas-webhook-token"
+              }
+            },
+            "emailKeyBound": false,
+            "emailFromBound": false,
+            "otherVariableNames": [
+              "ASAAS_INSTALLMENTS_APPROVED",
+              "PAYMENT_REMOTE_ENABLED",
+              "TENANT_HOST_ALIASES"
+            ],
+            "command": null,
+            "args": null
+          }
+        ]
+      }
+    ]
+  },
+  "infrastructure": {
+    "at": "2026-10-22T15:00:53.190014+00:00",
+    "enabledRelevantApis": [
+      "iam.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
+      "run.googleapis.com",
+      "secretmanager.googleapis.com"
+    ],
+    "jobs": {
+      "ok": true,
+      "complete": true,
+      "source": "gcloud run jobs list (no region filter)",
+      "data": [
+        {
+          "name": "continental-hml-payments",
+          "suspended": null,
+          "executionCount": null,
+          "latestCreatedExecution": null
+        },
+        {
+          "name": "continental-hml-supervision",
+          "suspended": null,
+          "executionCount": null,
+          "latestCreatedExecution": null
+        }
+      ]
+    },
+    "channels": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": [
+        {
+          "name": "projects/continental-511812/notificationChannels/3617580342119339067",
+          "displayName": "Continental HML G6 - operador",
+          "type": "email",
+          "enabled": false,
+          "verificationStatus": null,
+          "configuredRecipientMatchesOperator": true,
+          "deliveryProven": false
+        }
+      ]
+    },
+    "policies": {
+      "ok": true,
+      "pages": 1,
+      "complete": true,
+      "data": [
+        {
+          "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+          "displayName": "continental-hml-supervision: execução ausente",
+          "enabled": false,
+          "notificationChannels": [
+            "projects/continental-511812/notificationChannels/3617580342119339067"
+          ],
+          "conditions": [
+            {
+              "displayName": "Sem conclusão do consumidor",
+              "types": [
+                "conditionAbsent"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "projects/continental-511812/alertPolicies/2245739515294212144",
+          "displayName": "continental-hml-supervision: falha ou falta de progresso",
+          "enabled": false,
+          "notificationChannels": [
+            "projects/continental-511812/notificationChannels/3617580342119339067"
+          ],
+          "conditions": [
+            {
+              "displayName": "Falha, revisão, retry ou atraso",
+              "types": [
+                "conditionMatchedLog"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "serviceAccounts": [
+      {
+        "email": "15531616695-compute@developer.gserviceaccount.com",
+        "disabled": false
+      },
+      {
+        "email": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "disabled": false
+      },
+      {
+        "email": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+        "disabled": false
+      }
+    ],
+    "serviceAccountProjectRoles": [],
+    "cronSecretServiceAccountBindings": [
+      {
+        "role": "roles/secretmanager.secretAccessor",
+        "members": [
+          "serviceAccount:continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+          "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+        ]
+      }
+    ],
+    "loggingMetrics": [
+      {
+        "name": "continental-hml-supervision-completed",
+        "description": null,
+        "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND jsonPayload.event=\"consumer_completed\""
+      }
+    ],
+    "schedulerJobs": {
+      "ok": false,
+      "reason": "SERVICE_DISABLED",
+      "status": "not_checked"
+    },
+    "readFailures": {},
+    "changes": false
+  },
+  "controls": {
+    "at": "2026-10-22T15:00:56.027609+00:00",
+    "jobs": [
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/jobs/continental-hml-payments",
+        "executionCount": 0,
+        "latestCreatedExecution": {},
+        "parallelism": 1,
+        "taskCount": 1,
+        "timeout": "1800s",
+        "maxRetries": 0,
+        "serviceAccount": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+        "containers": [
+          {
+            "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "512Mi"
+              }
+            },
+            "flags": {
+              "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+              "ASAAS_ACCOUNT_SCOPE": "sandbox-hml",
+              "CONSUMER_MODE": "payments",
+              "CONSUMER_MAX_BATCHES": "5",
+              "CONSUMER_REQUEST_TIMEOUT_MS": "240000",
+              "CONSUMER_BACKLOG_WARNING_SECONDS": "300",
+              "CONSUMER_ORIGIN": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+            },
+            "secretBindings": {
+              "CRON_SECRET": {
+                "name": "continental-hml-cron-secret",
+                "key": "1"
+              }
+            },
+            "emailKeyBound": false,
+            "emailFromBound": false,
+            "otherVariableNames": [],
+            "command": [
+              "node"
+            ],
+            "args": [
+              "scripts/cloudrun-consumer.mjs"
+            ]
+          }
+        ],
+        "iam": [],
+        "iamReadOk": true,
+        "executionsReadOk": true,
+        "executions": [],
+        "executionsComplete": true
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/jobs/continental-hml-supervision",
+        "executionCount": 0,
+        "latestCreatedExecution": {},
+        "parallelism": 1,
+        "taskCount": 1,
+        "timeout": "60s",
+        "maxRetries": 0,
+        "serviceAccount": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+        "containers": [
+          {
+            "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "512Mi"
+              }
+            },
+            "flags": {
+              "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+              "ASAAS_ACCOUNT_SCOPE": "sandbox-hml",
+              "CONSUMER_ORIGIN": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+              "CONSUMER_MODE": "supervision",
+              "CONSUMER_MAX_BATCHES": "1",
+              "CONSUMER_REQUEST_TIMEOUT_MS": "30000",
+              "CONSUMER_BACKLOG_WARNING_SECONDS": "300"
+            },
+            "secretBindings": {
+              "CRON_SECRET": {
+                "name": "continental-hml-cron-secret",
+                "key": "1"
+              }
+            },
+            "emailKeyBound": false,
+            "emailFromBound": false,
+            "otherVariableNames": [],
+            "command": [
+              "node"
+            ],
+            "args": [
+              "scripts/cloudrun-consumer.mjs"
+            ]
+          }
+        ],
+        "iam": [],
+        "iamReadOk": true,
+        "executionsReadOk": true,
+        "executions": [],
+        "executionsComplete": true
+      }
+    ],
+    "policies": [
+      {
+        "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+        "displayName": "continental-hml-supervision: execução ausente",
+        "enabled": false,
+        "conditions": [
+          {
+            "conditionAbsent": {
+              "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-supervision-completed\"",
+              "duration": "600s",
+              "trigger": {
+                "count": 1
+              },
+              "aggregations": [
+                {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_DELTA",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              ]
+            },
+            "displayName": "Sem conclusão do consumidor",
+            "name": "projects/continental-511812/alertPolicies/16768859373754969259/conditions/16768859373754967910"
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "alertStrategy": null
+      },
+      {
+        "name": "projects/continental-511812/alertPolicies/2245739515294212144",
+        "displayName": "continental-hml-supervision: falha ou falta de progresso",
+        "enabled": false,
+        "conditions": [
+          {
+            "displayName": "Falha, revisão, retry ou atraso",
+            "name": "projects/continental-511812/alertPolicies/2245739515294212144/conditions/2245739515294212365",
+            "conditionMatchedLog": {
+              "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND (severity>=ERROR OR jsonPayload.severity=\"ERROR\" OR jsonPayload.outcome=\"attention\")"
+            }
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "alertStrategy": {
+          "notificationRateLimit": {
+            "period": "300s"
+          },
+          "autoClose": "86400s"
+        }
+      }
+    ],
+    "channels": [
+      {
+        "name": "projects/continental-511812/notificationChannels/3617580342119339067",
+        "type": "email",
+        "enabled": false,
+        "recipientMatchesPrevious": null,
+        "recipientConfigured": true,
+        "deliveryProven": false
+      }
+    ],
+    "secrets": [
+      {
+        "name": "projects/15531616695/secrets/continental-hml-asaas-api-key",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-asaas-api-key/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-16T18:16:04.469117Z"
+          }
+        ]
+      },
+      {
+        "name": "projects/15531616695/secrets/continental-hml-asaas-webhook-token",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-asaas-webhook-token/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-21T15:10:53.044003Z"
+          }
+        ]
+      },
+      {
+        "name": "projects/15531616695/secrets/continental-hml-cron-secret",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-cron-secret/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-16T18:16:14.928088Z"
+          }
+        ]
+      },
+      {
+        "name": "projects/15531616695/secrets/continental-hml-database-url",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-database-url/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-16T16:06:40.306466Z"
+          }
+        ]
+      },
+      {
+        "name": "projects/15531616695/secrets/continental-hml-direct-url",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-direct-url/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-16T16:06:44.724201Z"
+          }
+        ]
+      },
+      {
+        "name": "projects/15531616695/secrets/continental-hml-freight-quote-secret",
+        "iam": [
+          {
+            "role": "roles/secretmanager.secretAccessor",
+            "serviceAccounts": [
+              "serviceAccount:continental-hml-web@continental-511812.iam.gserviceaccount.com"
+            ],
+            "humanMembers": 0,
+            "publicMembers": [],
+            "conditional": false
+          }
+        ],
+        "iamReadOk": true,
+        "versions": [
+          {
+            "name": "projects/15531616695/secrets/continental-hml-freight-quote-secret/versions/1",
+            "state": "ENABLED",
+            "createTime": "2026-10-16T18:16:25.608643Z"
+          }
+        ]
+      }
+    ],
+    "projectIam": [
+      {
+        "role": "roles/artifactregistry.serviceAgent",
+        "serviceAccounts": [
+          "serviceAccount:service-15531616695@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+        ],
+        "humanMembers": 0,
+        "publicMembers": [],
+        "conditional": false
+      },
+      {
+        "role": "roles/containerregistry.ServiceAgent",
+        "serviceAccounts": [
+          "serviceAccount:service-15531616695@containerregistry.iam.gserviceaccount.com"
+        ],
+        "humanMembers": 0,
+        "publicMembers": [],
+        "conditional": false
+      },
+      {
+        "role": "roles/editor",
+        "serviceAccounts": [
+          "serviceAccount:15531616695-compute@developer.gserviceaccount.com"
+        ],
+        "humanMembers": 0,
+        "publicMembers": [],
+        "conditional": false
+      },
+      {
+        "role": "roles/owner",
+        "serviceAccounts": [],
+        "humanMembers": 1,
+        "publicMembers": [],
+        "conditional": false
+      },
+      {
+        "role": "roles/pubsub.serviceAgent",
+        "serviceAccounts": [
+          "serviceAccount:service-15531616695@gcp-sa-pubsub.iam.gserviceaccount.com"
+        ],
+        "humanMembers": 0,
+        "publicMembers": [],
+        "conditional": false
+      },
+      {
+        "role": "roles/run.serviceAgent",
+        "serviceAccounts": [
+          "serviceAccount:service-15531616695@serverless-robot-prod.iam.gserviceaccount.com"
+        ],
+        "humanMembers": 0,
+        "publicMembers": [],
+        "conditional": false
+      }
+    ],
+    "accounts": [
+      {
+        "name": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "keyInventoryOk": true,
+        "userManagedKeyCount": 0
+      },
+      {
+        "name": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+        "keyInventoryOk": true,
+        "userManagedKeyCount": 0
+      }
+    ]
+  },
+  "application": {
+    "at": "2026-10-22T15:00:52.591167+00:00",
+    "method": "GET_ONLY",
+    "applicationBacklog": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "schemaVersion": 1,
+        "at": "2026-10-22T15:00:50.392Z",
+        "accountScope": "sandbox-hml",
+        "inbox": [
+          {
+            "_count": 30,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "READY"
+          }
+        ],
+        "outbox": [
+          {
+            "_count": 22,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "DEAD_LETTER"
+          }
+        ],
+        "uncertain": 0,
+        "overdue": 1,
+        "abandonedLeases": 0,
+        "operations": [
+          {
+            "_count": 13,
+            "status": "COMPLETED",
+            "kind": "REFUND"
+          },
+          {
+            "_count": 2,
+            "status": "COMPLETED",
+            "kind": "CANCEL"
+          },
+          {
+            "_count": 1,
+            "status": "PENDING",
+            "kind": "REFUND"
+          }
+        ],
+        "untrackedLegacyOrders": 0,
+        "oldestUnresolvedInboxAt": "2026-10-17T07:01:24.694Z",
+        "supervision": {
+          "schemaVersion": 1,
+          "reviewAttempts": 1,
+          "chargebackReviews": 0,
+          "physicalReturnReviews": 0,
+          "heldOperations": 1,
+          "emailDeadLetters": 0,
+          "expiredQueueLeases": 0,
+          "foreignAccountAttempts": 0,
+          "oldestUnresolvedOutboxAt": "2026-10-10T00:59:17.814Z",
+          "oldestPendingEmailAt": null,
+          "oldestDueReconciliationAt": "2026-10-15T16:32:06.938Z"
+        }
+      }
+    },
+    "asaasWebhooks": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "hasMore": false,
+        "totalCount": 1,
+        "webhooks": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "enabled": true,
+            "interrupted": false,
+            "sendType": "SEQUENTIALLY",
+            "apiVersion": 3,
+            "alertsEmailConfigured": true
+          }
+        ]
+      }
+    },
+    "financialProcessingInvoked": false,
+    "jobInvoked": false,
+    "changes": false
+  },
+  "webhook": {
+    "at": "2026-10-22T15:00:52.980209+00:00",
+    "sandbox": true,
+    "getOk": true,
+    "webhooks": [
+      {
+        "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+        "path": "/api/webhooks/asaas",
+        "enabled": true,
+        "interrupted": false,
+        "queryContainsBypass": true,
+        "authTokenReturned": false,
+        "authTokenMatchesLocal": null,
+        "bypassRotationProven": false
+      }
+    ],
+    "hasMore": false,
+    "changed": false
+  },
+  "database": {
+    "at": "2026-10-22T15:03:35.506Z",
+    "readOnly": true,
+    "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+    "database": {
+      "store": {
+        "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+        "slug": "continental-homologacao",
+        "customDomain": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+        "enableCorreios": true,
+        "enablePickup": true,
+        "enableNoFreight": true,
+        "additionalDays": 1,
+        "enablePix": true,
+        "enableCreditCard": true,
+        "enableBoleto": true,
+        "enableManualPix": false
+      },
+      "settings": {
+        "readOnly": "on",
+        "maxConnections": 112,
+        "reservedConnections": 4,
+        "databaseBytes": "15589376"
+      },
+      "role": {
+        "rolsuper": false,
+        "rolcreatedb": true,
+        "rolcreaterole": true,
+        "rolbypassrls": true,
+        "rolcanlogin": true
+      },
+      "memberships": [
+        "pg_database_owner",
+        "pg_read_all_data",
+        "pg_write_all_data",
+        "pg_monitor",
+        "pg_read_all_settings",
+        "pg_read_all_stats",
+        "pg_stat_scan_tables",
+        "pg_signal_backend",
+        "pg_maintain",
+        "pg_create_subscription",
+        "pg_signal_autovacuum_worker",
+        "neon_superuser",
+        "neon_auth"
+      ],
+      "permissions": {
+        "publicTables": 38,
+        "ownedByCurrentRole": 38
+      },
+      "sessions": [
+        {
+          "state": "active",
+          "count": 1
+        },
+        {
+          "state": "idle",
+          "count": 1
+        }
+      ],
+      "freightConfig": {
+        "originCepConfigured": true,
+        "correiosContractConfigured": false,
+        "correiosCredentialConfigured": false
+      },
+      "productDimensions": {
+        "total": 519,
+        "invalidDimensions": 0,
+        "matchingSchemaDefaults": 519
+      },
+      "freightQuotes": [
+        {
+          "provider": "JT_EXPRESS",
+          "deliveryType": "DELIVERY",
+          "count": 31,
+          "minAmount": "12.30",
+          "maxAmount": "12.30",
+          "minDays": 2,
+          "maxDays": 2,
+          "latestCreatedAt": "2026-10-14T14:38:17.503Z"
+        }
+      ],
+      "leases": [
+        {
+          "table": "PaymentInbox",
+          "claimed": 0,
+          "unexpired": 0,
+          "expired": 0
+        },
+        {
+          "table": "CommerceOutbox",
+          "claimed": 0,
+          "unexpired": 0,
+          "expired": 0
+        },
+        {
+          "table": "PaymentAttempt",
+          "claimed": 0,
+          "unexpired": 0,
+          "expired": 0
+        }
+      ],
+      "sensitiveFieldChecks": [
+        {
+          "table": "AuditLog",
+          "column": "metadata",
+          "inspected": 77,
+          "matches": 0
+        },
+        {
+          "table": "AuditLog",
+          "column": "newValue",
+          "inspected": 77,
+          "matches": 0
+        },
+        {
+          "table": "AuditLog",
+          "column": "previousValue",
+          "inspected": 77,
+          "matches": 0
+        },
+        {
+          "table": "CheckoutIntent",
+          "column": "snapshot",
+          "inspected": 10,
+          "matches": 0
+        },
+        {
+          "table": "CommerceOutbox",
+          "column": "payload",
+          "inspected": 23,
+          "matches": 0
+        },
+        {
+          "table": "FreightQuote",
+          "column": "snapshot",
+          "inspected": 31,
+          "matches": 0
+        },
+        {
+          "table": "LoyaltyTransaction",
+          "column": "policy",
+          "inspected": 12,
+          "matches": 0
+        },
+        {
+          "table": "Order",
+          "column": "financialPlan",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "Order",
+          "column": "financialSnapshot",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "Order",
+          "column": "freightSnapshot",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "Order",
+          "column": "loyaltyEarnSnapshot",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "OrderBuyer",
+          "column": "billingAddress",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "OrderBuyer",
+          "column": "deliveryAddress",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "PaymentAttempt",
+          "column": "planSnapshot",
+          "inspected": 8,
+          "matches": 0
+        },
+        {
+          "table": "PaymentCharge",
+          "column": "instructions",
+          "inspected": 19,
+          "matches": 0
+        },
+        {
+          "table": "PaymentInbox",
+          "column": "payload",
+          "inspected": 31,
+          "matches": 0
+        },
+        {
+          "table": "PaymentWebhookEvent",
+          "column": "payload",
+          "inspected": 0,
+          "matches": 0
+        },
+        {
+          "table": "StockSyncLog",
+          "column": "metadata",
+          "inspected": 0,
+          "matches": 0
+        }
+      ],
+      "migrations": {
+        "applied": 35,
+        "pending": [],
+        "failed": [],
+        "checksumMismatches": []
+      }
+    },
+    "pool": {
+      "pooledEndpoint": false,
+      "parameters": {
+        "connection_limit": null,
+        "pool_timeout": null,
+        "connect_timeout": null,
+        "pgbouncer": null,
+        "sslmode": "require"
+      },
+      "sameRoleAsDirect": true
+    },
+    "completed": true
+  },
+  "emailAccessBilling": {
+    "at": "2026-10-22T15:06:10.184355+00:00",
+    "resend": {
+      "ok": false,
+      "httpStatus": 403,
+      "code": null,
+      "sendingTestExecuted": false
+    },
+    "runtimeSecretsMatchLocal": {
+      "DATABASE_URL": true,
+      "DIRECT_URL": true,
+      "CRON_SECRET": true,
+      "ASAAS_WEBHOOK_TOKEN": true
+    },
+    "billingInfoReadOk": true,
+    "billingEnabled": true,
+    "budgets": {
+      "readOk": false,
+      "error": {
+        "ok": false,
+        "httpStatus": 403,
+        "code": "PERMISSION_DENIED"
+      },
+      "items": []
+    }
+  },
+  "resendPermission": {
+    "at": "2026-10-22T15:09:56.663Z",
+    "httpStatus": 401,
+    "code": "restricted_api_key",
+    "sendingTestExecuted": false
+  },
+  "navigation": {
+    "at": "2026-10-22T15:10:24.142Z",
+    "origin": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+    "anonymous": true,
+    "mutatingRequestsBlocked": 0,
+    "checks": [
+      {
+        "requested": "/",
+        "viewport": 1366,
+        "path": "/",
+        "width": 1366,
+        "scrollWidth": 1351,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "scenario": "catalog",
+        "viewport": 1366,
+        "cards": 12,
+        "overflow": false
+      },
+      {
+        "scenario": "productDetail",
+        "viewport": 1366,
+        "opened": true,
+        "overflow": false,
+        "headingPresent": true,
+        "variantGroups": 0,
+        "disabledVariantChoices": 0
+      },
+      {
+        "requested": "/login",
+        "viewport": 1366,
+        "path": "/login",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "requested": "/forgot-password",
+        "viewport": 1366,
+        "path": "/forgot-password",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "requested": "/admin",
+        "viewport": 1366,
+        "path": "/login",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "requested": "/",
+        "viewport": 390,
+        "path": "/",
+        "width": 390,
+        "scrollWidth": 390,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "scenario": "catalog",
+        "viewport": 390,
+        "cards": 12,
+        "overflow": false
+      },
+      {
+        "scenario": "productDetail",
+        "viewport": 390,
+        "opened": true,
+        "overflow": false,
+        "headingPresent": true,
+        "variantGroups": 0,
+        "disabledVariantChoices": 0
+      },
+      {
+        "requested": "/login",
+        "viewport": 390,
+        "path": "/login",
+        "width": 390,
+        "scrollWidth": 390,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "requested": "/forgot-password",
+        "viewport": 390,
+        "path": "/forgot-password",
+        "width": 390,
+        "scrollWidth": 390,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      },
+      {
+        "requested": "/admin",
+        "viewport": 390,
+        "path": "/login",
+        "width": 390,
+        "scrollWidth": 390,
+        "overflow": false,
+        "bodyPresent": true,
+        "brokenImages": 0,
+        "variantControls": 0
+      }
+    ],
+    "failedOwnRequests": [],
+    "completed": true,
+    "productFound": true,
+    "cartFound": false
+  },
+  "httpProbes": {
+    "at": "2026-10-22T15:08:58.300Z",
+    "origin": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+    "checks": [
+      {
+        "path": "/api/loja/active",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 631,
+        "cacheControl": null,
+        "location": null,
+        "expectedTenant": true
+      },
+      {
+        "path": "/api/payment/capabilities",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 356,
+        "cacheControl": "private, no-store",
+        "location": null,
+        "methods": [],
+        "capabilityKeys": [
+          "schemaVersion",
+          "lojaID",
+          "configurationVersion",
+          "methods",
+          "maximumInstallments",
+          "config"
+        ]
+      },
+      {
+        "path": "/api/cart",
+        "method": "GET",
+        "status": 401,
+        "durationMs": 105,
+        "cacheControl": "no-store",
+        "location": null
+      },
+      {
+        "path": "/admin",
+        "method": "GET",
+        "status": 307,
+        "durationMs": 92,
+        "cacheControl": null,
+        "location": "/login"
+      },
+      {
+        "path": "/api/cron/payments/status",
+        "method": "GET",
+        "status": 401,
+        "durationMs": 79,
+        "cacheControl": null,
+        "location": null
+      },
+      {
+        "path": "/api/cron/payments",
+        "method": "GET",
+        "status": 503,
+        "durationMs": 113,
+        "cacheControl": null,
+        "location": null
+      },
+      {
+        "path": "/api/upload",
+        "method": "POST",
+        "status": 401,
+        "checkoutPaused": false,
+        "uploadUnauthorized": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "path": "/api/checkout",
+        "method": "POST",
+        "status": 503,
+        "checkoutPaused": true,
+        "uploadUnauthorized": false,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "path": "/api/webhooks/asaas",
+        "mode": "missing",
+        "status": 401,
+        "malformedBody": true
+      },
+      {
+        "path": "/api/webhooks/asaas",
+        "mode": "invalid",
+        "status": 401,
+        "malformedBody": true
+      },
+      {
+        "path": "/api/webhooks/asaas",
+        "mode": "private",
+        "status": 503,
+        "malformedBody": true
+      },
+      {
+        "path": "/api/loja/active",
+        "forgedForwardedHost": true,
+        "status": 200,
+        "originalTenantPreserved": true
+      }
+    ],
+    "financialEventsSent": false,
+    "oldOrdersReferenced": false,
+    "completed": true
+  },
+  "logs": {
+    "at": "2026-10-22T15:06:10.183117+00:00",
+    "intervalStart": "2026-10-21T15:06:10.179552Z",
+    "intervalEnd": "2026-10-22T15:06:10.179552Z",
+    "rawLogBodiesCollected": false,
+    "queries": {
+      "card_field_markers": {
+        "ok": true,
+        "matchesInFirstPage": 0,
+        "complete": true,
+        "error": null
+      },
+      "errors": {
+        "ok": true,
+        "matchesInFirstPage": 2,
+        "complete": true,
+        "error": null
+      }
+    }
+  },
+  "errorMetadata": {
+    "at": "2026-10-22T15:12:12.370326+00:00",
+    "metadataOnly": true,
+    "result": {
+      "entries": [
+        {
+          "httpRequest": {
+            "status": 503
+          },
+          "timestamp": "2026-10-21T15:16:49.872886Z",
+          "severity": "ERROR"
+        },
+        {
+          "httpRequest": {
+            "status": 503
+          },
+          "timestamp": "2026-10-21T15:16:50.845135Z",
+          "severity": "ERROR"
+        }
+      ]
+    }
+  },
+  "usage": {
+    "at": "2026-10-22T15:06:10.183555+00:00",
+    "intervalStart": "2026-10-21T15:06:10.179552Z",
+    "intervalEnd": "2026-10-22T15:06:10.179552Z",
+    "metrics": {
+      "request_count": {
+        "ok": true,
+        "series": [
+          {
+            "metric": {
+              "type": "run.googleapis.com/request_count"
+            },
+            "points": [
+              {
+                "interval": {
+                  "startTime": "2026-10-21T15:06:10.179552Z",
+                  "endTime": "2026-10-22T15:06:10.179552Z"
+                },
+                "value": {
+                  "int64Value": "18"
+                }
+              }
+            ]
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "container/billable_instance_time": {
+        "ok": true,
+        "series": [
+          {
+            "metric": {
+              "type": "run.googleapis.com/container/billable_instance_time"
+            },
+            "points": [
+              {
+                "interval": {
+                  "startTime": "2026-10-21T15:06:10.179552Z",
+                  "endTime": "2026-10-22T15:06:10.179552Z"
+                },
+                "value": {
+                  "doubleValue": 18.450469233081055
+                }
+              }
+            ]
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "container/instance_count": {
+        "ok": true,
+        "series": [
+          {
+            "metric": {
+              "type": "run.googleapis.com/container/instance_count"
+            },
+            "points": [
+              {
+                "interval": {
+                  "startTime": "2026-10-22T15:06:10.179552Z",
+                  "endTime": "2026-10-22T15:06:10.179552Z"
+                },
+                "value": {
+                  "int64Value": "1"
+                }
+              }
+            ]
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "container/cpu/utilizations": {
+        "ok": true,
+        "series": [
+          {
+            "metric": {
+              "type": "run.googleapis.com/container/cpu/utilizations"
+            },
+            "points": [
+              {
+                "interval": {
+                  "startTime": "2026-10-22T15:06:10.179552Z",
+                  "endTime": "2026-10-22T15:06:10.179552Z"
+                },
+                "value": {
+                  "doubleValue": 0.1225
+                }
+              }
+            ]
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "container/memory/utilizations": {
+        "ok": true,
+        "series": [
+          {
+            "metric": {
+              "type": "run.googleapis.com/container/memory/utilizations"
+            },
+            "points": [
+              {
+                "interval": {
+                  "startTime": "2026-10-22T15:06:10.179552Z",
+                  "endTime": "2026-10-22T15:06:10.179552Z"
+                },
+                "value": {
+                  "doubleValue": 0.16895000000000002
+                }
+              }
+            ]
+          }
+        ],
+        "complete": true,
+        "error": null
+      }
+    }
+  },
+  "unitTests": {
+    "numPassedTests": 73,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true,
+    "files": [
+      "image-upload-policy",
+      "commerce-contracts",
+      "vanderlei-security",
+      "password-recovery",
+      "email-environment",
+      "cross-tenant-matrix"
+    ]
+  },
+  "accessLimits": {
+    "vercelControlPlane": "NO_CREDENTIAL_FOUND_IN_CHECKED_LOCATIONS",
+    "cloudflareControlPlane": "NO_CREDENTIAL_FOUND_IN_CHECKED_LOCATIONS",
+    "neonControlPlane": "NO_CREDENTIAL_FOUND_IN_CHECKED_LOCATIONS",
+    "scheduler": "API_DISABLED_NOT_INVENTORIED",
+    "localWindowsProjectScheduledTasks": 0,
+    "manualInvocationsOutsideThisMachine": "NOT_PROVEN",
+    "globalExclusivity": "NOT_PROVEN"
+  },
+  "operatorReply": {
+    "domainAndSenderDefined": false,
+    "alertOwnerAndSubstituteDefined": false,
+    "windowConfirmed": false,
+    "source": "Resposta do usuario nesta sessao em 22/10/2026: ainda nao foi definido"
+  },
+  "proposedWindow": {
+    "start": "2026-10-23T14:00:00-03:00",
+    "end": "2026-10-23T15:30:00-03:00",
+    "confirmed": false,
+    "scope": "Priorizar supervisao e alerta; financeiro somente apos roteiro/casos e exclusividade comprovada"
+  },
+  "missingDocuments": [
+    "trabalho_em_dupla/FECHAMENTO_G2.md",
+    "trabalho_em_dupla/ROTEIRO_ACEITE_FINANCEIRO_G3.md",
+    "trabalho_em_dupla/evidencias/L-G2-BACKUP-ENSAIO-2026-10-21.json",
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-FLUXO-PROPOSTO-2026-10-22.json"
+  ],
+  "costModel": {
+    "region": "southamerica-east1",
+    "currency": "USD",
+    "source": "Authenticated Cloud Billing Catalog API; current OnDemand regional SKUs",
+    "rates": [
+      {
+        "sku": "085C-A237-027A",
+        "description": "Services CPU Tier 2  (Request-based billing)",
+        "unit": "s",
+        "usd": 3.36e-05,
+        "effectiveTime": "2026-10-22T07:00:00Z"
+      },
+      {
+        "sku": "237B-7B65-23B9",
+        "description": "Jobs Memory in southamerica-east1",
+        "unit": "GiBy.s",
+        "usd": 2.4e-06,
+        "effectiveTime": "2026-10-22T07:00:00Z"
+      },
+      {
+        "sku": "600C-3782-6708",
+        "description": "Services Memory Tier 2 (Request-based billing)",
+        "unit": "GiBy.s",
+        "usd": 3.5e-06,
+        "effectiveTime": "2026-10-22T07:00:00Z"
+      },
+      {
+        "sku": "AF17-DF9D-44AC",
+        "description": "Jobs CPU in southamerica-east1",
+        "unit": "s",
+        "usd": 2.16e-05,
+        "effectiveTime": "2026-10-22T07:00:00Z"
+      }
+    ],
+    "jobAssumptions": {
+      "vcpu": 1,
+      "gib": 0.5,
+      "billedSecondsPerExecution": 60,
+      "daysPerMonth": 30,
+      "minimumChargeSeconds": 60,
+      "freeTierCreditsApplied": false,
+      "databaseNetworkMonitoringSchedulerExcluded": true
+    },
+    "costPerJobExecutionUsd": 0.001368,
+    "monthlyPerJob": [
+      {
+        "cadenceMinutes": 1,
+        "executions": 43200,
+        "usd": 59.0976
+      },
+      {
+        "cadenceMinutes": 5,
+        "executions": 8640,
+        "usd": 11.81952
+      },
+      {
+        "cadenceMinutes": 60,
+        "executions": 720,
+        "usd": 0.98496
+      }
+    ],
+    "pilotTwoJobs18ExecutionsEachUsd": 0.049248,
+    "budgetRead": "PERMISSION_DENIED",
+    "withinApprovedBudgetProven": false,
+    "neonScenario": {
+      "assumedAverageActiveCu": 0.25,
+      "activeHoursPerDay": 24,
+      "days": 30,
+      "cuHours": 180,
+      "actualAccountUsageKnown": false
+    }
+  },
+  "proofLimits": [
+    "ZERO leases is only a snapshot, not global exclusivity",
+    "No current capacity or RPO/RTO acceptance",
+    "Sensitive field scan returns aggregate matches only; pattern coverage is not exhaustive",
+    "Anonymous browser navigation is not authenticated purchase or admin acceptance",
+    "Current recipient exists but owner/substitute and availability are undefined",
+    "G2 guide reports prior technical recovery; independent closure evidence absent locally; no repeated restore",
+    "Python Resend GET returned HTTP 403 without provider code; subsequent Node GET identified 401 restricted_api_key, not proof of send failure"
+  ],
+  "integrationAfterInspection": {
+    "at": "2026-10-22T17:02:03.590490+00:00",
+    "upstreamCommit": "bcdce982dffc4b61dd9f22e9a21f90bcaa3b68b1",
+    "pullRequest": 14,
+    "receivedPreviouslyMissingDocuments": [
+      "trabalho_em_dupla/evidencias/L-NUVEMSHOP-FLUXO-PROPOSTO-2026-10-22.json"
+    ],
+    "historicalMissingDocumentsListPreserved": true,
+    "newIntegrationDeployedOrOperationallyValidatedByThisReport": false
+  }
+}

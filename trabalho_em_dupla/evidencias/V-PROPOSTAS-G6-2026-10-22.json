@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-22T15:14:02.114186+00:00",
+  "state": "PREPARED_NOT_APPLIED",
+  "approvalDependencies": [
+    "owner/substitute and confirmed window",
+    "accepted budget and cadence",
+    "external trigger inventory",
+    "controlled financial cases and backlog triage"
+  ],
+  "project": "continental-511812",
+  "region": "southamerica-east1",
+  "additions": [
+    {
+      "resource": "loggingMetric",
+      "precondition": "name absent in fresh inventory",
+      "body": {
+        "name": "continental-hml-payments-completed",
+        "description": "Conclusoes do Job de pagamentos; independente da supervisao",
+        "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-payments\" AND jsonPayload.event=\"consumer_completed\"",
+        "metricDescriptor": {
+          "metricKind": "DELTA",
+          "valueType": "INT64",
+          "unit": "1"
+        }
+      }
+    },
+    {
+      "resource": "alertPolicy",
+      "precondition": "equivalent payment policy absent; do not duplicate",
+      "body": {
+        "displayName": "continental-hml-payments: execução ausente",
+        "enabled": false,
+        "conditions": [
+          {
+            "conditionAbsent": {
+              "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-payments-completed\"",
+              "duration": "600s",
+              "trigger": {
+                "count": 1
+              },
+              "aggregations": [
+                {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_DELTA",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              ]
+            },
+            "displayName": "Sem conclusão do consumidor"
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "combiner": "OR"
+      }
+    },
+    {
+      "resource": "alertPolicy",
+      "precondition": "equivalent payment policy absent; do not duplicate",
+      "body": {
+        "displayName": "continental-hml-payments: falha ou falta de progresso",
+        "enabled": false,
+        "conditions": [
+          {
+            "displayName": "Falha, revisão, retry ou atraso",
+            "conditionMatchedLog": {
+              "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-payments\" AND (severity>=ERROR OR jsonPayload.severity=\"ERROR\" OR jsonPayload.outcome=\"attention\")"
+            }
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "alertStrategy": {
+          "notificationRateLimit": {
+            "period": "300s"
+          },
+          "autoClose": "86400s"
+        },
+        "combiner": "OR"
+      }
+    }
+  ],
+  "pilotLimits": {
+    "supervision": {
+      "maxBatches": 1,
+      "httpTimeoutMs": 30000,
+      "jobTimeoutSeconds": 60,
+      "tasks": 1,
+      "parallelism": 1,
+      "maxRetries": 0,
+      "cadenceMinutes": 5,
+      "windowMinutes": 90,
+      "maxScheduledExecutions": 18
+    },
+    "payments": {
+      "maxBatchesProposed": 1,
+      "currentServerBatchLimit": 5,
+      "maxRetries": 0,
+      "automaticPostRetry": false,
+      "enabled": false,
+      "blockedUntil": "baseline segregates authorized cases; current endpoint has no per-order allowlist and also drains outbox and reconciliation",
+      "httpTimeoutCurrentlyMs": 240000,
+      "jobTimeoutCurrentlySeconds": 1800,
+      "webTimeoutSeconds": 60,
+      "timeoutAlignment": "must measure and agree before pilot; do not assume HTTP cancellation stops database work"
+    },
+    "recurrenceAfterWindow": false
+  }
+}

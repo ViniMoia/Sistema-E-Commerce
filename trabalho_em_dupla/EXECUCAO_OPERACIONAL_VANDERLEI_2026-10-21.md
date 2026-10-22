@@ -1,5 +1,12 @@
 # Execução da frente operacional de Vanderlei — 21/10/2026
 
+> Correção posterior, 22/10: o `401 restricted_api_key` de GET `/domains` não
+> comprova que a chave não possa enviar. As recomendações abaixo de substituir/
+> fornecer chave válida eram uma interpretação insuficiente dessa consulta e
+> estão superadas. Conferir permissão de envio/remetente pelo uso necessário,
+> conforme a [devolutiva atual](DEVOLUTIVA_VANDERLEI_PREPARACAO_PRODUCAO_2026-10-22.md).
+> Recursos, horários e demais resultados abaixo permanecem como histórico de 21/10.
+
 Execução por Codex, solicitada pelo operador para avançar e-mail/reset e G6.
 **Preparação de infraestrutura implantada; ensaio e aceite G6 ainda pendentes.**
 Consultas e alterações entre 09:34 e 09:39 BRT. A candidata continua
