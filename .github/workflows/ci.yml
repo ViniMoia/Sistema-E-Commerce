@@ -60,6 +60,9 @@ jobs:
       - name: Reject Missing or Mismatched Test Database Sentinel
         run: npm run test:isolation:negative
 
+      - name: Verify Nuvemshop Bindings on Disposable PostgreSQL
+        run: node scripts/verify-nuvemshop-bindings.mjs 2>&1 | tee artifacts/validation/nuvemshop-bindings.log
+
       - name: Verify Isolated Database and HTTP Server
         run: npm run test:integration:isolated -- --homologation 2>&1 | tee artifacts/validation/integration.log
 

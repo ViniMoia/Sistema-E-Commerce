@@ -1,0 +1,370 @@
+{
+  "kind": "NUVEMSHOP_LEGACY_CURRENT_COMPATIBILITY_REVIEW",
+  "date": "2026-10-22",
+  "status": "STATIC_COMPARISON_COMPLETE_IMPLEMENTATION_NOT_STARTED",
+  "scope": {
+    "requested": "Comparar checkout, pagamento, reservas, cancelamentos e variantes; identificar reaproveitamento/adapta??o/substitui??o",
+    "oldProject": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto",
+    "oldRevision": "f0d416f",
+    "currentRevision": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+    "mainRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "homologacaoRevision": "1b09934e66c592ef0cd72aa1a80d1c4e53f35d28",
+    "currentAppLibServicesPrismaMatchHomologacao": true,
+    "note": "Main foi consultada como origem; n?o cont?m todas as corre??es presentes na candidata. Avalia??o est?tica do c?digo n?o comprova publica??o nem opera??o no provedor."
+  },
+  "findings": [
+    {
+      "id": "C01",
+      "area": "Checkout e momento do envio",
+      "classification": "PRESERVAR_FLUXO_ATUAL_ADAPTAR_GATILHO",
+      "oldRefs": [
+        "lib/services/checkout.service.ts:219",
+        "services/order.service.ts:265",
+        "services/order-sync.service.ts:45"
+      ],
+      "currentRefs": [
+        "services/checkout.service.ts:144",
+        "services/checkout.service.ts:177",
+        "lib/commerce/order-command.ts:125",
+        "services/payment/payment-evidence.service.ts:177"
+      ],
+      "finding": "O fluxo antigo dispara envio ao criar o pedido e tamb?m ao aprovar; o servi?o retorna imediatamente se j? estiver SYNCED. Um envio inicial como pending pode impedir a atualiza??o posterior para paid. Hoje a compra depende de inten??o aceita, revis?o, c?lculo no servidor e tentativa financeira persistida.",
+      "adaptation": "Preservar checkout atual e a reconcilia??o financeira. Propor trabalho de integra??o dur?vel ap?s a aprova??o comercial validada, inclusive confirma??o manual autorizada, sem tratar CHECKOUT_COMMITTED como pagamento. O envio n?o deve baixar estoque local novamente.",
+      "riskIfCopied": "Pedido externo antes da confirma??o, status externo desatualizado, segunda baixa de estoque ou regress?o dos controles de consentimento."
+    },
+    {
+      "id": "C02",
+      "area": "Reservas e atualiza??o de estoque",
+      "classification": "SUBSTITUIR_ESCRITA_ANTIGA_POR_PROTOCOLO_COMPATIVEL",
+      "oldRefs": [
+        "services/stock-sync.service.ts:146",
+        "services/stock-sync.service.ts:173",
+        "services/stock-sync.service.ts:218",
+        "lib/services/checkout.service.ts:104",
+        "services/order.service.ts:291"
+      ],
+      "currentRefs": [
+        "services/inventory.service.ts:34",
+        "lib/commerce/order-command.ts:111",
+        "lib/commerce/order-command.ts:125",
+        "lib/commerce/locks.ts:5",
+        "prisma/schema.prisma:893"
+      ],
+      "finding": "O sincronizador antigo substitui os saldos de produto e variantes pelos valores remotos. Hoje o checkout reduz produto e variante numa transa??o e grava InventoryReservation; a aprova??o muda RESERVED para COMMITTED sem nova redu??o.",
+      "adaptation": "Separar observa??o remota de estoque dispon?vel local e definir tratamento de reservas, vendas ainda n?o reconhecidas externamente, respostas antigas e devolu??es. Reutilizar a ordem de locks e vers?es atuais. N?o aplicar automaticamente uma f?rmula apenas subtraindo todas as reservas ou todos os pedidos pagos.",
+      "example": "Se o provedor informa 10 e h? 2 unidades reservadas apenas localmente, substituir o dispon?vel local de 8 por 10 pode vender novamente essas 2 unidades.",
+      "riskIfCopied": "Perda das reservas, sobrevenda ou dupla baixa quando o estoque externo j? refletir a venda."
+    },
+    {
+      "id": "C03",
+      "area": "Identidade de produto e variante",
+      "classification": "REAPROVEITAR_LEITURA_ADAPTAR_MAPEAMENTO",
+      "oldRefs": [
+        "services/order-sync.service.ts:62",
+        "services/order-sync.service.ts:81",
+        "services/stock-sync.service.ts:43",
+        "services/stock-sync.service.ts:92",
+        "services/stock-sync.service.ts:160"
+      ],
+      "currentRefs": [
+        "lib/product-variants.ts:19",
+        "lib/product-variants.ts:68",
+        "services/product.service.ts:228",
+        "services/product.service.ts:262",
+        "services/checkout-plan.service.ts:41"
+      ],
+      "finding": "O envio antigo escolhe a primeira variante remota e pode usar o ID fixo 1588283587 quando n?o resolve o v?nculo. O importador tamb?m pode criar produto sem variantes. Hoje os IDs e combina??es normalizadas s?o preservados, a sele??o depende de disponibilidade e op??es removidas com v?nculos s?o retiradas de venda.",
+      "adaptation": "Reutilizar IDs externos de produto e estudar SKU/barcode como candidatos ? correspond?ncia, sempre dentro da loja e do produto. Validar v?nculo inequ?voco da variante; aus?ncia ou ambiguidade exige revis?o. N?o criar nova variante s? porque nuvemshopVariantId est? vazio. Preservar IDs, hist?rico, reservas, retiredAt e unavailableStock.",
+      "riskIfCopied": "Enviar outra mercadoria, reativar variantes retiradas ou criar produtos que n?o podem ser comprados pelo contrato atual."
+    },
+    {
+      "id": "C04",
+      "area": "Confirma??o financeira, valores e comprador",
+      "classification": "SUBSTITUIDO_PELO_DOMINIO_ATUAL_ADAPTAR_PAYLOAD_EXTERNO",
+      "oldRefs": [
+        "services/order-sync.service.ts:21",
+        "services/order-sync.service.ts:88",
+        "services/order-sync.service.ts:108",
+        "scratch/test_phase4_order_pipeline.js:44",
+        "scratch/test_phase4_order_pipeline.js:102"
+      ],
+      "currentRefs": [
+        "services/checkout.service.ts:172",
+        "services/checkout.service.ts:181",
+        "services/payment/payment-evidence.service.ts:33",
+        "lib/commerce/order-buyer.ts:1",
+        "services/checkout-plan.service.ts:61"
+      ],
+      "finding": "O servi?o antigo presume order.user dispon?vel e endere?o cadastrado. O atual suporta visitante por OrderBuyer, endere?os congelados, desconto por pontos, frete, plano parcelado, total comercial e encargos financeiros distintos. O teste #31 escreveu PAID e paid diretamente.",
+      "adaptation": "Mapear o comprador e os itens do snapshot atual; conferir totais, desconto, frete e encargos antes de enviar. A Nuvemshop/SMB n?o deve passar a autorizar pagamento nem cobrar novamente. N?o trocar os crit?rios atuais de APPROVED/PAID por um status externo.",
+      "riskIfCopied": "Falha para visitante, dados de endere?o alterados posteriormente, diverg?ncia financeira e venda marcada paga sem evid?ncia v?lida."
+    },
+    {
+      "id": "C05",
+      "area": "Cancelamento, estorno, retorno f?sico e chargeback",
+      "classification": "REAPROVEITAR_DOMINIO_ATUAL_CRIAR_CONTRATO_EXTERNO",
+      "oldRefs": [
+        "services/order.service.ts:340",
+        "services/nuvemshop.service.ts:288"
+      ],
+      "currentRefs": [
+        "lib/commerce/order-command.ts:111",
+        "lib/commerce/order-fulfillment.ts:9",
+        "services/payment/payment-evidence.service.ts:152",
+        "services/payment/payment-evidence.service.ts:183",
+        "services/physical-return.service.ts:38",
+        "services/payment/chargeback.ts:19"
+      ],
+      "finding": "N?o foi encontrado mecanismo de cancelamento/estorno remoto no cliente antigo. A rotina antiga devolve estoque de variantes ao cancelar PAID. Hoje h? opera??es financeiras, revis?o de pagamento tardio/parcial/chargeback e retorno f?sico auditado para mercadoria expedida.",
+      "adaptation": "Separar cancelamento comercial, devolu??o financeira e retorno f?sico. Reutilizar os comandos atuais e definir a comunica??o correspondente ao ERP. N?o repor mercadoria expedida s? porque houve estorno. Evitar que a reposi??o local mais a reposi??o externa contem duas vezes a mesma devolu??o.",
+      "riskIfCopied": "Reposi??o sem recebimento f?sico, duplicidade de devolu??o ou altera??o de pedidos que deveriam permanecer em revis?o."
+    },
+    {
+      "id": "C06",
+      "area": "Execu??o em segundo plano e retentativas",
+      "classification": "SUBSTITUIR_EXECUTOR_ANTIGO_REAPROVEITAR_PADRAO_DURAVEL",
+      "oldRefs": [
+        "lib/serverless/background-task.ts:9",
+        "services/order-sync.service.ts:45",
+        "services/order-sync.service.ts:55",
+        "services/order-sync.service.ts:197",
+        "services/order-sync.service.ts:207"
+      ],
+      "currentRefs": [
+        "services/payment/durable-work.service.ts:7",
+        "services/payment/payment-outbox.service.ts:13",
+        "services/payment/payment-outbox.service.ts:28",
+        "services/payment/payment-outbox.service.ts:40",
+        "prisma/schema.prisma:969"
+      ],
+      "finding": "O executor antigo usa waitUntil global ou setImmediate; o marcador PROCESSING n?o ? uma aquisi??o exclusiva. Ap?s timeout do POST, o pedido pode ter sido criado externamente e uma repeti??o pode duplic?-lo. A fila atual tem lease e fencing, mas seu consumidor adquire todos os tipos da CommerceOutbox e envia tipos desconhecidos ? revis?o.",
+      "adaptation": "Reutilizar o padr?o dur?vel, definindo roteamento ou fila pr?pria para integra??o. N?o acrescentar simplesmente um segundo consumidor irrestrito. Congelar payload, correlacionar opera??o com loja/conta/pedido, consultar resultado amb?guo antes de repetir POST e preservar e-mails/financeiro. Lease local sozinho n?o garante aus?ncia de duplica??o externa.",
+      "riskIfCopied": "Trabalho perdido ap?s rein?cio, dois envios concorrentes, envio duplicado ap?s timeout ou interfer?ncia na fila de pagamentos."
+    },
+    {
+      "id": "C07",
+      "area": "Webhook de cat?logo",
+      "classification": "REAPROVEITAR_HMAC_ADAPTAR_RECEPCAO_E_PROCESSAMENTO",
+      "oldRefs": [
+        "app/api/webhooks/nuvemshop/route.ts:42",
+        "app/api/webhooks/nuvemshop/route.ts:66",
+        "services/nuvemshop.service.ts:330",
+        "scratch/test_phase3_webhooks.js:17"
+      ],
+      "currentRefs": [
+        "services/payment/payment-inbox.service.ts:13",
+        "services/payment/durable-work.service.ts:7"
+      ],
+      "finding": "O receptor antigo verifica HMAC e busca o produto imediatamente, mas n?o vincula explicitamente store_id ? loja local, n?o persiste caixa de entrada e devolve 200 quando a consulta externa falha. O teste hist?rico gerava sua pr?pria assinatura e gravava o log; n?o comprova entrega do provedor.",
+      "adaptation": "Reaproveitar a ideia da verifica??o do corpo bruto e compara??o constante, validando contrato oficial e segredo. Implementar escopo obrigat?rio de loja, persist?ncia, duplica??o/reordena??o, tamanho/valida??o do payload, eventos de exclus?o e novos produtos. Caixa de entrada de pagamentos serve de padr?o; seu schema PAYMENT_* n?o pode receber eventos de cat?logo.",
+      "riskIfCopied": "Falha externa descartada, atualiza??o de loja errada, evento duplicado ou estoque alterado por mensagem antiga."
+    },
+    {
+      "id": "C08",
+      "area": "Cliente HTTP e configura??o",
+      "classification": "REAPROVEITAVEL_COM_REVISAO",
+      "oldRefs": [
+        "services/nuvemshop.service.ts:29",
+        "services/nuvemshop.service.ts:55",
+        "services/nuvemshop.service.ts:90",
+        "services/nuvemshop.service.ts:288"
+      ],
+      "currentRefs": [
+        "lib/commerce/payment-account.ts:1",
+        "services/payment/payment-execution-policy.ts:1"
+      ],
+      "finding": "O cliente antigo j? separa consultas e opera??es, usa timeout, pagina??o e verifica??o HMAC. Por?m entra em modo simulado automaticamente se faltam credenciais, usa controles em mem?ria e devolve texto bruto de erros do provedor.",
+      "adaptation": "Reaproveitar estrutura do adaptador e tipos ap?s conferir contratos atuais da API. Falta de configura??o deve bloquear a integra??o explicitamente, sem simular sucesso. Separar permiss?es de leitura/escrita, fixar identidade de loja/ambiente, limitar/sanitizar erros e planejar limites de chamadas entre consumidores.",
+      "riskIfCopied": "Pedido marcado sincronizado com resultado simulado, conta errada ou vazamento de dados em logs."
+    },
+    {
+      "id": "C09",
+      "area": "Reprocessamento e importa??o administrativa",
+      "classification": "SUBSTITUIR_COMANDOS_ANTIGOS",
+      "oldRefs": [
+        "app/api/admin/integration/sync/route.ts:27",
+        "app/api/admin/integration/sync/route.ts:37",
+        "services/order-sync.service.ts:207",
+        "scratch/import_full_catalog.js:8"
+      ],
+      "currentRefs": [
+        "lib/commerce/order-fulfillment.ts:9",
+        "lib/commerce/order-reporting.ts:5",
+        "prisma/schema.prisma:358",
+        "services/product.service.ts:228"
+      ],
+      "finding": "A rota antiga importa produtos com autoCreate habilitado por padr?o e reenvia pedidos na mesma a??o. O retry inclui PENDING e PAID; syncStatus permanece PENDING por padr?o no schema atual. Ativ?-lo pode incluir pedidos legados, testes ou antigos sem solicita??o de envio.",
+      "adaptation": "Separar diagn?stico, carga de cat?logo e envio de pedidos. Novos trabalhos precisam ter elegibilidade e escopo expl?citos; nenhuma carga retrospectiva apenas por syncStatus. Preservar #31 como evid?ncia hist?rica e manter classifica??o sem altera??o autom?tica. Confirmar escopo dos 43 produtos extras antes de qualquer importa??o.",
+      "riskIfCopied": "Reenvio em massa de vendas antigas, altera??o de estoque real e importa??o n?o revisada."
+    }
+  ],
+  "summary": {
+    "reuseWithReview": [
+      "Separa??o cliente HTTP / cat?logo / pedidos",
+      "Leitura paginada e identifica??o externa de produto",
+      "Verifica??o HMAC sobre corpo bruto",
+      "Hist?rico e registros de correla??o existentes"
+    ],
+    "preserveCurrent": [
+      "CheckoutIntent e aceite da proposta",
+      "OrderBuyer e snapshots financeiros/frete",
+      "PaymentAttempt, fatos financeiros e reconcilia??o",
+      "InventoryReservation, locks e vers?es",
+      "Normaliza??o de variantes e preserva??o de IDs/v?nculos",
+      "Retorno f?sico auditado e tratamento de chargeback"
+    ],
+    "replaceLegacy": [
+      "Fallback para variante fixa ou primeira variante arbitr?ria",
+      "Sobrescrita de estoque dispon?vel com saldo bruto remoto",
+      "Baixa adicional na aprova??o de pagamento",
+      "Execu??o sem persist?ncia e reenvio cego de POST",
+      "Importa??o e retry financeiro misturados",
+      "Mocks autom?ticos por aus?ncia de credencial"
+    ]
+  },
+  "compatibilityExamples": [
+    {
+      "scenario": "Reserva local de 2 unidades com saldo remoto 10",
+      "expected": "Manter dispon?vel coerente com reservas e movimentos externos; n?o substituir 8 por 10 automaticamente."
+    },
+    {
+      "scenario": "Pagamento aprovado ap?s reserva",
+      "expected": "Confirmar reserva e produzir trabalho externo eleg?vel; nenhuma segunda baixa local."
+    },
+    {
+      "scenario": "POST aceito externamente mas resposta perdida",
+      "expected": "Reconciliar por identidade/correla??o; n?o reenviar cria??o sem esclarecer o primeiro resultado."
+    },
+    {
+      "scenario": "Estorno de pedido j? expedido",
+      "expected": "Manter revis?o f?sica e repor somente quantidade conferida, com coordena??o para n?o duplicar reposi??o no ERP."
+    }
+  ],
+  "futureRegressionCases": [
+    "Visitante e cliente cadastrado com mesmo contrato de envio",
+    "Dois consumidores tentando enviar o mesmo pedido",
+    "Timeout ap?s cria??o remota e rein?cio antes de salvar v?nculo",
+    "Webhook repetido, fora de ordem ou de outra loja",
+    "Sincroniza??o concorrente com reserva e confirma??o",
+    "V?nculo ausente/amb?guo e variantes retiradas sem cria??o duplicada",
+    "Cancelamento pendente de envio versus pedido j? exportado",
+    "Estorno integral, parcial e chargeback sem restitui??o indevida",
+    "Exclus?o de produtos no provedor com pedidos/carrinhos vinculados",
+    "C?lculo com pontos, frete, encargos e parcelamento sem diferen?a de centavos",
+    "Fila de integra??o convivendo com pagamento/e-mail sem consumir seus trabalhos",
+    "Pedidos legados e ensaios sem exporta??o autom?tica"
+  ],
+  "testsExecuted": [],
+  "validation": "Leitura e compara??o est?tica; refer?ncias de arquivos/linhas e hashes conferidos. N?o foram executados testes de aplica??o ou scripts antigos.",
+  "pendingExternalEvidence": [
+    "Recebimento do pedido Nuvemshop #100/2062174127 no SMB Store e eventual movimento de estoque",
+    "Regras efetivas do conector SMB/Nuvemshop para reserva, baixa, cancelamento e reposi??o",
+    "Pol?tica para estoque remoto ilimitado/ausente, indispon?vel, m?ltiplos dep?sitos e buffer",
+    "Escopo comercial dos 43 produtos adicionais"
+  ],
+  "previousEvidence": [
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-ORIGEM-PEDIDO31-2026-10-21.json",
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-CONSULTA-AUTENTICADA-2026-10-21.json"
+  ],
+  "safety": {
+    "applicationCodeChanged": false,
+    "legacyCodeCopied": false,
+    "legacyScriptsExecuted": false,
+    "newDatabaseReads": 0,
+    "providerRequests": 0,
+    "stockWrites": 0,
+    "financialOperations": 0,
+    "webhooksActivated": 0,
+    "credentialsRead": false
+  },
+  "reviewedCurrentFileHashes": [
+    {
+      "file": "services/checkout.service.ts",
+      "sha256": "c93231e8a331c45e177c8c78ad572ba080fb0bf971b0bb40790d4256be5743c1"
+    },
+    {
+      "file": "lib/commerce/order-command.ts",
+      "sha256": "24430c5b7d11260247bad0bc8903affc814c791d6b965c3a5eccdd0da29021d2"
+    },
+    {
+      "file": "services/payment/payment-evidence.service.ts",
+      "sha256": "ebb7f3d645b76fb3773309425c0c82ef96dac4e4221cada31af571df2bc4d0f0"
+    },
+    {
+      "file": "services/inventory.service.ts",
+      "sha256": "4de7e03e40985acaf59106175764df585d964f9e201bb8ae771fb73cfdb9e84e"
+    },
+    {
+      "file": "lib/commerce/locks.ts",
+      "sha256": "0e66a56f6f9b69cef9112ce92c21f23080c4cd1d91435e18ff8cb9c63ab0590e"
+    },
+    {
+      "file": "prisma/schema.prisma",
+      "sha256": "36cc0afe8a0a3cce20ac3e869fe1485e0d05a7841b0caf2399dac621f2a3c73c"
+    },
+    {
+      "file": "lib/product-variants.ts",
+      "sha256": "c1ad3586ff01d94b04202035be0f902e68c943262bfab7d8918eb0b954c60fe7"
+    },
+    {
+      "file": "services/product.service.ts",
+      "sha256": "d74850633025f4ea4f81a2ce84e1f317b45902ed1f480156df3005e542a844b5"
+    },
+    {
+      "file": "services/checkout-plan.service.ts",
+      "sha256": "e1d8619a229cd986aebe8d84fd7cb546fdf924331dc12dedd06d8a2c77452717"
+    },
+    {
+      "file": "lib/commerce/order-buyer.ts",
+      "sha256": "9d8cb8b09963a25953c0b5fcf2ec5f325f8593aba733898766b2332dceda92ee"
+    },
+    {
+      "file": "lib/commerce/order-fulfillment.ts",
+      "sha256": "fe4505966a3b350370e86f75b52544645d89cb814af3636b086213970d148f40"
+    },
+    {
+      "file": "services/physical-return.service.ts",
+      "sha256": "e9675c975ba0306c1845c4b3344a70e11f4d6bb4c76f3732342dfcbc6b981b4c"
+    },
+    {
+      "file": "services/payment/chargeback.ts",
+      "sha256": "7e6d86a6f61d40ec6a6001490a79c3eb58588cba4d50d4421d85a3a9c200909d"
+    },
+    {
+      "file": "services/payment/durable-work.service.ts",
+      "sha256": "0177586cb499309a72f2f5ab3a68c0ba2c032908aa36479d46b8367d0ced96de"
+    },
+    {
+      "file": "services/payment/payment-outbox.service.ts",
+      "sha256": "cf3b6b975eeb60046701dc67ca17e725a20e2fa6d4e2f216ce9010a93d4e4611"
+    },
+    {
+      "file": "services/payment/payment-inbox.service.ts",
+      "sha256": "ed3cb534cc5073e4cc82564e8f5f760e1cf00a6c65356b580bd9044e36d83e13"
+    },
+    {
+      "file": "lib/commerce/payment-account.ts",
+      "sha256": "6474252684c4eb6c8c879e1a97a1717305ddb1785af0a7cad217b4138739eb04"
+    },
+    {
+      "file": "services/payment/payment-execution-policy.ts",
+      "sha256": "c423baec775b59b291120c5bb3e9ba981b46754de99133527c588d46962a4c7c"
+    },
+    {
+      "file": "lib/commerce/order-reporting.ts",
+      "sha256": "82da3db6ee9fe0110bff6c7d25d9034969aefa64452c7d45b3803ca5080ad572"
+    }
+  ],
+  "productionReady": false,
+  "existingRelevantTestFiles": [
+    "tests/unit/product-variant-reconciliation.test.ts",
+    "tests/unit/inventory-lifecycle.test.ts",
+    "tests/integration/checkout-intent-authority.test.ts",
+    "tests/integration/order-transition-atomicity.test.ts",
+    "tests/integration/payment-durable-execution.test.ts",
+    "tests/integration/payment-process-recovery.test.ts",
+    "tests/integration/physical-return-atomicity.test.ts",
+    "tests/integration/boleto-refund.test.ts"
+  ],
+  "testReviewNote": "Arquivos relevantes localizados; asser??es de invent?rio e reconcilia??o de variantes foram lidas. N?o representa revis?o integral nem execu??o das su?tes listadas."
+}

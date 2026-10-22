@@ -1,0 +1,181 @@
+{
+  "kind": "NUVEMSHOP_ORDER31_ORIGINAL_EXECUTOR_LOCATED",
+  "date": "2026-10-21",
+  "timeZone": "America/Sao_Paulo",
+  "providerReadAt": "2026-10-22T02:55:50.175Z",
+  "status": "ORIGINAL_MODULE_AND_TEST_EXECUTION_LOCATED_IN_OLD_PROJECT",
+  "oldProject": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto",
+  "oldHead": "f0d416f",
+  "originalModules": [
+    {
+      "relative": "scratch/import_full_catalog.js",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/scratch/import_full_catalog.js",
+      "sha256": "03279140c45b170354252f93c5769efbcb53a07ba02c76396f42c7ff76ff92e8",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "scratch/test_phase4_order_pipeline.js",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/scratch/test_phase4_order_pipeline.js",
+      "sha256": "695063bc8d17e685e112b5c151c88889c72a4472617c037805172cf25efddf28",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "scratch/test_phase3_webhooks.js",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/scratch/test_phase3_webhooks.js",
+      "sha256": "08d5b2a64768b2a7970b2c3d1c5161f42b659e40a9801bba48c23d43d42cf3d9",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "services/nuvemshop.service.ts",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/services/nuvemshop.service.ts",
+      "sha256": "a7c4829020b098862f3fe0ca372658673c4fd8733e1d7dd44f1505dbc915bc2c",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "services/stock-sync.service.ts",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/services/stock-sync.service.ts",
+      "sha256": "23468db1f77657466bbda44c05cc3e6958774e7fa58d0901e59aeb3a182047d3",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "services/order-sync.service.ts",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/services/order-sync.service.ts",
+      "sha256": "4ddc92dbc8165fcb9f16c860e83bbe9ea8b6ef1e176fb77504a2ddd8166c2f2e",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "app/api/webhooks/nuvemshop/route.ts",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/app/api/webhooks/nuvemshop/route.ts",
+      "sha256": "23a69cfbe831636fc90404f93f4263a894aaad984718eef4160d79607398f931",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "app/api/admin/integration/sync/route.ts",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/app/api/admin/integration/sync/route.ts",
+      "sha256": "123a62fca35afa5b69e60a9fc6d15e950121dbada99ca528cbe292262e773874",
+      "existsInCurrentProject": false
+    },
+    {
+      "relative": "tools/register_nuvemshop_webhook.js",
+      "path": "C:/Diversos/TI/Trabalhos/2026/04-Abril/Sistema_E-Commerce/Projeto/tools/register_nuvemshop_webhook.js",
+      "sha256": "b81f254471178aabb86571c35e8d192c0c585dac5e2df1b2a7037611a9bb8255",
+      "existsInCurrentProject": false
+    }
+  ],
+  "originalCommits": [
+    {
+      "sha": "3c1cda45efc1353e2181fb2355a5caca7deb8567",
+      "purpose": "catalog reconciliation/import",
+      "existsInCurrentGit": false
+    },
+    {
+      "sha": "469b1d96a0bf4718cdb8b36a48556408bd19beb9",
+      "purpose": "outbound orders and variant resolution",
+      "existsInCurrentGit": false
+    },
+    {
+      "sha": "c9e6f9bd89a4482f54129eb4e3d26b4dadc136e4",
+      "purpose": "integration resilience and telemetry",
+      "existsInCurrentGit": false
+    }
+  ],
+  "transcript": {
+    "path": "%USERPROFILE%/.gemini/antigravity-ide/brain/1f29dd5b-ef54-4112-94a9-cde03d6fa879/.system_generated/logs/transcript_full.jsonl",
+    "scriptCreationLine": 901,
+    "scriptCreationAt": "2026-09-04T19:05:45Z",
+    "successfulInvocationLine": 921,
+    "successfulInvocationAt": "2026-09-04T19:07:10Z",
+    "executionResultLine": 922,
+    "invocation": "node --env-file=.env scratch/test_phase4_order_pipeline.js",
+    "correlatedResult": {
+      "localOrderNumber": 31,
+      "localOrderId": "0c4e0ac3-4816-405d-9ecf-27af26cd9da7",
+      "providerHttpStatus": 201,
+      "providerOrderId": "2062174127",
+      "localSyncStatus": "SYNCED",
+      "localProductStockBefore": 5,
+      "localProductStockAfter": 4
+    },
+    "fullTranscriptCopied": false
+  },
+  "providerOrder": {
+    "httpStatus": 200,
+    "id": 2062174127,
+    "number": 100,
+    "app_id": "41122",
+    "storefront": "api",
+    "status": "open",
+    "payment_status": "paid",
+    "gateway": "not-provided",
+    "gateway_name": "not-provided",
+    "created_at": "2026-09-04T19:07:20+0000",
+    "updated_at": "2026-09-04T19:07:20+0000",
+    "total": "49.99",
+    "currency": "BRL",
+    "storeIdentityMatches": true,
+    "products": [
+      {
+        "productId": 364588859,
+        "variantId": "1588283603",
+        "quantity": "1"
+      }
+    ],
+    "notes": {
+      "present": true,
+      "mentionsTest": false,
+      "mentionsContinental": true,
+      "mentionsLocalReference": true
+    }
+  },
+  "localOrder": {
+    "id": "0c4e0ac3-4816-405d-9ecf-27af26cd9da7",
+    "orderNumber": 31,
+    "status": "PAID",
+    "nuvemshopOrderId": "2062174127",
+    "createdAt": "2026-09-04T19:07:18.408Z",
+    "updatedAt": "2026-09-15T16:55:38.435Z",
+    "total": "49.99"
+  },
+  "localStockLog": [
+    {
+      "source": "ORDER_DECREMENT",
+      "previousStock": 5,
+      "newStock": 4,
+      "createdAt": "2026-09-04T19:07:21.726Z",
+      "orderNumber": "31",
+      "nuvemshopOrderId": "2062174127"
+    }
+  ],
+  "findings": [
+    "The successful historical operation was a standalone test script, not proof that the current checkout invokes the integration.",
+    "The old project also contains the actual API client, stock/order synchronization services, webhook route and admin integration endpoints.",
+    "The test creates a local order directly with status PAID and sends payment_status=paid to Nuvemshop; no real financial collection is demonstrated.",
+    "The test directly decrements local Product.stock and writes ORDER_DECREMENT; it does not use the current inventory/reservation workflow.",
+    "The import script reads Nuvemshop products and uses first-variant SKU, then barcode, then external product ID as local SKU fallback.",
+    "The historical webhook test generates its own signed payload and writes a WEBHOOK log; that test does not demonstrate provider delivery to a published endpoint.",
+    "The old outbound service can fall back to a hardcoded external variant ID, and its stock synchronization overwrites stock without the current reservation protocol. These behaviors must be reviewed before reuse."
+  ],
+  "limits": [
+    "No SMB Store API/dashboard was available, so downstream ERP receipt and stock movement remain unverified.",
+    "The reason these commits are absent from the current repository has not been established.",
+    "The original module was read, not imported, run or deployed.",
+    "The historical test used real catalog data; do not cancel it, restore stock or reclassify records automatically."
+  ],
+  "nextActions": [
+    "Use Nuvemshop order number 100, ID 2062174127, created 2026-09-04 16:07:20 America/Sao_Paulo, total BRL 49.99, to find the corresponding record in SMB Store.",
+    "Review and adapt reusable integration modules to current product/variant identity, inventory reservations, payment confirmation and durable processing before any deployment."
+  ],
+  "safety": {
+    "sourceReadOnly": true,
+    "providerMethods": [
+      "GET"
+    ],
+    "oldScriptsExecuted": false,
+    "stockChanged": false,
+    "ordersCreated": false,
+    "webhooksChanged": false,
+    "sourceOrderClassificationChanged": false,
+    "secretValuesWritten": false
+  },
+  "productionReady": false
+}

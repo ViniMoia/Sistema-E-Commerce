@@ -1,0 +1,42 @@
+{
+  "kind": "SMB_HISTORICAL_SALE_USER_SCREENSHOT",
+  "date": "2026-10-22",
+  "status": "HISTORICAL_SALE_RECEIPT_CONFIRMED_STOCK_MOVEMENT_PENDING",
+  "source": {
+    "type": "Imagem enviada por Vinícius nesta conversa",
+    "context": "Resposta à solicitação de localizar o pedido Nuvemshop 100 no SMB",
+    "independentAuthenticatedSmbQuery": false,
+    "imageCopiedToRepository": false
+  },
+  "observed": {
+    "documentType": "Venda",
+    "seller": "Nuvemshop",
+    "displayedDateTime": "04/09/2026 16:07:00",
+    "continentalOrderNumber": 31,
+    "nuvemshopOrderNumber": 100,
+    "observationLinksBothOrders": true,
+    "totalBRL": "49.99",
+    "quantity": 1,
+    "productName": "AC2-PRO DESINCRUSTANTE ACIDO 1,5L",
+    "displayedPaymentMethod": "Cartão de crédito"
+  },
+  "correlation": {
+    "priorEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-ORIGEM-PEDIDO31-2026-10-21.json",
+    "nuvemshopOrderIdFromPriorApiEvidence": "2062174127",
+    "note": "O ID remoto numérico vem da consulta anterior, não da imagem. Número do pedido, referência Continental, valor e minuto da venda coincidem."
+  },
+  "conclusion": "O documento apresentado como comprovante do SMB confirma o registro histórico da venda originada na Continental e enviada à Nuvemshop. A etapa histórica de chegada ao ERP deixa de ser apenas hipótese.",
+  "notProven": [
+    "Movimento de saída no histórico de estoque do SMB, saldo anterior/posterior e ausência de dupla baixa",
+    "Liquidação financeira: o ensaio antigo forçou o status pago; o rótulo Cartão de crédito no comprovante não demonstra captura no provedor",
+    "Funcionamento da integração na revisão atual, sincronização contínua e tratamento de cancelamentos/devoluções"
+  ],
+  "remainingReadOnlyCheck": "Consultar o histórico de estoque do produto no SMB e localizar a saída vinculada à venda de 04/09/2026 16:07, verificando quantidade e vínculo. Não faturar, cancelar ou ajustar estoque para investigar.",
+  "privacy": "Dados de contato, cliente, endereço e QR code não transcritos.",
+  "safety": {
+    "applicationCodeChanged": false,
+    "databaseAccessed": false,
+    "stockChanged": false,
+    "financialOperations": false
+  }
+}
