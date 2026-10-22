@@ -1,0 +1,79 @@
+{
+  "kind": "NUVEMSHOP_CATALOG_READER_ISOLATED_VALIDATION",
+  "date": "2026-10-22",
+  "timeZone": "America/Sao_Paulo",
+  "status": "READER_AND_ATTRIBUTE_ADAPTER_VALIDATED_WITH_SYNTHETIC_RESPONSES",
+  "baseRevision": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+  "files": [
+    "lib/integrations/nuvemshop-catalog-reader.ts",
+    "tests/unit/nuvemshop-catalog-reader.test.ts"
+  ],
+  "implementation": {
+    "function": "readNuvemshopCatalog",
+    "purpose": "Produzir o DTO remoto aceito pelo planejador de identidade, observações do catálogo e pendências de tradução. Não sincroniza estoque nem grava vínculos.",
+    "configuration": "Configuração explícita, sem leitura de .env. Ausência de credencial não ativa simulação. Transporte injetável para testes; fetch nativo quando chamado explicitamente sem substituição.",
+    "contract": "API v1, a mesma versão observada nas leituras anteriores. Migração para a API mais nova de múltiplos estoques não foi realizada nem validada.",
+    "http": [
+      "Somente GET, HTTPS e domínio fixo da API Nuvemshop.",
+      "Primeira consulta obtém apenas o ID da loja e confere sua identidade antes do catálogo.",
+      "Timeout por requisição, redirecionamentos recusados, no-store e intervalo de 600 ms entre chamadas da mesma execução.",
+      "Limite configurável de páginas e tamanho de página, com valores máximos validados.",
+      "Erros sanitizados sem corpo do provedor, token, URL privada ou causa original. Sem retry automático nesta etapa."
+    ],
+    "pagination": [
+      "Confere x-total-count em todas as páginas; total alterado, resultado truncado ou IDs repetidos interrompem a leitura.",
+      "Valida origem, loja, recurso, página e parâmetros de Link antes de anexar credenciais; sem Link, utiliza URL fixa do catálogo com a próxima página.",
+      "Limite atingido com itens faltantes gera erro, não resultado parcial marcado como completo.",
+      "A conferência de contagens não transforma as consultas em snapshot atômico; atomicSnapshot permanece false."
+    ],
+    "attributes": [
+      "Associa atributos conhecidos aos campos size/color pelo nome no idioma configurado.",
+      "Posição serve apenas para parear atributo e valor dentro do contrato remoto; nunca para escolher a variante local.",
+      "Sem atributos e sem valores, produz Único/Padrão para o normalizador existente.",
+      "Atributo desconhecido, dimensão repetida, idioma ausente, quantidade de valores incompatível ou variante de outro produto gera pendência explícita.",
+      "Produto com pendência não entra no DTO de mapeamento. Essa ausência não comprova remoção no provedor; consumidor deve verificar issues e translationComplete."
+    ],
+    "stockAndPublication": "published, stock, stock_management e updated_at são preservados como observações separadas. Estoque nulo não vira zero/infinito. O DTO de identidade não concede disponibilidade para venda nem aplica o saldo remoto."
+  },
+  "validation": {
+    "unitCommand": "vitest run tests/unit/nuvemshop-catalog-reader.test.ts tests/unit/nuvemshop-variant-mapping.test.ts tests/unit/product-variant-reconciliation.test.ts tests/unit/inventory-lifecycle.test.ts",
+    "passedFiles": 4,
+    "passedTests": 92,
+    "failedTests": 0,
+    "readerTests": 37,
+    "typecheck": "tsc --noEmit --incremental false: exit 0",
+    "lint": "eslint lib/integrations/nuvemshop-catalog-reader.ts tests/unit/nuvemshop-catalog-reader.test.ts: exit 0",
+    "fixtures": "Respostas HTTP sintéticas e transporte substituído em todos os testes do leitor. Token fictício, sem leitura de credenciais reais.",
+    "pipelineProof": "Um teste envia o DTO produzido pelo leitor ao planejador e confere preservação do ID local e proposta de vínculo por código de barras.",
+    "warning": "Aviso já existente do Vite sobre futura mudança no carregador da configuração; execução atual aprovada."
+  },
+  "limits": [
+    "Nenhuma execução autenticada desse leitor contra a conta real ocorreu nesta etapa. As leituras anteriores foram diagnósticos separados.",
+    "Rotas, cron, webhook, checkout, consumidores e ambiente publicado não foram ligados ao novo código.",
+    "Os 92 testes não representam aceite completo da integração SMB/Nuvemshop ou execução dos cenários financeiros pendentes.",
+    "A versão v1 é deliberadamente explícita. Campos ou atributos não suportados exigem revisão do contrato, sem interpretação silenciosa.",
+    "Rate limit entre múltiplas instâncias, persistência, recuperação de jobs e retry durável ainda não estão implementados neste leitor.",
+    "A leitura local de homologação e a construção do DTO com versão/retirada verificadas ainda precisam ser preparadas.",
+    "Nenhuma evidência nova da baixa histórica no SMB ou do tratamento de cancelamentos/reposição foi produzida."
+  ],
+  "nextStep": "Preparar uma execução de diagnóstico que reúna leitura local em transação somente leitura e catálogo remoto, com identidade do destino e campos modernos conferidos, e produza proposta revisável. Persistência de vínculos continua sendo uma etapa separada, com backup, auditoria, versões e locks.",
+  "documentation": [
+    "https://tiendanube.github.io/api-documentation/v1/resources/product",
+    "https://tiendanube.github.io/api-documentation/v1/resources/product-variant",
+    "https://tiendanube.github.io/api-documentation/v1/intro"
+  ],
+  "previousEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-MAPEAMENTO-ISOLADO-2026-10-22.json",
+  "safety": {
+    "realProviderRequests": 0,
+    "publicDocumentationConsulted": true,
+    "databaseConnections": 0,
+    "databaseWrites": 0,
+    "stockChanges": 0,
+    "financialOperations": 0,
+    "credentialsRead": false,
+    "migrationsCreated": false,
+    "runtimeActivated": false,
+    "committed": false,
+    "published": false
+  }
+}

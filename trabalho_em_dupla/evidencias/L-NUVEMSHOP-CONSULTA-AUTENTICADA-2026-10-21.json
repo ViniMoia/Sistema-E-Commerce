@@ -1,0 +1,191 @@
+{
+  "kind": "NUVEMSHOP_AUTHENTICATED_READ_ONLY_DIAGNOSIS",
+  "startedAt": "2026-10-22T02:25:37.310Z",
+  "completedAt": "2026-10-22T02:25:47.191Z",
+  "sourceReadOnly": true,
+  "sourceIdentityVerified": true,
+  "apiVersion": "v1",
+  "methods": [
+    "GET"
+  ],
+  "stockWritten": false,
+  "ordersCreated": false,
+  "webhooksChanged": false,
+  "secretValuesPersisted": false,
+  "initialRequests": {
+    "at": "2026-10-22T02:24:29.879Z",
+    "method": "GET",
+    "writes": false,
+    "requests": [
+      {
+        "label": "store",
+        "status": 200,
+        "identityMatches": true,
+        "name": {
+          "pt": "Distribuidora Continental"
+        }
+      },
+      {
+        "label": "webhooks",
+        "status": 200,
+        "count": 0,
+        "hasMore": false,
+        "entries": []
+      },
+      {
+        "label": "products",
+        "status": 200,
+        "total": "561",
+        "returned": 1,
+        "variantCount": 1
+      }
+    ]
+  },
+  "productRequests": [
+    {
+      "resource": "products",
+      "page": 1,
+      "status": 200,
+      "total": "561"
+    },
+    {
+      "resource": "products",
+      "page": 2,
+      "status": 200,
+      "total": "561"
+    },
+    {
+      "resource": "products",
+      "page": 3,
+      "status": 200,
+      "total": "561"
+    },
+    {
+      "resource": "products",
+      "page": 4,
+      "status": 200,
+      "total": "561"
+    },
+    {
+      "resource": "products",
+      "page": 5,
+      "status": 200,
+      "total": "561"
+    },
+    {
+      "resource": "products",
+      "page": 6,
+      "status": 200,
+      "total": "561"
+    }
+  ],
+  "comparison": {
+    "localProducts": 522,
+    "previouslyIdentifiedTestProducts": 4,
+    "localCommercialProducts": 518,
+    "providerProducts": 561,
+    "matchedByProductId": 518,
+    "localCommercialMissingAtProvider": 0,
+    "providerProductsWithoutLocalCommercialId": 43,
+    "productsWithDifferentVariantCounts": 0,
+    "productsWithNumericStockComparable": 510,
+    "productsWithNumericStockDifference": 280,
+    "productsWithUnknownOrUnlimitedProviderStock": 8,
+    "localVariantsWithExternalId": 0,
+    "uniqueVariantSkuMatchesWithinLinkedProduct": 0,
+    "localVariantSkuUnresolved": 518,
+    "singleVariantPairsWithProductSkuMatch": 0
+  },
+  "stockDifferenceExamples": [
+    {
+      "localProductId": "0017752f-56e5-47af-bf7a-e2b69f7a8858",
+      "nuvemshopProductId": "364589506",
+      "localStock": 7,
+      "providerVariantStockSum": 10,
+      "localUpdatedAt": "2026-09-10T15:20:22.502Z",
+      "providerUpdatedAt": "2026-09-01T16:00:47+0000"
+    },
+    {
+      "localProductId": "01497348-fa94-44bf-bbd3-c27c7e85bffd",
+      "nuvemshopProductId": "364590130",
+      "localStock": 3,
+      "providerVariantStockSum": 2,
+      "localUpdatedAt": "2026-09-10T15:21:00.606Z",
+      "providerUpdatedAt": "2026-09-01T16:03:15+0000"
+    },
+    {
+      "localProductId": "02f551a7-5c92-43bb-b240-5a183801933d",
+      "nuvemshopProductId": "364589883",
+      "localStock": 12,
+      "providerVariantStockSum": 11,
+      "localUpdatedAt": "2026-09-23T21:29:17.162Z",
+      "providerUpdatedAt": "2026-09-01T16:02:20+0000"
+    },
+    {
+      "localProductId": "05734ad7-c4a4-40c3-92c7-e5d553b69587",
+      "nuvemshopProductId": "364591287",
+      "localStock": 3,
+      "providerVariantStockSum": 0,
+      "localUpdatedAt": "2026-09-10T15:22:06.712Z",
+      "providerUpdatedAt": "2026-10-15T21:15:35+0000"
+    },
+    {
+      "localProductId": "057a36e0-4c7c-44d0-bb27-acf0d79768b4",
+      "nuvemshopProductId": "364589759",
+      "localStock": 2,
+      "providerVariantStockSum": 1,
+      "localUpdatedAt": "2026-09-23T21:29:16.599Z",
+      "providerUpdatedAt": "2026-09-01T16:01:45+0000"
+    }
+  ],
+  "linkedOrders": [
+    {
+      "localOrderNumber": 31,
+      "httpStatus": 200,
+      "externalIdMatches": true,
+      "remoteStatus": "open",
+      "remotePaymentStatus": "paid",
+      "remoteCreatedAt": "2026-09-04T19:07:20+0000",
+      "remoteLineCount": 1
+    }
+  ],
+  "limitations": [
+    "Provider pages and local database are separate reads, not an atomic cross-system snapshot.",
+    "Raw stock differences do not account for local reservations, stock buffers, intervening sales or business synchronization rules.",
+    "Webhooks list covers the application associated with this token, not all installed apps.",
+    "No SMB Store API or dashboard was consulted.",
+    "Webhook secret validity and webhook delivery were not tested.",
+    "No import, repair, purchase, refund, scheduler or synchronization was triggered.",
+    "API store identity was confirmed; the token issuing application was not independently identified.",
+    "An order payment_status of paid is provider order metadata, not independent proof of funds settlement or SMB Store stock movement.",
+    "43 provider products without a local commercial ID may reflect intentional catalog scope; do not import automatically."
+  ],
+  "localDate": "2026-10-21",
+  "timeZone": "America/Sao_Paulo",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "homologacaoRevision": "1b09934e66c592ef0cd72aa1a80d1c4e53f35d28",
+  "status": "PROVIDER_ACCESS_AND_HISTORICAL_ORDER_CONFIRMED_CURRENT_SYNC_UNRESOLVED",
+  "localEnv": {
+    "fourRequestedVariablesPresent": true,
+    "ignoredByGit": true,
+    "trackedByGit": false
+  },
+  "nextActions": [
+    "Identify the process that created the historical external order and whether it still executes.",
+    "Confirm intended catalog scope and reconcile variant identity before any stock mutation.",
+    "Review local reservations and source-of-truth policy before interpreting numeric stock differences.",
+    "Obtain SMB Store evidence for the existing external order, without creating a new sale."
+  ],
+  "documentation": {
+    "webhooks": "https://tiendanube.github.io/api-documentation/v1/resources/webhook",
+    "products": "https://tiendanube.github.io/api-documentation/v1/resources/product"
+  },
+  "originalExecutorFollowUp": {
+    "evidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-ORIGEM-PEDIDO31-2026-10-21.json",
+    "moduleLocated": true,
+    "location": "OLD_LOCAL_PROJECT_OUTSIDE_CURRENT_REPOSITORY",
+    "order31Origin": "STANDALONE_TEST_SCRIPT",
+    "currentRuntimeVerified": false,
+    "smbStockMovementVerified": false
+  }
+}

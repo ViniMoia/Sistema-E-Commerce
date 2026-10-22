@@ -1,0 +1,90 @@
+{
+  "kind": "NUVEMSHOP_BINDING_WRITER_ISOLATED_VALIDATION",
+  "date": "2026-10-22",
+  "status": "IMPLEMENTED_AND_TESTED_ON_DISPOSABLE_POSTGRES_NOT_APPLIED_TO_HOMOLOGACAO",
+  "sourceDiagnostic": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-DIAGNOSTICO-HOMOLOGACAO-2026-10-22.json",
+  "revisions": {
+    "localHead": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+    "mainReference": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "homologacaoReference": "443fd4e4fee8342f1ed4c1514f2d9e8457d99c4b",
+    "implementationCommitted": false
+  },
+  "files": {
+    "writer": "lib/integrations/nuvemshop-binding-writer.ts",
+    "integrationTests": "tests/integration/nuvemshop-binding.test.ts",
+    "isolatedRunner": "scripts/verify-nuvemshop-bindings.mjs"
+  },
+  "implemented": [
+    "Rotina interna de manutenção, sem rota, carregamento de .env, CLI para banco real, cron ou conexão com checkout.",
+    "URL explícita: somente homologação com host/banco/loja fixados ou PostgreSQL descartável com URL e sentinela verificados. Destino main não é aceito.",
+    "Comando explícito com operador administrador ativo da loja, ID idempotente, referências de backup/auditoria, produtos, versões e pares exatos de variantes.",
+    "Catálogo autenticado deve ser obtido pelo chamador confiável antes da transação. A rotina exige leitura completa, tradução completa, loja correspondente e início da leitura há no máximo dez minutos; não faz requisições externas.",
+    "Releitura de produtos/variantes dentro da transação após os bloqueios. Reutiliza CommerceLocks e o planejador de identidade; inclui outros cadastros da mesma loja na busca por conflitos.",
+    "Valida todo o lote antes da primeira gravação: posse, versões, códigos, dimensões, ciclo de vida, variantes de outro produto e reutilização de IDs externos.",
+    "Grava apenas nuvemshopVariantId de variantes existentes sem vínculo, incrementa catalogVersion uma vez por produto alterado e registra AuditLog. Timestamps de atualização são geridos pelo ORM.",
+    "Registra contagens dos vínculos existentes com carrinhos, itens de pedidos e reservas, sem dados de clientes.",
+    "Vínculos e auditoria compartilham a mesma transação. Falha na auditoria reverte o lote inteiro.",
+    "Repetição do mesmo comando confere auditoria, conteúdo, versões e estado atual; não reaplica efeitos. Reutilizar o comando com conteúdo diferente falha."
+  ],
+  "locking": {
+    "mode": "EXCLUSIVE em Product e ProductVariants, seguido de bloqueios ordenados de linhas",
+    "purpose": "Proteger a validação de duplicidades contra edições concorrentes, inclusive escritores que não usam esta rotina.",
+    "operationalImpact": "Bloqueia temporariamente escritas e SELECT FOR UPDATE nessas tabelas de todo o banco, inclusive outras lojas. SELECT comum permanece disponível. Aplicação real exige janela de manutenção e consumidores/escritores controlados.",
+    "timeouts": "lock_timeout 5s; statement_timeout 20s; transação 60s; sem retry automático.",
+    "regression": "O ensaio identificou deadlock com o bloqueio inicial SHARE ROW EXCLUSIVE durante uma edição que já detinha FOR UPDATE. O modo EXCLUSIVE corrigiu esse cenário; o teste observa a espera em pg_locks e confirma rejeição da versão desatualizada após a edição concluir.",
+    "limit": "Não foi criada uma restrição UNIQUE global para nuvemshopVariantId. A proteção cobre esta transação e esta rotina; não certifica outros escritores futuros nem elimina todos os possíveis conflitos do grafo de locks."
+  },
+  "validation": {
+    "command": "node scripts/verify-nuvemshop-bindings.mjs",
+    "database": "PostgreSQL 18 descartável em Docker, em loopback, com papel restrito e sentinela verificada",
+    "schema": "Migrations existentes aplicadas somente ao banco descartável; nenhuma migration nova necessária para este módulo.",
+    "data": "Fixtures sintéticas; sem cópia do catálogo real, sem backup real, sem credenciais de provedores.",
+    "passedFiles": 3,
+    "passedTests": 96,
+    "postgresIntegrationTests": 20,
+    "readerAndPlannerTests": 76,
+    "failedTestsFinalRun": 0,
+    "typecheck": "tsc --noEmit --incremental false: exit 0",
+    "lint": "eslint dos três arquivos novos de código/teste/runner: exit 0",
+    "verified": [
+      "IDs locais, estoque, preço e inventoryVersion preservados; apenas uma variante permanece após vinculação.",
+      "Referências de carrinho, pedido e reserva preservadas e contadas na auditoria.",
+      "Duas execuções concorrentes do mesmo comando produzem uma aplicação e um replay.",
+      "Comandos distintos com a mesma versão inicial não podem ambos confirmar a gravação.",
+      "Edição concorrente termina antes da releitura e provoca conflito de versão.",
+      "IDs externos repetidos fora do lote, produto remoto duplicado e ID de variante de outro produto são recusados.",
+      "Código remoto divergente, vínculo anterior diferente, variante retirada e lista incompleta são recusados.",
+      "Falha induzida na auditoria após os updates reverte todos os produtos do lote.",
+      "Replay não encobre estado local posteriormente alterado.",
+      "Loja/operador incompatíveis, destino arbitrário, evidência antiga/incompleta e campos extras no comando são recusados."
+    ],
+    "cleanup": "Containers descartáveis removidos pelo runner; nenhum container logic-audit-pg permaneceu ao final.",
+    "warning": "Aviso preexistente do Vite sobre o futuro carregador de configuração; não impediu a execução."
+  },
+  "limits": [
+    "Os 517 candidatos da consulta anterior ainda NÃO foram vinculados na homologação.",
+    "O pano com código divergente e o produto sem vínculo continuam fora da proposta; os 45 produtos remotos adicionais não foram importados.",
+    "As referências de backup e auditoria são registradas, mas sua existência e recuperabilidade não são comprovadas por strings no comando. Precisam ser verificadas antes de uma aplicação real.",
+    "CatalogReadResult é uma entrada interna confiável, não uma atestação criptográfica. Não expor esta rotina diretamente a payloads de navegador.",
+    "A leitura remota é paginada e não atômica. O limite de dez minutos não impede alterações do provedor após a consulta.",
+    "Não comprova publicação da candidata, sincronização contínua, baixa de estoque no SMB, exportação de pedidos ou fechamento dos gates de produção."
+  ],
+  "nextStep": [
+    "Revisar e versionar o conjunto de módulos/testes antes da aplicação.",
+    "Na etapa de aplicação autorizada: controlar escritores da homologação, gerar/verificar backup do destino e refazer a leitura autenticada do catálogo.",
+    "Conferir o lote explícito e suas versões; aplicar somente os vínculos aprovados, preservando os casos excluídos.",
+    "Comparar dados antes/depois e guardar auditoria, confirmando ausência de alterações de estoque, pedidos, reservas e saldos."
+  ],
+  "safety": {
+    "mainConnected": false,
+    "homologacaoConnected": false,
+    "providerRequests": 0,
+    "realDatabaseWrites": 0,
+    "realOrdersCreated": 0,
+    "financialOperations": 0,
+    "neonResourcesCreated": 0,
+    "runtimeActivated": false,
+    "published": false,
+    "syntheticWritesInDisposablePostgres": true
+  }
+}

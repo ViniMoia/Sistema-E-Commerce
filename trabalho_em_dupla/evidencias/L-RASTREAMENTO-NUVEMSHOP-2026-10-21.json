@@ -1,0 +1,125 @@
+{
+  "kind": "NUVEMSHOP_INTEGRATION_READ_ONLY_TRACE",
+  "date": "2026-10-21",
+  "databaseReadAt": "2026-10-21T20:31:51.368Z",
+  "status": "HISTORICAL_IMPORT_RECORDS_FOUND_CURRENT_EXECUTION_MECHANISM_UNRESOLVED",
+  "revisions": {
+    "localHead": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+    "originMain": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "originHomologacao": "1b09934e66c592ef0cd72aa1a80d1c4e53f35d28"
+  },
+  "userReport": "SMB Store feeds Nuvemshop; the ecommerce was linked to Nuvemshop during development with Antigravity. User has access to both providers.",
+  "scope": {
+    "sourceDatabaseFingerprintVerified": true,
+    "sourceStoreIdentityVerified": true,
+    "transactionReadOnlyVerified": true,
+    "isolation": "RepeatableRead",
+    "sharedDataWritten": false,
+    "financialOperationsExecuted": false,
+    "synchronizationTriggered": false,
+    "providerRequestsExecuted": false,
+    "secretsPrinted": false
+  },
+  "observations": {
+    "products": {
+      "total": 522,
+      "withExternalProductId": 521
+    },
+    "variants": {
+      "total": 528,
+      "withExternalVariantId": 0
+    },
+    "orders": {
+      "total": 24,
+      "withExternalOrderId": 1
+    },
+    "storedStoreConfiguration": {
+      "storeIdPresent": false,
+      "accessTokenPresent": false,
+      "userAgentPresent": false
+    },
+    "localEnvNuvemshopVariablesFound": false,
+    "stockSyncLogGroups": [
+      {
+        "source": "CATALOG_IMPORT",
+        "count": 518,
+        "first": "2026-09-04T18:35:44.839Z",
+        "last": "2026-09-04T18:56:31.001Z"
+      },
+      {
+        "source": "CATALOG_SYNC",
+        "count": 15,
+        "first": "2026-09-04T18:53:23.733Z",
+        "last": "2026-09-04T18:53:28.624Z"
+      },
+      {
+        "source": "WEBHOOK",
+        "count": 4,
+        "first": "2026-08-26T01:55:13.771Z",
+        "last": "2026-09-04T19:01:10.195Z"
+      },
+      {
+        "source": "ORDER_DECREMENT",
+        "count": 1,
+        "first": "2026-09-04T19:07:21.726Z",
+        "last": "2026-09-04T19:07:21.726Z"
+      }
+    ],
+    "databaseExtensions": [
+      "plpgsql"
+    ],
+    "publicSchemaTriggers": 0,
+    "storefrontReadPath": [
+      "app/page.tsx:16",
+      "services/product.service.ts:104"
+    ],
+    "storefrontDataSource": "Prisma reads persisted products from the ecommerce database",
+    "catalogCopyScript": "scripts/import-main-hml-catalog.mjs copies the reviewed source database catalog into homologation; it is not a Nuvemshop API synchronization service"
+  },
+  "codeAndHistory": {
+    "guide": "diversos/PLANEJAMENTO_GERAL/INTEGRACAO/GUIA_INTEGRACAO_ESTOQUE_SMB_NUVEMSHOP.md",
+    "guideImplementationPathsNotFoundInReviewedBranches": [
+      "lib/nuvemshop.ts",
+      "app/api/webhooks/nuvemshop/route.ts",
+      "lib/orders/dispatchOrderToERP.ts"
+    ],
+    "runtimeConnectorIdentified": false,
+    "searchScope": "Working tree including ignored source files outside build/dependency directories; fetched main and homologacao refs, isolamento ref and available Git history; relevant text artifacts in local Antigravity brain",
+    "historicalDocument": "diversos/PLANEJAMENTO_GERAL/revisao_1/RELATORIO_REVISAO_TECNICA_POS_AUDITORIA.md:216",
+    "historicalDocumentDate": "2026-09-16",
+    "historicalDocumentFinding": "Nuvemshop fields described as inactive without active synchronization code"
+  },
+  "limitations": [
+    "Local database records establish recorded import/synchronization history, not authenticated proof of provider-side processing or current synchronization.",
+    "No later StockSyncLog entries does not rule out an external routine that does not write this table.",
+    "Empty local/database configuration fields do not establish that external deployments lack credentials.",
+    "External product IDs include previously identified tests; mapped-product count is not the commercial-product count.",
+    "The external order ID and webhook signature flag were not verified against Nuvemshop.",
+    "Provider dashboards, installed app configuration, registered webhook destinations and remote runtime logs were not accessible in this investigation.",
+    "No claim that the earlier integration never existed, was deleted, or is currently operating."
+  ],
+  "nextEvidence": [
+    "Identify the installed app linking this ecommerce to Nuvemshop and the actual webhook destination, without sharing tokens or signed query strings.",
+    "Identify the deployment or script owner and obtain recent execution metadata for catalog/stock synchronization.",
+    "Correlate a product and variant across SMB Store, Nuvemshop and ecommerce, with timestamps and recent changes.",
+    "Verify that a recorded ecommerce order reached Nuvemshop and SMB Store before attempting any new write or reenabling synchronization."
+  ],
+  "productionReady": false,
+  "followUp": {
+    "evidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-CONSULTA-AUTENTICADA-2026-10-21.json",
+    "at": "2026-10-22T02:25:47.191Z",
+    "storeIdentityConfirmed": true,
+    "credentialsAvailableLocallyNow": true,
+    "historicalExternalOrderConfirmed": true,
+    "currentSynchronizationVerified": false,
+    "note": "Original observations above describe the earlier read. The follow-up authenticated consultation confirms the existing external order and current catalog, without proving continuous synchronization."
+  },
+  "originalExecutorFollowUp": {
+    "evidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-ORIGEM-PEDIDO31-2026-10-21.json",
+    "moduleLocated": true,
+    "location": "OLD_LOCAL_PROJECT_OUTSIDE_CURRENT_REPOSITORY",
+    "order31Origin": "STANDALONE_TEST_SCRIPT",
+    "currentRuntimeVerified": false,
+    "smbStockMovementVerified": false
+  }
+}

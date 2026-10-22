@@ -1,0 +1,240 @@
+{
+  "kind": "NUVEMSHOP_INTEGRATION_FLOW_PROPOSAL",
+  "date": "2026-10-22",
+  "status": "PROPOSAL_PREPARED_CONNECTOR_BEHAVIOR_PENDING",
+  "scope": {
+    "stage": "Definir fluxo entre SMB Store, Nuvemshop e Plataforma Continental, sem implementar ou ativar integração",
+    "currentRevision": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+    "mainRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "homologacaoRevision": "1b09934e66c592ef0cd72aa1a80d1c4e53f35d28",
+    "applicationMatchesHomologacao": true,
+    "mainReadOnly": true,
+    "guideInOriginMain": false,
+    "guideSource": "Arquivo local não rastreado: diversos/PLANEJAMENTO_GERAL/INTEGRACAO/GUIA_INTEGRACAO_ESTOQUE_SMB_NUVEMSHOP.md"
+  },
+  "evidence": [
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-COMPATIBILIDADE-2026-10-22.json",
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-ORIGEM-PEDIDO31-2026-10-21.json",
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-CONSULTA-AUTENTICADA-2026-10-21.json"
+  ],
+  "documentation": [
+    {
+      "id": "SMB_PRODUCTS",
+      "url": "https://tutoriais.smbstore.com.br/ativar-produtos-na-integracao-nuvemshop",
+      "finding": "A vinculação é ativada por produto. Ajustes devem partir do SMB; alterações diretas de saldo na Nuvemshop podem divergir. Existe configuração de estoque mínimo para o canal online.",
+      "limit": "Não comprova a configuração desta loja."
+    },
+    {
+      "id": "SMB_SALES",
+      "url": "https://tutoriais.smbstore.com.br/vendas-pre-pedidos-integrados-a-nuvemshop",
+      "finding": "Vendas da Nuvemshop geram vendas no SMB e movimentam estoque/caixa. Vendas do SMB atualizam estoque na Nuvemshop, sem criar outro pedido.",
+      "limit": "A recepção do pedido criado por nossa API ainda precisa ser comprovada."
+    },
+    {
+      "id": "SMB_PREORDER",
+      "url": "https://tutoriais.smbstore.com.br/pre-pedidos-integrados-a-nuvemshop",
+      "finding": "Pagamento em processo pode gerar pré-pedido; confirmação pode transformá-lo em venda. Faturamento manual no SMB também altera o pagamento na Nuvemshop.",
+      "limit": "Esse status externo não deve substituir a evidência financeira do pagamento na Continental."
+    },
+    {
+      "id": "SMB_CANCEL",
+      "url": "https://tutoriais.smbstore.com.br/cancelar-pedidos-integrados-a-nuvemshop",
+      "finding": "O procedimento documentado de cancelamento de venda integrada repõe unidades e registra saída de caixa; o manual restringe devolução parcial nessa integração.",
+      "limit": "Não generalizar essa restrição para toda a API Nuvemshop. Não comprova reembolso Asaas nem tratamento de item danificado."
+    },
+    {
+      "id": "NS_ORDER",
+      "url": "https://tiendanube.github.io/api-documentation/v1/resources/order",
+      "finding": "Na API v1 consultada, inventory_behaviour tem bypass como padrão e claim tenta reservar estoque. Cancelamento tem restock=true e email=true como padrões. Há aviso de nova API com múltiplos estoques.",
+      "limit": "Confirmar versão efetiva, depósito e comportamento do conector antes de definir payload. A URL nova indicada pela página não pôde ser acessada nesta consulta."
+    }
+  ],
+  "newFindings": [
+    {
+      "area": "Baixa externa",
+      "finding": "O guia supõe baixa ao criar pedido; o payload antigo de services/order-sync.service.ts não explicita inventory_behaviour. O sucesso HTTP 201 do ensaio antigo não prova baixa remota.",
+      "consequence": "Não usar ausência de erro ou saldo agregado como confirmação de movimento. Validar pedido, variante e movimento do conector."
+    },
+    {
+      "area": "Cancelamento e retorno",
+      "finding": "O cancelamento documentado do SMB pode recolocar unidades em estoque, enquanto a Continental exige inspeção para retorno físico de pedido enviado.",
+      "consequence": "Não automatizar cancelamento externo para todo estorno/chargeback; impedir reposição prematura ou em duplicidade."
+    }
+  ],
+  "proposedAuthority": [
+    {
+      "domain": "Estoque físico, entradas, inventário e ajustes",
+      "owner": "SMB Store",
+      "rule": "O estoque chega à Continental pela Nuvemshop. Não enviar ajustes absolutos de saldo da Continental à Nuvemshop."
+    },
+    {
+      "domain": "Catálogo comercial externo",
+      "owner": "SMB integrado à Nuvemshop",
+      "rule": "Receber somente produtos elegíveis e vinculados; respeitar publicação, variantes e bloqueios. Guardar URLs das imagens; não armazenar arquivos."
+    },
+    {
+      "domain": "Reservas de checkout e disponibilidade local",
+      "owner": "Continental",
+      "rule": "Preservar reserva atômica atual, IDs, versões e locks. Saldo remoto observado é informação separada do disponível para compra."
+    },
+    {
+      "domain": "Pagamento do pedido Continental",
+      "owner": "Fluxo financeiro atual da Continental",
+      "rule": "Usar evidência validada do provedor ou confirmação manual autorizada existente. Nuvemshop/SMB recebem o registro comercial; não iniciam outra cobrança nem confirmam recebimento Asaas."
+    },
+    {
+      "domain": "Reconhecimento da venda no ERP",
+      "owner": "Conector SMB/Nuvemshop",
+      "rule": "Tratar pedido aceito na API, baixa na Nuvemshop e venda reconhecida no SMB como comprovações distintas."
+    }
+  ],
+  "lifecycle": [
+    {
+      "event": "Produto criado/alterado no SMB",
+      "action": "Após integração e elegibilidade na Nuvemshop, receber notificação, buscar cadastro atual e reconciliar produto/variantes por identidade comprovada.",
+      "acceptance": "Repetição preserva IDs e vínculos, não duplica variantes. Produto oculto/removido deixa de vender sem apagar histórico.",
+      "pending": "Mapear variantes existentes; rever 43 produtos remotos sem vínculo comercial local antes de inclusão."
+    },
+    {
+      "event": "Checkout PENDING",
+      "action": "Reservar localmente com o fluxo atual; proposta inicial não exporta pré-pedido.",
+      "acceptance": "Não cria venda externa nem cobra novamente.",
+      "tradeoff": "Reserva local não bloqueia venda no balcão. Necessário definir proteção para última unidade, saldo antigo e concorrência entre canais; sincronização assíncrona não elimina esse risco."
+    },
+    {
+      "event": "Pagamento comercial aprovado",
+      "action": "Criar uma intenção durável de exportação após transição validada para PAID, com variante mapeada, comprador congelado e valores conferidos; revalidar elegibilidade antes do envio.",
+      "acceptance": "Uma venda externa vinculada por loja/pedido; nenhuma segunda baixa local. Não reexportar pedidos históricos pelo syncStatus padrão.",
+      "pending": "Definir claim/bypass, depósito e efeito no SMB. Proposta favorece validação de disponibilidade externa, mas depende do ensaio do conector."
+    },
+    {
+      "event": "Resposta incerta ou interrupção durante POST",
+      "action": "Registrar resultado desconhecido e reconciliar por correlação antes de reenviar; ausência de prova suficiente vai para revisão.",
+      "acceptance": "Não criar outro pedido automaticamente por timeout. Unicidade local não garante sozinha idempotência remota."
+    },
+    {
+      "event": "Saldo externo atualizado",
+      "action": "Registrar observação remota e reconciliar obrigações locais ainda não refletidas, com controle de concorrência e origem.",
+      "acceptance": "Não sobrescrever disponível com saldo bruto nem descontar novamente venda já refletida externamente. Timestamp/HTTP 201 isolado não prova quais vendas integram o saldo."
+    },
+    {
+      "event": "Cancelamento antes de exportar",
+      "action": "Liberar reserva local conforme regras atuais e invalidar exportação ainda não iniciada.",
+      "acceptance": "Nenhuma venda externa; se envio já iniciou ou está incerto, reconciliar e compensar em vez de assumir que não existe."
+    },
+    {
+      "event": "Cancelamento após exportar, antes de expedir",
+      "action": "Concluir tratamento financeiro conforme fluxo atual e coordenar um único cancelamento comercial externo com reconciliação dos três saldos.",
+      "acceptance": "Reposição ocorre uma vez por sistema e o saldo recebido de volta não gera outro crédito. Parâmetros de reposição e e-mail explícitos após validação.",
+      "pending": "Comprovar propagação Nuvemshop/SMB e corrida entre cancelamento e exportação."
+    },
+    {
+      "event": "Estorno após envio ou entrega",
+      "action": "Registrar financeiro sem repor estoque automaticamente. Coordenar retorno físico e efeito externo em procedimento separado.",
+      "acceptance": "Disponibilidade só aumenta para unidades recebidas e aptas; item danificado permanece indisponível.",
+      "pending": "Definir com SMB tratamento que não reponha automaticamente item ausente/danificado."
+    },
+    {
+      "event": "Chargeback ou devolução parcial",
+      "action": "Manter revisão e atendimento existentes; não converter automaticamente em cancelamento integral do ERP.",
+      "acceptance": "Nenhuma reposição sem prova física nem reembolso duplicado. Registrar diferença entre movimento de caixa ERP e transferência financeira real."
+    }
+  ],
+  "stockReconciliationDesign": {
+    "status": "INVARIANTS_DEFINED_ALGORITHM_NOT_FINAL",
+    "factsToPersist": [
+      "Observação remota por loja/produto/variante/depósito, data da leitura e versão disponível",
+      "Reservas locais ativas",
+      "Exportações pendentes, incertas e reconhecidas",
+      "Reposições locais e externas correlacionadas",
+      "Estado de bloqueio por saldo desconhecido, identidade ambígua ou conciliação pendente"
+    ],
+    "rules": [
+      "Não assumir que todos os pedidos pagos já estão refletidos no saldo remoto.",
+      "Não assumir que todos os pedidos pagos ainda precisam ser subtraídos.",
+      "Não aceitar resposta antiga sobre estado mais recente.",
+      "Estoque ilimitado/nulo precisa de política explícita; não converter silenciosamente em zero ou quantidade infinita.",
+      "Não descontar duas vezes margem já aplicada pelo SMB; verificar configuração de estoque mínimo.",
+      "Na ambiguidade, proposta é restringir venda do item afetado e encaminhar à revisão; limiares de validade e margem ainda não definidos."
+    ],
+    "example": "Partindo de observação de 10 unidades, reservar 2 localmente deixa 8 disponíveis. Se a leitura externa posterior de 8 já inclui essa venda, subtrair as mesmas 2 novamente seria erro. Se ainda mostra 10 sem incluir a venda, substituir o disponível por 10 também seria erro.",
+    "limitation": "Sem confirmação correlacionável dos efeitos do conector, a integração não pode prometer ausência de sobrevenda entre loja física e ecommerce."
+  },
+  "implementationBoundaries": [
+    "Reaproveitar cliente HTTP e leitura do catálogo após remover sucesso simulado por configuração ausente e sanitizar erros.",
+    "Preservar checkout, reservas, reconciliação de variantes e financeiro atuais; não transplantar serviços antigos.",
+    "Persistir trabalho de integração com consumidor próprio ou roteamento explícito: o consumidor CommerceOutbox atual reivindica comandos sem filtro e conclui ORDER_STATUS_CHANGED.",
+    "Capturar intenção de exportação atomicamente; executar chamadas HTTP fora das transações e locks de domínio.",
+    "Propor unicidade por loja e IDs externos, levantamento prévio de conflitos e reconciliação de vínculos antes de migration.",
+    "Valores exportados devem reconciliar itens, descontos/pontos, frete e encargos. Não inventar produto para representar diferença financeira.",
+    "Webhooks autenticados, validados por loja, persistidos antes de processamento, deduplicados; notificações orientam nova leitura, não aplicação cega de saldo.",
+    "Rotina de reconciliação com paginação, limites e alertas. Frequência do guia de 10/15 minutos é proposta histórica, não tarefa implantada comprovada."
+  ],
+  "pendingEvidence": [
+    {
+      "id": "P01",
+      "owner": "Vinícius",
+      "request": "Consultar somente leitura o pedido Nuvemshop número 100, ID 2062174127, de 04/09/2026 16:07 BRT, R$ 49,99, no SMB; informar presença como venda/pré-pedido e movimento de estoque.",
+      "status": "HISTORICAL_SMB_SALE_CONFIRMED_STOCK_MOVEMENT_PENDING",
+      "responseEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-SMB-PEDIDO100-2026-10-22.json",
+      "response": "Imagem enviada por Vinícius mostra venda com vendedor Nuvemshop, referências aos pedidos Continental 31 e Nuvemshop 100, uma unidade e R$ 49,99. Histórico da baixa de estoque não aparece no documento.",
+      "note": "Pedido originado de ensaio antigo com status pago forçado; não usar como prova de liquidação financeira e não faturar/cancelar para investigar."
+    },
+    {
+      "id": "P02",
+      "owner": "Configuração SMB e conector",
+      "request": "Confirmar produtos integrados, estoque mínimo, depósito e regra de reconhecimento de pedidos via API. Confirmar cancelamento/reposição e itens danificados.",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P03",
+      "owner": "Implementação e validação",
+      "request": "Comprovar identidade de variantes e regras de preço/desconto/frete/encargos no payload; política para saldo nulo, desatualizado e última unidade.",
+      "status": "MAPPING_AUDITED_PURE_PLANNER_VALIDATED_RUNTIME_PENDING",
+      "isolatedImplementationEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-MAPEAMENTO-ISOLADO-2026-10-22.json",
+      "catalogReaderEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-LEITURA-CATALOGO-ISOLADA-2026-10-22.json",
+      "homologacaoDiagnosticEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-DIAGNOSTICO-HOMOLOGACAO-2026-10-22.json",
+      "bindingWriterEvidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-GRAVACAO-ISOLADA-2026-10-22.json",
+      "subsequentProgress": "Diagnóstico autenticado somente leitura na homologação concluído: 519 produtos/520 variantes locais, 563 produtos remotos, 517 candidatos e dois casos excluídos da proposta. 45 produtos remotos sem vínculo local permanecem fora do escopo. Ajuste de paginação validado com 76 testes isolados, TypeScript e lint. Nenhum vínculo aplicado ou runtime ativado. Contagens de segurança no final deste documento referem-se à elaboração original; a evidência nova registra suas próprias consultas.",
+      "evidence": "trabalho_em_dupla/evidencias/L-NUVEMSHOP-MAPEAMENTO-VARIANTES-2026-10-22.json",
+      "progress": "Leitura da origem e Nuvemshop identificou 517 candidatos únicos por código de barras e uma divergência de identidade. Vinícius informou que o pano 30X30 antigo não está mais no catálogo SMB; não foi associado ao 40X40. Trinta cenários isolados especificados, ainda não executados. Nenhum vínculo ou estoque alterado."
+    },
+    {
+      "id": "P04",
+      "owner": "Operação publicada",
+      "request": "Após testes isolados, comprovar consumidor, webhook e reconciliação ativos na candidata correta; ensaio externo depende de escopo separado.",
+      "status": "NOT_EXECUTED"
+    }
+  ],
+  "nextSafeStage": {
+    "name": "Especificar o mapeamento de produtos/variantes e os contratos de integração para testes locais",
+    "deliverables": [
+      "Proposta de correspondência por ID externo e evidências auxiliares, sem gravar vínculos automaticamente",
+      "Casos determinísticos de reserva, confirmação, cancelamento, timeout e retorno físico usando dados sintéticos",
+      "Contrato explícito de exportação e estados de conciliação, condicionado às respostas sobre SMB"
+    ],
+    "firstImplementationPriority": "Mapeamento sem ambiguidades e testes isolados antes de habilitar exportação de venda ou aplicar saldos reais.",
+    "externalActivationBlockedBy": [
+      "P02",
+      "P03",
+      "Ensaios isolados e publicação validada"
+    ],
+    "cost": "Esta preparação não exige novo banco Neon, branch Neon ou upgrade."
+  },
+  "validation": {
+    "jsonParsed": true,
+    "note": "Somente validação estrutural deste documento; não representa testes da integração."
+  },
+  "safety": {
+    "applicationCodeChanged": false,
+    "mainWritten": false,
+    "databaseRequests": 0,
+    "authenticatedProviderRequests": 0,
+    "publicDocumentationConsulted": true,
+    "stockWrites": 0,
+    "financialOperations": 0,
+    "credentialsRead": false,
+    "webhooksActivated": 0,
+    "commitsCreated": 0
+  }
+}

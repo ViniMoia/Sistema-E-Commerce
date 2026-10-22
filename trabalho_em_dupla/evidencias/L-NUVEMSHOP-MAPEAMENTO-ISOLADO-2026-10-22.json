@@ -1,0 +1,67 @@
+{
+  "kind": "NUVEMSHOP_ISOLATED_IDENTITY_PLANNER_VALIDATION",
+  "date": "2026-10-22",
+  "timeZone": "America/Sao_Paulo",
+  "status": "PURE_PLANNER_IMPLEMENTED_AND_VALIDATED_NOT_CONNECTED_TO_RUNTIME",
+  "baseRevision": "e28e225ea6fbd500bb4b75bede5e8ca827194206",
+  "files": [
+    "lib/integrations/nuvemshop-variant-mapping.ts",
+    "tests/unit/nuvemshop-variant-mapping.test.ts"
+  ],
+  "implementation": {
+    "function": "planNuvemshopVariantMapping",
+    "input": "DTO validado com ambiente, loja local/remota, produto pai, versão do cadastro, situação ACTIVE/RETIRED/UNKNOWN e dimensões explicitamente traduzidas pelo futuro adapter.",
+    "output": "Plano IDENTITY_REVIEW_ONLY com canApply=false, candidatos por produto ou motivos de revisão; não produz disponibilidade nem seleciona item para checkout.",
+    "matching": [
+      "ID persistido validado contra o produto pai e códigos presentes; conflito impede fallback.",
+      "SKU/código de barras de variante dentro do produto vinculado, sem normalização numérica ou remoção de zeros iniciais.",
+      "Código legado do produto somente para uma única variante neutra nos dois lados.",
+      "Dimensões comparadas pelo normalizador existente lib/product-variants.ts.",
+      "Ambiguidade, repetição de identidades ou combinações, retirada, situação desconhecida e ausência de versão geram revisão.",
+      "Produto com qualquer variante conflitante não recebe mapeamento parcial."
+    ],
+    "preservation": "Função pura: preserva entradas e IDs, não cria, remove, renomeia ou atualiza variantes. Replays produzem o mesmo plano."
+  },
+  "validation": {
+    "unitCommand": "vitest run tests/unit/nuvemshop-variant-mapping.test.ts tests/unit/product-variant-reconciliation.test.ts tests/unit/inventory-lifecycle.test.ts",
+    "passedFiles": 3,
+    "passedTests": 55,
+    "failedTests": 0,
+    "typecheck": "tsc --noEmit --incremental false: exit 0",
+    "lint": "eslint lib/integrations/nuvemshop-variant-mapping.ts tests/unit/nuvemshop-variant-mapping.test.ts: exit 0",
+    "fixtures": "Dados sintéticos, inclusive o caso de código alterado sob o mesmo produto. Nenhum cadastro real usado para escrita.",
+    "environment": "Vitest local. Módulo novo sem dependência de Prisma, rede, filesystem ou variáveis de ambiente. Regressões existentes usam mocks de persistência.",
+    "warning": "Vite emitiu aviso de compatibilidade futura do carregador da configuração; execução atual aprovada."
+  },
+  "coverageLimits": [
+    "Os 55 testes são da suíte executada em três arquivos; não equivalem à execução dos 30 cenários completos da integração especificados no levantamento anterior.",
+    "M11 cobre repetição, unicidade e pureza do planejador. Concorrência de escrita com locks/transação ainda não implementada nem ensaiada por este módulo.",
+    "M13 recusa versão ausente e preserva versão conhecida no resultado. Releitura transacional e recusa de aplicação sobre versão alterada pertencem ao futuro escritor.",
+    "M09 separa identificação de autorização comercial. Identidade conhecida de um item sem estoque não o libera para compra; seleção continua no fluxo de domínio atual.",
+    "Payload HTTP bruto não é aceito como DTO. Tradução dos atributos Nuvemshop e leitura do destino precisam de adapter próprio.",
+    "Os 517 candidatos do diagnóstico legado não foram aplicados nem tratados como disponibilidade comprovada. A ausência de campos modernos exige releitura no destino compatível.",
+    "Reservas, envio de pedidos, respostas incertas, webhooks, estornos, retorno físico e efeitos no SMB ainda não foram integrados a este planejador."
+  ],
+  "productException": {
+    "context": "Pano 30X30 local versus pano 40X40 atual sob o mesmo ID externo.",
+    "operatorStatement": "Vinícius informou que o pano 30X30 já não está no catálogo SMB.",
+    "handling": "Continua fora de associação automática. Nenhum cadastro, nome, vínculo ou disponibilidade foi modificado."
+  },
+  "nextStep": "Preparar adapter de leitura e tradução dos atributos para o DTO, com fixtures do contrato e conferência do destino de homologação. Planejar persistência separadamente, exigindo backup, auditoria dos vínculos, versões e locks antes de qualquer aplicação autorizada.",
+  "previousEvidence": [
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-MAPEAMENTO-VARIANTES-2026-10-22.json",
+    "trabalho_em_dupla/evidencias/L-NUVEMSHOP-FLUXO-PROPOSTO-2026-10-22.json"
+  ],
+  "safety": {
+    "newDatabaseConnections": 0,
+    "providerRequests": 0,
+    "databaseWrites": 0,
+    "stockChanges": 0,
+    "financialOperations": 0,
+    "runtimeWiringChanged": false,
+    "migrationsCreated": false,
+    "credentialsRead": false,
+    "committed": false,
+    "published": false
+  }
+}
