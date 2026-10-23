@@ -1,11 +1,11 @@
 import { randomUUID, randomBytes } from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
+import { beforeAll, afterAll, afterEach, describe, it, expect, vi } from 'vitest';
 import prisma, { verifyTestDatabase } from '@/lib/prisma';
 import { createFixtureStore, cleanupFixtureStores } from '@/tests/setup/fixture-scope';
 import { createOrder, type CreateOrderParams } from '@/tests/setup/checkout-fixture';
 import { receivePaymentEvent } from '@/services/payment/payment-inbox.service';
-import { drainPaymentInbox, reconcilePaymentAttempts } from '@/services/payment/payment-worker.service';
+import { drainPaymentInbox, processPaymentInboxEvent, reconcilePaymentAttempts, reconcilePaymentCancellation } from '@/services/payment/payment-worker.service';
 import { drainPaymentOutbox } from '@/services/payment/payment-outbox.service';
 import { requestPaymentOperation } from '@/services/payment/payment-operations.service';
 import { manualRefund } from '@/services/payment/manual-refund.service';
@@ -102,6 +102,160 @@ async function event(p: Awaited<ReturnType<typeof purchase>>, type = 'PAYMENT_RE
 async function stock(p: Awaited<ReturnType<typeof purchase>>) { return (await prisma.product.findUniqueOrThrow({ where: { id: p.product.id } })).stock; }
 
 describe('WF-14: real PostgreSQL, controlled remote operations, resumable executor', () => {
+  const scopedExpiryFixtures: string[] = [];
+  afterEach(async () => {
+    // Keep scenarios intentionally left pending out of later batch-worker tests.
+    if (scopedExpiryFixtures.length) await prisma.paymentAttempt.updateMany({ where: { id: { in: scopedExpiryFixtures.splice(0) } },
+      data: { reconcileAfter: new Date('2099-01-01'), reservationExpiresAt: new Date('2099-01-01') } });
+  });
+  async function expiredBoleto() {
+    const p = await purchase(port(), 'BOLETO');
+    scopedExpiryFixtures.push(p.attempt.id);
+    p.remote[0].status = 'OVERDUE'; p.remote[0].dueAt = new Date(0).toISOString();
+    await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data: {
+      externalExpiresAt: new Date(0), reservationExpiresAt: new Date(72 * 3600000), reconcileAfter: new Date(0) } });
+    const target = { attemptId: p.attempt.id, orderId: p.result.order.id, lojaID, providerAccount: p.attempt.providerAccount! };
+    return { ...p, target };
+  }
+  it('scoped expiry holds stock until definitive deletion and preserves other eligible orders and review work', async () => {
+    const other = await expiredBoleto(); const p = await expiredBoleto();
+    const beforeOther = await stored(other.result.order.id);
+    const review = await prisma.commerceOutbox.create({ data: { effectKey: randomUUID(), commandType: 'PAYMENT_REVIEW',
+      aggregateId: other.result.order.id, status: 'DEAD_LETTER', lastErrorCode: 'PAYMENT_REVIEW_REQUIRED', payload: {} } });
+    const beforeStock = await stock(p);
+    expect(await processExpiredOrders({ target: p.target, gateway: p.gateway })).toMatchObject({ success: true, processedCount: 1, cancelledCount: 0 });
+    expect((await stored(p.result.order.id)).paymentAttempts[0].status).toBe('CANCEL_PENDING');
+    expect(await stock(p)).toBe(beforeStock); expect(p.gateway.cancelPayment).not.toHaveBeenCalled();
+    expect(await reconcilePaymentCancellation(p.target, p.gateway)).toEqual({ claimed: 1, completed: 1, retried: 0, review: 0 });
+    const after = await stored(p.result.order.id);
+    expect(after.status).toBe('CANCELLED'); expect(after.paymentAttempts[0].operations[0].status).toBe('COMPLETED');
+    expect(after.reservations[0].status).toBe('RELEASED'); expect(await stock(p)).toBe(beforeStock + 1);
+    expect(p.gateway.cancelPayment).toHaveBeenCalledTimes(1);
+    expect((await reconcilePaymentCancellation(p.target, p.gateway)).claimed).toBe(0);
+    expect((await processExpiredOrders({ target: p.target, gateway: p.gateway })).processedCount).toBe(0);
+    expect(await stored(other.result.order.id)).toEqual(beforeOther);
+    expect(await prisma.commerceOutbox.findUniqueOrThrow({ where: { id: review.id } })).toEqual(review);
+  });
+  it('scoped cancellation never retries an uncertain DELETE or releases stock for a mere successful response', async () => {
+    for (const uncertain of [false, true]) {
+      const p = await expiredBoleto(); const beforeStock = await stock(p);
+      vi.mocked(p.gateway.cancelPayment!).mockImplementation(async () => { if (uncertain) throw new Error('timeout'); });
+      await processExpiredOrders({ target: p.target, gateway: p.gateway });
+      await reconcilePaymentCancellation(p.target, p.gateway);
+      expect((await stored(p.result.order.id)).status).toBe('PENDING'); expect(await stock(p)).toBe(beforeStock);
+      expect((await stored(p.result.order.id)).paymentAttempts[0].operations[0].status).toBe(uncertain ? 'UNKNOWN' : 'PENDING');
+      await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data: { reconcileAfter: new Date(0) } });
+      p.remote[0].deleted = true;
+      await reconcilePaymentCancellation(p.target, p.gateway);
+      expect((await stored(p.result.order.id)).status).toBe('CANCELLED'); expect(await stock(p)).toBe(beforeStock + 1);
+      expect(p.gateway.cancelPayment).toHaveBeenCalledTimes(1);
+    }
+  });
+  it('scoped expiry and cancellation reject incorrect scope without selecting another attempt', async () => {
+    const p = await expiredBoleto();
+    for (const override of [{ attemptId: randomUUID() }, { orderId: randomUUID() }, { lojaID: randomUUID() }]) {
+      expect((await processExpiredOrders({ target: { ...p.target, ...override }, gateway: p.gateway })).processedCount).toBe(0);
+      expect((await reconcilePaymentCancellation({ ...p.target, ...override }, p.gateway)).claimed).toBe(0);
+    }
+    await expect(processExpiredOrders({ target: { ...p.target, attemptId: '' } })).rejects.toThrow('PAYMENT_ATTEMPT_TARGET_REQUIRED');
+    await expect(reconcilePaymentCancellation({ ...p.target, providerAccount: 'other' }, p.gateway)).rejects.toThrow('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
+    expect(p.gateway.inspectAttempt).not.toHaveBeenCalled();
+  });
+  it('scoped execution preserves active leases, reviews and reconciliation backoff', async () => {
+    const p = await expiredBoleto();
+    for (const data of [{ leaseOwner: randomUUID(), leaseExpiresAt: new Date(Date.now() + 600000) },
+      { leaseOwner: null, leaseExpiresAt: null, failureCode: 'PAYMENT_CONTRACT_MISMATCH' }]) {
+      await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data });
+      expect((await processExpiredOrders({ target: p.target, gateway: p.gateway })).processedCount).toBe(0);
+    }
+    await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data: { failureCode: null } });
+    await processExpiredOrders({ target: p.target, gateway: p.gateway });
+    for (const data of [{ reconcileAfter: new Date(Date.now() + 600000) },
+      { reconcileAfter: new Date(0), leaseOwner: randomUUID(), leaseExpiresAt: new Date(Date.now() + 600000) },
+      { leaseOwner: null, leaseExpiresAt: null, failureCode: 'PAYMENT_CONTRACT_MISMATCH' }]) {
+      await prisma.paymentAttempt.update({ where: { id: p.attempt.id }, data });
+      expect((await reconcilePaymentCancellation(p.target, p.gateway)).claimed).toBe(0);
+    }
+    expect(p.gateway.cancelPayment).not.toHaveBeenCalled();
+  });
+  it('scoped cancellation observes payment before dispatch and concurrent consumers cannot double-cancel', async () => {
+    const paid = await expiredBoleto();
+    await processExpiredOrders({ target: paid.target, gateway: paid.gateway }); paid.remote[0].status = 'RECEIVED';
+    await reconcilePaymentCancellation(paid.target, paid.gateway);
+    expect((await stored(paid.result.order.id)).status).toBe('PAID'); expect(paid.gateway.cancelPayment).not.toHaveBeenCalled();
+    const p = await expiredBoleto(); await processExpiredOrders({ target: p.target, gateway: p.gateway });
+    const results = await Promise.all([reconcilePaymentCancellation(p.target, p.gateway), reconcilePaymentCancellation(p.target, p.gateway)]);
+    expect(results.reduce((n, r) => n + r.claimed, 0)).toBe(1);
+    expect(p.gateway.cancelPayment).toHaveBeenCalledTimes(1); expect(await stock(p)).toBe(5);
+  });
+  it('processes only the selected overdue event, preserving other orders, reservations and review work', async () => {
+    const p = await purchase(port(), 'BOLETO');
+    const other = await purchase();
+    p.remote[0].status = 'OVERDUE'; other.remote[0].status = 'RECEIVED';
+    const selected = await event(p, 'PAYMENT_OVERDUE');
+    const unrelated = await event(other);
+    const review = await prisma.commerceOutbox.create({ data: { effectKey: randomUUID(), commandType: 'PAYMENT_REVIEW',
+      aggregateId: other.result.order.id, status: 'DEAD_LETTER', lastErrorCode: 'PAYMENT_REVIEW_REQUIRED',
+      payload: { attemptId: other.attempt.id, reasonCode: 'PAYMENT_REFUND_CANCELLED_REVIEW' } } });
+    const beforeOther = await stored(other.result.order.id);
+    const beforeTarget = await stored(p.result.order.id);
+    const beforeStock = await stock(p);
+    const target = { inboxId: selected.row.id, orderId: p.result.order.id, lojaID, providerAccount: p.attempt.providerAccount! };
+    expect(await processPaymentInboxEvent(target, p.gateway)).toEqual({ claimed: 1, completed: 1, retried: 0, review: 0 });
+    expect((await prisma.paymentInbox.findUniqueOrThrow({ where: { id: selected.row.id } })).status).toBe('COMPLETED');
+    expect(await prisma.paymentInbox.findUniqueOrThrow({ where: { id: unrelated.row.id } })).toEqual(unrelated.row);
+    expect(await stored(other.result.order.id)).toEqual(beforeOther);
+    expect(await prisma.commerceOutbox.findUniqueOrThrow({ where: { id: review.id } })).toEqual(review);
+    const after = await stored(p.result.order.id);
+    expect(after.status).toBe('PENDING'); expect(after.paymentAttempts[0].charges[0].providerStatus).toBe('OVERDUE');
+    expect(after.reservations).toEqual(beforeTarget.reservations); expect(await stock(p)).toBe(beforeStock);
+    expect(await prisma.financialFact.count({ where: { orderId: after.id } })).toBe(0);
+    expect(await prisma.commerceOutbox.count({ where: { aggregateId: after.id, commandType: 'PAYMENT_CONFIRMATION_EMAIL' } })).toBe(0);
+    expect(p.gateway.cancelPayment).not.toHaveBeenCalled(); expect(p.gateway.refundPayment).not.toHaveBeenCalled();
+    expect(await processPaymentInboxEvent(target, p.gateway)).toEqual({ claimed: 0, completed: 0, retried: 0, review: 0 });
+    expect(await stored(p.result.order.id)).toEqual(after);
+    expect(p.gateway.inspectAttempt).toHaveBeenCalledTimes(1);
+  });
+  it('never falls back to another event for a missing or mismatched target', async () => {
+    const p = await purchase(); const e = await event(p);
+    const target = { inboxId: e.row.id, orderId: p.result.order.id, lojaID, providerAccount: p.attempt.providerAccount! };
+    for (const override of [{ inboxId: randomUUID() }, { orderId: randomUUID() }, { lojaID: randomUUID() }]) {
+      expect((await processPaymentInboxEvent({ ...target, ...override }, p.gateway)).claimed).toBe(0);
+    }
+    await expect(processPaymentInboxEvent({ ...target, providerAccount: 'another-account' }, p.gateway)).rejects.toThrow('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
+    await expect(processPaymentInboxEvent({ ...target, inboxId: '' }, p.gateway)).rejects.toThrow('PAYMENT_INBOX_TARGET_REQUIRED');
+    const conflict = await event(p, 'PAYMENT_RECEIVED', { externalReference: randomUUID() });
+    expect((await processPaymentInboxEvent({ ...target, inboxId: conflict.row.id }, p.gateway)).claimed).toBe(0);
+    const methodConflict = await event(p, 'PAYMENT_RECEIVED', { billingType: 'BOLETO' });
+    expect((await processPaymentInboxEvent({ ...target, inboxId: methodConflict.row.id }, p.gateway)).claimed).toBe(0);
+    expect(await prisma.paymentInbox.findUniqueOrThrow({ where: { id: e.row.id } })).toEqual(e.row);
+    expect(p.gateway.inspectAttempt).not.toHaveBeenCalled();
+  });
+  it('respects backoff, active leases and review state while recovering only an expired target lease', async () => {
+    const p = await purchase(); const e = await event(p);
+    const target = { inboxId: e.row.id, orderId: p.result.order.id, lojaID, providerAccount: p.attempt.providerAccount! };
+    const future = new Date(Date.now() + 600000);
+    for (const data of [
+      { status: 'READY' as const, nextAttemptAt: future },
+      { status: 'LEASED' as const, leaseOwner: randomUUID(), leaseExpiresAt: future },
+      { status: 'DEAD_LETTER' as const, nextAttemptAt: new Date(0), leaseOwner: null, leaseExpiresAt: null },
+    ]) {
+      const before = await prisma.paymentInbox.update({ where: { id: e.row.id }, data });
+      expect((await processPaymentInboxEvent(target, p.gateway)).claimed).toBe(0);
+      expect(await prisma.paymentInbox.findUniqueOrThrow({ where: { id: e.row.id } })).toEqual(before);
+    }
+    await prisma.paymentInbox.update({ where: { id: e.row.id }, data: { status: 'LEASED', leaseOwner: randomUUID(), leaseExpiresAt: new Date(0) } });
+    expect((await processPaymentInboxEvent(target, p.gateway)).completed).toBe(1);
+    expect(p.gateway.inspectAttempt).toHaveBeenCalledTimes(1);
+  });
+  it('concurrent single-event consumers inspect the target only once', async () => {
+    const p = await purchase(); const e = await event(p);
+    const target = { inboxId: e.row.id, orderId: p.result.order.id, lojaID, providerAccount: p.attempt.providerAccount! };
+    const results = await Promise.all([processPaymentInboxEvent(target, p.gateway), processPaymentInboxEvent(target, p.gateway)]);
+    expect(results.reduce((n, r) => n + r.claimed, 0)).toBe(1);
+    expect(results.reduce((n, r) => n + r.completed, 0)).toBe(1);
+    expect(p.gateway.inspectAttempt).toHaveBeenCalledTimes(1);
+  });
   it('purchase pause preserves durable payment receipt, reconciliation and exactly-once approval', async () => {
     const p = await purchase();
     p.remote[0].status = 'RECEIVED';

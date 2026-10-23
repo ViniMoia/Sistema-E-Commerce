@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-23T19:35:08.092Z",
+  "status": "IMPLEMENTADO_E_TESTADO_LOCALMENTE",
+  "function": "processPaymentInboxEvent",
+  "inputs": [
+    "inboxId",
+    "orderId",
+    "lojaID",
+    "providerAccount"
+  ],
+  "behavior": [
+    "Claims only the identified event, with a matching existing charge, order, tenant, account, reference and payment method.",
+    "Uses existing lease, fencing, provider inspection and financial evidence processing.",
+    "Honors backoff and active leases. Does not reopen completed or DEAD_LETTER work.",
+    "Does not run general reconciliation, expiration or outbox dispatch. No new HTTP route or cron added."
+  ],
+  "validation": {
+    "integration": {
+      "command": "node scripts/run-isolated-tests.mjs tests/integration/payment-durable-execution.test.ts",
+      "passed": 60,
+      "total": 60,
+      "postgres": "Disposable Docker database; no homologation or main database used",
+      "firstRun": "59 passed; one fixture lease-constraint failure corrected",
+      "finalRun": "Vitest: 60 passed; disposable container removed. PowerShell stderr redirection reported NativeCommandError for the existing Vite warning; no failed tests in final log."
+    },
+    "typescript": "tsc --noEmit --incremental false passed",
+    "eslint": "Changed files passed",
+    "diffCheck": "Passed"
+  },
+  "files": [
+    {
+      "path": "services/payment/durable-work.service.ts",
+      "sha256": "d0ae9b7b10462988714327a52b8a813ac3da46f8a737961313582d2d22404f9d"
+    },
+    {
+      "path": "services/payment/payment-worker.service.ts",
+      "sha256": "e4dd6e058531fdcb776195b28ba438202ae66fe24d0090932dbcba302113415b"
+    },
+    {
+      "path": "tests/integration/payment-durable-execution.test.ts",
+      "sha256": "c6356511a941d85b399fd847571dbe3e82284b4610af637276d40fddfca3dcb9"
+    }
+  ],
+  "deployment": {
+    "published": false,
+    "remoteDatabaseMutations": 0,
+    "remoteFinancialJobsExecuted": 0,
+    "order8EventProcessed": false
+  },
+  "operationalPrerequisites": [
+    "Refresh provider/order/event state and backup before a scoped homologation execution.",
+    "Verify intended code and account configuration; do not substitute general cron with limit=1.",
+    "Record before/after effects and preserve order 3 refund review."
+  ],
+  "preparationEvidence": "L-PREPARACAO-VALIDACAO-PEDIDO8-2026-10-23.json"
+}

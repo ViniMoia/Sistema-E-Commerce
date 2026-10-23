@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-23T20:53:32.367Z",
+  "status": "CANDIDATA_VALIDADA_LOCALMENTE_PARA_PR",
+  "baseBranch": "homologacao_teste",
+  "baseRevision": "c2a6933a333009077fd3ab753ce7307261850e23",
+  "headBranch": "feat/scoped-payment-execution-20261023",
+  "mainReference": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "validation": {
+    "integration": {
+      "passed": 65,
+      "total": 65,
+      "command": "node scripts/run-isolated-tests.mjs tests/integration/payment-durable-execution.test.ts",
+      "database": "Disposable Docker PostgreSQL"
+    },
+    "unit": {
+      "passed": 9,
+      "total": 9,
+      "command": "vitest run tests/unit/order-timeout.test.ts"
+    },
+    "typescript": "PASS",
+    "eslint": "PASS",
+    "addedPublicationGuard": "Explicit null/undefined target is rejected before a batch query"
+  },
+  "files": [
+    {
+      "path": "services/order-timeout.service.ts",
+      "sha256": "5ccd9c5f074c98a7ed3cdf098b1a16c5993cfaaad54faef7a56e175e01701619"
+    },
+    {
+      "path": "services/payment/durable-work.service.ts",
+      "sha256": "d0ae9b7b10462988714327a52b8a813ac3da46f8a737961313582d2d22404f9d"
+    },
+    {
+      "path": "services/payment/payment-worker.service.ts",
+      "sha256": "a892ff20c440b25c8c261b3467054da615b5a9b8a397609b0f7c872940dfd7b8"
+    },
+    {
+      "path": "services/payment/payment-attempt-target.ts",
+      "sha256": "7e0bcfc4bce209126903e2b250063813795b0459f946332b6dc3f37ca590d91d"
+    },
+    {
+      "path": "tests/integration/payment-durable-execution.test.ts",
+      "sha256": "d16456c5e7932d011a65ce632a5e6240dc5bf684310dbd1282a74b0e838aee2a"
+    },
+    {
+      "path": "tests/unit/order-timeout.test.ts",
+      "sha256": "9beb0da6057e71dc8629761b9273b8519b1e32efde438bb88d3da6d6d16456b3"
+    }
+  ],
+  "limits": {
+    "newFinancialExecution": false,
+    "remoteConfigurationChanged": false,
+    "mainDatabaseAccessed": false,
+    "prMerged": false,
+    "deployed": false
+  },
+  "next": "CI and code review before incorporation into homologation; order 8 must not be replayed."
+}
