@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "status": "PRAZO_EXISTENTE_EXPIRACAO_AINDA_NAO_SOLICITADA",
+  "checkedAt": "2026-10-23T20:31:12.454Z",
+  "orderNumber": 8,
+  "followUp": "Executado posteriormente: pedido 8 cancelado no Sandbox, reserva liberada e demais registros conferidos. Ver L-EXPIRACAO-PEDIDO8-2026-10-23.json. Os achados abaixo preservam o estado da consulta anterior a essa execucao.",
+  "scope": "Consulta somente leitura na homologacao e revisao do codigo; sem chamadas ao Asaas, sem mutacoes no banco e sem acionamento de jobs.",
+  "findings": {
+    "orderStatus": "PENDING",
+    "attemptStatus": "PENDING",
+    "method": "BOLETO",
+    "externalExpiresAt": "2026-10-17T03:00:00.000Z",
+    "reservationExpiresAt": "2026-10-20T03:00:00.000Z",
+    "reservationDeadlineBrt": "20/10/2026 00:00:00 -03:00",
+    "boletoConfirmationGraceHours": 72,
+    "reservationStatus": "RESERVED",
+    "reservationQuantity": 1,
+    "inventoryReservationExpiresAt": null,
+    "paymentOperations": [],
+    "paymentExpirationRequestedAuditCount": 0
+  },
+  "correction": "O campo InventoryReservation.expiresAt vazio nao significa ausencia de prazo efetivo. O fluxo atual usa PaymentAttempt.reservationExpiresAt, que esta preenchido. A descricao anterior de reserva sem prazo estava incompleta.",
+  "interpretation": [
+    "O pedido satisfaz os criterios locais de prazo, metodo e estado para selecao pela rotina de expiracao; isso nao comprova cancelamento remoto.",
+    "Nao foi encontrada solicitacao persistida de expiracao nem operacao financeira desta tentativa.",
+    "A retomada informada manteve o processamento financeiro e a expiracao desabilitados. Essa configuracao remota nao foi reconferida nesta consulta.",
+    "O fluxo existente exige nova consulta ao provedor, pedido de cancelamento e confirmacao definitiva antes da liberacao do estoque. OVERDUE isoladamente nao libera a reserva.",
+    "Nao ha justificativa para preencher manualmente o campo da reserva ou substituir a politica persistida de 72 horas."
+  ],
+  "nextStep": "Preparar execucao de expiracao e cancelamento restrita ao pedido 8, com backup e testes, reutilizando a inspecao e as transacoes existentes. O executor atual de expiracao seleciona lotes; batchSize=1 nao garante o alvo. Nao acionar fila geral nem liberar estoque diretamente.",
+  "sources": [
+    "services/order-timeout.service.ts",
+    "services/payment/payment-evidence.service.ts",
+    "app/api/cron/payments/route.ts",
+    "L-PROCESSAMENTO-EVENTO-PEDIDO8-2026-10-23.json"
+  ],
+  "mainComparison": {
+    "revision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "result": "Rotina legada usa timeout fixo; nao deve substituir os prazos persistidos e a confirmacao remota do fluxo atual.",
+    "mainDatabaseAccessed": false
+  }
+}

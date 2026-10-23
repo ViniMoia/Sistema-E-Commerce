@@ -4,6 +4,36 @@ import type { Prisma } from '@prisma/client';
 import { paymentNow } from './payment-evidence.service';
 
 export type WorkTable = 'PaymentInbox' | 'CommerceOutbox';
+export type PaymentInboxTarget = { inboxId: string; orderId: string; lojaID: string; providerAccount: string };
+
+// Operational single-event processing requires an already correlated charge.
+// A missing/mismatched target must never fall back to the general queue.
+export async function claimPaymentInboxEvent(target: PaymentInboxTarget) {
+  if (!target || [target.inboxId, target.orderId, target.lojaID, target.providerAccount]
+    .some(value => typeof value !== 'string' || !value.trim())) throw new Error('PAYMENT_INBOX_TARGET_REQUIRED');
+  const owner = randomUUID();
+  const ids = await prisma.$transaction(async tx => {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`SELECT i.id FROM "PaymentInbox" i
+      JOIN "PaymentCharge" c ON c.provider='ASAAS' AND c."providerPaymentId"=i.payload->'payment'->>'id'
+      JOIN "PaymentAttempt" a ON a.id=c."attemptId"
+      JOIN "Order" o ON o.id=a."orderId"
+      WHERE i.id=${target.inboxId} AND o.id=${target.orderId} AND o."lojaID"=${target.lojaID}
+        AND i.provider=${'ASAAS:' + target.providerAccount}
+        AND a.provider='ASAAS' AND a."providerAccount"=${target.providerAccount}
+        AND c."providerAccount"=${target.providerAccount}
+        AND a."externalReference"=i.payload->'payment'->>'externalReference'
+        AND a.method=i.payload->'payment'->>'billingType'
+        AND ((i.status='READY' AND i."nextAttemptAt"<=clock_timestamp())
+          OR (i.status='LEASED' AND i."leaseExpiresAt"<=clock_timestamp()))
+      FOR UPDATE OF i SKIP LOCKED`;
+    for (const row of rows) await tx.$executeRaw`UPDATE "PaymentInbox" SET status='LEASED',
+      "leaseOwner"=${owner}, "leaseExpiresAt"=clock_timestamp()+interval '10 minutes', attempts=attempts+1
+      WHERE id=${row.id}`;
+    return rows.map(row => row.id);
+  });
+  return { owner, ids };
+}
+
 export async function claimWork(table: WorkTable, limit: number) {
   const owner = randomUUID();
   const ids = await prisma.$transaction(async tx => {

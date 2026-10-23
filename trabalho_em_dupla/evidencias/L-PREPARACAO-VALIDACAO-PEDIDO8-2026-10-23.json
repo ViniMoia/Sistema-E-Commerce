@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-10-23T19:21:38.643Z",
+  "orderNumber": 8,
+  "scope": "Read-only HML database and one Sandbox GET payment",
+  "local": {
+    "orderStatus": "PENDING",
+    "attemptStatus": "PENDING",
+    "chargeStatus": "PENDING",
+    "method": "BOLETO",
+    "amount": "49.9",
+    "operations": [],
+    "reservations": [
+      {
+        "status": "RESERVED",
+        "quantity": 1,
+        "expiresAt": null
+      }
+    ],
+    "facts": []
+  },
+  "remote": {
+    "status": "OVERDUE",
+    "billingType": "BOLETO",
+    "value": 49.9,
+    "dueDate": "2026-10-16",
+    "deleted": false,
+    "identityMatches": true,
+    "externalReferenceMatches": true,
+    "amountMatches": true,
+    "methodMatches": true
+  },
+  "mutations": 0,
+  "status": "PREPARADO_NAO_EXECUTADO",
+  "sources": {
+    "mainRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "mainWebhookInspected": "origin/main:app/api/webhooks/asaas/route.ts",
+    "mainAttendanceDocument": "Absent at this revision; current homologation documentation retained",
+    "currentCode": [
+      "app/api/cron/payments/route.ts",
+      "services/payment/payment-worker.service.ts",
+      "services/payment/payment-evidence.service.ts",
+      "services/order-timeout.service.ts"
+    ]
+  },
+  "executionAssessment": {
+    "generalCronIsOrderScoped": false,
+    "limitOneIsNotOrderIsolation": true,
+    "reason": "The route runs inbox, reconciliation, expiration and outbox. Inbox claim only supports batch limit, not an explicit event ID.",
+    "targetInboxId": "79c2ce48-f25c-449a-9fe9-b2206531a1ba",
+    "requiredPreparation": [
+      "Use a reviewed and tested mechanism that claims exactly the target event, validates homologation account/order identity and preserves the existing worker lease/fencing and evidence logic.",
+      "Refresh read-only provider state and scoped backup before any mutation; abort if the identity, value or current state differs from this preparation.",
+      "Process only that inbox event; do not call general reconciliation, expiration, outbox dispatch or provider mutation commands.",
+      "Compare before/after order, stock, reservations, financial facts and order 3 review. Repeat-event acceptance must not create financial or stock effects."
+    ],
+    "expectedIfProviderStillOverdue": [
+      "Persist remote OVERDUE charge evidence and complete the inbox event using the existing worker.",
+      "Do not mark order PAID, create payment-confirmation email, refund, cancel remotely, or release stock solely from overdue notification.",
+      "Any reservation expiry correction/release requires separate review of the stored boleto policy."
+    ],
+    "notImplementedOrExecuted": true
+  }
+}

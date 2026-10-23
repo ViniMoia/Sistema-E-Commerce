@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "status": "PEDIDO8_CANCELADO_E_RESERVA_LIBERADA_VERIFICADOS",
+  "orderNumber": 8,
+  "startedAt": "2026-10-23T20:37:57.900Z",
+  "executionFinishedAt": "2026-10-23T20:38:25.168Z",
+  "verifiedAt": "2026-10-23T20:39:32.095Z",
+  "scope": {
+    "environment": "HOMOLOGACAO",
+    "provider": "ASAAS_SANDBOX",
+    "execution": "Local exact order/attempt execution; no general queue or job",
+    "mainConnected": false,
+    "providerMutationCalls": 1,
+    "providerMutation": "One DELETE for the exact sandbox charge",
+    "remoteConfigurationChanges": false,
+    "codePublished": false
+  },
+  "backup": {
+    "reference": "order8-69b4bdfc-fae3-4a73-ab22-8088545add47",
+    "encryptedSha256": "5f86fb3bcbe958a2187876d5661f1e8beee603fcffb82974946037437e285123",
+    "readbackVerified": true,
+    "scope": "Consistent full public-table JSON snapshot, encrypted and readback verified; not a pg_dump or rehearsed full restore"
+  },
+  "validation": {
+    "integrationTests": 65,
+    "integrationPassed": 65,
+    "unitTests": 8,
+    "unitPassed": 8,
+    "typeScript": "PASS",
+    "eslint": "PASS",
+    "diffCheck": "PASS",
+    "scenarios": [
+      "Exact scope and no fallback",
+      "Other eligible orders and review preserved",
+      "Stock retained until confirmed deletion",
+      "Unknown DELETE is not repeated",
+      "Payment observed before cancellation suppresses DELETE",
+      "Active leases, backoff and review preserved",
+      "Concurrent consumers do not double-cancel"
+    ],
+    "sourceFiles": [
+      {
+        "path": "services/order-timeout.service.ts",
+        "sha256": "fff7085ca605f49c2e10d96327865d5024449a8da0045e2c44895af8f7ec40c7"
+      },
+      {
+        "path": "services/payment/payment-attempt-target.ts",
+        "sha256": "7e0bcfc4bce209126903e2b250063813795b0459f946332b6dc3f37ca590d91d"
+      },
+      {
+        "path": "services/payment/payment-worker.service.ts",
+        "sha256": "a892ff20c440b25c8c261b3467054da615b5a9b8a397609b0f7c872940dfd7b8"
+      },
+      {
+        "path": "services/payment/durable-work.service.ts",
+        "sha256": "d0ae9b7b10462988714327a52b8a813ac3da46f8a737961313582d2d22404f9d"
+      },
+      {
+        "path": "tests/integration/payment-durable-execution.test.ts",
+        "sha256": "d16456c5e7932d011a65ce632a5e6240dc5bf684310dbd1282a74b0e838aee2a"
+      }
+    ]
+  },
+  "provider": {
+    "status": "OVERDUE",
+    "deleted": true,
+    "value": 49.9,
+    "method": "BOLETO",
+    "identityVerified": true
+  },
+  "execution": {
+    "expiration": {
+      "success": true,
+      "processedCount": 1,
+      "cancelledCount": 0,
+      "errorCount": 0,
+      "cancelledOrderIds": [],
+      "errors": [],
+      "executionTimeMs": 4338
+    },
+    "cancellation": {
+      "claimed": 1,
+      "completed": 1,
+      "retried": 0,
+      "review": 0
+    }
+  },
+  "before": {
+    "orderStatus": "PENDING",
+    "attemptStatus": "PENDING",
+    "failureCode": null,
+    "chargeStatus": "OVERDUE",
+    "reservationStatus": "RESERVED",
+    "quantity": 1,
+    "productStock": 98,
+    "variantStock": 48,
+    "productUnavailableStock": 0,
+    "variantUnavailableStock": 0,
+    "reservationExpiresAt": "2026-10-20T03:00:00",
+    "operations": []
+  },
+  "after": {
+    "orderStatus": "CANCELLED",
+    "attemptStatus": "CANCELLED",
+    "failureCode": null,
+    "chargeStatus": "DELETED",
+    "reservationStatus": "RELEASED",
+    "quantity": 1,
+    "productStock": 99,
+    "variantStock": 49,
+    "productUnavailableStock": 0,
+    "variantUnavailableStock": 0,
+    "reservationExpiresAt": "2026-10-20T03:00:00",
+    "operations": [
+      {
+        "kind": "CANCEL",
+        "status": "COMPLETED",
+        "lastErrorCode": null
+      }
+    ]
+  },
+  "verification": {
+    "tableCount": 38,
+    "otherRowsUnchanged": true,
+    "order3AndReviewUnchanged": true,
+    "changes": {
+      "AuditLog": {
+        "inserted": 3
+      },
+      "CommerceOutbox": {
+        "inserted": 1
+      },
+      "FinancialFact": {
+        "inserted": 1
+      },
+      "InventoryReservation": {
+        "changed": 1,
+        "fields": [
+          "status",
+          "version",
+          "updatedAt",
+          "releasedAt"
+        ]
+      },
+      "Order": {
+        "changed": 1,
+        "fields": [
+          "status",
+          "version",
+          "updatedAt",
+          "asaasPaymentStatus"
+        ]
+      },
+      "OrderStatusHistory": {
+        "inserted": 1
+      },
+      "PaymentAttempt": {
+        "changed": 1,
+        "fields": [
+          "status",
+          "version",
+          "updatedAt",
+          "reviewAfter",
+          "reconcileAfter"
+        ]
+      },
+      "PaymentCharge": {
+        "changed": 1,
+        "fields": [
+          "updatedAt",
+          "providerStatus"
+        ]
+      },
+      "PaymentOperation": {
+        "inserted": 1
+      },
+      "Product": {
+        "changed": 1,
+        "fields": [
+          "stock",
+          "updatedAt",
+          "inventoryVersion"
+        ]
+      },
+      "ProductVariants": {
+        "changed": 1,
+        "fields": [
+          "stock",
+          "updatedAt",
+          "inventoryVersion"
+        ]
+      }
+    },
+    "stockReleasedQuantity": 1,
+    "stockDestination": "AVAILABLE",
+    "automaticOutboxDispatch": false,
+    "comparatorCorrection": "The initial postcheck stopped because its row comparator assumed every table had an id column. Read-only recheck compared composite-key tables as complete ordered sets and confirmed all 38 tables. No cancellation was repeated."
+  },
+  "remaining": [
+    "Scoped executors are local and tested; they have not been published or deployed.",
+    "The generated order-status outbox entry was not dispatched by this execution.",
+    "The independent order 3 refund review remains pending.",
+    "This execution does not validate automatic scheduling, a new purchase, Nuvemshop order export or SMB stock deduction."
+  ],
+  "evidence": [
+    "L-REVISAO-RESERVA-PEDIDO8-2026-10-23.json",
+    "L-PROCESSAMENTO-EVENTO-PEDIDO8-2026-10-23.json"
+  ]
+}
