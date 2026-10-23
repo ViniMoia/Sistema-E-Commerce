@@ -1,0 +1,3348 @@
+{
+  "schemaVersion": 1,
+  "state": "INDEPENDENT_PREPARATION_COMPLETED_SHARED_EXECUTION_PENDING",
+  "consolidatedAtUtc": "2026-10-23T22:02:33.273Z",
+  "timezone": "America/Sao_Paulo",
+  "labWindowBrt": [
+    "2026-10-23T18:57:31.227-03:00",
+    "2026-10-23T18:58:37.545-03:00"
+  ],
+  "inventoryWindowBrt": [
+    "2026-10-23T18:56:33.032-03:00",
+    "2026-10-23T18:56:39.589-03:00"
+  ],
+  "references": {
+    "head": "c2a6933a333009077fd3ab753ce7307261850e23",
+    "originMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "mainDocumentsRead": [
+      "ROADMAP.md",
+      "ROADMAP_FRETE.md"
+    ],
+    "baseline": "trabalho_em_dupla/evidencias/V-RETOMADA-GCP-2026-10-23.json",
+    "guide": "trabalho_em_dupla/evidencias/guia/2.0/VANDERLEI.md",
+    "report": "trabalho_em_dupla/DEVOLUTIVA_VANDERLEI_ETAPA2_2026-10-23.md",
+    "proposals": "trabalho_em_dupla/evidencias/V-PROPOSTAS-G6-ETAPA2-2026-10-23.json"
+  },
+  "independentlyVerifiedDelta": {
+    "sameTraffic": true,
+    "sameServiceFlags": true,
+    "sameServiceSecretReferences": true,
+    "sameWebTimeout": true,
+    "jobsStillHaveZeroExecutions": true,
+    "queueDelta": {
+      "PaymentInbox": {
+        "before": {
+          "READY": 1,
+          "COMPLETED": 30
+        },
+        "after": {
+          "COMPLETED": 31
+        },
+        "delta": {
+          "READY": -1,
+          "COMPLETED": 1
+        }
+      },
+      "CommerceOutbox": {
+        "before": {
+          "COMPLETED": 22,
+          "DEAD_LETTER": 1
+        },
+        "after": {
+          "READY": 1,
+          "COMPLETED": 22,
+          "DEAD_LETTER": 1
+        },
+        "delta": {
+          "COMPLETED": 0,
+          "DEAD_LETTER": 0,
+          "READY": 1
+        }
+      },
+      "PaymentOperation": {
+        "before": {
+          "COMPLETED": 15,
+          "PENDING": 1
+        },
+        "after": {
+          "COMPLETED": 16,
+          "PENDING": 1
+        },
+        "delta": {
+          "COMPLETED": 1,
+          "PENDING": 0
+        }
+      }
+    },
+    "queueCause": "NOT_ATTRIBUTED",
+    "sincePlanningRead1738Brt": "Queue counts, flags and resources reconfirmed; Docker engine now running for disposable lab."
+  },
+  "communicatedByViniciusNotIndependentlyVerifiedHere": {
+    "source": "guia/2.0/VANDERLEI.md revision 2.1",
+    "vercelAccessible": true,
+    "asaasQueueResumed": true,
+    "order8EventCompleted": true,
+    "order8ReservationStillUnderReview": true,
+    "targetedExecutor": "Awaiting published code and evidence; not present in audited branch."
+  },
+  "inventory": {
+    "gcp": {
+      "startedAt": "2026-10-23T21:56:35.217258+00:00",
+      "finishedAt": "2026-10-23T21:56:39.589552+00:00",
+      "readOnly": true,
+      "secretValuesAccessed": false,
+      "project": "continental-511812",
+      "region": "southamerica-east1",
+      "service": {
+        "traffic": [
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-17fd1a7-review",
+            "tag": "review-17fd1a7",
+            "uri": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+          },
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-896dc56-logout",
+            "percent": 100
+          },
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-9495ff9-review",
+            "tag": "review-9495ff9",
+            "uri": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+          },
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-ae9ec9c-review",
+            "tag": "review-ae9ec9c",
+            "uri": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+          },
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-d63ad8a-review",
+            "tag": "review-d63ad8a",
+            "uri": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+          },
+          {
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+            "revision": "continental-hml-eff10bf-dashboard",
+            "tag": "dashboard-eff10bf",
+            "uri": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+          }
+        ],
+        "timeout": "60s",
+        "scaling": {
+          "maxInstanceCount": 1
+        },
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "secretBindings": {
+          "DATABASE_URL": {
+            "secretKeyRef": {
+              "secret": "continental-hml-database-url",
+              "version": "1"
+            }
+          },
+          "DIRECT_URL": {
+            "secretKeyRef": {
+              "secret": "continental-hml-direct-url",
+              "version": "1"
+            }
+          },
+          "ASAAS_API_KEY": {
+            "secretKeyRef": {
+              "secret": "continental-hml-asaas-api-key",
+              "version": "1"
+            }
+          },
+          "CRON_SECRET": {
+            "secretKeyRef": {
+              "secret": "continental-hml-cron-secret",
+              "version": "1"
+            }
+          },
+          "FREIGHT_QUOTE_SECRET": {
+            "secretKeyRef": {
+              "secret": "continental-hml-freight-quote-secret",
+              "version": "1"
+            }
+          },
+          "ASAAS_WEBHOOK_TOKEN": {
+            "secretKeyRef": {
+              "secret": "continental-hml-asaas-webhook-token",
+              "version": "1"
+            }
+          }
+        }
+      },
+      "reachableRevisions": [
+        {
+          "name": "continental-hml-17fd1a7-review",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            }
+          }
+        },
+        {
+          "name": "continental-hml-896dc56-logout",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            }
+          }
+        },
+        {
+          "name": "continental-hml-9495ff9-review",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            },
+            "ASAAS_WEBHOOK_TOKEN": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-webhook-token",
+                "version": "1"
+              }
+            }
+          }
+        },
+        {
+          "name": "continental-hml-ae9ec9c-review",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            }
+          }
+        },
+        {
+          "name": "continental-hml-d63ad8a-review",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            }
+          }
+        },
+        {
+          "name": "continental-hml-eff10bf-dashboard",
+          "timeout": "60s",
+          "scaling": {
+            "maxInstanceCount": 1
+          },
+          "maxInstanceRequestConcurrency": 20,
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "cpuIdle": true,
+            "startupCpuBoost": true
+          },
+          "flags": {
+            "APP_MAINTENANCE_MODE": "false",
+            "CHECKOUT_PAUSED": "true",
+            "PAYMENT_WORKER_ENABLED": "false",
+            "PAYMENT_REMOTE_ENABLED": "false",
+            "PAYMENT_EXPIRATION_ENABLED": "false",
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "DATABASE_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-database-url",
+                "version": "1"
+              }
+            },
+            "DIRECT_URL": {
+              "secretKeyRef": {
+                "secret": "continental-hml-direct-url",
+                "version": "1"
+              }
+            },
+            "ASAAS_API_KEY": {
+              "secretKeyRef": {
+                "secret": "continental-hml-asaas-api-key",
+                "version": "1"
+              }
+            },
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            },
+            "FREIGHT_QUOTE_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-freight-quote-secret",
+                "version": "1"
+              }
+            }
+          }
+        }
+      ],
+      "jobs": [
+        {
+          "name": "continental-hml-payments",
+          "timeout": "1800s",
+          "maxRetries": 0,
+          "taskCount": 1,
+          "parallelism": 1,
+          "executionCount": 0,
+          "listedExecutions": 0,
+          "command": [
+            "node"
+          ],
+          "args": [
+            "scripts/cloudrun-consumer.mjs"
+          ],
+          "flags": {
+            "APP_MAINTENANCE_MODE": null,
+            "CHECKOUT_PAUSED": null,
+            "PAYMENT_WORKER_ENABLED": null,
+            "PAYMENT_REMOTE_ENABLED": null,
+            "PAYMENT_EXPIRATION_ENABLED": null,
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            }
+          },
+          "CONSUMER_ORIGIN": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+          "CONSUMER_MODE": "payments",
+          "CONSUMER_MAX_BATCHES": "5",
+          "CONSUMER_REQUEST_TIMEOUT_MS": "240000"
+        },
+        {
+          "name": "continental-hml-supervision",
+          "timeout": "60s",
+          "maxRetries": 0,
+          "taskCount": 1,
+          "parallelism": 1,
+          "executionCount": 0,
+          "listedExecutions": 0,
+          "command": [
+            "node"
+          ],
+          "args": [
+            "scripts/cloudrun-consumer.mjs"
+          ],
+          "flags": {
+            "APP_MAINTENANCE_MODE": null,
+            "CHECKOUT_PAUSED": null,
+            "PAYMENT_WORKER_ENABLED": null,
+            "PAYMENT_REMOTE_ENABLED": null,
+            "PAYMENT_EXPIRATION_ENABLED": null,
+            "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+            "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+          },
+          "secretBindings": {
+            "CRON_SECRET": {
+              "secretKeyRef": {
+                "secret": "continental-hml-cron-secret",
+                "version": "1"
+              }
+            }
+          },
+          "CONSUMER_ORIGIN": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+          "CONSUMER_MODE": "supervision",
+          "CONSUMER_MAX_BATCHES": "1",
+          "CONSUMER_REQUEST_TIMEOUT_MS": "30000"
+        }
+      ],
+      "metrics": [
+        {
+          "name": "continental-hml-supervision-completed",
+          "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND jsonPayload.event=\"consumer_completed\""
+        }
+      ],
+      "policies": [
+        {
+          "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+          "displayName": "continental-hml-supervision: execução ausente",
+          "enabled": false,
+          "conditions": [
+            {
+              "conditionAbsent": {
+                "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-supervision-completed\"",
+                "duration": "600s",
+                "trigger": {
+                  "count": 1
+                },
+                "aggregations": [
+                  {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_DELTA",
+                    "crossSeriesReducer": "REDUCE_SUM"
+                  }
+                ]
+              },
+              "displayName": "Sem conclusão do consumidor",
+              "name": "projects/continental-511812/alertPolicies/16768859373754969259/conditions/16768859373754967910"
+            }
+          ]
+        },
+        {
+          "name": "projects/continental-511812/alertPolicies/2245739515294212144",
+          "displayName": "continental-hml-supervision: falha ou falta de progresso",
+          "enabled": false,
+          "conditions": [
+            {
+              "displayName": "Falha, revisão, retry ou atraso",
+              "name": "projects/continental-511812/alertPolicies/2245739515294212144/conditions/2245739515294212365",
+              "conditionMatchedLog": {
+                "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\" AND (severity>=ERROR OR jsonPayload.severity=\"ERROR\" OR jsonPayload.outcome=\"attention\")"
+              }
+            }
+          ]
+        }
+      ],
+      "channels": [
+        {
+          "name": "projects/continental-511812/notificationChannels/3617580342119339067",
+          "type": "email",
+          "enabled": false
+        }
+      ]
+    },
+    "database": {
+      "startedAt": "2026-10-23T21:56:33.032Z",
+      "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+      "readOnly": true,
+      "snapshot": {
+        "identity": {
+          "database": "neondb",
+          "read_only": "on",
+          "max_connections": 112,
+          "reserved": 4,
+          "all_stats_visible": true
+        },
+        "role": {
+          "rolsuper": false,
+          "rolcreatedb": true,
+          "rolcreaterole": true,
+          "rolbypassrls": true
+        },
+        "tables": {
+          "total": 38,
+          "owned": 38,
+          "rls": 0
+        },
+        "sessions": [],
+        "queues": {
+          "PaymentInbox": [
+            {
+              "status": "COMPLETED",
+              "count": 31
+            }
+          ],
+          "CommerceOutbox": [
+            {
+              "status": "READY",
+              "count": 1
+            },
+            {
+              "status": "COMPLETED",
+              "count": 22
+            },
+            {
+              "status": "DEAD_LETTER",
+              "count": 1
+            }
+          ],
+          "PaymentOperation": [
+            {
+              "status": "COMPLETED",
+              "count": 16
+            },
+            {
+              "status": "PENDING",
+              "count": 1
+            }
+          ]
+        },
+        "leases": {
+          "PaymentInbox": {
+            "held": 0,
+            "live": 0
+          },
+          "CommerceOutbox": {
+            "held": 0,
+            "live": 0
+          },
+          "PaymentAttempt": {
+            "held": 0,
+            "live": 0
+          }
+        }
+      },
+      "ok": true,
+      "finishedAt": "2026-10-23T21:56:36.663Z"
+    }
+  },
+  "localLab": {
+    "schemaVersion": 1,
+    "startedAt": "2026-10-23T21:57:31.227Z",
+    "state": "PASSED",
+    "postgresMajor": 18,
+    "remoteMutations": false,
+    "providers": "synthetic",
+    "runtimeGrants": {
+      "Loja": [
+        "SELECT"
+      ],
+      "User": [
+        "SELECT"
+      ],
+      "Address": [
+        "SELECT"
+      ],
+      "FreightRule": [
+        "SELECT"
+      ],
+      "FreightTariffRevision": [
+        "SELECT"
+      ],
+      "JtExpressGeocom": [
+        "SELECT"
+      ],
+      "JtExpressRate": [
+        "SELECT"
+      ],
+      "Product": [
+        "SELECT",
+        "UPDATE"
+      ],
+      "ProductVariants": [
+        "SELECT",
+        "UPDATE"
+      ],
+      "CheckoutBasket": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "CheckoutIntent": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "Cart": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "CartItem": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "OrderBuyer": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "Order": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "OrderItem": [
+        "SELECT",
+        "INSERT"
+      ],
+      "OrderStatusHistory": [
+        "SELECT",
+        "INSERT"
+      ],
+      "PaymentAttempt": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "PaymentCharge": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "PaymentOperation": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "FinancialFact": [
+        "SELECT",
+        "INSERT"
+      ],
+      "PaymentInbox": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "PaymentWebhookEvent": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "CommerceOutbox": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "InventoryReservation": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "AuditLog": [
+        "SELECT",
+        "INSERT"
+      ],
+      "LoyaltyWallet": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "LoyaltyTransaction": [
+        "SELECT",
+        "INSERT"
+      ],
+      "LoyaltyLot": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "LoyaltyAllocation": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ],
+      "FreightQuote": [
+        "SELECT",
+        "INSERT",
+        "UPDATE"
+      ]
+    },
+    "lockColumnGrants": {
+      "Loja": "id",
+      "User": "id",
+      "FreightTariffRevision": "id"
+    },
+    "routines": [
+      "check_inventory_reservation_source",
+      "check_checkout_commit",
+      "keep_checkout_intent_immutable",
+      "keep_checkout_source_consumed",
+      "payment_operation_provenance",
+      "financial_fact_provenance",
+      "boleto_refund_operation_guard"
+    ],
+    "sequenceGrants": {
+      "Order_orderNumber_seq": [
+        "USAGE",
+        "SELECT"
+      ]
+    },
+    "runId": "9b009bf2e8b78b537e7b28188e7583c7",
+    "isolatedCopyWithoutDotEnv": true,
+    "measurements": {
+      "startedAt": "2026-10-23T21:57:39.603Z",
+      "timings": [
+        {
+          "mode": "separate",
+          "limit": 1,
+          "concurrency": 1,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 99.4,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 78.62,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 55.59,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "f3c40de0-81d6-4d88-910a-e7a008634a8c"
+                ],
+                "errors": [],
+                "executionTimeMs": 56
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 16.11,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 0,
+          "durationMs": 250.19,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 2
+        },
+        {
+          "mode": "separate",
+          "limit": 1,
+          "concurrency": 1,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 153.51,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 157.9,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 53.61,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "aa1dbb55-fc8c-4c66-a926-c60201b2c1c4"
+                ],
+                "errors": [],
+                "executionTimeMs": 53
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 18.92,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 2,
+          "durationMs": 384.41,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 2
+        },
+        {
+          "mode": "separate",
+          "limit": 1,
+          "concurrency": 2,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 76.22,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 148.14,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 78.92,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 80.43,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 48.4,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "cf50affc-309d-4225-b176-58ddbc7d13d1"
+                ],
+                "errors": [],
+                "executionTimeMs": 48
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 55.09,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 55
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 15.98,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 37.02,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 4,
+          "durationMs": 321.12,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 4
+        },
+        {
+          "mode": "separate",
+          "limit": 1,
+          "concurrency": 2,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 152.55,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 152.67,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 156.11,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 156.24,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 44.69,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "1cc3761b-6c21-4148-9190-6eec1cae0ef0"
+                ],
+                "errors": [],
+                "executionTimeMs": 44
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 52.17,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 52
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 14.07,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 14.17,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 8,
+          "durationMs": 375.49,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 4
+        },
+        {
+          "mode": "separate",
+          "limit": 5,
+          "concurrency": 1,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 364.54,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 371.59,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 206.32,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "33d8a828-0a0c-4dd1-baf0-ac56a2d24435",
+                  "a65b6d81-dd7a-42e7-a6d0-2a1443563a7e",
+                  "07a218ef-9dee-466b-9034-dfcae0de197a",
+                  "a785edf3-b5a8-4d74-b169-a1d758db492b",
+                  "f3edd78b-ec83-456d-9f71-56b694e3fe91"
+                ],
+                "errors": [],
+                "executionTimeMs": 206
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 92.49,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 12,
+          "durationMs": 1035.36,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 10
+        },
+        {
+          "mode": "separate",
+          "limit": 5,
+          "concurrency": 1,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 734.77,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 755.63,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 194.17,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "b5475cc6-d02b-42e1-9566-c72f4d0dc49f",
+                  "9eb2b074-148b-4099-9daa-8634db947760",
+                  "3de18188-e0cb-4164-b69c-db91113a6836",
+                  "c52b7afa-b9cd-49a2-8a9e-8ed01c490191",
+                  "72424eea-dc13-4848-8cdd-72e2a94fa7f0"
+                ],
+                "errors": [],
+                "executionTimeMs": 194
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 245.51,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 22,
+          "durationMs": 1930.43,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 10
+        },
+        {
+          "mode": "separate",
+          "limit": 5,
+          "concurrency": 2,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 308.82,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 309.45,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 323.53,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 323.58,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 170.39,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "67a5f296-4988-4046-840e-fc20de3f0c9a",
+                  "9ee730a7-0808-4ff5-bbf6-52ba6e4f13c2",
+                  "6354640d-3572-4d01-9bd2-c22be3b09bd1",
+                  "8a17b49f-115e-4722-bc0d-67d86c3788b1",
+                  "b5f48d89-a449-482e-8ed3-b49cf37366c4"
+                ],
+                "errors": [],
+                "executionTimeMs": 171
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 176.2,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 176
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 82.52,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 83.7,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 32,
+          "durationMs": 893.24,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 20
+        },
+        {
+          "mode": "separate",
+          "limit": 5,
+          "concurrency": 2,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 718.04,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 718.15,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 719.49,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 719.6,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 171.03,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "99721bf9-9401-4679-8244-633c4a9b6177",
+                  "b48ef9c5-3146-496a-981b-83b39a6aacfc",
+                  "145add29-ae04-4a75-a7ae-9eaa4e4e471b",
+                  "d497aec7-dccc-4bca-8fa7-210bae4aae02",
+                  "0bae3001-802e-4427-a93d-c911073c459e"
+                ],
+                "errors": [],
+                "executionTimeMs": 171
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 175.92,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 176
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 243.45,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 252.58,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 52,
+          "durationMs": 1866.47,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 20
+        },
+        {
+          "mode": "combined",
+          "limit": 1,
+          "concurrency": 1,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 56.33,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 60,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 38.24,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "2f9a0baf-7925-4b53-851c-d46a46deaf0d"
+                ],
+                "errors": [],
+                "executionTimeMs": 38
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 13.36,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 72,
+          "durationMs": 168.49,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 2
+        },
+        {
+          "mode": "combined",
+          "limit": 1,
+          "concurrency": 1,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 140.46,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 138.14,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 35.7,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "0acc7b33-d1e4-4b1f-8d3c-a58de389ca05"
+                ],
+                "errors": [],
+                "executionTimeMs": 36
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 11.72,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 74,
+          "durationMs": 326.29,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 2
+        },
+        {
+          "mode": "combined",
+          "limit": 1,
+          "concurrency": 2,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 63.34,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 63.5,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 66.97,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 66.99,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 37.73,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "87fd8595-94a9-4ae7-985f-d588f202e80e"
+                ],
+                "errors": [],
+                "executionTimeMs": 38
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 43.49,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 44
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 13.61,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 13.4,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 76,
+          "durationMs": 187.52,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 4
+        },
+        {
+          "mode": "combined",
+          "limit": 1,
+          "concurrency": 2,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 143.81,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 143.98,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 153.87,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 154.21,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 43.14,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 1,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "eb879635-6993-47ab-bfda-152c828f5922"
+                ],
+                "errors": [],
+                "executionTimeMs": 43
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 49.31,
+              "result": {
+                "success": true,
+                "processedCount": 1,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 50
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 16.25,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 14.93,
+              "result": {
+                "claimed": 1,
+                "completed": 1,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 80,
+          "durationMs": 362.58,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 4
+        },
+        {
+          "mode": "combined",
+          "limit": 5,
+          "concurrency": 1,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 310.14,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 300.18,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 163.72,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "f6d911a2-a56e-43e8-9623-aafe3691b329",
+                  "391a0afd-4949-40f4-9427-b06238c60ced",
+                  "1c3680fb-c50e-409e-8451-c9e161fe1ae4",
+                  "50f773b4-88ac-4e1f-bb7c-54eeabdb7494",
+                  "5592dc50-0496-4127-b550-aac422b3099b"
+                ],
+                "errors": [],
+                "executionTimeMs": 163
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 75.11,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 84,
+          "durationMs": 849.43,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 10
+        },
+        {
+          "mode": "combined",
+          "limit": 5,
+          "concurrency": 1,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 682.79,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 688.51,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 164.07,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "b0011ce0-ef68-440b-a2ea-1946d521b9c6",
+                  "55618308-316b-4354-a697-20e2b528bfdc",
+                  "5faadfaf-6381-4e11-b875-29d71892dd50",
+                  "515b81c3-8b3d-4bb8-be97-1b854ea79d45",
+                  "70245a72-7a82-4cef-bab8-2092f8854591"
+                ],
+                "errors": [],
+                "executionTimeMs": 164
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 235.47,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 94,
+          "durationMs": 1771.12,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 10
+        },
+        {
+          "mode": "combined",
+          "limit": 5,
+          "concurrency": 2,
+          "providerLatencyMs": 0,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 293.76,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 293.9,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 339.88,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 340.2,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 195.16,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "773d7147-11a7-4247-8f49-2d8b2bad1519",
+                  "bcc17f61-efdb-411b-88c2-f04836e2c6fa",
+                  "1c94e603-d71c-467e-bb8b-bd26042f2151",
+                  "1291fb68-7b0d-4068-830d-b37a382fb3aa",
+                  "7c3e0d18-28c3-4a0c-9fa7-2e29b06e39de"
+                ],
+                "errors": [],
+                "executionTimeMs": 195
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 201.26,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 201
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 80.54,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 80.05,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 104,
+          "durationMs": 915.41,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 20
+        },
+        {
+          "mode": "combined",
+          "limit": 5,
+          "concurrency": 2,
+          "providerLatencyMs": 80,
+          "stages": [
+            {
+              "name": "inbox",
+              "worker": 1,
+              "durationMs": 704.28,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "inbox",
+              "worker": 0,
+              "durationMs": 704.41,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 0,
+              "durationMs": 736.46,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "reconciliation",
+              "worker": 1,
+              "durationMs": 736.65,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 0,
+              "durationMs": 168.69,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 5,
+                "errorCount": 0,
+                "cancelledOrderIds": [
+                  "c34aff19-ba82-415d-a644-95b6a47b6a5b",
+                  "70a8fa48-d1ac-4ed0-a554-b8f0674d3e1c",
+                  "88df27ba-993c-4700-aa0c-26a0c660ba27",
+                  "50b98335-7bc3-4da5-adf1-c7132a86bf18",
+                  "27b8519a-3b8a-47db-a78d-f7466a63f97e"
+                ],
+                "errors": [],
+                "executionTimeMs": 168
+              }
+            },
+            {
+              "name": "expiration",
+              "worker": 1,
+              "durationMs": 174.44,
+              "result": {
+                "success": true,
+                "processedCount": 5,
+                "cancelledCount": 0,
+                "errorCount": 0,
+                "cancelledOrderIds": [],
+                "errors": [],
+                "executionTimeMs": 174
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 0,
+              "durationMs": 246.13,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            },
+            {
+              "name": "outbox",
+              "worker": 1,
+              "durationMs": 248.59,
+              "result": {
+                "claimed": 5,
+                "completed": 5,
+                "retried": 0,
+                "review": 0
+              }
+            }
+          ],
+          "leasesBefore": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCallsBefore": 124,
+          "durationMs": 1864.21,
+          "leasesAfter": {
+            "PaymentInbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "PaymentAttempt": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            },
+            "CommerceOutbox": {
+              "held": 0,
+              "live": 0,
+              "remaining_seconds": null
+            }
+          },
+          "inspectCalls": 20
+        }
+      ],
+      "scope": "real services / synthetic providers / disposable PostgreSQL only",
+      "samplesPerCombination": 1,
+      "permissions": {
+        "runtime": {
+          "rolname": "ecommerce_test",
+          "rolsuper": false,
+          "rolcreatedb": false,
+          "rolcreaterole": false,
+          "rolbypassrls": false
+        },
+        "ownedTables": 0,
+        "grants": [
+          {
+            "table_name": "Address",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "AuditLog",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "AuditLog",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "Cart",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "Cart",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "Cart",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "CartItem",
+            "privilege_type": "DELETE"
+          },
+          {
+            "table_name": "CartItem",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "CartItem",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "CartItem",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "CheckoutBasket",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "CheckoutBasket",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "CheckoutBasket",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "CheckoutIntent",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "CheckoutIntent",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "CheckoutIntent",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "CommerceOutbox",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "CommerceOutbox",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "CommerceOutbox",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "FinancialFact",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "FinancialFact",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "FreightQuote",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "FreightQuote",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "FreightQuote",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "FreightRule",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "FreightTariffRevision",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "InventoryReservation",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "InventoryReservation",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "InventoryReservation",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "JtExpressGeocom",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "JtExpressRate",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "Loja",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "LoyaltyAllocation",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "LoyaltyAllocation",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "LoyaltyAllocation",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "LoyaltyLot",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "LoyaltyLot",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "LoyaltyLot",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "LoyaltyTransaction",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "LoyaltyTransaction",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "LoyaltyWallet",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "LoyaltyWallet",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "LoyaltyWallet",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "Order",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "Order",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "Order",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "OrderBuyer",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "OrderBuyer",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "OrderBuyer",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "OrderItem",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "OrderItem",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "OrderStatusHistory",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "OrderStatusHistory",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentAttempt",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "PaymentAttempt",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentAttempt",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "PaymentCharge",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "PaymentCharge",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentCharge",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "PaymentInbox",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "PaymentInbox",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentInbox",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "PaymentOperation",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "PaymentOperation",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentOperation",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "PaymentWebhookEvent",
+            "privilege_type": "INSERT"
+          },
+          {
+            "table_name": "PaymentWebhookEvent",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "PaymentWebhookEvent",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "Product",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "Product",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "ProductVariants",
+            "privilege_type": "SELECT"
+          },
+          {
+            "table_name": "ProductVariants",
+            "privilege_type": "UPDATE"
+          },
+          {
+            "table_name": "User",
+            "privilege_type": "SELECT"
+          }
+        ],
+        "denied": [
+          "ddl",
+          "truncate",
+          "createRole",
+          "migrations",
+          "changeRole"
+        ],
+        "transactionsAndImmutableTrigger": true
+      },
+      "interruption": {
+        "clientTimeoutMs": 150,
+        "providerLatencyMs": 600,
+        "abortedAfterMs": 179.8830999999991,
+        "serverFinishedAfterMs": 723.8966999999975,
+        "posts": 1,
+        "logs": [
+          {
+            "event": "consumer_started",
+            "runId": "c599f4c2-22a2-4d00-9236-259ffc841b4e",
+            "mode": "payments",
+            "accountScope": "primary",
+            "at": "2026-10-23T21:58:32.909Z"
+          },
+          {
+            "event": "consumer_failed",
+            "runId": "c599f4c2-22a2-4d00-9236-259ffc841b4e",
+            "mode": "payments",
+            "accountScope": "primary",
+            "at": "2026-10-23T21:58:33.088Z",
+            "severity": "ERROR",
+            "code": "CONSUMER_TRANSPORT_UNCERTAIN",
+            "durationMs": 179
+          }
+        ],
+        "leasesAtAbort": {
+          "PaymentInbox": {
+            "held": 1,
+            "live": 1,
+            "remaining_seconds": 599.861562
+          },
+          "PaymentAttempt": {
+            "held": 0,
+            "live": 0,
+            "remaining_seconds": null
+          },
+          "CommerceOutbox": {
+            "held": 0,
+            "live": 0,
+            "remaining_seconds": null
+          }
+        },
+        "leasesAfter": {
+          "PaymentInbox": {
+            "held": 0,
+            "live": 0,
+            "remaining_seconds": null
+          },
+          "PaymentAttempt": {
+            "held": 0,
+            "live": 0,
+            "remaining_seconds": null
+          },
+          "CommerceOutbox": {
+            "held": 0,
+            "live": 0,
+            "remaining_seconds": null
+          }
+        },
+        "orderAfter": "PAID",
+        "noAutomaticPostRetry": true,
+        "clientResult": "CONSUMER_TRANSPORT_UNCERTAIN",
+        "note": "Loopback adapter invokes real stages; not a deployed Next/Cloud Run request."
+      },
+      "pool": {
+        "experiments": [
+          {
+            "revisions": 1,
+            "instances": 1,
+            "clients": 1,
+            "connectionLimit": 4,
+            "uniqueBackendPids": 4,
+            "model": "independent Prisma clients model processes; revisions are labels, not Cloud Run deployments"
+          },
+          {
+            "revisions": 1,
+            "instances": 2,
+            "clients": 2,
+            "connectionLimit": 4,
+            "uniqueBackendPids": 8,
+            "model": "independent Prisma clients model processes; revisions are labels, not Cloud Run deployments"
+          },
+          {
+            "revisions": 2,
+            "instances": 1,
+            "clients": 2,
+            "connectionLimit": 4,
+            "uniqueBackendPids": 8,
+            "model": "independent Prisma clients model processes; revisions are labels, not Cloud Run deployments"
+          }
+        ],
+        "proposal": {
+          "pool": 4,
+          "revisions": 6,
+          "instancesPerRevision": 1,
+          "overlappingRevisions": 1,
+          "administration": 4,
+          "maxConnections": 112,
+          "reserved": 4,
+          "cloudRun": 28,
+          "known": 32,
+          "externalConnections": null,
+          "remainingBeforeExternal": 76,
+          "approved": false,
+          "note": "Planning arithmetic only; external workload, memory and database limits require separate evidence."
+        }
+      },
+      "syntheticEmailCalls": 144,
+      "passed": true,
+      "finishedAt": "2026-10-23T21:58:34.555Z"
+    },
+    "negativeIsolation": {
+      "incorrectSentinel": "REJECTED_BEFORE_WRITES",
+      "nonlocalDestination": "REJECTED_BY_DATABASE_POLICY"
+    },
+    "finishedAt": "2026-10-23T21:58:37.545Z"
+  },
+  "proposedTimeouts": {
+    "state": "EXPERIMENTAL_NOT_APPLIED",
+    "webSeconds": 60,
+    "httpMilliseconds": 75000,
+    "jobSeconds": 240,
+    "maxBatches": 1,
+    "tasks": 1,
+    "parallelism": 1,
+    "maxRetries": 0,
+    "reasoning": "Keep web bound; HTTP adds 15s to observe its response; Job covers 3 requests at 75s plus 15s process allowance.",
+    "limitation": "Synthetic measurements are not a worst-case bound. Provider calls, cold starts and DB contention require a coordinated measurement before adoption.",
+    "stopOnTimeout": "UNKNOWN_OUTCOME_NO_POST_RETRY"
+  },
+  "alertValidation": {
+    "localTests": 5,
+    "operationalRegressionTests": 32,
+    "realNotifications": 0,
+    "cases": [
+      "success",
+      "attention",
+      "failure",
+      "recovery",
+      "promoted severity",
+      "wrong project",
+      "wrong region",
+      "wrong job",
+      "wrong resource type"
+    ],
+    "supervisionOnlyGet": true,
+    "separateMetrics": true,
+    "absenceRehearsal": "PREPARED_NOT_EXECUTED_ON_GCP",
+    "remoteFilterApiValidation": false,
+    "caveat": "Restricted local evaluator and injected consumer responses do not prove ingestion, incidents or human delivery."
+  },
+  "validation": {
+    "disposableSuite": "1 passed, 16 timing combinations plus permissions, interruption and 3 pool topologies",
+    "isolationSuite": "17 passed (16 policy checks plus actual mismatched sentinel)",
+    "operationSuite": "32 passed; focused 5 repeated after alignment proposal update",
+    "types": "tsc --noEmit --incremental false: passed after refreshing generated local Prisma client",
+    "lint": "ESLint on added JS/TS files: passed",
+    "cleanup": "Owned disposable container removed and isolated copy discarded; no labelled lab containers remain",
+    "delivery": {
+      "at": "2026-10-23T22:02:33.621Z",
+      "filesChecked": 13,
+      "jsonParsing": "PASSED",
+      "hashes": "PASSED",
+      "sharedCredentialValueScan": "PASSED",
+      "privateKeyAndDatabaseUrlScan": "PASSED"
+    }
+  },
+  "notPerformed": [
+    "shared database mutation",
+    "shared migration",
+    "variant repair",
+    "import",
+    "restore",
+    "GCP mutation",
+    "job execution",
+    "scheduler creation",
+    "real provider call",
+    "real notification",
+    "IAM or binding change",
+    "main mutation"
+  ],
+  "dependencies": [
+    "Vinicius commercial cases and exact event executor publication",
+    "coordinated window and global trigger exclusivity",
+    "operator/substitute and human alert receipt",
+    "Neon/Vercel/external connection budgets",
+    "email sender/domain and controlled recipient",
+    "shipping contracts/packages",
+    "remaining interface cases",
+    "G2 custody and recovery evidence"
+  ],
+  "limitations": [
+    "One sample per synthetic timing combination; no percentile or remote SLO claim",
+    "Manual payment expiry and PIX approval only; refund/card/boleto/SMB paths not certified by this lab",
+    "Pool measurements use independent clients as instance models, not deployed revisions",
+    "Permission matrix covers exercised checkout/payment paths; not a complete web/Admin least-privilege rollout",
+    "Read-only snapshots cannot establish global writer exclusivity",
+    "Cloudflare/Vercel external inventories and histories behind disabled APIs remain administrator dependencies"
+  ],
+  "artifactsSha256": {
+    "artifacts/operational-readiness/2026-10-23T21-57-31-227Z/report.json": "b763448d394176a1b581c728da2537ef0df5f8a7fc46cdef5749e92956fe80c6",
+    "artifacts/operational-readiness/inventory/gcp-20261023T215639Z.json": "fa04ed26d5f12a0173c6ce8deecf104aa0a39363c9ef69be9f11e3cfb246ba84",
+    "artifacts/operational-readiness/inventory/database-2026-10-23T21-56-33-032Z.json": "31db8e43ea717fc0cf6abf2f9e460a0328d85a0cf70d93320040ae1150d51339",
+    "trabalho_em_dupla/evidencias/V-PROPOSTAS-G6-ETAPA2-2026-10-23.json": "2ccb4bb003b14509200851afac884e311f1e11a43a9654c617dc3233bef39110",
+    "trabalho_em_dupla/DEVOLUTIVA_VANDERLEI_ETAPA2_2026-10-23.md": "bcb6051edf27ffca2cdd0330dc00f6f119d1c36ee70209bc97d1d23022cc2627",
+    "scripts/verify-operational-readiness.mjs": "815504b67b20b625cba5c3ad8505da201e4f64e00a0b7ade93e59ebc48d65843",
+    "scripts/lib/operational-readiness.mjs": "9134f77a1763fada9955ff930dfb3ae6e7d412abcb050bd5020bac09cf36baab",
+    "scripts/collect-operational-readiness.py": "044e49731d8ce92dc578dadeee9a41977a1d0af07f208e36960723ba16f668de",
+    "scripts/collect-operational-readiness-db.mjs": "a9d2eb601b9c034e5fedd78dc380e2d852b5a6946f7a7a8de1a77c803ef8445b",
+    "tests/operational/readiness.test.ts": "2bb60a314adce71d9b3c7db69e893e301a77482b19c417ce08ded1d6cf3419ca",
+    "tests/scripts/operational-readiness.test.mjs": "e0bc446ee532c051a08680a6d87197ccc025cd3c91f5f93681d497cf9a579747"
+  }
+}

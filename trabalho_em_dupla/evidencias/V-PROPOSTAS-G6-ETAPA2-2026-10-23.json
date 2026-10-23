@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-23T22:02:33.265Z",
+  "state": "PREPARED_NOT_APPLIED",
+  "approvalDependencies": [
+    "owner/substitute and confirmed window",
+    "accepted budget and cadence",
+    "external trigger inventory",
+    "controlled financial cases and backlog triage",
+    "measured remote dependency latency and cold starts; synthetic local timings are not production bounds"
+  ],
+  "project": "continental-511812",
+  "region": "southamerica-east1",
+  "additions": [
+    {
+      "resource": "loggingMetric",
+      "precondition": "name absent in fresh inventory",
+      "body": {
+        "name": "continental-hml-payments-completed",
+        "description": "Conclusoes do Job de pagamentos; independente da supervisao",
+        "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-payments\" AND jsonPayload.event=\"consumer_completed\"",
+        "metricDescriptor": {
+          "metricKind": "DELTA",
+          "valueType": "INT64",
+          "unit": "1"
+        }
+      }
+    },
+    {
+      "resource": "alertPolicy",
+      "precondition": "equivalent payment policy absent; do not duplicate",
+      "body": {
+        "displayName": "continental-hml-payments: execução ausente",
+        "enabled": false,
+        "conditions": [
+          {
+            "conditionAbsent": {
+              "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-payments-completed\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-payments\"",
+              "duration": "600s",
+              "trigger": {
+                "count": 1
+              },
+              "aggregations": [
+                {
+                  "alignmentPeriod": "600s",
+                  "perSeriesAligner": "ALIGN_DELTA",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              ]
+            },
+            "displayName": "Sem conclusão do consumidor"
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "combiner": "OR"
+      }
+    },
+    {
+      "resource": "alertPolicy",
+      "precondition": "equivalent payment policy absent; do not duplicate",
+      "body": {
+        "displayName": "continental-hml-payments: falha ou falta de progresso",
+        "enabled": false,
+        "conditions": [
+          {
+            "displayName": "Falha, revisão, retry ou atraso",
+            "conditionMatchedLog": {
+              "filter": "resource.type=\"cloud_run_job\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-payments\" AND (severity>=ERROR OR jsonPayload.severity=\"ERROR\" OR jsonPayload.outcome=\"attention\")"
+            }
+          }
+        ],
+        "notificationChannels": [
+          "projects/continental-511812/notificationChannels/3617580342119339067"
+        ],
+        "alertStrategy": {
+          "notificationRateLimit": {
+            "period": "300s"
+          },
+          "autoClose": "86400s"
+        },
+        "combiner": "OR"
+      }
+    }
+  ],
+  "pilotLimits": {
+    "supervision": {
+      "maxBatches": 1,
+      "httpTimeoutMs": 30000,
+      "jobTimeoutSeconds": 60,
+      "tasks": 1,
+      "parallelism": 1,
+      "maxRetries": 0,
+      "cadenceMinutes": 5,
+      "windowMinutes": 90,
+      "maxScheduledExecutions": 18
+    },
+    "payments": {
+      "maxBatchesProposed": 1,
+      "currentServerBatchLimit": 5,
+      "maxRetries": 0,
+      "automaticPostRetry": false,
+      "enabled": false,
+      "blockedUntil": "baseline segregates authorized cases; current endpoint has no per-order allowlist and also drains outbox and reconciliation",
+      "httpTimeoutCurrentlyMs": 240000,
+      "jobTimeoutCurrentlySeconds": 1800,
+      "webTimeoutSeconds": 60,
+      "timeoutAlignment": "must measure and agree before pilot; do not assume HTTP cancellation stops database work",
+      "timeoutCandidate": {
+        "state": "EXPERIMENTAL_NOT_APPLIED",
+        "webSeconds": 60,
+        "httpMilliseconds": 75000,
+        "jobSeconds": 240,
+        "maxBatches": 1,
+        "tasks": 1,
+        "parallelism": 1,
+        "maxRetries": 0,
+        "reasoning": "Keep web bound; HTTP adds 15s to observe its response; Job covers 3 requests at 75s plus 15s process allowance.",
+        "limitation": "Synthetic measurements are not a worst-case bound. Provider calls, cold starts and DB contention require a coordinated measurement before adoption.",
+        "stopOnTimeout": "UNKNOWN_OUTCOME_NO_POST_RETRY"
+      }
+    },
+    "recurrenceAfterWindow": false
+  },
+  "basedOn": "V-PROPOSTAS-G6-2026-10-22.json",
+  "poolBudget": {
+    "pool": 4,
+    "revisions": 6,
+    "instancesPerRevision": 1,
+    "overlappingRevisions": 1,
+    "administration": 4,
+    "maxConnections": 112,
+    "reserved": 4,
+    "cloudRun": 28,
+    "known": 32,
+    "externalConnections": null,
+    "remainingBeforeExternal": 76,
+    "approved": false,
+    "note": "Planning arithmetic only; external workload, memory and database limits require separate evidence."
+  },
+  "updates": [
+    {
+      "resource": "alertPolicy",
+      "precondition": "fresh comparison of existing supervision policy; coordinated review",
+      "updateMask": "conditions,enabled",
+      "body": {
+        "name": "projects/continental-511812/alertPolicies/16768859373754969259",
+        "conditions": [
+          {
+            "conditionAbsent": {
+              "filter": "resource.type=\"cloud_run_job\" AND metric.type=\"logging.googleapis.com/user/continental-hml-supervision-completed\" AND resource.labels.project_id=\"continental-511812\" AND resource.labels.location=\"southamerica-east1\" AND resource.labels.job_name=\"continental-hml-supervision\"",
+              "duration": "600s",
+              "trigger": {
+                "count": 1
+              },
+              "aggregations": [
+                {
+                  "alignmentPeriod": "600s",
+                  "perSeriesAligner": "ALIGN_DELTA",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              ]
+            },
+            "displayName": "Sem conclusão do consumidor",
+            "name": "projects/continental-511812/alertPolicies/16768859373754969259/conditions/16768859373754967910"
+          }
+        ],
+        "enabled": false
+      }
+    }
+  ],
+  "monitoringNotes": {
+    "alignmentSource": "https://docs.cloud.google.com/monitoring/alerts/metric-absence",
+    "initialPointRequired": true,
+    "alignmentSeconds": 600,
+    "absenceSeconds": 600,
+    "timing": "Do not promise notification exactly at 600s: account for alignment, ingestion, evaluation and human delivery.",
+    "noRemoteNotificationSent": true,
+    "syntheticFilterEvaluatorOnly": true,
+    "humanConfirmation": "Owner, substitute, availability, receipt, acknowledgement and recovery all pending coordinated rehearsal."
+  }
+}
