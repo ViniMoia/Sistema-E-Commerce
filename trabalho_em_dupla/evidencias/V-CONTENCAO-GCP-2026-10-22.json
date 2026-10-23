@@ -1,0 +1,2249 @@
+{
+  "kind": "GCP_HML_MAINTENANCE_CONTAINMENT",
+  "status": "GCP_CONTIDO_E_DRENADO_PARA_A_JANELA",
+  "startedAtUtc": "2026-10-22T20:05:00+00:00",
+  "startedAtBrasilia": "2026-10-22T17:05:00-03:00",
+  "verificationCompletedAtUtc": "2026-10-22T20:14:55.680260+00:00",
+  "verificationCompletedAtBrasilia": "2026-10-22T17:14:55.680260-03:00",
+  "scope": "Configured GCP HML writers only. No global suspension claim. Explicit release required; no timed resumption.",
+  "references": {
+    "head": "9d57dc14e9b1b895a0350c47897018db26577eeb",
+    "originMainReadOnly": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "pr14Integrated": "bcdce982dffc4b61dd9f22e9a21f90bcaa3b68b1",
+    "publishedSource": "9495ff942e832db6588219e57163982b246e16d7",
+    "ci": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39619498248"
+  },
+  "baseline": {
+    "at": "2026-10-22T20:06:19.444154+00:00",
+    "services": [
+      {
+        "name": "continental-hml",
+        "region": "southamerica-east1"
+      }
+    ],
+    "service": {
+      "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml",
+      "uid": "f6aaeef9-aeee-4a11-8deb-685925bbc9b7",
+      "etag": "\"CJiu49YGELCDhLwC/cHJvamVjdHMvY29udGluZW50YWwtNTExODEyL2xvY2F0aW9ucy9zb3V0aGFtZXJpY2EtZWFzdDEvc2VydmljZXMvY29udGluZW50YWwtaG1s\"",
+      "reconciling": null,
+      "latestReadyRevision": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-9495ff9-review",
+      "uri": "https://continental-hml-jctvprygla-rj.a.run.app",
+      "urls": [
+        "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "https://continental-hml-jctvprygla-rj.a.run.app"
+      ],
+      "ingress": "INGRESS_TRAFFIC_ALL",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-896dc56-logout",
+          "percent": 100
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-eff10bf-dashboard",
+          "tag": "dashboard-eff10bf"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-d63ad8a-review",
+          "tag": "review-d63ad8a"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-17fd1a7-review",
+          "tag": "review-17fd1a7"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-ae9ec9c-review",
+          "tag": "review-ae9ec9c"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-9495ff9-review",
+          "tag": "review-9495ff9"
+        }
+      ],
+      "trafficStatuses": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-17fd1a7-review",
+          "tag": "review-17fd1a7",
+          "uri": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-896dc56-logout",
+          "percent": 100
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-9495ff9-review",
+          "tag": "review-9495ff9",
+          "uri": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-ae9ec9c-review",
+          "tag": "review-ae9ec9c",
+          "uri": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-d63ad8a-review",
+          "tag": "review-d63ad8a",
+          "uri": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-eff10bf-dashboard",
+          "tag": "dashboard-eff10bf",
+          "uri": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+        }
+      ],
+      "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+      "timeout": "60s",
+      "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:3444783bf8f5f3e41df033ef69f2e5a54252a3fb5ff1dc67e8bb8e53bc3d4155",
+      "flags": {
+        "APP_MAINTENANCE_MODE": "false",
+        "CHECKOUT_PAUSED": "true",
+        "PAYMENT_WORKER_ENABLED": "false",
+        "PAYMENT_REMOTE_ENABLED": "false",
+        "PAYMENT_EXPIRATION_ENABLED": "false",
+        "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+        "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+      },
+      "secretBindings": {
+        "DATABASE_URL": {
+          "secretKeyRef": {
+            "secret": "continental-hml-database-url",
+            "version": "1"
+          }
+        },
+        "DIRECT_URL": {
+          "secretKeyRef": {
+            "secret": "continental-hml-direct-url",
+            "version": "1"
+          }
+        },
+        "ASAAS_API_KEY": {
+          "secretKeyRef": {
+            "secret": "continental-hml-asaas-api-key",
+            "version": "1"
+          }
+        },
+        "CRON_SECRET": {
+          "secretKeyRef": {
+            "secret": "continental-hml-cron-secret",
+            "version": "1"
+          }
+        },
+        "FREIGHT_QUOTE_SECRET": {
+          "secretKeyRef": {
+            "secret": "continental-hml-freight-quote-secret",
+            "version": "1"
+          }
+        },
+        "ASAAS_WEBHOOK_TOKEN": {
+          "secretKeyRef": {
+            "secret": "continental-hml-asaas-webhook-token",
+            "version": "1"
+          }
+        }
+      }
+    },
+    "revisions": [
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-9495ff9-review",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-ae9ec9c-review",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0165e678e299c6f6fc6169ca675fa9f6f42f7bc11c5840bbf9803944759788b0",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-17fd1a7-review",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:fc46874ed4993a46c1e4e4c601483650356c5619fd6123201d71abbf5dd02368",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-d63ad8a-review",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:ba883be27218190f2f5256134b586e891b853afdee9ff577053abbf66f25c455",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-eff10bf-dashboard",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:152430471d6699e2a7cf9e6ddf74d13e78d7762d60e5a1f9c6cb02b86bf2d199",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-896dc56-logout",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:00dde59c69248b51cd05cb402f835520e810cd6786912c91ce6cb7c2a185c686",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-8c7f865-alias",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:bcb131836f702376d08f27d4f2f973da8283288cc3f5ee7b79fe6c0426801108",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-00003-xhx",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0f1e3302cb6308c09b7197ef2a97f41cd8da9003d340c1b7c203ae20a1eaf3cb",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-00002-d6f",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0f1e3302cb6308c09b7197ef2a97f41cd8da9003d340c1b7c203ae20a1eaf3cb",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "false",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      },
+      {
+        "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-17366e8-maint",
+        "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+        "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:0f1e3302cb6308c09b7197ef2a97f41cd8da9003d340c1b7c203ae20a1eaf3cb",
+        "flags": {
+          "APP_MAINTENANCE_MODE": "true",
+          "CHECKOUT_PAUSED": "true",
+          "PAYMENT_WORKER_ENABLED": "false",
+          "PAYMENT_REMOTE_ENABLED": "false",
+          "PAYMENT_EXPIRATION_ENABLED": "false",
+          "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+          "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+        },
+        "timeout": "60s"
+      }
+    ],
+    "jobs": [
+      {
+        "name": "continental-hml-payments",
+        "template": {
+          "labels": {
+            "environment": "homologacao",
+            "purpose": "payments-preparation"
+          },
+          "parallelism": 1,
+          "taskCount": 1,
+          "template": {
+            "containers": [
+              {
+                "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+                "command": [
+                  "node"
+                ],
+                "args": [
+                  "scripts/cloudrun-consumer.mjs"
+                ],
+                "env": [
+                  {
+                    "name": "PAYMENT_DEPLOYMENT_ENVIRONMENT",
+                    "value": "SANDBOX"
+                  },
+                  {
+                    "name": "ASAAS_ACCOUNT_SCOPE",
+                    "value": "sandbox-hml"
+                  },
+                  {
+                    "name": "CONSUMER_MODE",
+                    "value": "payments"
+                  },
+                  {
+                    "name": "CONSUMER_MAX_BATCHES",
+                    "value": "5"
+                  },
+                  {
+                    "name": "CONSUMER_REQUEST_TIMEOUT_MS",
+                    "value": "240000"
+                  },
+                  {
+                    "name": "CONSUMER_BACKLOG_WARNING_SECONDS",
+                    "value": "300"
+                  },
+                  {
+                    "name": "CONSUMER_ORIGIN",
+                    "value": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+                  },
+                  {
+                    "name": "CRON_SECRET",
+                    "valueSource": {
+                      "secretKeyRef": {
+                        "secret": "continental-hml-cron-secret",
+                        "version": "1"
+                      }
+                    }
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "1",
+                    "memory": "512Mi"
+                  }
+                }
+              }
+            ],
+            "maxRetries": 0,
+            "timeout": "1800s",
+            "serviceAccount": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+            "executionEnvironment": "EXECUTION_ENVIRONMENT_GEN2"
+          },
+          "client": "gcloud",
+          "clientVersion": "573.0.0"
+        },
+        "executionCount": 0,
+        "executions": [],
+        "iam": {
+          "etag": "ACAB"
+        }
+      },
+      {
+        "name": "continental-hml-supervision",
+        "template": {
+          "labels": {
+            "environment": "homologacao",
+            "purpose": "g6-supervision"
+          },
+          "parallelism": 1,
+          "taskCount": 1,
+          "template": {
+            "containers": [
+              {
+                "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+                "command": [
+                  "node"
+                ],
+                "args": [
+                  "scripts/cloudrun-consumer.mjs"
+                ],
+                "env": [
+                  {
+                    "name": "PAYMENT_DEPLOYMENT_ENVIRONMENT",
+                    "value": "SANDBOX"
+                  },
+                  {
+                    "name": "ASAAS_ACCOUNT_SCOPE",
+                    "value": "sandbox-hml"
+                  },
+                  {
+                    "name": "CONSUMER_ORIGIN",
+                    "value": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+                  },
+                  {
+                    "name": "CONSUMER_MODE",
+                    "value": "supervision"
+                  },
+                  {
+                    "name": "CONSUMER_MAX_BATCHES",
+                    "value": "1"
+                  },
+                  {
+                    "name": "CONSUMER_REQUEST_TIMEOUT_MS",
+                    "value": "30000"
+                  },
+                  {
+                    "name": "CONSUMER_BACKLOG_WARNING_SECONDS",
+                    "value": "300"
+                  },
+                  {
+                    "name": "CRON_SECRET",
+                    "valueSource": {
+                      "secretKeyRef": {
+                        "secret": "continental-hml-cron-secret",
+                        "version": "1"
+                      }
+                    }
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "1",
+                    "memory": "512Mi"
+                  }
+                }
+              }
+            ],
+            "maxRetries": 0,
+            "timeout": "60s",
+            "serviceAccount": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+            "executionEnvironment": "EXECUTION_ENVIRONMENT_GEN2"
+          },
+          "client": "gcloud",
+          "clientVersion": "573.0.0"
+        },
+        "executionCount": 0,
+        "executions": [],
+        "iam": {
+          "etag": "ACAB"
+        }
+      }
+    ],
+    "consumerServiceAccount": {
+      "name": "projects/continental-511812/serviceAccounts/continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+      "projectId": "continental-511812",
+      "uniqueId": "104391302621294667340",
+      "email": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+      "displayName": "Continental homologacao consumer",
+      "etag": "MDEwMjE5MjA=",
+      "oauth2ClientId": "104391302621294667340"
+    },
+    "enabledApis": [
+      "analyticshub.googleapis.com",
+      "apptopology.googleapis.com",
+      "artifactregistry.googleapis.com",
+      "bigquery.googleapis.com",
+      "bigqueryconnection.googleapis.com",
+      "bigquerydatapolicy.googleapis.com",
+      "bigquerydatatransfer.googleapis.com",
+      "bigquerymigration.googleapis.com",
+      "bigqueryreservation.googleapis.com",
+      "bigquerystorage.googleapis.com",
+      "cloudapis.googleapis.com",
+      "cloudbilling.googleapis.com",
+      "cloudresourcemanager.googleapis.com",
+      "cloudtrace.googleapis.com",
+      "containerregistry.googleapis.com",
+      "dataform.googleapis.com",
+      "dataplex.googleapis.com",
+      "datastore.googleapis.com",
+      "iam.googleapis.com",
+      "iamcredentials.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
+      "pubsub.googleapis.com",
+      "run.googleapis.com",
+      "secretmanager.googleapis.com",
+      "servicemanagement.googleapis.com",
+      "serviceusage.googleapis.com",
+      "sql-component.googleapis.com",
+      "storage-api.googleapis.com",
+      "storage-component.googleapis.com",
+      "storage.googleapis.com",
+      "telemetry.googleapis.com"
+    ]
+  },
+  "otherResources": {
+    "at": "2026-10-22T20:07:15.628896+00:00",
+    "topics": [],
+    "subscriptions": [],
+    "workerPools": [],
+    "domainMappings": [],
+    "disabledExecutionApis": [
+      "cloudscheduler.googleapis.com",
+      "cloudtasks.googleapis.com",
+      "eventarc.googleapis.com",
+      "cloudfunctions.googleapis.com",
+      "workflows.googleapis.com",
+      "workflowexecutions.googleapis.com",
+      "cloudbuild.googleapis.com",
+      "compute.googleapis.com",
+      "container.googleapis.com",
+      "batch.googleapis.com"
+    ],
+    "denyManagementPermissions": {
+      "permissions": [
+        "iam.denypolicies.get"
+      ]
+    },
+    "denyPolicies": {}
+  },
+  "applicationAndEventsBefore": {
+    "at": "2026-10-22T20:07:29.523029+00:00",
+    "method": "GET_ONLY",
+    "applicationBacklog": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "schemaVersion": 1,
+        "at": "2026-10-22T20:07:28.254Z",
+        "accountScope": "sandbox-hml",
+        "inbox": [
+          {
+            "_count": 30,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "READY"
+          }
+        ],
+        "outbox": [
+          {
+            "_count": 22,
+            "status": "COMPLETED"
+          },
+          {
+            "_count": 1,
+            "status": "DEAD_LETTER"
+          }
+        ],
+        "uncertain": 0,
+        "overdue": 1,
+        "abandonedLeases": 0,
+        "operations": [
+          {
+            "_count": 13,
+            "status": "COMPLETED",
+            "kind": "REFUND"
+          },
+          {
+            "_count": 2,
+            "status": "COMPLETED",
+            "kind": "CANCEL"
+          },
+          {
+            "_count": 1,
+            "status": "PENDING",
+            "kind": "REFUND"
+          }
+        ],
+        "untrackedLegacyOrders": 0,
+        "oldestUnresolvedInboxAt": "2026-10-17T07:01:24.694Z",
+        "supervision": {
+          "schemaVersion": 1,
+          "reviewAttempts": 1,
+          "chargebackReviews": 0,
+          "physicalReturnReviews": 0,
+          "heldOperations": 1,
+          "emailDeadLetters": 0,
+          "expiredQueueLeases": 0,
+          "foreignAccountAttempts": 0,
+          "oldestUnresolvedOutboxAt": "2026-10-10T00:59:17.814Z",
+          "oldestPendingEmailAt": null,
+          "oldestDueReconciliationAt": "2026-10-15T16:32:06.938Z"
+        }
+      }
+    },
+    "asaasWebhooks": {
+      "ok": true,
+      "httpStatus": 200,
+      "data": {
+        "hasMore": false,
+        "totalCount": 1,
+        "webhooks": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "enabled": true,
+            "interrupted": true,
+            "sendType": "SEQUENTIALLY",
+            "apiVersion": 3,
+            "alertsEmailConfigured": true
+          }
+        ]
+      }
+    },
+    "financialProcessingInvoked": false,
+    "jobInvoked": false,
+    "changes": false
+  },
+  "jobChanges": [
+    {
+      "at": "2026-10-22T20:09:45.713382+00:00",
+      "job": "continental-hml-payments",
+      "commandBefore": [
+        "node"
+      ],
+      "argsBefore": [
+        "scripts/cloudrun-consumer.mjs"
+      ],
+      "commandAfter": [
+        "/bin/false"
+      ],
+      "argsAfter": [],
+      "operation": "projects/continental-511812/locations/southamerica-east1/operations/72156f05-a51d-4b2f-9eb8-545e6dae5d17"
+    },
+    {
+      "at": "2026-10-22T20:09:47.367252+00:00",
+      "job": "continental-hml-supervision",
+      "commandBefore": [
+        "node"
+      ],
+      "argsBefore": [
+        "scripts/cloudrun-consumer.mjs"
+      ],
+      "commandAfter": [
+        "/bin/false"
+      ],
+      "argsAfter": [],
+      "operation": "projects/continental-511812/locations/southamerica-east1/operations/7c0df450-16d0-4385-8696-e7bdb9542214"
+    }
+  ],
+  "consumerIdentityChange": {
+    "at": "2026-10-22T20:09:54.123628+00:00",
+    "serviceAccount": "continental-hml-consumer@continental-511812.iam.gserviceaccount.com",
+    "disabled": true
+  },
+  "maintenanceDeploy": {
+    "at": "2026-10-22T20:09:58.190886+00:00",
+    "revision": "continental-hml-maint-20261022",
+    "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+    "temporaryTag": "maintenance-20261022",
+    "trafficPromoted": false
+  },
+  "preflight": {
+    "at": "2026-10-22T20:10:56.169712+00:00",
+    "revision": "continental-hml-maint-20261022",
+    "sameApprovedImage": true,
+    "sameEnvironmentExceptMaintenance": true,
+    "existingTrafficPreservedBeforeCutover": true,
+    "probe": {
+      "at": "2026-10-22T20:10:56.169690+00:00",
+      "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+      "method": "GET",
+      "credentialSupplied": true,
+      "status": 503,
+      "maintenanceResponse": true,
+      "cacheControl": "private, no-store"
+    }
+  },
+  "trafficChange": {
+    "startedAt": "2026-10-22T20:11:02.615071+00:00",
+    "revision": "continental-hml-maint-20261022",
+    "tags": [
+      "dashboard-eff10bf",
+      "review-d63ad8a",
+      "review-17fd1a7",
+      "review-ae9ec9c",
+      "review-9495ff9",
+      "maintenance-20261022"
+    ],
+    "percent": 100
+  },
+  "current": {
+    "at": "2026-10-22T20:14:46.317276+00:00",
+    "service": {
+      "name": "projects/continental-511812/locations/southamerica-east1/services/continental-hml",
+      "uid": "f6aaeef9-aeee-4a11-8deb-685925bbc9b7",
+      "etag": "\"CNrb6dYGELDLxcgC/cHJvamVjdHMvY29udGluZW50YWwtNTExODEyL2xvY2F0aW9ucy9zb3V0aGFtZXJpY2EtZWFzdDEvc2VydmljZXMvY29udGluZW50YWwtaG1s\"",
+      "reconciling": null,
+      "latestReadyRevision": "projects/continental-511812/locations/southamerica-east1/services/continental-hml/revisions/continental-hml-maint-20261022",
+      "uri": "https://continental-hml-jctvprygla-rj.a.run.app",
+      "urls": [
+        "https://continental-hml-15531616695.southamerica-east1.run.app",
+        "https://continental-hml-jctvprygla-rj.a.run.app"
+      ],
+      "ingress": "INGRESS_TRAFFIC_ALL",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "percent": 100
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "dashboard-eff10bf"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "maintenance-20261022"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-17fd1a7"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-9495ff9"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-ae9ec9c"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-d63ad8a"
+        }
+      ],
+      "trafficStatuses": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "percent": 100,
+          "tag": "dashboard-eff10bf",
+          "uri": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "maintenance-20261022",
+          "uri": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-17fd1a7",
+          "uri": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-9495ff9",
+          "uri": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-ae9ec9c",
+          "uri": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app"
+        },
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "continental-hml-maint-20261022",
+          "tag": "review-d63ad8a",
+          "uri": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+        }
+      ],
+      "serviceAccount": "continental-hml-web@continental-511812.iam.gserviceaccount.com",
+      "timeout": "60s",
+      "image": "southamerica-east1-docker.pkg.dev/continental-511812/releases/store@sha256:7a360eb28fd93be1606d6b8c1591e12c61c3d1db5f06fdb51ca86fe81d056202",
+      "flags": {
+        "APP_MAINTENANCE_MODE": "true",
+        "CHECKOUT_PAUSED": "true",
+        "PAYMENT_WORKER_ENABLED": "false",
+        "PAYMENT_REMOTE_ENABLED": "false",
+        "PAYMENT_EXPIRATION_ENABLED": "false",
+        "PAYMENT_DEPLOYMENT_ENVIRONMENT": "SANDBOX",
+        "ASAAS_ACCOUNT_SCOPE": "sandbox-hml"
+      },
+      "secretBindings": {
+        "DATABASE_URL": {
+          "secretKeyRef": {
+            "secret": "continental-hml-database-url",
+            "version": "1"
+          }
+        },
+        "DIRECT_URL": {
+          "secretKeyRef": {
+            "secret": "continental-hml-direct-url",
+            "version": "1"
+          }
+        },
+        "ASAAS_API_KEY": {
+          "secretKeyRef": {
+            "secret": "continental-hml-asaas-api-key",
+            "version": "1"
+          }
+        },
+        "CRON_SECRET": {
+          "secretKeyRef": {
+            "secret": "continental-hml-cron-secret",
+            "version": "1"
+          }
+        },
+        "FREIGHT_QUOTE_SECRET": {
+          "secretKeyRef": {
+            "secret": "continental-hml-freight-quote-secret",
+            "version": "1"
+          }
+        },
+        "ASAAS_WEBHOOK_TOKEN": {
+          "secretKeyRef": {
+            "secret": "continental-hml-asaas-webhook-token",
+            "version": "1"
+          }
+        }
+      }
+    },
+    "jobs": [
+      {
+        "name": "continental-hml-payments",
+        "reconciling": false,
+        "command": [
+          "/bin/false"
+        ],
+        "args": [],
+        "executionCount": 0,
+        "executions": []
+      },
+      {
+        "name": "continental-hml-supervision",
+        "reconciling": false,
+        "command": [
+          "/bin/false"
+        ],
+        "args": [],
+        "executionCount": 0,
+        "executions": []
+      }
+    ]
+  },
+  "controlVerification": {
+    "at": "2026-10-22T20:14:55.680260+00:00",
+    "jobs": [
+      {
+        "name": "continental-hml-payments",
+        "onlyCommandAndArgsChanged": true,
+        "executions": 0,
+        "callerPermissions": [
+          "run.jobs.run",
+          "run.jobs.runWithOverrides"
+        ]
+      },
+      {
+        "name": "continental-hml-supervision",
+        "onlyCommandAndArgsChanged": true,
+        "executions": 0,
+        "callerPermissions": [
+          "run.jobs.run",
+          "run.jobs.runWithOverrides"
+        ]
+      }
+    ],
+    "consumerIdentityDisabled": true,
+    "webIdentityEnabled": true,
+    "runtimeDatabaseIdentity": [
+      {
+        "variable": "DATABASE_URL",
+        "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+        "database": "neondb",
+        "matchesApprovedHml": true
+      },
+      {
+        "variable": "DIRECT_URL",
+        "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+        "database": "neondb",
+        "matchesApprovedHml": true
+      }
+    ],
+    "allIngressRoutedToMaintenance": true,
+    "oldRevisionsStillExistWithoutTrafficOrTags": true,
+    "jobRunApiPermissionRevoked": false,
+    "consumerProgramCanRunUnderCurrentJobConfiguration": false,
+    "note": "IAM can accept an execution request, but the fixed /bin/false entrypoint and disabled identity prevent consumer execution; no Job was invoked for testing."
+  },
+  "httpProbes": {
+    "at": "2026-10-22T20:11:41.998580+00:00",
+    "origins": [
+      "https://continental-hml-15531616695.southamerica-east1.run.app",
+      "https://continental-hml-jctvprygla-rj.a.run.app",
+      "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+      "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+      "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+      "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+      "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+      "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app"
+    ],
+    "results": [
+      {
+        "at": "2026-10-22T20:11:38.157368+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.290840+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.159600+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.145201+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.388068+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.428925+00:00",
+        "url": "https://continental-hml-15531616695.southamerica-east1.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.677058+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.701189+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.746052+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.809649+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.929037+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:38.959868+00:00",
+        "url": "https://continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.229226+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.217002+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.307594+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.354814+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.457438+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.471277+00:00",
+        "url": "https://dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.675033+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.628464+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.707570+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.731527+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:39.880074+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.027394+00:00",
+        "url": "https://maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.202239+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.205763+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.262126+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.386621+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.447740+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.466856+00:00",
+        "url": "https://review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.516521+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.636257+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.736770+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.725497+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.772221+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:40.899677+00:00",
+        "url": "https://review-9495ff9---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.215475+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.224300+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.234700+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.277385+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.470401+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.460640+00:00",
+        "url": "https://review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.732014+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.761710+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/admin",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.849121+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/api/products",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.856575+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/api/checkout/context",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.998213+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/api/cron/payments/status",
+        "method": "GET",
+        "credentialSupplied": true,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      },
+      {
+        "at": "2026-10-22T20:11:41.991889+00:00",
+        "url": "https://review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app/api/webhooks/asaas",
+        "method": "GET",
+        "credentialSupplied": false,
+        "status": 503,
+        "maintenanceResponse": true,
+        "cacheControl": "private, no-store"
+      }
+    ],
+    "allMaintenance": true,
+    "adminEvidence": "unconditional proxy before authentication plus effective revision config; no real admin session used"
+  },
+  "databaseReadOnlySnapshots": [
+    {
+      "at": "2026-10-22T20:07:15.618Z",
+      "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+      "database": "neondb",
+      "snapshot": {
+        "store": {
+          "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+          "slug": "continental-homologacao"
+        },
+        "identity": {
+          "database": "neondb",
+          "read_only": "on",
+          "all_stats_visible": true
+        },
+        "sessions": [],
+        "locks": [],
+        "leases": [
+          {
+            "table": "PaymentInbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "CommerceOutbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "PaymentAttempt",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          }
+        ],
+        "queues": {
+          "PaymentInbox": [
+            {
+              "status": "READY",
+              "count": 1
+            },
+            {
+              "status": "COMPLETED",
+              "count": 30
+            }
+          ],
+          "CommerceOutbox": [
+            {
+              "status": "COMPLETED",
+              "count": 22
+            },
+            {
+              "status": "DEAD_LETTER",
+              "count": 1
+            }
+          ],
+          "PaymentOperation": [
+            {
+              "status": "COMPLETED",
+              "count": 15
+            },
+            {
+              "status": "PENDING",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "ok": true
+    },
+    {
+      "at": "2026-10-22T20:11:33.462Z",
+      "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+      "database": "neondb",
+      "snapshot": {
+        "store": {
+          "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+          "slug": "continental-homologacao"
+        },
+        "identity": {
+          "database": "neondb",
+          "read_only": "on",
+          "all_stats_visible": true
+        },
+        "sessions": [],
+        "locks": [],
+        "leases": [
+          {
+            "table": "PaymentInbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "CommerceOutbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "PaymentAttempt",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          }
+        ],
+        "queues": {
+          "PaymentInbox": [
+            {
+              "status": "READY",
+              "count": 1
+            },
+            {
+              "status": "COMPLETED",
+              "count": 30
+            }
+          ],
+          "CommerceOutbox": [
+            {
+              "status": "COMPLETED",
+              "count": 22
+            },
+            {
+              "status": "DEAD_LETTER",
+              "count": 1
+            }
+          ],
+          "PaymentOperation": [
+            {
+              "status": "COMPLETED",
+              "count": 15
+            },
+            {
+              "status": "PENDING",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "ok": true
+    },
+    {
+      "at": "2026-10-22T20:12:40.122Z",
+      "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+      "database": "neondb",
+      "snapshot": {
+        "store": {
+          "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+          "slug": "continental-homologacao"
+        },
+        "identity": {
+          "database": "neondb",
+          "read_only": "on",
+          "all_stats_visible": true
+        },
+        "sessions": [],
+        "locks": [],
+        "leases": [
+          {
+            "table": "PaymentInbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "CommerceOutbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "PaymentAttempt",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          }
+        ],
+        "queues": {
+          "PaymentInbox": [
+            {
+              "status": "READY",
+              "count": 1
+            },
+            {
+              "status": "COMPLETED",
+              "count": 30
+            }
+          ],
+          "CommerceOutbox": [
+            {
+              "status": "COMPLETED",
+              "count": 22
+            },
+            {
+              "status": "DEAD_LETTER",
+              "count": 1
+            }
+          ],
+          "PaymentOperation": [
+            {
+              "status": "COMPLETED",
+              "count": 15
+            },
+            {
+              "status": "PENDING",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "ok": true
+    },
+    {
+      "at": "2026-10-22T20:14:42.941Z",
+      "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+      "database": "neondb",
+      "snapshot": {
+        "store": {
+          "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+          "slug": "continental-homologacao"
+        },
+        "identity": {
+          "database": "neondb",
+          "read_only": "on",
+          "all_stats_visible": true
+        },
+        "sessions": [],
+        "locks": [],
+        "leases": [
+          {
+            "table": "PaymentInbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "CommerceOutbox",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          },
+          {
+            "table": "PaymentAttempt",
+            "claimed": 0,
+            "unexpired": 0,
+            "expired": 0
+          }
+        ],
+        "queues": {
+          "PaymentInbox": [
+            {
+              "status": "READY",
+              "count": 1
+            },
+            {
+              "status": "COMPLETED",
+              "count": 30
+            }
+          ],
+          "CommerceOutbox": [
+            {
+              "status": "COMPLETED",
+              "count": 22
+            },
+            {
+              "status": "DEAD_LETTER",
+              "count": 1
+            }
+          ],
+          "PaymentOperation": [
+            {
+              "status": "COMPLETED",
+              "count": 15
+            },
+            {
+              "status": "PENDING",
+              "count": 1
+            }
+          ]
+        }
+      },
+      "ok": true
+    }
+  ],
+  "requests": {
+    "at": "2026-10-22T20:14:46.178488+00:00",
+    "since": "2026-10-22T20:04:00Z",
+    "completePages": true,
+    "requests": [
+      {
+        "timestamp": "2026-10-22T20:07:22.855365Z",
+        "revision": "continental-hml-9495ff9-review",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 200,
+        "latency": "4.847613299s"
+      },
+      {
+        "timestamp": "2026-10-22T20:10:57.177400Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.906294721s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.052729Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.012899377s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.054284Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.018065188s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.061478Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.022075014s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.207047Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.007878495s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.304563Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.008440080s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.336941Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-15531616695.southamerica-east1.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.009843454s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.595123Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.009230140s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.612676Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.012051746s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.665526Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.006137247s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.726046Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.005885716s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.840498Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.007282445s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:40.877738Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.004820189s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.138075Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.004952563s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.144609Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.003916860s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.227238Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.004570739s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.271495Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.005345382s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.375508Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.005059728s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.388895Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "dashboard-eff10bf---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.005417017s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.542577Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.005335061s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.552950Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.005399792s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.629054Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.005007113s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.648783Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.004703276s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.798369Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.004782690s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:41.916356Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "maintenance-20261022---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.003797824s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.118555Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.004492668s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.122576Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.005039771s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.175550Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.005410208s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.306151Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.004467749s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.365041Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.006227400s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.380416Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-17fd1a7---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.004181639s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.433833Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.004798484s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.555355Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.004153005s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.641113Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.004094853s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.648892Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.004949435s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.685430Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.005657008s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:42.815925Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.003999647s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.134958Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.003750791s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.139519Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.003173696s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.149196Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.004452412s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.192466Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.003874018s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.377423Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.007589370s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.382332Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-ae9ec9c---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.006725715s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.653164Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/",
+        "status": 503,
+        "latency": "0.003669666s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.672198Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/admin",
+        "status": 503,
+        "latency": "0.008139491s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.764697Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/products",
+        "status": 503,
+        "latency": "0.003683009s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.770635Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/checkout/context",
+        "status": 503,
+        "latency": "0.004442122s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.909658Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 503,
+        "latency": "0.004969247s"
+      },
+      {
+        "timestamp": "2026-10-22T20:11:43.914815Z",
+        "revision": "continental-hml-maint-20261022",
+        "method": "GET",
+        "host": "review-d63ad8a---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/webhooks/asaas",
+        "status": 503,
+        "latency": "0.003700280s"
+      }
+    ],
+    "oldRevisionRequests": [
+      {
+        "timestamp": "2026-10-22T20:07:22.855365Z",
+        "revision": "continental-hml-9495ff9-review",
+        "method": "GET",
+        "host": "review-9495ff9---continental-hml-jctvprygla-rj.a.run.app",
+        "path": "/api/cron/payments/status",
+        "status": 200,
+        "latency": "4.847613299s"
+      }
+    ],
+    "limitation": "Request logs describe recorded requests; ingestion can lag and is combined with read-only DB/lease observations, not used alone to prove drain."
+  },
+  "instanceMetrics": {
+    "at": "2026-10-22T20:14:16.019375+00:00",
+    "metric": "run.googleapis.com/container/instance_count",
+    "series": [
+      {
+        "revision": "continental-hml-9495ff9-review",
+        "state": "active",
+        "points": [
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:13:00Z",
+              "endTime": "2026-10-22T20:13:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:12:00Z",
+              "endTime": "2026-10-22T20:12:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:11:00Z",
+              "endTime": "2026-10-22T20:11:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          }
+        ]
+      },
+      {
+        "revision": "continental-hml-9495ff9-review",
+        "state": "idle",
+        "points": [
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:13:00Z",
+              "endTime": "2026-10-22T20:13:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:12:00Z",
+              "endTime": "2026-10-22T20:12:00Z"
+            },
+            "value": {
+              "int64Value": "1"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:11:00Z",
+              "endTime": "2026-10-22T20:11:00Z"
+            },
+            "value": {
+              "int64Value": "1"
+            }
+          }
+        ]
+      },
+      {
+        "revision": "continental-hml-maint-20261022",
+        "state": "active",
+        "points": [
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:13:00Z",
+              "endTime": "2026-10-22T20:13:00Z"
+            },
+            "value": {
+              "int64Value": "1"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:12:00Z",
+              "endTime": "2026-10-22T20:12:00Z"
+            },
+            "value": {
+              "int64Value": "1"
+            }
+          }
+        ]
+      },
+      {
+        "revision": "continental-hml-maint-20261022",
+        "state": "idle",
+        "points": [
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:13:00Z",
+              "endTime": "2026-10-22T20:13:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          },
+          {
+            "interval": {
+              "startTime": "2026-10-22T20:12:00Z",
+              "endTime": "2026-10-22T20:12:00Z"
+            },
+            "value": {
+              "int64Value": "0"
+            }
+          }
+        ]
+      }
+    ],
+    "limitation": "Sampled metrics with ingestion delay; not a live request counter."
+  },
+  "limits": [
+    "Job run/runWithOverrides IAM permissions were not revoked; requests can create failed execution records. Fixed /bin/false entrypoint prevents the consumer program from running, including args overrides. Consumer identity is additionally disabled. No execution requested.",
+    "Owner/deployer can undo configuration; operators must not change controls during window.",
+    "Disabled execution APIs were not enabled for listing. Disabled API is not evidence of absent historical resources; job/HTTP containment also covers calls from such triggers.",
+    "Admin maintenance proved by unconditional pre-auth guard in deployed source, effective config and 503 probes; no real admin session was used.",
+    "Vercel webhook was already interrupted before GCP mutations. Event recovery there requires Vinicius; no provider update or replay performed.",
+    "Database snapshots and sampled metrics/logs are bounded observations, not a database-wide exclusive lock; direct SQL and external writers remain separately coordinated."
+  ],
+  "businessMutationsPerformed": false,
+  "backupGenerated": false,
+  "bindingsApplied": false,
+  "migrationsApplied": false,
+  "syncEnabled": false,
+  "automaticResume": false
+}
