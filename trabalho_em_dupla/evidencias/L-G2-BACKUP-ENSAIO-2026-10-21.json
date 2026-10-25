@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "kind": "FRESH_BACKUP_AND_ISOLATED_OPENING_REHEARSAL",
+  "recordedAt": "2026-10-21T15:16:15.400839+00:00",
+  "candidateRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "checkoutRevision": "f2a55eb5482130529a47ec9e3acd6bd5d924fb03",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "sourceReadOnly": true,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "remoteFinancialOperationsExecuted": false,
+  "productionReady": false,
+  "capture": {
+    "runId": "b0072bdd3f7e2302fea9dd8e49f91d6d",
+    "startedAt": "2026-10-21T15:12:30.580Z",
+    "finishedAt": "2026-10-21T15:13:20.076Z",
+    "success": true,
+    "sourceReadOnlySetting": "on",
+    "scope": "public schema; no global roles/ACL/owner replay",
+    "backupSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+    "backupBytes": 305612,
+    "encryptedWith": "AES-256-GCM",
+    "keyProtection": "Windows DPAPI current user",
+    "storage": "Private ACL-restricted directory outside Git under LOCALAPPDATA/logic-audit-backups; local copy only",
+    "independentRestoresCompared": 2,
+    "dataAndSequencesPreserved": true,
+    "schemaDiff": "-- This is an empty migration.\n",
+    "exactDumpSnapshotTimestampRecorded": false
+  },
+  "opening": {
+    "runId": "06875ebce0ecd4d872d641a3f90c5d16",
+    "cloneRunId": "9dbd4702d2b1533b2a899f6f9b3cfa88",
+    "startedAt": "2026-10-21T15:13:35.236Z",
+    "finishedAt": "2026-10-21T15:15:24.544Z",
+    "success": true,
+    "sourceReconnected": false,
+    "checks": {
+      "sanitizedRestoreVerified": true,
+      "historyVerified": true,
+      "dataPreserved": true,
+      "sequencesPreserved": true,
+      "checksPreserved": true,
+      "loyaltyChecksPreserved": true,
+      "freightAuthorityChecks": true,
+      "paymentAuthorityChecks": true,
+      "checkoutAuthorityChecks": true,
+      "durablePaymentChecks": true,
+      "freightLegacyPreserved": true,
+      "checkoutLegacyPreserved": true,
+      "paymentLegacyPreserved": true
+    },
+    "schemaDiff": "-- This is an empty migration.\n",
+    "cloneContainerAbsent": true,
+    "guardTestsPassed": 5,
+    "products": {
+      "at": "2026-10-21T15:14:43.478Z",
+      "cloneOnly": true,
+      "backupPreviouslyRestored": true,
+      "productIds": [
+        "6a6e98eb-98c3-4ba2-aede-a357d43893cf",
+        "622731a7-0158-486c-9626-0a739b3ddb91",
+        "6178ba96-b383-4e50-be1d-93a506912011",
+        "fdd4cc6a-c8e4-4a58-b45c-04a6d5c07e13"
+      ],
+      "protectedProductIds": [
+        "c6b3097f-6174-44f1-86c9-e06aba7c9733",
+        "0486f861-4e39-426a-81ce-8b39f60a177f",
+        "5e86739a-6114-4df1-a15a-df88b7a349c3",
+        "7fd834af-d2be-4ea5-8d30-9790bd48a79e",
+        "bc076f2d-740c-45f3-84c5-9d0fb8657d84"
+      ],
+      "retiredProducts": 4,
+      "retiredVariants": 10,
+      "activeProducts": 518,
+      "stockValuesPreserved": true,
+      "allOtherDataPreserved": true,
+      "sharedDatabaseWritten": false,
+      "strategy": "retiredAt with version increments; no deletion, stock reconciliation or financial effects",
+      "productionReady": false
+    },
+    "wallets": {
+      "replay": false,
+      "wallets": 2,
+      "removedTestPoints": 475,
+      "balance": 0,
+      "adjustments": 2,
+      "auditRecords": 2,
+      "originalTransactionsPreserved": 2,
+      "legacyOrdersPreserved": 24,
+      "otherTablesPreserved": true,
+      "lotsFabricated": 0,
+      "remoteCalls": 0,
+      "cloneOnly": true,
+      "productionReady": false
+    },
+    "walletReplay": {
+      "replay": true,
+      "wallets": 2,
+      "balance": 0,
+      "adjustments": 2
+    },
+    "httpChecks": {
+      "startedAt": "2026-10-21T15:14:49.951Z",
+      "cloneRunId": "9dbd4702d2b1533b2a899f6f9b3cfa88",
+      "cases": [
+        {
+          "name": "server_database_identity",
+          "count": 1,
+          "passed": true
+        },
+        {
+          "name": "catalog_read",
+          "count": 518,
+          "passed": true
+        },
+        {
+          "name": "test_products_absent_from_catalog",
+          "count": 4,
+          "passed": true
+        },
+        {
+          "name": "commercial_vacuums_and_accessories_preserved",
+          "count": 5,
+          "passed": true
+        },
+        {
+          "name": "legacy_admin_order_read",
+          "count": 24,
+          "passed": true
+        },
+        {
+          "name": "unauthenticated_order_denied",
+          "count": 1,
+          "passed": true
+        },
+        {
+          "name": "unknown_tenant_denied",
+          "count": 1,
+          "passed": true
+        },
+        {
+          "name": "opening_wallet_read",
+          "count": 2,
+          "passed": true
+        },
+        {
+          "name": "methods_remain_disabled",
+          "count": 1,
+          "passed": true
+        }
+      ],
+      "productionReady": false,
+      "allApplicationTablesPreserved": true,
+      "sessionBootstrapOnly": true,
+      "applicationDatabaseReadOnly": true,
+      "finishedAt": "2026-10-21T15:15:20.476Z"
+    },
+    "tests": {
+      "passed": 3,
+      "failed": 0,
+      "legacyOrderCommandsDenied": 20,
+      "newPurchases": 1,
+      "transport": "controlled manual payment; no Asaas calls",
+      "sourceWritten": false
+    },
+    "legacyAudit": {
+      "integrityPassed": true,
+      "requiresReconciliation": true,
+      "productionReady": false,
+      "tenants": [
+        {
+          "tenantTag": "0f8ade082fb0d7c46987a829",
+          "counts": {
+            "orders": 24,
+            "legacy_orders": 24,
+            "legacy_open_orders": 10,
+            "paid_without_facts": 4,
+            "unreconciled_wallets": 2,
+            "legacy_unkeyed_orders": 24,
+            "missing_variant_links": 33,
+            "invalid_cart_ownership": 0,
+            "invalid_item_ownership": 0,
+            "missing_buyer_snapshot": 24,
+            "orders_without_history": 24,
+            "divergent_ready_wallets": 0,
+            "invalid_order_ownership": 0,
+            "untracked_remote_orders": 2,
+            "legacy_loyalty_movements": 2,
+            "freight_without_geography": 0,
+            "invalid_loyalty_ownership": 0,
+            "active_legacy_reset_tokens": 0,
+            "incomplete_protocol_orders": 0,
+            "legacy_without_reservation": 24,
+            "invalid_cart_item_ownership": 0,
+            "duplicate_active_cart_owners": 0,
+            "invalid_financial_provenance": 0,
+            "invalid_reservation_provenance": 0,
+            "delivery_without_quote_snapshot": 16,
+            "active_products_without_active_variant": 0
+          },
+          "integrityBlockers": 0,
+          "reviewReasons": [
+            "legacy_orders",
+            "legacy_open_orders",
+            "paid_without_facts",
+            "unreconciled_wallets",
+            "legacy_unkeyed_orders",
+            "missing_variant_links",
+            "missing_buyer_snapshot",
+            "orders_without_history",
+            "untracked_remote_orders",
+            "legacy_loyalty_movements",
+            "legacy_without_reservation",
+            "delivery_without_quote_snapshot"
+          ]
+        }
+      ],
+      "duplicateGroups": 0,
+      "contract": {
+        "missingGuards": [],
+        "invalidIndexes": 0,
+        "disabledTriggers": 0,
+        "unvalidatedConstraints": 0
+      }
+    }
+  },
+  "reportingClassification": {
+    "rehearsedOnFreshBackup": false,
+    "reason": "Executor pins the reviewed 15 October backup hash; no guard relaxed. Fresh manifest review still required.",
+    "priorEvidence": "L-G2-REVISAO-ABERTURA-2026-10-16.json"
+  },
+  "independentRecovery": {
+    "operator": "User confirmed they will be the alternate operator",
+    "operatorConfirmed": true,
+    "accessMechanism": null,
+    "independentAccountVerified": false,
+    "executed": false,
+    "rpoApproved": false,
+    "rtoApproved": false,
+    "retentionApproved": false,
+    "offMachineCopyVerified": false
+  },
+  "limitations": [
+    "Local capture/restore times are not agreed production RPO/RTO.",
+    "Backup covers public schema, not provider roles/grants, runtime secrets, DNS or external images.",
+    "Current DPAPI key does not prove recovery from another Windows account or machine.",
+    "Fresh read-only inventory and provider obligations require final cutoff reconciliation.",
+    "All retirement, wallet adjustments and controlled purchase occurred exclusively in a sanitized disposable clone."
+  ],
+  "fileHashes": {
+    "scripts/verify-restored-clone.mjs": "ec6d812e59670128b4782dd1a7e0da99fe4094f6ffe9a3c8bb0ca349c0359a3c",
+    "scripts/lib/disposable-postgres.mjs": "5dcefec98623520073d0ec48318c7b2485efe28980b395bc0ac0d9088bf747a9",
+    "scripts/lib/restored-application-smoke.mjs": "c88893776711b7ed990e6788c2412aded63b186e9c73aeee58da512657e590a2",
+    "scripts/lib/restored-opening.mjs": "ba86ffc85ac049ea4990007ad74927adfb8238e6285018918327077cb2797052",
+    "scripts/lib/restored-order-reporting.mjs": "f2a50b42c622b389c7511ad9cb4dbf69746ee2a41b5f2dd7d5d1cc3649135ed2",
+    "scripts/lib/restored-test-products.mjs": "c0104a06fa72c09bb76213a2b0b8c3481e4e2ddfbf9001688e821ffb5d9f3f3d",
+    "tests/clone/restored-opening.test.ts": "109b109c747d06131341279df441a6a55f6929ef2ccf2a49f3565f176c7bd1f3"
+  }
+}

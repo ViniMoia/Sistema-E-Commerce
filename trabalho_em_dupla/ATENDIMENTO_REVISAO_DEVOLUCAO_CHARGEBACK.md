@@ -1,5 +1,7 @@
 # G3 — Atendimento de revisão financeira, devolução e chargeback
 
+**Próximo ensaio preparado em 21/10:** [roteiro de aceite financeiro G3](ROTEIRO_ACEITE_FINANCEIRO_G3.md) e [modelo de execução](modelos/ACEITE_FINANCEIRO_G3.json), baseados na integração `9495ff9`. Contêm pré-requisitos de publicação/consumidores, resultados esperados, evidências e critérios de interrupção para PIX, boleto, retorno físico e chargeback. Estado NOT_EXECUTED; não autorizam estornos ou reaproveitamento dos pedidos antigos. O fluxo de boleto está integrado, mas permanece sem aceite na conta/destino.
+
 ## Implementação de boleto pago — 21/10/2026, ainda sem publicação
 
 O fluxo específico foi implementado na branch `feat/boleto-refund-20261021`, sobre `cc405e8`. As lacunas de código descritas na triagem abaixo são o estado anterior desta entrega. **O ensaio na conta Sandbox e o aceite de G3 continuam pendentes.** [Registro da implementação e validações](evidencias/L-BOLETO-DEVOLUCAO-2026-10-21.json).
