@@ -13,6 +13,12 @@ beforeEach(() => {
   vi.mocked(prisma.order.findUniqueOrThrow).mockResolvedValue(candidate.order as never);
 });
 describe('WF-14 method-aware expiration uses persisted deadlines and database clock', () => {
+  it('rejects an explicitly missing target before querying the general batch', async () => {
+    for (const target of [null, undefined]) {
+      await expect(processExpiredOrders({ target: target as never })).rejects.toThrow('PAYMENT_ATTEMPT_TARGET_REQUIRED');
+    }
+    expect(prisma.paymentAttempt.findMany).not.toHaveBeenCalled();
+  });
   it('selects persisted expired attempts without generic age/Asaas-ID heuristics', async () => {
     await processExpiredOrders({ now: new Date('2040-01-01'), asaasTimeoutMinutes: 1 });
     const query = vi.mocked(prisma.paymentAttempt.findMany).mock.calls[0][0];

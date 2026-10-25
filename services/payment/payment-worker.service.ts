@@ -5,7 +5,7 @@ import { asaasPaymentAdapter } from '@/services/asaas/asaas.adapter';
 import { asaasClient } from '@/services/asaas/asaas.client';
 import type { PaymentGateway, PaymentMethod, PaymentInspection } from '@/types/payment-gateway.types';
 import { applyPaymentEvidence, markPaymentReview, paymentNow } from './payment-evidence.service';
-import { claimWork, fenceWork, completeWork, retryWork } from './durable-work.service';
+import { claimWork, claimPaymentInboxEvent, fenceWork, completeWork, retryWork, type PaymentInboxTarget } from './durable-work.service';
 import { webhookEnvelopeSchema } from './payment-inbox.service';
 import { paymentAccountScope } from '@/lib/commerce/payment-account';
 import { logger } from '@/lib/logger';
@@ -14,6 +14,7 @@ import { moneyCents } from './installment.service';
 import { savedChargeback, chargebackPaymentStatuses } from './chargeback';
 import { boletoRefundUrl } from '@/lib/commerce/boleto-refund';
 import { expectedAsaasEnvironment } from '@/lib/config/asaas-environment.mjs';
+import { validatePaymentAttemptTarget, type PaymentAttemptTarget } from './payment-attempt-target';
 
 export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentGateway = asaasPaymentAdapter, chargebackHints: string[] = []): Promise<PaymentInspection> {
   const attempt = await prisma.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId }, include: { charges: true, operations: true } });
@@ -27,6 +28,17 @@ export async function inspectPaymentAttempt(attemptId: string, gateway: PaymentG
 
 export async function drainPaymentInbox(limit = 10, gateway: PaymentGateway = asaasPaymentAdapter) {
   const batch = await claimWork('PaymentInbox', Math.max(1, Math.min(50, Math.trunc(limit))));
+  return processClaimedPaymentInbox(batch, gateway);
+}
+
+// No cron, expiration, general reconciliation or outbox dispatch is run here.
+export async function processPaymentInboxEvent(target: PaymentInboxTarget, gateway: PaymentGateway = asaasPaymentAdapter) {
+  if (target?.providerAccount !== paymentAccountScope()) throw new Error('PAYMENT_ACCOUNT_SCOPE_MISMATCH');
+  const batch = await claimPaymentInboxEvent(target);
+  return processClaimedPaymentInbox(batch, gateway);
+}
+
+async function processClaimedPaymentInbox(batch: { owner: string; ids: string[] }, gateway: PaymentGateway) {
   const summary = { claimed: batch.ids.length, completed: 0, retried: 0, review: 0 };
   for (const id of batch.ids) {
     let phase = 'lookup';
@@ -83,6 +95,32 @@ export async function reconcilePaymentAttempts(limit = 10, gateway: PaymentGatew
       "leaseExpiresAt"=clock_timestamp()+interval '10 minutes', "reconcileAttempts"="reconcileAttempts"+1 WHERE id=${row.id}`;
     return rows.map(r => r.id);
   });
+  return reconcileClaimedAttempts(ids, owner, gateway);
+}
+
+// Exact pending cancellation only: no batch fallback, refund dispatch or rearming review work.
+export async function reconcilePaymentCancellation(target: PaymentAttemptTarget, gateway: PaymentGateway = asaasPaymentAdapter) {
+  validatePaymentAttemptTarget(target);
+  const owner = randomUUID();
+  const ids = await prisma.$transaction(async tx => {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`SELECT a.id FROM "PaymentAttempt" a
+      JOIN "Order" o ON o.id=a."orderId"
+      WHERE a.id=${target.attemptId} AND o.id=${target.orderId} AND o."lojaID"=${target.lojaID}
+      AND a.provider='ASAAS' AND a."providerAccount"=${target.providerAccount}
+      AND a.status='CANCEL_PENDING' AND o.status='PENDING' AND a."failureCode" IS NULL
+      AND (a."reconcileAfter" IS NULL OR a."reconcileAfter"<=clock_timestamp())
+      AND (a."leaseExpiresAt" IS NULL OR a."leaseExpiresAt"<=clock_timestamp())
+      AND EXISTS (SELECT 1 FROM "PaymentOperation" op WHERE op."attemptId"=a.id AND op.kind='CANCEL')
+      AND NOT EXISTS (SELECT 1 FROM "PaymentOperation" op WHERE op."attemptId"=a.id AND op.kind<>'CANCEL')
+      FOR UPDATE OF a SKIP LOCKED`;
+    for (const row of rows) await tx.$executeRaw`UPDATE "PaymentAttempt" SET "leaseOwner"=${owner},
+      "leaseExpiresAt"=clock_timestamp()+interval '10 minutes', "reconcileAttempts"="reconcileAttempts"+1 WHERE id=${row.id}`;
+    return rows.map(row => row.id);
+  });
+  return reconcileClaimedAttempts(ids, owner, gateway);
+}
+
+async function reconcileClaimedAttempts(ids: string[], owner: string, gateway: PaymentGateway) {
   const summary = { claimed: ids.length, completed: 0, retried: 0, review: 0 };
   for (const id of ids) {
     let phase = 'lookup';

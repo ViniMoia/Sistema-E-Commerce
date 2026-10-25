@@ -6,12 +6,14 @@ import { applyPaymentEvidence, paymentNow } from '@/services/payment/payment-evi
 import { inspectPaymentAttempt } from '@/services/payment/payment-worker.service';
 import type { PaymentGateway } from '@/types/payment-gateway.types';
 import { paymentEvidenceTransactionOptions } from '@/services/payment/payment-execution-policy';
+import { validatePaymentAttemptTarget, type PaymentAttemptTarget } from '@/services/payment/payment-attempt-target';
 
 export const DEFAULT_ASAAS_TIMEOUT_MINUTES = 60; // Deprecated: never used as remote expiry.
 export const DEFAULT_MANUAL_TIMEOUT_HOURS = 24;
 export const DEFAULT_BATCH_SIZE = 50;
 export interface ProcessExpiredOrdersOptions {
   lojaID?: string; batchSize?: number; dryRun?: boolean; gateway?: PaymentGateway;
+  target?: PaymentAttemptTarget;
   /** Compatibility only: runtime decisions exclusively use persisted deadlines and database time. */
   asaasTimeoutMinutes?: number; manualTimeoutHours?: number; now?: Date;
 }
@@ -20,12 +22,20 @@ export interface OrderTimeoutSummary {
   cancelledOrderIds: string[]; errors: Array<{ orderId: string; orderNumber?: number; error: string }>; executionTimeMs: number;
 }
 export async function processExpiredOrders(options: ProcessExpiredOrdersOptions = {}): Promise<OrderTimeoutSummary> {
+  const target = options.target;
+  // An explicitly supplied invalid target must not turn into a batch run.
+  if ('target' in options) validatePaymentAttemptTarget(target!);
+  if (target) {
+    if (options.lojaID && options.lojaID !== target.lojaID) throw new Error('PAYMENT_TARGET_STORE_MISMATCH');
+  }
   const started = Date.now();
   const summary: OrderTimeoutSummary = { success: true, processedCount: 0, cancelledCount: 0, errorCount: 0, cancelledOrderIds: [], errors: [], executionTimeMs: 0 };
   try {
     const now = await prisma.$transaction(paymentNow);
     const candidates = await prisma.paymentAttempt.findMany({ where: {
-      order: { status: 'PENDING', ...(options.lojaID ? { lojaID: options.lojaID } : {}) },
+      order: { status: 'PENDING', ...(options.lojaID ? { lojaID: options.lojaID } : {}), ...(target ? { id: target.orderId, lojaID: target.lojaID } : {}) },
+      ...(target ? { id: target.attemptId, provider: 'ASAAS', providerAccount: target.providerAccount, failureCode: null,
+        OR: [{ leaseExpiresAt: null }, { leaseExpiresAt: { lte: now } }] } : {}),
       reservationExpiresAt: { lte: now }, status: { in: ['NOT_STARTED', 'PENDING'] },
       method: { in: ['WHATSAPP_PIX', 'PIX', 'BOLETO'] },
     }, take: Math.max(1, Math.min(100, Math.trunc(options.batchSize ?? DEFAULT_BATCH_SIZE))),
@@ -42,6 +52,9 @@ export async function processExpiredOrders(options: ProcessExpiredOrdersOptions 
           const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: candidate.id } });
           const order = await tx.order.findUniqueOrThrow({ where: { id: candidate.orderId } });
           const clock = await paymentNow(tx);
+          if (target && (attempt.id !== target.attemptId || order.id !== target.orderId || order.lojaID !== target.lojaID ||
+            attempt.provider !== 'ASAAS' || attempt.providerAccount !== target.providerAccount || attempt.failureCode !== null ||
+            (attempt.leaseExpiresAt && attempt.leaseExpiresAt > clock))) return false;
           if (order.status !== 'PENDING' || !attempt.reservationExpiresAt || attempt.reservationExpiresAt > clock ||
             !['NOT_STARTED','PENDING'].includes(attempt.status)) return false;
           if (evidence) {
