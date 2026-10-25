@@ -1,5 +1,11 @@
 # Backup e recuperação da atualização do banco existente
 
+**Estado vigente em 21/10:** [fechamento G2](../../../../trabalho_em_dupla/FECHAMENTO_G2.md). Restore técnico em outra máquina aceito pela evidência recebida, executado por Vinícius na máquina/conta de Vanderlei sem participação dele. Isso supera as pendências históricas abaixo de execução apenas na conta Windows original. Permanecem acesso por conta pessoal/custódia, retenção e recuperação operacional. Vinícius aprovou RPO <= 15 min / RTO <= 60 min e informou acesso ao painel Neon; janela efetiva e permissões ainda não verificadas. Não transformar as metas em resultado nem repetir restore apenas para atualizar documentos.
+
+**Pacote portátil preparado em 21/10:** [localizadores e instruções G2](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md#pacote-portátil-de-recuperação-preparado--21102026). Nova cópia criptografada `age` e identidade separada permitem ensaio sem DPAPI no segundo Windows; originais preservados. O executor fornecido não aplica migrations/tratamentos de abertura e exige destino Docker novo sem rede/portas. Testes locais não encerram recuperação independente: o usuário ainda deve transferir o pacote/chave por meios separados, executar no outro computador e devolver a evidência sanitizada. Nenhum segredo ou dump integra o Git.
+
+**Devolutiva de 21/10:** Vanderlei relatou dois backups criptografados **de homologação** na máquina dele, com ensaios anteriores pelo mesmo usuário; não localizou o backup **da origem** mantido na máquina de Vinícius. [Escopos e próximo encaminhamento](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md#devolutiva-de-vanderlei-sobre-backups--21102026). Nenhum novo restore ou verificação criptográfica independente foi feito nessa investigação. DPAPI continua dependente da conta original; acesso externo/portável ainda precisa ser preparado. Snapshots/PITR/retenção do Neon não foram verificados. Usar o backup de origem para o ensaio de origem, sem substituí-lo pelo de homologação ou inferir implantação a partir de um pacote de código. G2 permanece aberto.
+
 **Atualização de 21/10:** backup fresco e restaurações locais da candidata `9495ff9` aprovados; [registro e limites](../../../../trabalho_em_dupla/PACOTE_ABERTURA_G2.md#backup-fresco-e-ensaio-de-abertura--21102026). O usuário assumiu a função de operador alternativo, mas acesso independente, restauração por ele, cópia externa, retenção e RPO/RTO continuam sem comprovação. A captura criptografada atual permanece protegida por DPAPI/ACL da conta Windows original; não equivale a recuperação em outra conta. Os números e localizador de 15/10 abaixo são históricos.
 
 Revisão em 15/10/2026. Recuperação local em clone demonstrada; recuperação operacional independente ainda pendente. Este documento não autoriza escrita na main, restauração sobre banco compartilhado, troca de conexão ou contratação de recurso.
@@ -26,10 +32,10 @@ O ensaio de abertura completo durou aproximadamente 97 segundos localmente; incl
 |---|---|
 | Schema public, dados e histórico de migrations | Capturados e restaurados em cópia isolada. |
 | Roles, owners e grants/ACL do provedor | Não reproduzidos pelo restore com no-owner/no-acl; revisar separadamente. |
-| Imagens e documentos externos | URLs do banco não são backup dos arquivos. Verificar buckets/provedores, versões e acesso. |
+| Imagens e documentos externos | URLs do banco não são backup dos arquivos. Imagens de produto são referências Nuvemshop; verificar disponibilidade/recuperação junto à origem externa, sem provisionar upload ou bucket por inferência. Documentos de atendimento possuem cobertura separada. |
 | Secrets, DNS e configuração de runtime | Fora do dump. Guardar referências/versões e política de recuperação no mecanismo aprovado. |
 | PITR/snapshots do provedor | Retenção, disponibilidade na conta e último ponto recuperável não verificados nesta etapa. Não presumir com base no nome/plano do serviço. |
-| Recuperação por Vanderlei/em outra máquina | Não demonstrada. DPAPI local não comprova esse acesso. |
+| Recuperação em outra máquina | Run `b64bee022cfd4578bbc408f9867fee00` recebido e conferido: Vinícius operou usando a conta Windows de Vanderlei. Recuperação por conta pessoal e acesso operacional permanente continuam pendentes. |
 | Reentrega de eventos financeiros após cutoff | Exige procedimento e evidência próprios; banco restaurado não reverte o provedor. |
 
 A cópia sanitizada serve para testar e compartilhar evidência técnica, **não para substituir o banco real após desastre**, pois remove credenciais, referências de integração e dados pessoais.
@@ -43,7 +49,7 @@ A cópia sanitizada serve para testar e compartilhar evidência técnica, **não
 5. O responsável alternativo deve demonstrar restauração em destino **novo, vazio e isolado**, usando o mecanismo aprovado, e registrar integridade, tempo e ponto recuperado. Acesso ao bucket ou download concluído sozinho não prova recuperabilidade.
 6. Definir expiração/limpeza dos artefatos após o período acordado, mantendo o necessário para a janela e investigação. O executor local já descarta apenas seus containers por identidade; não usar limpeza global do Docker.
 
-Até essa prova, estado: **restauração local aprovada; recuperação independente não comprovada**. Copiar `key.dpapi` junto ao dump para outra máquina não constitui teste de recuperação.
+Estado vigente: **restauração técnica em outra máquina aprovada por evidência recebida; acesso pessoal permanente, retenção e recuperação operacional completa pendentes**. O pacote usa chave age independente; copiar `key.dpapi` junto ao dump para outra máquina não constitui teste de recuperação.
 
 ## Preparação de cada janela
 
@@ -68,4 +74,4 @@ Promover o destino recuperado somente após integridade, roles/grants, configura
 
 Anexar localizador/ID do backup, horário do cutoff, hash, revisão/artefato, cobertura, responsável que restaurou, destino isolado, tempos, comparações, lacunas e decisão. Nenhum valor secreto, dump bruto ou comprador aparece no relatório compartilhável.
 
-Uma restauração só está operacionalmente demonstrada quando o responsável alternativo consegue obter acesso, restaurar e validar no prazo acordado. A tarefa continua pendente enquanto existir somente a prova da conta Windows original.
+Uma restauração só está operacionalmente demonstrada quando o responsável alternativo consegue obter acesso pelo mecanismo aprovado, restaurar, validar e conciliar/retomar no prazo acordado. O restore técnico de 21/10 já está aceito no seu escopo; faltam os critérios operacionais da ficha de encerramento, não uma nova prova idêntica do dump.

@@ -1,0 +1,98 @@
+{
+  "checkedAt": "2026-10-23T19:15:47.326Z",
+  "readOnly": true,
+  "inbox": [
+    {
+      "id": "79c2ce48-f25c-449a-9fe9-b2206531a1ba",
+      "provider": "ASAAS:sandbox-hml",
+      "eventType": "PAYMENT_OVERDUE",
+      "status": "READY",
+      "attempts": 0,
+      "lastErrorCode": null,
+      "receivedAt": "2026-10-17T07:01:24.694Z",
+      "nextAttemptAt": "2026-10-17T07:01:24.694Z",
+      "leaseExpiresAt": null,
+      "paymentStatus": "OVERDUE",
+      "method": "BOLETO",
+      "hasExternalReference": true,
+      "matchedCharge": true,
+      "matchedAttempt": true,
+      "attempt": {
+        "status": "PENDING",
+        "failureCode": null,
+        "providerAccount": "sandbox-hml",
+        "methodMatches": true,
+        "referenceMatches": true,
+        "order": {
+          "orderNumber": 8,
+          "status": "PENDING"
+        }
+      }
+    }
+  ],
+  "outbox": [
+    {
+      "id": "24c2a64b-0d7e-43a2-85fa-27fbaa656134",
+      "commandType": "PAYMENT_REVIEW",
+      "status": "DEAD_LETTER",
+      "attempts": 1,
+      "lastErrorCode": "PAYMENT_REVIEW_REQUIRED",
+      "createdAt": "2026-10-10T00:59:17.814Z",
+      "nextAttemptAt": "2026-10-10T00:59:17.814Z",
+      "leaseExpiresAt": null,
+      "order": {
+        "orderNumber": 3,
+        "status": "PAID"
+      },
+      "attempt": {
+        "status": "REFUND_PENDING",
+        "failureCode": "PAYMENT_REFUND_CANCELLED_REVIEW",
+        "providerAccount": "sandbox-hml"
+      },
+      "payloadKeys": [
+        "attemptId",
+        "reasonCode",
+        "schemaVersion"
+      ],
+      "deliveryStartedAt": null
+    }
+  ],
+  "status": "DIAGNOSTICO_SOMENTE_LEITURA_CONCLUIDO",
+  "findings": {
+    "inbox": {
+      "orderNumber": 8,
+      "event": "PAYMENT_OVERDUE",
+      "interpretation": "Boleto overdue event received and persisted, with zero processing attempts. Local charge/reference/method/account correlate. It is not payment confirmation.",
+      "limitation": "Current remote charge state and historical worker runtime were not independently queried in this diagnosis.",
+      "nextStep": "Prepare scoped consumer validation before processing; do not invoke a general payment-processing job."
+    },
+    "outbox": {
+      "orderNumber": 3,
+      "interpretation": "PAYMENT_REVIEW held for cancelled-refund review; not an email delivery failure.",
+      "historicalSource": "trabalho_em_dupla/ATENDIMENTO_REVISAO_DEVOLUCAO_CHARGEBACK.md:34",
+      "historicalProviderState": "Previous documentation reports RECEIVED with refund CANCELLED. This is historical, not a new provider query.",
+      "nextStep": "Preserve review and existing operation; obtain provider-supported resolution before any new refund action."
+    }
+  },
+  "userProvidedWebhookLogs": {
+    "source": "User screenshot with last-week date filter",
+    "entries": [
+      {
+        "localDateTime": "2026-10-16 15:35",
+        "httpStatus": 200
+      },
+      {
+        "localDateTime": "2026-10-17 04:01",
+        "httpStatus": 200
+      }
+    ],
+    "limitation": "Screenshot shows delivery acknowledgements only; no post-resumption delivery or financial processing proven."
+  },
+  "mutations": {
+    "database": 0,
+    "provider": 0,
+    "financialJobsExecuted": 0,
+    "refundsSubmitted": 0,
+    "stockChanges": 0
+  }
+}

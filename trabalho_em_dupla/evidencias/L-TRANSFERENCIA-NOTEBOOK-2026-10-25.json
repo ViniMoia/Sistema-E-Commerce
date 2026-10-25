@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "purpose": "Publicacao na homologacao a pedido do usuario para continuar o projeto no notebook",
+  "baseRemote": "ce0ac2a94367b2cfb6b2ff02c3846a20ae51a876",
+  "includedHeads": [
+    "34ab8ea02b8bd0f5cacc740107e827e898b7c4d4",
+    "e28e225"
+  ],
+  "preserved": "Entrega de Vanderlei ce0ac2a, commits remotos e todas as alteracoes locais transferiveis; conflitos de checklist resolvidos preservando as duas sequencias historicas.",
+  "validation": {
+    "pr15Ci": {
+      "id": 40022784708,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/40022784708"
+    },
+    "financialFilesIdenticalToPr15": 6,
+    "typeScript": "PASS",
+    "targetedLint": "PASS",
+    "scriptTests": {
+      "passed": 10,
+      "total": 10
+    },
+    "portableRecoveryPowerShellParse": "PASS",
+    "jsonFilesParsed": 26,
+    "secretScan": "No local credential values found; sole pattern match is a synthetic database URI template in a test",
+    "diffCheck": "PASS"
+  },
+  "exclusions": [
+    ".env and credentials",
+    "Encrypted backups and age/DPAPI keys",
+    "Raw received recovery attachments and machine-specific helper scripts in diversos/RESULTADOS",
+    "Private operational scripts and local execution logs in .git"
+  ],
+  "scope": {
+    "databaseWrites": 0,
+    "providerOperations": 0,
+    "manualRuntimeConfigurationChanges": 0,
+    "mainModified": false
+  },
+  "pending": [
+    "Independent review of PR15 by Vanderlei remains unrecorded; transfer authorized now does not declare operational acceptance.",
+    "New homologation CI and automatic preview must be checked after push.",
+    "Effective GCP revision, pending order 3 review and full SMB/Nuvemshop sync remain separate tasks."
+  ],
+  "guide": "trabalho_em_dupla/CONTINUAR_NO_NOTEBOOK.md"
+}

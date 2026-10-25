@@ -6,13 +6,19 @@ const store = '536bfa58-0531-49e8-9209-3a046281e516';
 const batch = 'legacy-test-orders-20261015-v1';
 const reason = 'USER_CLASSIFIED_TEST_DATA';
 const actor = 'CLONE_REPORTING_REHEARSAL';
-const approvedBackup = '51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9';
+// Both persisted dumps were independently restored and their complete Order,
+// OrderItem and OrderStatusHistory records compared before adding 21 October.
+// Evidence: L-G2-CLASSIFICACAO-2026-10-21.json. No arbitrary snapshot is accepted.
+const approvedBackups = new Set([
+  '51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9',
+  'e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a',
+]);
 const approvedOrders = '1d381f7497ca8ac5b9f3fbd7d82f47d1';
 const quote = name => '"' + name.replaceAll('"', '""') + '"';
 const literal = text => "'" + text.replaceAll("'", "''") + "'";
 
 export function assertReportingBaseline(backupSha, count, hash) {
-  if (backupSha !== approvedBackup || count !== 24 || hash !== approvedOrders) throw new Error('REPORTING_BASELINE_CHANGED');
+  if (!approvedBackups.has(backupSha) || count !== 24 || hash !== approvedOrders) throw new Error('REPORTING_BASELINE_CHANGED');
 }
 
 /** This is intentionally not a production classifier. Requires a restored,
@@ -44,7 +50,7 @@ export async function rehearseOrderReporting(pg, { backupSha, originalOrderColum
         const classification = await tx.orderReportingExclusion.create({ data: { orderId: order.id, reason, classificationBatch: batch, classifiedBy: actor } });
         await tx.auditLog.create({ data: { action: 'TEST_ORDER_REPORTING_CLASSIFIED', actorType: 'SYSTEM', systemActor: actor,
           entity: 'OrderReportingExclusion', entityId: order.id, effectKey: batch+':'+order.id,
-          newValue: JSON.parse(JSON.stringify(classification)), metadata: { lojaID: store, cloneOnly: true, approvedBackup, approvedOrders } } });
+          newValue: JSON.parse(JSON.stringify(classification)), metadata: { lojaID: store, cloneOnly: true, approvedBackup: backupSha, approvedOrders } } });
       }
       const after = await tx.order.findMany({ include: { items: true, statusHistory: true }, orderBy: { id: 'asc' } });
       if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('REPORTING_HISTORY_CHANGED');

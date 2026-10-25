@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-22T20:07:16.796Z",
+  "mode": "READ_ONLY",
+  "status": "ACOMPANHAMENTO_PASSIVO_CONFIRMADO_PELO_USUARIO_AGUARDA_GCP",
+  "checks": {
+    "processes": "Consulta de processos selecionados: nenhum node, python, psql, pg_restore, pg_dump, DBeaver, pgAdmin4 ou DataGrip encontrado. Shells PowerShell e cmd presentes; comandos e segredos nao registrados.",
+    "scheduledTasks": {
+      "queried": 208,
+      "matchingProjectOrIntegrationTasks": 0,
+      "scope": "Correspondencia por projeto, Continental, Nuvemshop, Asaas, Prisma e ferramentas PostgreSQL nas acoes visiveis"
+    },
+    "dockerRunningContainers": 0,
+    "establishedTcpConnectionsRemotePort5432": 0
+  },
+  "limitations": [
+    "Retrato momentaneo, sem prova de ausencia de tarefas fora dos filtros ou sem visibilidade.",
+    "SQL Editor do Neon e outras ferramentas em navegador nao identificados por esta consulta.",
+    "Conexoes HTTP/HTTPS a bancos e integracoes nao cobertas pela consulta TCP 5432.",
+    "Scripts em WSL, outras maquinas ou outros ambientes nao inventariados.",
+    "Nenhum processo interrompido ou configuracao alterada."
+  ],
+  "pending": [
+    "Vanderlei confirmar contencao e drenagem GCP e seus escritores locais",
+    "Reconferir controles, sessoes e transacoes do banco quando houver liberacao conjunta"
+  ],
+  "globalMaintenanceConfirmed": false,
+  "userConfirmation": {
+    "recordedAt": "2026-10-22T20:09:19.023Z",
+    "statement": "Estou apenas acompanhando os paineis",
+    "scope": "Atividade atual declarada por Vinicius; nao estende a confirmacao a outras pessoas ou ambientes"
+  },
+  "gcpConfirmation": {
+    "confirmed": false,
+    "source": "Usuario informou que Vanderlei ainda nao respondeu"
+  }
+}

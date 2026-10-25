@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "status": "APLICADO_E_VERIFICADO_EM_HOMOLOGACAO",
+  "startedAt": "2026-10-23T17:10:46.316Z",
+  "completedAt": "2026-10-23T17:12:54.289Z",
+  "windowBrt": "23/10/2026, 14h10-14h12",
+  "implementation": {
+    "branch": "homologacao_teste",
+    "revision": "9d57dc14e9b1b895a0350c47897018db26577eeb",
+    "mergeCommit": "bcdce982dffc4b61dd9f22e9a21f90bcaa3b68b1",
+    "pullRequest": 14,
+    "mergedCi": "success",
+    "sourceFilesMatchedFetchedRevision": true
+  },
+  "scope": {
+    "database": "neondb",
+    "host": "ep-blue-feather-b6l24gbu.c-2.sa-east-1.aws.neon.tech",
+    "storeId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "storeSlug": "continental-homologacao",
+    "remoteStoreId": "8179726",
+    "mainConnected": false,
+    "remoteNuvemshopWrites": 0,
+    "smbWrites": 0,
+    "financialOperationsExecuted": 0
+  },
+  "preflightEvidence": "L-NUVEMSHOP-JANELA-PREFLIGHT-2026-10-23.json",
+  "backup": {
+    "reference": "%LOCALAPPDATA%/continental-hml-backups/74983dfcd7664ccd67e4ea9a267dd100",
+    "runId": "74983dfcd7664ccd67e4ea9a267dd100",
+    "captureStartedAt": "2026-10-23T17:07:00.999Z",
+    "captureCompletedAt": "2026-10-23T17:07:14.022Z",
+    "encryptedFile": "homologacao.dump.enc",
+    "encryptedBytes": 389071,
+    "encryptedSha256": "16b6160c239e7aaa63f05bdcbce21da5bf47c9170b9ba2b08e9341f5350aa78f",
+    "plaintextSha256": "565a41285e50f7c9bd919395c7a9f9918d0ead0d743d7b9b7d009cb120354fd9",
+    "encryption": "AES-256-GCM; key protected by Windows DPAPI for local account",
+    "restoreVerified": true,
+    "restoredTables": 38,
+    "dockerNetwork": "none",
+    "publishedPorts": [],
+    "cloneRemoved": true,
+    "beforeApplyAllTableFingerprintsMatchBackup": true,
+    "scopeLimit": "public schema, data, sequences; no global roles, owners/ACL or external resources",
+    "independentOperatorRecoveryClaimed": false
+  },
+  "catalog": {
+    "readStartedAt": "2026-10-23T17:07:48.307Z",
+    "readCompletedAt": "2026-10-23T17:07:56.066Z",
+    "remoteProducts": 565,
+    "readComplete": true,
+    "translationComplete": true,
+    "atomicRemoteSnapshot": false,
+    "candidateProducts": 517,
+    "approvedBatchUnchangedFromPreviousDiagnostic": true,
+    "manifestSha256": "797e64f7b3d8d282503c2641ac2e213f6534eb843107b2936881f82913b970f1",
+    "catalogSha256": "84d7777e88cbc6ec2fb9a86d7401571959f0781c836ef9f1f5bb1b73e0c464da",
+    "remoteOnlyProducts": 47,
+    "remoteOnlyImported": false
+  },
+  "application": {
+    "products": 517,
+    "variantsBound": 517,
+    "productsCreated": 0,
+    "variantsCreated": 0,
+    "productsDeleted": 0,
+    "variantsDeleted": 0,
+    "existingLocalIdsPreserved": true,
+    "batchCount": 11,
+    "batchLimit": 50,
+    "atomicity": "Each batch and its audit commit together. The whole sequence is not a single transaction. All 11 batches completed successfully.",
+    "batches": [
+      {
+        "effectKey": "nuvemshop-binding:212e28adbb43858a1e90108f9b294736afe8b266784343962d7ea34bda7c603d",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:10:57.744Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:cdb1dc84c4538c205b01d95c95d767c7bab080e8d787143266065fcb680b020d",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:11:09.216Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:bb8829d1ccdaad33bd4baccca912a0a6ce495397cc07748894468f98a5686f4e",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:11:19.643Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:641b1baee7f2931d12b08e9ae52253330bc34e01ef7219e3a80df81ad38e44a1",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:11:32.648Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:2a0f2d641a53e3b90ac1aa84d9435f3a9f5af8b563124c9abbbe22bbb4de0939",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:11:44.144Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:b42d3c25af4a21dfb640e1aa38ee885f677df261590c60648d6e995e0d8b08cc",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:11:56.323Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:b93ff1b71efcd85986702fa71af791e9797f7d1913e11368b34d90f7fcdab233",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:12:06.274Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:b37f811ba804d857b0d4d73ca28c489a7b6c2b44907796f2b189dcbff3d1059f",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:12:17.400Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:7271ac79df1bb2c9451d3ef4b31c7be73fbd1111b286840c6ae47c7dbd98c663",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:12:27.722Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:6affea9fef91f596ba864456c9797adbe2b4d10143d47e52638c5f653be2b082",
+        "changedVariants": 50,
+        "committedAt": "2026-10-23T17:12:40.018Z"
+      },
+      {
+        "effectKey": "nuvemshop-binding:75fabefbb2c0893b08f631f0adef419694e2d23e567d8c61d3ee49764c35e69f",
+        "changedVariants": 17,
+        "committedAt": "2026-10-23T17:12:45.716Z"
+      }
+    ],
+    "changeScope": [
+      "ProductVariants.nuvemshopVariantId: null to approved remote ID",
+      "Product.catalogVersion: incremented once per bound product",
+      "ORM updatedAt timestamps for changed records",
+      "AuditLog: one record per committed batch"
+    ],
+    "existingReferencesAuditedBeforeBatch": {
+      "carts": 0,
+      "orders": 0,
+      "reservations": 0
+    }
+  },
+  "verification": {
+    "unchangedTables": 35,
+    "protectedCatalogUnchanged": true,
+    "oldAuditUnchanged": true,
+    "sequencesUnchanged": true,
+    "idsAndRowCountsPreserved": true,
+    "bindingsVerified": 517,
+    "auditRecordsAdded": 11,
+    "totalProducts": 519,
+    "totalVariants": 520,
+    "unboundVariants": 3,
+    "duplicateRemoteVariantIds": 0,
+    "stockPricesInventoryVersionAndOtherCatalogFieldsUnchanged": true,
+    "nonScopedTables": [
+      "Address",
+      "Brand",
+      "Cart",
+      "CartItem",
+      "CategoryTag",
+      "CheckoutBasket",
+      "CheckoutIntent",
+      "CommerceOutbox",
+      "FinancialFact",
+      "FreightQuote",
+      "FreightRule",
+      "FreightTariffRevision",
+      "InventoryReservation",
+      "JtExpressGeocom",
+      "JtExpressRate",
+      "Loja",
+      "LoyaltyAllocation",
+      "LoyaltyLot",
+      "LoyaltyTransaction",
+      "LoyaltyWallet",
+      "Order",
+      "OrderBuyer",
+      "OrderItem",
+      "OrderReportingExclusion",
+      "OrderStatusHistory",
+      "PaymentAttempt",
+      "PaymentCharge",
+      "PaymentInbox",
+      "PaymentOperation",
+      "PaymentWebhookEvent",
+      "ProductCategoryTag",
+      "Session",
+      "StockSyncLog",
+      "User",
+      "_prisma_migrations"
+    ],
+    "preservedTablesFingerprintBefore": "59e5cc1cf94620d9f365e7946f1ea9ba784acfb4709b016d51fd2205badcfd1c",
+    "preservedTablesFingerprintAfter": "59e5cc1cf94620d9f365e7946f1ea9ba784acfb4709b016d51fd2205badcfd1c",
+    "oldAuditPreserved": true,
+    "excludedProductsPreserved": true
+  },
+  "excluded": [
+    {
+      "localProductId": "a26fdbc1-d8c3-4173-b114-f759654b9ca4",
+      "reason": "No remote product identity; two local variants remain unbound"
+    },
+    {
+      "localProductId": "de77a791-683b-48bc-9c38-ade2593ec79e",
+      "reason": "Old 30x30 cloth no longer in SMB catalog; remote ID currently represents different 40x40 product. No automatic reassignment."
+    }
+  ],
+  "containment": {
+    "keptInPlace": true,
+    "gcpResumeAuthorizedByThisEvidence": false,
+    "vercelFirewallPreviewDeny": true,
+    "vercelMaintenanceVariable": true,
+    "asaasQueuePaused": true,
+    "cloudflareSchedulerDisabled": true,
+    "source": "Preflight checks and user-provided GCP report; no resumption performed"
+  },
+  "next": [
+    "Coordinate controlled resumption with Vanderlei and Vinicius using recorded previous configurations; do not enable consumers that were previously disabled.",
+    "After receiver availability and required consumers are verified, resume Asaas queue and check pending deliveries without duplicate effects.",
+    "Bindings alone do not enable catalog synchronization, order export or prove SMB inventory deduction; those remain separate implementation and acceptance steps."
+  ],
+  "rollbackNote": "Preserved pre-change backup and per-batch AuditLog include IDs and previous null bindings. Any reversal must validate intervening changes and audit a narrowly scoped compensating operation; do not restore the entire database blindly."
+}

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "kind": "REPORTED_BACKUP_DISCOVERY_RECONCILIATION",
+  "reportDate": "2026-10-21",
+  "provenance": "Vanderlei's report relayed by the user in chat; not a direct inspection of his machine by this agent",
+  "independentlyVerifiedHere": false,
+  "investigationReportedReadOnly": true,
+  "reportedBackupParent": "C:/Users/esdra/AppData/Local/continental-hml-backups",
+  "reportedBackups": [
+    {
+      "directory": "dad96ff03044f5d15486b2adee06c167",
+      "artifact": "homologacao.dump.enc",
+      "encryptedFileBytes": 384730,
+      "keyFile": "key.dpapi",
+      "keyFileBytes": 716,
+      "filesModifiedAt": "2026-10-16T20:43:27Z",
+      "recordedExecutionWindow": { "from": "2026-10-16T20:43:14Z", "to": "2026-10-16T20:43:43Z" },
+      "environment": "HOMOLOGATION",
+      "provider": "Neon",
+      "databaseName": "neondb",
+      "storeSlug": "continental-homologacao",
+      "scope": "public schema; not roles, owners, grants or external resources",
+      "previousRestoreReported": true,
+      "restoredTablesReported": 37,
+      "currentRestoreVerified": false,
+      "sha256VerifiedHere": null
+    },
+    {
+      "directory": "ee9f404a92124b124c175696848eacaa",
+      "artifact": "homologacao.dump.enc",
+      "encryptedFileBytes": 387605,
+      "keyFile": "key.dpapi",
+      "keyFileBytes": 716,
+      "filesModifiedAt": "2026-10-21T15:06:48Z",
+      "recordedExecutionWindow": { "from": "2026-10-21T15:06:34Z", "to": "2026-10-21T15:07:07Z" },
+      "environment": "HOMOLOGATION",
+      "provider": "Neon",
+      "databaseName": "neondb",
+      "storeSlug": "continental-homologacao",
+      "scope": "public schema; not roles, owners, grants or external resources",
+      "previousRestoreReported": true,
+      "restoredTablesReported": 38,
+      "snapshotPrecedesBoletoRefundMigration": true,
+      "currentRestoreVerified": false,
+      "sha256VerifiedHere": null
+    }
+  ],
+  "reportedProtection": { "encryption": "AES-256-GCM", "keyProtection": "DPAPI of original Windows account", "keyOpenedDuringInvestigation": false },
+  "sourceBackupCopyFoundOnVanderleiMachine": false,
+  "sourceBackupCopySearchLimit": "Not found in the consulted paths; other user profiles and disks were not searched",
+  "sourceBackupForG2": {
+    "reference": "L-G2-BACKUP-ENSAIO-2026-10-21.json",
+    "location": "Vinicius machine; LOCALAPPDATA/logic-audit-backups/b0072bdd3f7e2302fea9dd8e49f91d6d",
+    "dumpSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+    "environment": "LEGACY_SOURCE",
+    "homologationBackupsAreNotSubstitutes": true
+  },
+  "externalMetadataReported": {
+    "gcpProject": "continental-511812",
+    "bucketsFound": 0,
+    "cloudSqlOrSearchedBackupApisFoundEnabled": false,
+    "neonAdministrativeAccessAvailable": false,
+    "neonSnapshotsPitrRetentionVerified": false,
+    "limitation": "GCP observations do not establish Neon backup availability or coverage"
+  },
+  "otherArtifactsReported": "Five source.tar archives identified as code packages; migration/diagnostic SQLs not identified as data backups",
+  "reportedDocumentGap": "L-G2-BACKUP-ENSAIO-2026-10-21.json unavailable in Vanderlei's local copy; his report did not fetch/pull",
+  "deploymentNotInferred": "Reference to PUBLICACAO_HOMOLOGACAO_9495FF9_2026-10-21.md or a source.tar is not proof of effective revision, traffic, consumers or migrations",
+  "remaining": [
+    "Synchronize reviewed G2 documentation through the review branch/PR so both operators have the same instructions",
+    "Define safe off-machine artifact access and portable key recovery, separate from the original Windows account; preserve original backups",
+    "Identify isolated empty destination and Vinicius own access before restoration",
+    "Perform and record independent restore, integrity/schema/data/sequences/migrations checks and recovery timings against agreed objectives",
+    "Confirm retention, latest recoverable point and external coverage; final opening needs a fresh cutoff"
+  ],
+  "backupTransferred": false,
+  "keyExported": false,
+  "restoreExecutedThisStep": false,
+  "sharedDatabaseWritten": false,
+  "independentRecoveryProven": false,
+  "g2Closed": false,
+  "productionReady": false
+}

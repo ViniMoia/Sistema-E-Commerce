@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "inspectionWindowBrt": "16:11-16:14",
+  "purpose": "Preparacao da janela de homologacao para vinculos Nuvemshop",
+  "status": "WORKER_CONHECIDO_DESABILITADO_CONFIGURACAO_REMOTA_CONFERIDA",
+  "method": "Consultas autenticadas GET na API administrativa Cloudflare e leitura do codigo publicado. Sessao OAuth local renovada pelo Wrangler whoami; nenhum segredo registrado.",
+  "remoteMutations": false,
+  "databaseMutations": false,
+  "worker": {
+    "name": "continental-pagamentos-hml",
+    "workersReturnedByAccountList": ["continental-pagamentos-hml"],
+    "schedules": [],
+    "bindingsAllowlist": {
+      "HML_SCHEDULER_ENABLED": "false",
+      "HML_SCHEDULER_MODE": "process",
+      "HML_RUN_UNTIL_UTC": "2026-10-08T15:59:45.2888162Z"
+    },
+    "deployment": {
+      "id": "baab5214-32b2-4d03-a1df-b57beef4affa",
+      "createdOn": "2026-10-08T14:15:03.593675Z",
+      "versionId": "2c23c5d7-dbc8-4618-9732-c749106252d9",
+      "percentage": 100
+    },
+    "publishedCode": {
+      "module": "payment-scheduler.worker.js",
+      "bytes": 5723,
+      "sha256": "d7c0e10709b78bfd2a936835263a542eb48d61ac5206e23b384f57a18635e50b",
+      "fetchHandler": "Retorna 404 sem chamadas a aplicacao",
+      "scheduledHandler": "Retorna disabled antes de qualquer chamada remota quando HML_SCHEDULER_ENABLED e false; tambem verifica prazo expirado",
+      "queueHandlerPresent": false
+    }
+  },
+  "limits": [
+    "Retrato da configuracao no momento consultado; reconferir antes da aplicacao do lote.",
+    "Nao foram consultados logs de execucao nem metricas de chamadas em voo; nao declarar drenagem global comprovada.",
+    "Nao comprova contencao da Vercel, GCP, clientes SQL, scripts locais, importadores ou edicoes administrativas.",
+    "Nao houve teste de disparo scheduled nem chamada a endpoints de processamento financeiro."
+  ],
+  "remaining": [
+    "Conferencia administrativa da Vercel com Vinicius; autenticacao administrativa local nao localizada.",
+    "Confirmacao tecnica de contencao e drenagem do GCP por Vanderlei.",
+    "Confirmar suspensao de escritas manuais e demais acionadores com os responsaveis.",
+    "Antes de interromper o receptor Asaas, comprovar preservacao e reentrega dos eventos.",
+    "Apos controles conjuntos: atualizar backup, leitura do catalogo, auditoria e lote antes de qualquer mutacao autorizada."
+  ],
+  "bindingsApplicationAuthorizedByThisEvidence": false
+}

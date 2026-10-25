@@ -1,0 +1,119 @@
+{
+  "kind": "G2_COMMERCIAL_STOCK_COUNT_PREPARATION",
+  "at": "2026-10-21T16:00:28.124Z",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "sourceStoreIdentityVerified": true,
+  "readOnlyVerified": true,
+  "isolation": "repeatable read",
+  "userDecision": "Nuvemshop products are real store products and must be preserved. Never infer test status from missing mappings, SKU, low/zero stock or product name.",
+  "totalProducts": 522,
+  "totalVariants": 528,
+  "commercialProducts": 518,
+  "commercialVariants": 518,
+  "previouslyIdentifiedTestProducts": 4,
+  "testVariants": 10,
+  "protectedProductsFound": 5,
+  "commercialProductIdsPresent": 518,
+  "commercialVariantIdsPresent": 0,
+  "storedConfigurationPresence": {
+    "storeId": false,
+    "token": false,
+    "userAgent": false
+  },
+  "stockSyncLogGroups": [
+    {
+      "source": "CATALOG_IMPORT",
+      "count": 518,
+      "latestRecordedAt": "2026-09-04T18:56:31.001Z"
+    },
+    {
+      "source": "CATALOG_SYNC",
+      "count": 15,
+      "latestRecordedAt": "2026-09-04T18:53:28.624Z"
+    },
+    {
+      "source": "ORDER_DECREMENT",
+      "count": 1,
+      "latestRecordedAt": "2026-09-04T19:07:21.726Z"
+    },
+    {
+      "source": "WEBHOOK",
+      "count": 4,
+      "latestRecordedAt": "2026-09-04T19:01:10.195Z"
+    }
+  ],
+  "localFingerprintMatchesInventory": {
+    "Product": true,
+    "ProductVariants": true
+  },
+  "baselineAt": "2026-10-21T15:05:26.254Z",
+  "issueCounts": {
+    "VINCULO_NUVEMSHOP_INCOMPLETO": {
+      "commercial": 518,
+      "previousTests": 4
+    },
+    "DIVERGENCIA_PRODUTO_SOMA_VARIANTES": {
+      "commercial": 0,
+      "previousTests": 4
+    },
+    "ID_PRODUTO_NUVEMSHOP_REPETIDO": {
+      "commercial": 0,
+      "previousTests": 3
+    },
+    "TESTE_PREVIO_COM_ID_EXTERNO": {
+      "commercial": 0,
+      "previousTests": 3
+    }
+  },
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "nuvemshopRequests": 0,
+  "synchronizationTriggered": false,
+  "physicalCountPerformed": false,
+  "productionReady": false,
+  "reportDirectory": "%LOCALAPPDATA%/logic-audit-backups/b0072bdd3f7e2302fea9dd8e49f91d6d/estoque-conferencia-20261021",
+  "files": {
+    "01_ESTOQUE_COMERCIAL.csv": {
+      "rows": 518,
+      "sha256": "494f106cb8a183b914e1b95372ad19cb09d268e28d3ad9353d73c3a5433f2de9"
+    },
+    "02_TESTES_IDENTIFICADOS.csv": {
+      "rows": 10,
+      "sha256": "89b534b8aafb17c711678edaa030c87e4535b7c91da9c65dafe1998fccd1fb70"
+    },
+    "03_DIVERGENCIAS_E_VINCULOS.csv": {
+      "rows": 532,
+      "sha256": "388bc4d31c79b54d093959d6eb060e247c59fa5c08ac355ff79104d4cbf6c1d6"
+    }
+  },
+  "limitations": [
+    "Local snapshot is not real-time Nuvemshop stock or physical count. Stock buffer is reported, never subtracted automatically.",
+    "Configuration fields and log presence do not prove the current external integration is enabled, disabled or synchronized.",
+    "Product/variant stock equality is only an arithmetic check; product total is repeated per variant and must not be summed.",
+    "Modern unavailableStock/retiredAt may be absent in the source schema; missing values are not treated as zero or availability proof.",
+    "Only exact previously reviewed test IDs are separated; no catalog, links, stock or classification changed."
+  ],
+  "commercialSkuPresent": 518,
+  "commercialNumericProductIdsPresent": 518,
+  "previousTestsWithExternalId": 3,
+  "previousTestExternalIdCollidesWithCommercial": false,
+  "privateDirectoryAclVerified": true,
+  "stockIntegrationMechanism": "NOT_IDENTIFIED; user confirmed they cannot yet identify the current update mechanism",
+  "validation": {
+    "csvRowCountsAndHashes": true,
+    "csvColumnCounts": true,
+    "manualCountFieldsBlank": true,
+    "exactTestIdSeparation": true,
+    "spreadsheetFormulaLikeStringsEscaped": true
+  },
+  "userClarification": {
+    "answer": "Ainda n?o sei identificar",
+    "meaning": "The user cannot identify the current stock update mechanism; this is not evidence that synchronization is absent or disabled."
+  },
+  "nextIntegrationEvidence": [
+    "Identify existing routine/system and its owner without activating or replacing it",
+    "Confirm source/destination store, product/variant mapping and stock update policy",
+    "Provide a recent execution record and correlated sample of Nuvemshop and local stock with timestamps, accounting for intervening movements"
+  ]
+}

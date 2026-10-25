@@ -1,0 +1,109 @@
+{
+  "kind": "G2_LEGACY_PAYMENT_REFERENCE_READ",
+  "at": "2026-10-21T15:52:32.082Z",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "readOnlyVerified": true,
+  "isolation": "repeatable read",
+  "storeIdentityVerified": true,
+  "sourceWritten": false,
+  "providerRequests": 0,
+  "summary": {
+    "orders": 24,
+    "remoteReferences": 2
+  },
+  "baselineAt": "2026-10-21T15:05:26.254Z",
+  "fingerprintsMatch": {
+    "Order": true,
+    "OrderItem": true,
+    "LoyaltyWallet": true,
+    "LoyaltyTransaction": true
+  },
+  "sourceConfiguredProviderOrigin": "api.asaas.com",
+  "references": [
+    {
+      "orderId": "389b4690-2074-47db-a910-790c6ea682d5",
+      "orderNumber": 30,
+      "localStatus": "PAID",
+      "localMethod": "WHATSAPP_PIX",
+      "total": "510.00",
+      "localPaymentStatus": "RECEIVED",
+      "paymentIdSha256": "f4aa9bd3119080e8819c212b90c200341d29a964d3504a23a4773896137fb62f",
+      "simulatorIdPattern": true,
+      "invoiceHost": null,
+      "bankSlipHost": null,
+      "updatedAt": "2026-09-15T19:32:47.905Z",
+      "events": [
+        {
+          "provider": "ASAAS_SIMULATOR",
+          "eventType": "PAYMENT_RECEIVED",
+          "simulated": "true",
+          "paymentIdMatches": true,
+          "externalReferenceMatches": true,
+          "eventValue": "510",
+          "eventPaymentStatus": "RECEIVED",
+          "eventIdSha256": "64b7c65a8fa0f8aa533f0913af3139e5d47c8922dd613bfe62f3315ca40023c9",
+          "valueMatches": true
+        }
+      ],
+      "finding": "CORRELATED_LOCAL_SIMULATOR_REFERENCE",
+      "nextAction": "Preserve historical reference; do not enqueue reconciliation/refund or treat as provider settlement. Keep opening classification separate."
+    },
+    {
+      "orderId": "9e804081-b6d6-4076-bb40-dac76199d0a8",
+      "orderNumber": 29,
+      "localStatus": "PAID",
+      "localMethod": "WHATSAPP_PIX",
+      "total": "440.00",
+      "localPaymentStatus": "RECEIVED",
+      "paymentIdSha256": "a9e1aba23f60f5041432cd229e1bc3c651b7eb64d8e63008c4b5872e28d6793c",
+      "simulatorIdPattern": true,
+      "invoiceHost": null,
+      "bankSlipHost": null,
+      "updatedAt": "2026-09-15T19:33:33.220Z",
+      "events": [
+        {
+          "provider": "ASAAS_SIMULATOR",
+          "eventType": "PAYMENT_RECEIVED",
+          "simulated": "true",
+          "paymentIdMatches": true,
+          "externalReferenceMatches": true,
+          "eventValue": "440",
+          "eventPaymentStatus": "RECEIVED",
+          "eventIdSha256": "05133185605c044c335961ba6c386b90c8ec4186b532afc535e3c365f474c6dc",
+          "valueMatches": true
+        }
+      ],
+      "finding": "CORRELATED_LOCAL_SIMULATOR_REFERENCE",
+      "nextAction": "Preserve historical reference; do not enqueue reconciliation/refund or treat as provider settlement. Keep opening classification separate."
+    }
+  ],
+  "recordedAt": "2026-10-21T15:54:05.656Z",
+  "candidateRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "sourceEvidence": {
+    "file": "app/api/webhooks/asaas/simulate/route.ts",
+    "revision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+    "sha256": "dded8bd70077a22846d8913e8e36526117928d3d6bb529bfb3e6695306e78002",
+    "behavior": "Legacy route generates pay_sim_<timestamp>, writes ASAAS_SIMULATOR with simulated=true, matching order/amount, then persists simulated payment ID and RECEIVED locally; this code path does not create a provider charge."
+  },
+  "providerAccountVerified": false,
+  "providerReadPerformed": false,
+  "providerReadSkippedReason": "Both stored IDs are correlated local simulator references, not provider-issued charge evidence. No production key was used and no ID was queried against Sandbox or production.",
+  "scopeResolved": "Provenance of the two non-null legacy payment references in the source snapshot.",
+  "inferenceLimits": [
+    "This proves recorded local simulation provenance, not the global absence of other charges or bank movements.",
+    "PAID/RECEIVED and nominal amounts here are not proof of provider settlement or money received.",
+    "No provider account, actual deployed runtime, webhook, agenda or consumer was verified.",
+    "Source orders 29/30 belong to the legacy origin store; they are not homologation payment scenarios 3-8.",
+    "Database and earlier snapshot fingerprints match for Order, OrderItem, LoyaltyWallet and LoyaltyTransaction at the recorded reading time; final opening still requires a fresh cutoff."
+  ],
+  "remoteCommandsAttempted": false,
+  "mutationsAttempted": false,
+  "sharedHomologationWritten": false,
+  "productionReady": false,
+  "remaining": [
+    "Independent backup recovery/access/retention/objectives",
+    "Physical commercial stock confirmation",
+    "Review of any other obligations and final opening cutoff/backup/executor",
+    "Published candidate financial/automation acceptance"
+  ]
+}

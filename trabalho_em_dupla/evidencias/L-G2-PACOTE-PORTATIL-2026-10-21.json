@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "kind": "PORTABLE_SOURCE_BACKUP_PREPARATION_AND_LOCAL_VALIDATION",
+  "recordedAt": "2026-10-21T17:02:02.990952+00:00",
+  "packageId": "1a5688542d7c4461a2d17d82f1b6ef31",
+  "originalBackup": "b0072bdd3f7e2302fea9dd8e49f91d6d",
+  "backupSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+  "backupPlaintextBytes": 305612,
+  "backupScope": "Legacy source public schema; not homologation, roles/grants/owners or external resources",
+  "portableEncryption": {
+    "format": "age v1.3.2 X25519",
+    "freshIdentity": true,
+    "identityStoredSeparately": true,
+    "originalDpapiKeyExported": false,
+    "privateKeyPrinted": false,
+    "release": {
+      "version": "v1.3.2",
+      "release": "https://github.com/FiloSottile/age/releases/tag/v1.3.2",
+      "asset": "age-v1.3.2-windows-amd64.zip",
+      "url": "https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-windows-amd64.zip",
+      "digest": "sha256:f48d8f8f9ebe903ab5027ed067652f2cc1db94bc206976430133b905dcd8e8c7"
+    },
+    "binaryBundled": "Windows amd64"
+  },
+  "archive": {
+    "name": "PACOTE_G2_PORTATIL_2026-10-21.zip",
+    "sha256": "54eee55441294962c2cd848384eadc3a4ba7c53fb2ebe7880afd2754cf33cce3",
+    "bytes": 7103107,
+    "files": 14,
+    "containsPrivateKey": false,
+    "containsPlainDump": false,
+    "manifestHashesVerified": true
+  },
+  "localValidation": {
+    "build": {
+      "runId": "1a5688542d7c4461a2d17d82f1b6ef31",
+      "startedAt": "2026-10-21T16:57:00.548Z",
+      "sourceConnected": false,
+      "originalBackupModified": false,
+      "portableRoundtripVerified": true,
+      "originalRecordedFingerprintsMatched": true,
+      "originalSequenceStatesMatched": true,
+      "tables": 23,
+      "sequences": 1,
+      "containerRemoved": true,
+      "originalArtifactsUnchanged": true,
+      "finishedAt": "2026-10-21T16:57:05.714Z"
+    },
+    "extractedArchiveRunId": "356bc7cb37a84327b5af0c5270f360cb",
+    "startedAt": "2026-10-21T17:01:02.3673503Z",
+    "finishedAt": "2026-10-21T17:01:06.7199680Z",
+    "dumpHashVerified": true,
+    "dataStructureSequencesVerified": true,
+    "tables": [
+      {
+        "table": "Address",
+        "rows": 18
+      },
+      {
+        "table": "AuditLog",
+        "rows": 22
+      },
+      {
+        "table": "Brand",
+        "rows": 18
+      },
+      {
+        "table": "Cart",
+        "rows": 3
+      },
+      {
+        "table": "CartItem",
+        "rows": 1
+      },
+      {
+        "table": "CategoryTag",
+        "rows": 10
+      },
+      {
+        "table": "FreightRule",
+        "rows": 0
+      },
+      {
+        "table": "JtExpressGeocom",
+        "rows": 58
+      },
+      {
+        "table": "JtExpressRate",
+        "rows": 5181
+      },
+      {
+        "table": "Loja",
+        "rows": 1
+      },
+      {
+        "table": "LoyaltyTransaction",
+        "rows": 2
+      },
+      {
+        "table": "LoyaltyWallet",
+        "rows": 2
+      },
+      {
+        "table": "Order",
+        "rows": 24
+      },
+      {
+        "table": "OrderItem",
+        "rows": 33
+      },
+      {
+        "table": "OrderStatusHistory",
+        "rows": 0
+      },
+      {
+        "table": "PaymentWebhookEvent",
+        "rows": 4
+      },
+      {
+        "table": "Product",
+        "rows": 522
+      },
+      {
+        "table": "ProductCategoryTag",
+        "rows": 474
+      },
+      {
+        "table": "ProductVariants",
+        "rows": 528
+      },
+      {
+        "table": "Session",
+        "rows": 13
+      },
+      {
+        "table": "StockSyncLog",
+        "rows": 538
+      },
+      {
+        "table": "User",
+        "rows": 8
+      },
+      {
+        "table": "_prisma_migrations",
+        "rows": 40
+      }
+    ],
+    "sequenceCount": 1,
+    "provisionMs": 2525,
+    "restoreMs": 420,
+    "validationMs": 338,
+    "containerRemoved": true,
+    "dockerNetwork": "none",
+    "publishedPorts": 0,
+    "storage": "tmpfs",
+    "postgresImage": "postgres@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873",
+    "originalArtifactsUnchanged": true
+  },
+  "negativeChecks": {
+    "sameMachineCannotClaimIndependentRecovery": true,
+    "wrongIdentityRejected": true,
+    "modifiedCiphertextRejected": true,
+    "plaintextPersistedByTests": false,
+    "modifiedPackageFileRejectedBeforeContainer": true
+  },
+  "executor": {
+    "file": "scripts/homologation/restore-portable-g2.ps1",
+    "sha256": "5e9fda649ef0ceead0dd4dab7ca5503658a67f64f4abf6e925ed86122617a96f"
+  },
+  "sourceConnected": false,
+  "sharedDatabaseWritten": false,
+  "remoteFinancialOperationsExecuted": false,
+  "stockChanged": false,
+  "migrationsApplied": false,
+  "remoteTransferPerformed": false,
+  "plaintextDumpPersisted": false,
+  "independentRecoveryProven": false,
+  "g2Closed": false,
+  "productionReady": false,
+  "remaining": [
+    "User transfers encrypted archive and new identity by separate protected means to second Windows",
+    "Second machine verifies archive digest, uses own account and executes without LocalValidation",
+    "Receive sanitized RESULTADO-G2.json plus measured access/transfer times",
+    "Agree retention/recovery objectives and verify external coverage/final opening independently"
+  ]
+}

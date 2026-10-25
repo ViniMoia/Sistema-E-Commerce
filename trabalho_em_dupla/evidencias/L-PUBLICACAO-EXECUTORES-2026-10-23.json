@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-23T20:54:27.034Z",
+  "number": 15,
+  "url": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/15",
+  "draft": true,
+  "head": "34ab8ea02b8bd0f5cacc740107e827e898b7c4d4",
+  "base": "homologacao_teste",
+  "runs": [
+    {
+      "id": 40022784708,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/40022784708",
+      "event": "pull_request",
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "merged": false,
+  "remoteFinancialExecution": false
+}

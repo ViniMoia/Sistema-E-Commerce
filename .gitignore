@@ -65,6 +65,8 @@ scratch/
 # Internal documentation, business & audit files
 material/
 auditoria/
+# Raw recovery attachments and machine-specific helpers; reviewed evidence is versioned separately.
+/diversos/RESULTADOS/
 
 # Reviewed Sandbox evidence only; commercial sources and raw exports stay local.
 /materiais/*

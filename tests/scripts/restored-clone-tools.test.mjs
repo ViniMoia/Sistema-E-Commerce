@@ -7,12 +7,17 @@ import { validateOpeningBaseline } from '../../scripts/lib/restored-opening.mjs'
 import { assertReportingBaseline } from '../../scripts/lib/restored-order-reporting.mjs';
 
 test('reporting classification requires the exact reviewed backup and complete order fingerprint', () => {
-  const backup = '51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9';
+  const backups = [
+    '51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9',
+    'e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a',
+  ];
   const orders = '1d381f7497ca8ac5b9f3fbd7d82f47d1';
-  assert.doesNotThrow(() => assertReportingBaseline(backup, 24, orders));
   assert.throws(() => assertReportingBaseline('another-backup', 24, orders));
-  assert.throws(() => assertReportingBaseline(backup, 25, orders));
-  assert.throws(() => assertReportingBaseline(backup, 24, 'changed-orders'));
+  for (const backup of backups) {
+    assert.doesNotThrow(() => assertReportingBaseline(backup, 24, orders));
+    assert.throws(() => assertReportingBaseline(backup, 25, orders));
+    assert.throws(() => assertReportingBaseline(backup, 24, 'changed-orders'));
+  }
 });
 
 const runId = '1'.repeat(32);

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "kind": "REVIEWED_FRESH_SNAPSHOT_CLASSIFICATION",
+  "recordedAt": "2026-10-21T15:41:17.358Z",
+  "sourceRevision": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "candidateBaseRevision": "9495ff942e832db6588219e57163982b246e16d7",
+  "localUncommittedImplementation": true,
+  "sourceConnected": false,
+  "sourceWritten": false,
+  "sharedHomologationWritten": false,
+  "remoteFinancialOperationsExecuted": false,
+  "deployed": false,
+  "productionReady": false,
+  "comparison": {
+    "at": "2026-10-21T15:39:08.891Z",
+    "sourceConnected": false,
+    "sharedDatabaseWritten": false,
+    "snapshots": [
+      {
+        "backupSha256": "51f0d8d7f80fb9910114928450753e46cfd86ac571e9acdd711d745fda1a65f9",
+        "identityVerified": true,
+        "tables": {
+          "Order": {
+            "count": 24,
+            "sha256": "7e7462c38b2c589ac6ec000f2e2915ac828d5023a47da0493fba788fbbc8b379"
+          },
+          "OrderItem": {
+            "count": 33,
+            "sha256": "08e82cc4657bd0993a7fcc93b68cc91e8793a6d5143ac926702d3399806068c0"
+          },
+          "OrderStatusHistory": {
+            "count": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          }
+        }
+      },
+      {
+        "backupSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+        "identityVerified": true,
+        "tables": {
+          "Order": {
+            "count": 24,
+            "sha256": "7e7462c38b2c589ac6ec000f2e2915ac828d5023a47da0493fba788fbbc8b379"
+          },
+          "OrderItem": {
+            "count": 33,
+            "sha256": "08e82cc4657bd0993a7fcc93b68cc91e8793a6d5143ac926702d3399806068c0"
+          },
+          "OrderStatusHistory": {
+            "count": 0,
+            "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          }
+        }
+      }
+    ],
+    "exactRecordsMatch": true,
+    "privateManifestSha256": "0bf4489a829a7871ef265cf8bc36bacb6af94adb3a1574802b27b528496e4ca6"
+  },
+  "comparisonMethod": "Two encrypted original dumps independently decrypted and SHA-256 verified, restored in label-checked disposable PostgreSQL 18 containers; sole store identity verified; IDs and SHA-256 of complete PostgreSQL to_jsonb row text compared for Order, OrderItem and OrderStatusHistory. Private manifest outside Git; no raw personal records published.",
+  "authorizationBasis": "Same exact records as the previously approved 15 October test-order set; prior evidence L-INDICADORES-CLASSIFICACAO-CLONE-2026-10-16.json. No date/status heuristic or newly inferred test classification.",
+  "rehearsal": {
+    "runId": "a9155b3182693f32a9360da4abc25841",
+    "startedAt": "2026-10-21T15:39:38.383Z",
+    "finishedAt": "2026-10-21T15:41:12.187Z",
+    "success": true,
+    "backupSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+    "classification": {
+      "replay": false,
+      "excludedOrders": 24,
+      "batch": "legacy-test-orders-20261015-v1",
+      "cloneOnly": true,
+      "ordersAndHistoryPreserved": true,
+      "auditRecords": 24
+    },
+    "replay": {
+      "replay": true,
+      "excludedOrders": 24,
+      "batch": "legacy-test-orders-20261015-v1",
+      "cloneOnly": true
+    },
+    "tests": {
+      "passed": 3,
+      "failed": 0,
+      "cloneOnly": true
+    },
+    "guardTestsPassed": 5,
+    "applicationHttpCases": [
+      {
+        "name": "server_database_identity",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "catalog_read",
+        "count": 518,
+        "passed": true
+      },
+      {
+        "name": "test_products_absent_from_catalog",
+        "count": 4,
+        "passed": true
+      },
+      {
+        "name": "commercial_vacuums_and_accessories_preserved",
+        "count": 5,
+        "passed": true
+      },
+      {
+        "name": "legacy_admin_order_read",
+        "count": 24,
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_order_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "unknown_tenant_denied",
+        "count": 1,
+        "passed": true
+      },
+      {
+        "name": "opening_wallet_read",
+        "count": 2,
+        "passed": true
+      },
+      {
+        "name": "methods_remain_disabled",
+        "count": 1,
+        "passed": true
+      }
+    ],
+    "applicationTablesPreserved": true,
+    "dataPreserved": true,
+    "sequencesPreserved": true,
+    "schemaDiff": "-- This is an empty migration.\n",
+    "cloneContainerAbsent": true
+  },
+  "remaining": [
+    "Independent off-machine recovery by the designated user; access, retention and recovery objectives remain unverified.",
+    "Two remote payment references still require obligation reconciliation; reporting classification does not cancel charges.",
+    "Physical commercial stock confirmation and final cutoff/backup/executor/destination opening remain pending.",
+    "Published candidate, consumers and financial acceptance are separate from this local rehearsal."
+  ],
+  "fileHashes": {
+    "scripts/lib/restored-order-reporting.mjs": "b9c334692344c36b4a833a0663d56fc92f837e51531e2d8e56ed7cd954656df0",
+    "scripts/verify-restored-clone.mjs": "ec6d812e59670128b4782dd1a7e0da99fe4094f6ffe9a3c8bb0ca349c0359a3c",
+    "tests/scripts/restored-clone-tools.test.mjs": "335e940e3a4ac0e5fe449edac26ec85ed5c2dbff35b9b2bc76dfe17db1a1077c",
+    "tests/clone/restored-reporting.test.ts": "1838e2c734e3604cd285b6c3db1e0dfc20adc5db8e272ff23059ae90326c560c"
+  }
+}

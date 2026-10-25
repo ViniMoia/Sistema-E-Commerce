@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "kind": "RECEIVED_INDEPENDENT_RECOVERY_EVIDENCE_REVIEW",
+  "reviewedAt": "2026-10-21T18:42:56.912762+00:00",
+  "provenance": "User-supplied remote script result and agent report; compared locally, no direct inspection of remote host.",
+  "sourceFile": "diversos/RESULTADOS/Resultaddo/arquivos/RESULTADO-G2.json",
+  "sourceFileSha256": "6ab070eff986279561552911e66984d0ad3edad8d7f6749325ad3813210d5e85",
+  "remoteResult": {
+    "runId": "b64bee022cfd4578bbc408f9867fee00",
+    "startedAt": "2026-10-21T18:15:39.3377415Z",
+    "stage": "validated",
+    "success": true,
+    "localValidation": false,
+    "ownAccessConfirmed": true,
+    "machineFingerprint": "9362f7fc948066705c0838f98222f36381f79684b7d554f9664fbca8464aea61",
+    "accountFingerprint": "2677e526849d87dc063c9d0663f253e68c117de25320b8c87930ce0948dc530a",
+    "sourceConnected": false,
+    "sharedDatabaseWritten": false,
+    "providerCalls": 0,
+    "migrationsApplied": false,
+    "stockAdjusted": false,
+    "independentRecoveryProven": true,
+    "g2Closed": false,
+    "productionReady": false,
+    "backupSha256": "e48959c523715bc217946d1bbec37275df50681eab0a1e43a19de7e5798a173a",
+    "differentMachine": true,
+    "differentAccount": true,
+    "postgresImage": "postgres@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873",
+    "decryptAndHashMs": 82,
+    "dumpHashVerified": true,
+    "provisionMs": 3840,
+    "restoreMs": 641,
+    "tables": [
+      {
+        "table": "Address",
+        "rows": 18
+      },
+      {
+        "table": "AuditLog",
+        "rows": 22
+      },
+      {
+        "table": "Brand",
+        "rows": 18
+      },
+      {
+        "table": "Cart",
+        "rows": 3
+      },
+      {
+        "table": "CartItem",
+        "rows": 1
+      },
+      {
+        "table": "CategoryTag",
+        "rows": 10
+      },
+      {
+        "table": "FreightRule",
+        "rows": 0
+      },
+      {
+        "table": "JtExpressGeocom",
+        "rows": 58
+      },
+      {
+        "table": "JtExpressRate",
+        "rows": 5181
+      },
+      {
+        "table": "Loja",
+        "rows": 1
+      },
+      {
+        "table": "LoyaltyTransaction",
+        "rows": 2
+      },
+      {
+        "table": "LoyaltyWallet",
+        "rows": 2
+      },
+      {
+        "table": "Order",
+        "rows": 24
+      },
+      {
+        "table": "OrderItem",
+        "rows": 33
+      },
+      {
+        "table": "OrderStatusHistory",
+        "rows": 0
+      },
+      {
+        "table": "PaymentWebhookEvent",
+        "rows": 4
+      },
+      {
+        "table": "Product",
+        "rows": 522
+      },
+      {
+        "table": "ProductCategoryTag",
+        "rows": 474
+      },
+      {
+        "table": "ProductVariants",
+        "rows": 528
+      },
+      {
+        "table": "Session",
+        "rows": 13
+      },
+      {
+        "table": "StockSyncLog",
+        "rows": 538
+      },
+      {
+        "table": "User",
+        "rows": 8
+      },
+      {
+        "table": "_prisma_migrations",
+        "rows": 40
+      }
+    ],
+    "baselineSha256": "09fdef7afb45c8647ce7ec09d93cedb742ad23235cc30912435419f18d46b17e",
+    "dataStructureSequencesVerified": true,
+    "validationMs": 572,
+    "containerRemoved": true,
+    "finishedAt": "2026-10-21T18:15:45.8996617Z",
+    "notes": "Timing excludes manual access/transfer. No RPO/RTO compliance inferred. Roles/grants, integrations, retention and final opening require separate acceptance."
+  },
+  "checksAgainstTrustedLocalEvidence": {
+    "backupHashMatches": true,
+    "imageMatches": true,
+    "baselineHashMatchesLocalRestore": true,
+    "all23TableCountsMatch": true,
+    "machineDiffers": true,
+    "accountDiffers": true,
+    "successAndCleanup": true,
+    "independentMode": true,
+    "integrityVerified": true,
+    "scopePreserved": true
+  },
+  "archiveHashStatus": "Reported by remote agent as matching prepared archive; not a field of RESULTADO-G2.json.",
+  "expectedArchiveSha256": "54eee55441294962c2cd848384eadc3a4ba7c53fb2ebe7880afd2754cf33cce3",
+  "auxiliaryScriptsReviewed": [
+    {
+      "file": "check_key_format.ps1",
+      "sha256": "5a1cda13ea5e31e0b92351822e4834529b1c56c1fb9c4ddf145f6b8ae5e4532f"
+    },
+    {
+      "file": "check_machine.ps1",
+      "sha256": "2784d0166e0f505b4d39d8e56c1bfd6de88fac3987a05058b37333c6acc83d88"
+    },
+    {
+      "file": "check_zip_hash.ps1",
+      "sha256": "89b190f2c359fbb115c7f3124d234162cee4517c6427af4f5e47bae70ce15cb4"
+    },
+    {
+      "file": "copy_artifacts.ps1",
+      "sha256": "2d782b171f289d71a6e61267ececd7e03a436259e1907d87d05ba964f9650af9"
+    },
+    {
+      "file": "extract_and_verify.ps1",
+      "sha256": "d2f93f2c3ddaf680802fd928eb6abcf0a62d122aa40bd0d77d58d96bcb75e52a"
+    },
+    {
+      "file": "protect_key_dir.ps1",
+      "sha256": "c8895cee070367a8b1227ae46609fc31f5e9373e7816c7da0301ff69eb53a9d1"
+    },
+    {
+      "file": "protect_pkg_dir.ps1",
+      "sha256": "d9e08ddc0ab5b023f2774610e662516153c0a363fc2c9965fa9c9d33b5c9e6e3"
+    },
+    {
+      "file": "read_docs_part1.ps1",
+      "sha256": "486ab01b050f6ef87702db4af5b93929996f7015195588ddf121c9e018054d9f"
+    },
+    {
+      "file": "read_pacote_abertura.ps1",
+      "sha256": "eb48fa7477480eb3352ff3ad433f0c46c9ae80b822ed1b94a03e2dab7ff580ba"
+    },
+    {
+      "file": "read_restaurar_script.ps1",
+      "sha256": "acbfefad7a3d4245f96973c48274f80ce19e491cfce6e8a735703f5d941a5d0c"
+    },
+    {
+      "file": "read_restaurar_top.ps1",
+      "sha256": "46bdbe39871823829310ceb9214eb98cf87390489a73c4771ca236eff62ca2a5"
+    },
+    {
+      "file": "read_runbook.ps1",
+      "sha256": "5c532f1449a0d831fc5ffcb9869685e73415de865893258a4155fb8eb1860092"
+    },
+    {
+      "file": "read_zip_metadata.ps1",
+      "sha256": "994bbe6e450281a1d19d9699a9707ae6e4607e97cbca382eee9d665bfba912f4"
+    },
+    {
+      "file": "search_pacote_lines.ps1",
+      "sha256": "21085b8d09d8b4cb536370affcf44bfdb83c5f3ad28c1a3f362c316c0db2c1c6"
+    },
+    {
+      "file": "search_zip_content.ps1",
+      "sha256": "46ae75263e9662481d234ac7d8b871cb34e8ea9db4b2c92012d1de166ed22b6e"
+    },
+    {
+      "file": "test_decrypt.ps1",
+      "sha256": "37554a5070d4306d43b5bfd5b41d73557b57c1435cfb55d19e95ff901ba5227c"
+    },
+    {
+      "file": "test_docker_probe.ps1",
+      "sha256": "22c31b398d1801e123e2f0eec55d8478a31ca90cd0f0428c2caadee31507077a"
+    }
+  ],
+  "auxiliaryScriptsExecutedHere": false,
+  "reviewLimitations": [
+    "JSON is received evidence, not independent remote attestation; execution flags do not audit all actions of the remote agent.",
+    "Auxiliary decrypt probe reads plaintext only into memory; no dump-file write found in reviewed script.",
+    "ACL commands remove inheritance and grant current SID, but alone do not prove absence of other explicit grants; actual ACL output not supplied.",
+    "Auxiliary Docker probe uses a fixed name and disposable test password; it is not the canonical recovery executor and should not be adopted as the runbook.",
+    "User confirmed Vinicius operated Vanderlei's machine and Windows account without Vanderlei's participation. Different destination account is proven; a personal account belonging to Vinicius was not used. The script ownAccessConfirmed flag is preserved as received, not treated as proof of account ownership."
+  ],
+  "technicalRecoveryAcceptedFromReceivedEvidence": true,
+  "humanOperatorConfirmed": true,
+  "operatorConfirmation": {
+    "source": "Direct user statement in conversation",
+    "humanOperator": "Vinicius",
+    "machineAndWindowsAccountOwner": "Vanderlei (Esdras)",
+    "windowsAccount": "zapnitro\\esdra",
+    "vanderleiParticipated": false,
+    "operatorUsedPersonalWindowsAccount": false,
+    "scope": "Technical restoration on another machine operated by Vinicius; personal-account recovery/access criterion remains unproven."
+  },
+  "g2Closed": false,
+  "productionReady": false,
+  "remaining": [
+    "Resolve personal-account access/recovery criterion: destination Windows account belongs to Vanderlei, not operator Vinicius",
+    "Record manual access and transfer times; agree and validate recovery objectives",
+    "Confirm backup retention, protected custody and external recovery coverage",
+    "Complete commercial stock reconciliation and authorized final opening"
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "kind": "NUVEMSHOP_MERGE_AND_PREPARATION_BACKUP",
+  "at": "2026-10-22T16:53:46.230Z",
+  "status": "MERGED_BACKUP_VERIFIED_BINDINGS_WAITING_FOR_MAINTENANCE",
+  "merge": {
+    "number": 14,
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/14",
+    "merged": true,
+    "mergedAt": "2026-10-22T16:48:23Z",
+    "mergeCommit": "bcdce982dffc4b61dd9f22e9a21f90bcaa3b68b1",
+    "branchHead": "bcdce982dffc4b61dd9f22e9a21f90bcaa3b68b1",
+    "head": "cea40d95ee178f4a29867e0ddea7cc26cf2ab567",
+    "mergeChecks": [
+      {
+        "name": "Vercel Preview Comments",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/ViniMoia/Sistema-E-Commerce/runs/119959774560"
+      },
+      {
+        "name": "Validation, Security & Quality Gates",
+        "status": "in_progress",
+        "conclusion": null,
+        "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39817091342/job/119958299242"
+      }
+    ]
+  },
+  "preMergeCI": {
+    "status": "success",
+    "head": "cea40d95ee178f4a29867e0ddea7cc26cf2ab567",
+    "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/39812591646"
+  },
+  "userOperationalConfirmation": {
+    "maintenanceWindowConfirmed": false,
+    "response": "Ainda não foi confirmada",
+    "consequence": "Nenhuma aplicação de vínculos na homologação nesta etapa."
+  },
+  "backup": {
+    "runId": "15bee191b1d96dca873089cee7b2c0e2",
+    "privateLocator": "%LOCALAPPDATA%/continental-hml-backups/15bee191b1d96dca873089cee7b2c0e2",
+    "files": [
+      "homologacao.dump.enc",
+      "key.dpapi",
+      "evidence.json"
+    ],
+    "sourceStore": {
+      "id": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+      "slug": "continental-homologacao"
+    },
+    "sourceVersion": "18.6 (fd34222)",
+    "sourceSnapshotAt": "2026-10-22T16:51:32.990Z",
+    "captureStartedAt": "2026-10-22T16:51:38.352Z",
+    "captureCompletedAt": "2026-10-22T16:51:51.978Z",
+    "captureMode": "pg_dump custom do schema public em transação somente leitura, usando o mesmo snapshot exportado da transação REPEATABLE READ que calculou as contagens/hashes.",
+    "plaintextBytes": 389043,
+    "plaintextSha256": "db8cb637abad3f281f9897bbadb5bb1374f9b53501a2b3fd88df221d1287b960",
+    "name": "homologacao.dump.enc",
+    "scope": "public schema, data, sequences; no global roles, owners/ACL or external resources",
+    "encryptedSha256": "6cc440972f36a8e12c50a8f26292af29f65b665580dbd4703294b9884505e884",
+    "encryptedBytes": 389071,
+    "encryptedRoundtripVerified": true,
+    "encryption": "AES-256-GCM; chave protegida por DPAPI da conta Windows atual; diretório com ACL restrita.",
+    "restoreVerified": true,
+    "restoredTables": 38,
+    "allTableCountsAndHashesMatched": true,
+    "restoredSequenceCount": 1,
+    "sequenceLimit": "Sequence values restored from the dump; no claim that live sequence values remained frozen during this preparation.",
+    "containerIsolation": "PostgreSQL 18 descartável com network=none, sem portas publicadas; aplicação e consumidores não iniciados.",
+    "cloneRemoved": true,
+    "finalApplicationCutoff": false,
+    "limitations": [
+      "Não houve congelamento global dos escritores. A captura é consistente, mas não é o cutoff definitivo da futura aplicação.",
+      "Roles globais, owners/ACL e serviços externos não são reconstituídos por este backup de public.",
+      "DPAPI exige a conta Windows original. Não substitui a prova de recuperação independente de G2.",
+      "Dump e chave não foram enviados ao Git ou a serviço externo."
+    ]
+  },
+  "refreshedDiagnostic": {
+    "at": "2026-10-22T16:52:17.955Z",
+    "localStoreId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "remoteStoreId": "8179726",
+    "localReadOnly": true,
+    "localProducts": 519,
+    "localVariants": 520,
+    "remoteScan": {
+      "pages": 6,
+      "productCount": 563,
+      "requestCount": 7,
+      "startedAt": "2026-10-22T16:52:10.642Z",
+      "completedAt": "2026-10-22T16:52:17.888Z",
+      "readComplete": true,
+      "translationComplete": true,
+      "atomicSnapshot": false
+    },
+    "candidateProducts": 517,
+    "exclusions": [
+      {
+        "localProductId": "a26fdbc1-d8c3-4173-b114-f759654b9ca4",
+        "remoteProductId": null,
+        "catalogVersion": 1,
+        "status": "REVIEW_REQUIRED",
+        "reasons": [
+          "REMOTE_PRODUCT_MISSING",
+          "VARIANT_COUNT_MISMATCH"
+        ],
+        "variants": []
+      },
+      {
+        "localProductId": "de77a791-683b-48bc-9c38-ade2593ec79e",
+        "remoteProductId": "364590935",
+        "catalogVersion": 0,
+        "status": "REVIEW_REQUIRED",
+        "reasons": [
+          "CODE_CONFLICT"
+        ],
+        "variants": []
+      }
+    ],
+    "exactPlanMatchesEarlierDiagnostic": true,
+    "planSha256": "d63dd606ae97bb05c21f3367a9d3ca0d90eb088dea174964f607df622008eaa4",
+    "sourceFilesMatchMergedRevision": true,
+    "sourceHashes": {
+      "lib/integrations/nuvemshop-catalog-reader.ts": "153bac0c2eba34c3e17b1801d51308a8cdc9bed4f267c7516f503e64ef89f866",
+      "lib/integrations/nuvemshop-variant-mapping.ts": "3fe31afceac9d2cd9094263438733126058055a1e50eb4e8476a9177ec0c365d",
+      "lib/product-variants.ts": "c1ad3586ff01d94b04202035be0f902e68c943262bfab7d8918eb0b954c60fe7"
+    },
+    "persistedVariantBindings": 0,
+    "freshnessLimit": "Reconsultar o catálogo imediatamente antes da aplicação; o escritor não aceita leitura iniciada há mais de dez minutos."
+  },
+  "nextRequired": [
+    "Confirmar conclusão da CI do commit de integração.",
+    "Vanderlei confirmar a janela e a contenção de edições/consumidores nos destinos que acessam o banco de homologação.",
+    "Na janela, atualizar o backup/baseline, repetir a leitura do catálogo e conferir novamente o lote e o operador.",
+    "Somente então aplicar os vínculos aprovados e comparar dados/auditoria antes e depois."
+  ],
+  "safety": {
+    "mainConnected": false,
+    "realDatabaseWrites": 0,
+    "providerMutations": 0,
+    "providerGetRequests": 7,
+    "financialOperations": 0,
+    "variantBindingsApplied": 0,
+    "stockChanged": false,
+    "productionApproved": false,
+    "newNeonResources": false
+  },
+  "publication": {
+    "implementationOnHomologacao": true,
+    "thisEvidenceInitiallyLocal": true,
+    "backupInGit": false
+  }
+}

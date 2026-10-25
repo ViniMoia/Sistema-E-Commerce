@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-23T21:07:04.230Z",
+  "pr": "https://github.com/ViniMoia/Sistema-E-Commerce/pull/15",
+  "head": "34ab8ea02b8bd0f5cacc740107e827e898b7c4d4",
+  "base": "c2a6933a333009077fd3ab753ce7307261850e23",
+  "status": "REVISAO_TECNICA_LOCAL_CONCLUIDA_CI_E_REVISAO_VANDERLEI_PENDENTES",
+  "reviewer": "Agente da frente de Vinicius; revisao do proprio pacote, nao revisao independente de Vanderlei",
+  "blockingFindings": [],
+  "reviewed": [
+    "Selecao por evento/tentativa, pedido, loja e conta; nenhum fallback de alvo invalido para lote",
+    "Correlacao da inbox com cobranca, referencia externa e metodo",
+    "Preservacao de leases ativos, espera de nova tentativa e revisoes",
+    "Confirmacao remota antes de liberar reserva; operacao incerta nao reenviada",
+    "Consulta antes do cancelamento para observar pagamento concorrente",
+    "Reutilizacao dos executores existentes, sem nova rota ou cron",
+    "Testes de concorrencia, repeticao, escopo e alvo nulo; evidencias historicas diferenciadas da candidata"
+  ],
+  "validation": {
+    "localIntegrationPassed": 65,
+    "localUnitPassed": 9,
+    "localTypeScript": "PASS",
+    "localLint": "PASS",
+    "ci": {
+      "id": 40022784708,
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/ViniMoia/Sistema-E-Commerce/actions/runs/40022784708"
+    },
+    "ciJobs": [
+      {
+        "name": "Validation, Security & Quality Gates",
+        "status": "in_progress",
+        "conclusion": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout Repository",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Setup Node.js",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install Dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Prepare Local Evidence Directory",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate Prisma Schema",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "TypeScript Typecheck",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Lint",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run Unit Tests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate Consumer and Deployment Manifests",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Rebuild and Verify Runtime Migration History",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reject Missing or Mismatched Test Database Sentinel",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify Nuvemshop Bindings on Disposable PostgreSQL",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify Isolated Database and HTTP Server",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Production Build and Two-Instance Runtime Regression",
+            "status": "in_progress",
+            "conclusion": null
+          },
+          {
+            "name": "Full Maintenance and Recovery in Isolated Production Runtime",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Relocated Standalone Package and Runtime Regression",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Bounded Capacity Pilot with Disposable Providers",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Build Cloud Run Image",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Validate Linux Container, Assets, Restart and Consumer",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Retain Evidence for This Revision",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Post Setup Node.js",
+            "status": "pending",
+            "conclusion": null
+          },
+          {
+            "name": "Post Checkout Repository",
+            "status": "pending",
+            "conclusion": null
+          }
+        ]
+      }
+    ],
+    "vercel": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "url": "https://vercel.com/vinimoias-projects/continental-prototipo/2pzRRRtXYNGESLDBt3bNPDfN928j"
+      }
+    ]
+  },
+  "independentReview": {
+    "registeredReviews": [],
+    "source": "trabalho_em_dupla/EXECUTORES_FINANCEIROS_2026-10-23.md, secao Revisao por Vanderlei",
+    "requiredByRecordedWorkflow": "Aguardar a CI desta entrega e registrar a revisao aprovada antes de incorpora-la a candidata operacional.",
+    "userAskedForReviewStatus": true,
+    "userConfirmation": "Vinicius confirmou que Vanderlei ainda nao concluiu a revisao."
+  },
+  "effects": {
+    "merged": false,
+    "deployedByThisTurn": false,
+    "remoteFinancialOperations": 0,
+    "databaseMutations": 0
+  },
+  "next": "Conferir resultado final da CI e devolutiva de Vanderlei na mesma revisao antes de incorporar a homologacao."
+}

@@ -1,5 +1,87 @@
 # G2 — Pacote de abertura do banco existente
 
+**Encerramento em andamento — 21/10:** Vinícius aprovou metas de **RPO <= 15 minutos / RTO <= 60 minutos** e informou acesso ao painel Neon. [Ficha de encerramento](FECHAMENTO_G2.md) e [registro das decisões](evidencias/L-G2-FECHAMENTO-2026-10-21.json). Próxima coleta: identidade do projeto/branch da origem, janela de histórico/PITR e permissões, somente leitura. As metas estão aprovadas; capacidade, retenção e acesso pessoal para recuperação ainda não estão comprovados. O restore em outra máquina já foi recebido e validado no escopo abaixo; não tratá-lo como execução pendente. G2 aberto.
+
+## Recuperação em outra máquina — resultado recebido em 21/10/2026
+
+**Recuperação técnica validada pela evidência recebida; G2 permanece aberto.** O usuário enviou o resultado do run `b64bee022cfd4578bbc408f9867fee00`, executado às 15:15 BRT. O SHA do backup, o digest PostgreSQL, o hash da comparação com a referência e todas as contagens das 23 tabelas correspondem ao ensaio local preparado. O executor registra dados/estrutura/sequências conferidos, máquina e conta diferentes, `localValidation: false`, acesso próprio declarado e contêiner removido. Duração automatizada: aproximadamente 6,56 segundos, sem transferência/acesso manual; não é RTO operacional.
+
+[Conferência e resultado recebido](evidencias/L-G2-RECUPERACAO-OUTRA-MAQUINA-2026-10-21.json). Trata-se de evidência fornecida pelo usuário, sem inspeção direta desta estação no destino. Vinícius confirmou que operou pessoalmente a máquina e a conta `zapnitro\esdra`, pertencentes a Vanderlei (Esdras), sem participação de Vanderlei no processo. A identidade do operador está esclarecida. A recuperação técnica em outra máquina está comprovada pela evidência recebida; o requisito de acesso por conta pessoal de Vinícius continua sem comprovação. O campo `ownAccessConfirmed` do resultado original registra uma declaração ao script e não comprova titularidade da conta. O resultado registra zero chamadas ao provedor, ausência de conexão à origem, escrita em banco compartilhado, migrations e ajustes de estoque.
+
+Esta atualização substitui as pendências históricas abaixo de transferência e execução técnica no segundo computador. Continuam abertos o critério de acesso por conta pessoal do operador, tempos completos, retenção/custódia, objetivos de recuperação e cobertura externa, estoque comercial e abertura final autorizada. Scripts auxiliares recebidos foram apenas lidos; não foram executados aqui nem incorporados ao procedimento canônico. Atualização documental local, sem commit/publicação nesta rodada.
+
+## Pacote portátil de recuperação preparado — 21/10/2026
+
+**Pronto para transferência controlada ao segundo Windows do usuário; recuperação independente ainda não executada.** O backup original de 21/10 foi verificado e recriptografado em formato padrão `age` v1.3.2 com identidade X25519 nova, fora do Git. A chave portátil está em diretório separado com ACL restrita; a chave DPAPI e o backup originais permaneceram intactos. Não enviar a chave pelo chat/Git nem dentro do ZIP.
+
+Localizadores nesta máquina:
+
+- Pacote: `%LOCALAPPDATA%\continental-g2-portable\1a5688542d7c4461a2d17d82f1b6ef31\PACOTE_G2_PORTATIL_2026-10-21.zip`.
+- Chave separada: `%LOCALAPPDATA%\continental-g2-keys\1a5688542d7c4461a2d17d82f1b6ef31\IDENTIDADE-G2.agekey`.
+- Instruções e prompt atualizado: `PACOTE_G2/LEIA-ME.txt` e `PACOTE_G2/PROMPT-GEMINI.txt`, dentro do ZIP.
+
+O pacote inclui ciphertext `source.dump.age`, executável oficial `age` para Windows amd64, manifesto, referência de verificação, SQL somente leitura e executor PowerShell. O ZIP oficial do `age` foi conferido contra o digest da release. O executor `scripts/homologation/restore-portable-g2.ps1` usa PostgreSQL 18 por digest, contêiner novo sem rede/portas e dados temporários em memória, com comparação de 23 tabelas, estrutura e uma sequência. Não carrega `.env`, não conecta a origem, não aplica migrations e não altera estoque/pontos. Evidência de validação local não é restauração pelo operador em outra máquina.
+
+No segundo computador, verificar o SHA-256 do ZIP pelo valor fornecido nesta máquina, guardar chave fora do pacote com acesso restrito, confirmar acesso próprio e executar conforme o prompt. Não usar `-LocalValidation`, não remover verificações de máquina/conta e não regenerar o resultado esperado para forçar aprovação. Enviar somente `RESULTADO-G2.json` sanitizado e os tempos de acesso/transferência medidos pelo operador. G2, retenção, RPO/RTO e cobertura externa continuam dependentes de aceites próprios. A transferência física ainda será feita pelo usuário; nenhuma cópia foi enviada a serviço externo.
+
+## Devolutiva de Vanderlei sobre backups — 21/10/2026
+
+**Fonte: relato de Vanderlei encaminhado pelo usuário, sem inspeção direta da máquina dele nesta etapa.** [Registro com limites](evidencias/L-G2-DEVOLUTIVA-BACKUPS-VANDERLEI-2026-10-21.json). Foram localizados dois `homologacao.dump.enc` em `%LOCALAPPDATA%\continental-hml-backups`, com manifestos de restauração pelo mesmo usuário: `dad96ff03044f5d15486b2adee06c167` (16/10, 37 tabelas) e `ee9f404a92124b124c175696848eacaa` (21/10, 38 tabelas, snapshot anterior à migration de devolução de boleto). Ambos são **de homologação**, protegidos por AES-GCM/DPAPI; integridade atual e recuperação independente não foram revalidadas nessa investigação.
+
+O backup **da origem** de 21/10, `b0072bdd3f7e2302fea9dd8e49f91d6d`, permanece identificado na máquina de Vinícius e não foi encontrado nos locais consultados por Vanderlei. Para o ensaio de recuperação da origem em G2, manter esse escopo; backups de homologação não o substituem. Nenhum arquivo/chave foi transferido ou exportado. Copiar `key.dpapi` não é comprovação de recuperação em outra conta/máquina.
+
+Vanderlei relatou ausência de buckets no projeto GCP consultado e falta de acesso administrativo ao Neon para verificar snapshots/PITR/retenção. Esses recursos do Neon continuam **não verificados**, não declarados inexistentes. Janelas dos manifestos incluem captura e ensaio; datas de modificação e tamanhos dos arquivos criptografados não equivalem ao ponto de captura ou tamanho/hash do dump original. Pacotes de código e SQLs de migration não substituem backups de dados. A referência a documento/arquivo da candidata `9495ff9` não comprova sua implantação efetiva.
+
+**Próximo encaminhamento:** sincronizar a documentação revisada via branch/PR — a cópia de Vanderlei não continha a evidência fresca G2 — e definir acesso fora da máquina ao artefato da origem e à chave por mecanismo seguro independente da conta Windows original, preservando os arquivos existentes. Depois preparar destino vazio isolado e executar a recuperação pelo usuário com conta própria, medir tempos e conferir integridade/dados/estrutura. Retenção, objetivos de recuperação e cobertura externa ainda precisam de definição/comprovação. Não criar armazenamento, exportar chaves ou restaurar por inferência desta devolutiva. G2 permanece aberto; registro documental local, ainda sem commit/envio.
+
+## Relação de estoque comercial para conferência — 21/10/2026
+
+**Retorno do usuário:** ainda não sabe identificar a rotina/sistema que atualiza os saldos. Registrar como mecanismo não identificado, sem presumir sincronização ausente ou desligada. A contagem física pode continuar com horário e movimentações registrados; o aceite do estoque para produção exige identificar o integrador existente, seu responsável, origem/destino, correspondência de produtos/variantes e uma execução recente com comparação correlacionada. Não criar, substituir nem ativar integração para preencher essa lacuna.
+
+**Preparação somente leitura às 13:00:28 BRT.** [Evidência e hashes dos arquivos](evidencias/L-G2-ESTOQUE-CONFERENCIA-2026-10-21.json). Conforme orientação do usuário, os produtos vindos da Nuvemshop são produtos reais da loja e devem ser preservados. A relação não é uma carga de estoque de abertura nem um comando de importação/sincronização.
+
+- **518 produtos comerciais / 518 variantes:** todos têm SKU e ID de produto Nuvemshop; nenhum foi classificado como teste por nome, saldo ou ausência de vínculo. Os cinco produtos anteriormente protegidos estão incluídos. Nenhuma divergência aritmética entre estoque do produto e soma das variantes nesses 518 produtos.
+- **4 testes previamente identificados / 10 variantes:** separados exclusivamente pelos IDs já revisados e identidade conferida. As quatro divergências produto/soma das variantes pertencem a esse conjunto. Três desses testes compartilham um ID externo, sem coincidência com os 518 produtos comerciais; esse vínculo precisa de revisão antes de qualquer futura ação. Nada foi retirado, zerado ou excluído.
+- **Vínculos a conferir:** nenhuma das 518 variantes comerciais tem `nuvemshopVariantId` preenchido. Isso não nega a origem comercial informada pelo usuário, mas impede presumir correspondência por variante sem conferência. Não preencher IDs automaticamente por nome/SKU ou apenas porque existe uma variante.
+- **Atualização dos saldos:** há registros históricos de importação/sincronização/webhook no banco, com últimas ocorrências registradas em 04/09; os campos de configuração Nuvemshop da loja consultada estão vazios. Esses achados não comprovam nem refutam uma rotina externa atual. Identificar o mecanismo efetivo e a hora de atualização com o operador; `updatedAt` não é comprovação de sincronização. Nenhuma consulta à API Nuvemshop nem acionamento foi executado.
+
+Arquivos privados, fora do Git, em `%LOCALAPPDATA%\logic-audit-backups\b0072bdd3f7e2302fea9dd8e49f91d6d\estoque-conferencia-20261021`:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `01_ESTOQUE_COMERCIAL.csv` | 518 linhas por variante, com identidade, SKU, vínculo externo e saldos registrados. |
+| `02_TESTES_IDENTIFICADOS.csv` | 10 linhas dos quatro produtos de teste já identificados, para revisão separada. |
+| `03_DIVERGENCIAS_E_VINCULOS.csv` | 532 ocorrências de cadastro/vínculo ou divergência local; não são 532 erros de estoque físico. |
+
+**Como conferir:** abrir uma cópia do CSV em UTF-8, separador ponto e vírgula, importando IDs/SKUs como texto. Manter os campos coletados intactos. Preencher as colunas finais com quantidade observada na Nuvemshop, horário da consulta, quantidade física, horário da contagem, movimentações entre esses horários, responsável, resultado e observações. Campos em branco significam **não conferido**, nunca zero. Confirmar a identidade exata do produto/variante antes de comparar valores; se não houver correspondência segura, registrar a pendência. Não somar a coluna de total do produto repetida por variante nem descontar o buffer automaticamente. Estoque local, estoque Nuvemshop e estoque físico são três observações distintas; eventual diferença requer explicação e revisão própria, sem ajuste automático.
+
+Os arquivos refletem uma fotografia do banco, não saldos em tempo real. Produtos/variantes mantêm as mesmas impressões da coleta das 12:05 BRT. O catálogo completo ficou em pasta privada com permissões herdadas da pasta de backup; o Git recebe apenas instruções e evidência resumida. **Contagem física, comparação com Nuvemshop e aceite comercial ainda não executados. G2 continua aberto.** Esta preparação não altera a política de estoque, não pausa nem dispara integrações, não importa dados e não publica a aplicação. Arquivos/documentação locais, ainda sem commit/envio.
+
+## Referências legadas identificadas como simulação — 21/10/2026
+
+**Leitura às 12:52:32 BRT, em transação REPEATABLE READ / READ ONLY, com loja de origem verificada.** [Evidência sanitizada](evidencias/L-G2-REFERENCIAS-SIMULADAS-2026-10-21.json). As duas referências antes chamadas de remotas são IDs locais `pay_sim_<timestamp>`, ligados a eventos `ASAAS_SIMULATOR`, `simulated=true`, com ID de pagamento, referência do pedido, valor e estado correspondentes. O código histórico de `origin/main` em `7f9b26e`, `app/api/webhooks/asaas/simulate/route.ts`, gera e persiste exatamente esse formato sem criar cobrança no provedor nesse fluxo.
+
+| Pedido na origem legada | Valor nominal local | Conclusão restrita |
+|---|---|---|
+| #29 | R$ 440,00 | Referência com proveniência de simulação local correlacionada. |
+| #30 | R$ 510,00 | Referência com proveniência de simulação local correlacionada. |
+
+`PAID`/`RECEIVED` nesses registros não comprovam recebimento de dinheiro. Não consultar esses IDs artificiais como cobranças reais, gerar estorno ou encaminhá-los à conciliação do provedor. Preservar o histórico e a classificação de testes já revisada; nenhum registro foi alterado. A rota na candidata está desativada no código, mas o runtime publicado não foi conferido nesta leitura.
+
+**Escopo resolvido:** identificação das duas referências não nulas do inventário. Zero chamadas ao Asaas; conta do provedor não verificada. Isso não prova ausência global de outras cobranças, recebimentos bancários ou obrigações fora desses registros. Impressões de pedidos, itens, carteiras e movimentos coincidem com a leitura das 12:05 BRT. Os pedidos #29/#30 pertencem à origem legada, não aos cenários #3–#8 da homologação.
+
+**G2 continua aberto:** recuperação independente, confirmação física de estoque comercial, revisão de eventuais outras obrigações e preparação/execução da abertura no destino autorizado. Atualização local, ainda sem commit/envio ao GitHub.
+
+## Classificação conferida no backup novo — 21/10/2026
+
+**Ensaio local aprovado às 12:39–12:41 BRT; G2 permanece aberto.** [Evidência da comparação e classificação](evidencias/L-G2-CLASSIFICACAO-2026-10-21.json). Os dumps criptografados de 15 e 21/10 foram restaurados separadamente, com verificação SHA-256 do arquivo e da identidade da loja. A comparação por ID e SHA-256 do conteúdo integral das linhas confirmou os mesmos 24 pedidos, 33 itens e zero registros de histórico. O manifesto por registro permanece no diretório privado do backup, fora do Git; a evidência versionável contém apenas resumos e hashes.
+
+O classificador do clone passou a aceitar também o hash exato do backup de 21/10, mantendo o snapshot antigo, a quantidade e a impressão integral dos pedidos exigidas. Nenhuma seleção por data/status nem aceitação de hash arbitrário foi introduzida. A auditoria registra o hash efetivamente usado; o lote anterior foi preservado porque corresponde ao mesmo conjunto já aprovado.
+
+No clone atualizado: 24 classificações e 24 auditorias, pedidos/itens/histórico preservados e repetição sem duplicação. Nove verificações HTTP, três testes de relatórios e cinco testes de proteção passaram. Os relatórios comerciais excluem os testes, o histórico continua consultável e compras novas continuam comerciais; o ensaio de compra/devolução usa dados locais controlados, sem Asaas. Clone descartado e ausência conferida. Alterações do executor e documentação ainda locais, sem novo commit/publicação nesta etapa.
+
+**Pendências após este ensaio:** as duas referências foram posteriormente identificadas como simulações locais, conforme seção acima. Restam confirmar estoque comercial físico, revisar eventuais outras obrigações, comprovar acesso/recuperação independente pelo usuário e preparar a janela final de abertura com backup, contenção dos escritores e comparação no destino autorizado. Classificação de relatórios não resolve cobranças, vínculos legados ou obrigações. Nenhuma conexão nova com a origem, operação financeira remota ou alteração em banco compartilhado ocorreu no ensaio de classificação.
+
 ## Backup fresco e ensaio de abertura — 21/10/2026
 
 **Restauração e abertura local aprovadas; G2 permanece aberto.** [Evidência sanitizada](evidencias/L-G2-BACKUP-ENSAIO-2026-10-21.json). Candidata de runtime `9495ff9`; checkout documental `f2a55eb`. A origem foi identificada antes da captura e acessada somente leitura; `.env` foi selecionado explicitamente para não herdar o outro destino de `.env.local`.
@@ -10,11 +92,11 @@
 - Duas carteiras abertas com baixa auditada dos 475 pontos de teste, dois ajustes/duas auditorias, movimentos e 24 pedidos históricos preservados. Replay sem duplicar ajustes. Isso não altera nem autoriza baixa nos saldos do banco de origem.
 - Nove verificações HTTP passaram, incluindo catálogo, pedidos, carteiras e recusas de acesso. Três testes de abertura/compra passaram: 20 comandos legados recusados e uma compra controlada local; sem chamadas Asaas. Cinco testes das proteções do executor passaram. Clone descartado e ausência conferida.
 
-**Classificação dos pedidos no backup novo:** ainda não reensaiada. O classificador exige o hash aprovado do snapshot de 15/10; a proteção foi preservada. Revisar o manifesto e a impressão integral dos pedidos do backup novo antes de habilitar essa fase. A prova anterior continua identificada como histórica, não como execução no snapshot de 21/10.
+**Classificação dos pedidos no backup novo:** estava pendente nesta primeira rodada; foi conferida e reensaiada posteriormente às 12:39–12:41 BRT, conforme seção acima. A prova antiga permanece histórica e a nova execução tem evidência própria.
 
 **Recuperação independente:** o usuário confirmou que será o operador alternativo. A execução acima ocorreu pela conta Windows atual e não demonstra acesso independente. Próxima prova: o usuário obtém o backup e a chave pelo mecanismo aprovado, em conta/ambiente cuja independência seja verificada, restaura em destino novo isolado e confere integridade. Não copiar `key.dpapi` supondo portabilidade. Ainda faltam definir/comprovar acesso independente, cópia fora desta máquina, retenção e RPO/RTO; tempos locais não são RPO/RTO aprovados.
 
-**Condições restantes de G2:** recuperação pelo operador alternativo; revisão do manifesto do snapshot fresco; obrigações das duas referências remotas e estoque comercial físico; backup/cutoff da janela final, contenção dos escritores, executor específico e comparação antes/depois no destino autorizado. Nenhuma migration, classificação, alteração de estoque/pontos ou abertura foi aplicada à origem/homologação compartilhada. Evidências e pendências do inventário abaixo conservam seu horário de coleta.
+**Condições restantes de G2:** recuperação pelo operador alternativo; revisão de eventuais outras obrigações e estoque comercial físico; backup/cutoff da janela final, contenção dos escritores, executor específico e comparação antes/depois no destino autorizado. As duas referências legadas foram identificadas como simulações locais às 12:52 BRT. O manifesto foi conferido para o backup de 21/10; atividade posterior exige nova conferência. Nenhuma migration, classificação, alteração de estoque/pontos ou abertura foi aplicada à origem/homologação compartilhada. Evidências e pendências do inventário abaixo conservam seu horário de coleta.
 
 ## Inventário atualizado — 21/10/2026
 
@@ -121,7 +203,7 @@ Conter e drenar os escritores conforme o runbook antes de uma janela real. `CHEC
 
 ## 5. Roteiro de recuperação por operador alternativo
 
-Esta prova ainda depende de um segundo operador. Copiar `key.dpapi` não torna a chave independente da conta Windows original. O tempo do ensaio local também não é RTO comercial.
+Vinícius já executou e validou o restore na máquina/conta de Vanderlei, sem participação dele, conforme o registro de 21/10 no início deste documento. Permanece pendente o acesso duradouro por conta pessoal e a recuperação operacional completa. O roteiro abaixo continua aplicável à janela final; não exige repetir o mesmo ensaio sem uma lacuna específica. Copiar `key.dpapi` não torna a chave independente da conta Windows original.
 
 1. Registrar operador principal/alternativo, backup escolhido, cutoff, cobertura, retenção, RPO/RTO acordados e mecanismo de acesso independente. Reutilizar recursos existentes confirmados; localização/permissões ainda não demonstradas ficam pendentes.
 2. Disponibilizar o artefato criptografado e acesso à chave pelo mecanismo aprovado, fora do Git/chat. Registrar somente referências e versões. Nenhum upload para serviço novo é realizado por este pacote.
@@ -132,11 +214,11 @@ Esta prova ainda depende de um segundo operador. Copiar `key.dpapi` não torna a
 
 | Campo do relatório do segundo operador | Preenchimento nesta etapa |
 |---|---|
-| Operador alternativo e mecanismo independente usados | Pendente |
-| ID/referência do backup, hash e cutoff | Escolher backup da janela; referência histórica acima é apenas ensaio |
-| Destino isolado / ambiente de origem confirmado | Pendente |
-| Integridade, dados, sequências e configuração | Pendente prova independente |
-| Tempos e ponto recuperado / RPO / RTO | Pendente medição e aceite |
+| Operador alternativo e mecanismo independente usados | Vinícius confirmado; pacote age em outra máquina/conta de Vanderlei, sem atuação dele. Acesso por conta pessoal ainda não comprovado. |
+| ID/referência do backup, hash e cutoff | Backup de origem `b0072bdd3f7e2302fea9dd8e49f91d6d`, hash completo na evidência; janela 21/10, 15:12:30–15:13:20 UTC. Snapshot exato não isolado; atualizar no cutoff final. |
+| Destino isolado / ambiente de origem confirmado | Docker descartável no segundo computador; identidade e hash comparados com a referência da origem. |
+| Integridade, dados, sequências e configuração | 23 tabelas, estrutura/sequências aprovadas pelo resultado recebido. Configuração externa não coberta. |
+| Tempos e ponto recuperado / RPO / RTO | ~6,56 s apenas do ciclo automatizado. Metas 15/60 min aprovadas; atendimento completo não demonstrado. |
 | Cobertura externa: arquivos, roles, segredos, eventos | Pendente verificação |
 | Decisão e revisão | Pendente; nenhuma promoção decorrente deste roteiro |
 

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "status": "VERCEL_AVAILABLE_ASAAS_QUEUE_RESUMED",
+  "vercelProbe": {
+    "checkedAt": "2026-10-23T19:05:08.661Z",
+    "home": {
+      "status": 200,
+      "maintenancePage": false
+    },
+    "asaas": {
+      "enabled": true,
+      "interrupted": true,
+      "sendType": "SEQUENTIALLY"
+    },
+    "invalidJsonProbe": {
+      "status": 400,
+      "error": "Payload de webhook inválido."
+    },
+    "scope": "Provider read and malformed JSON only; no payment event sent."
+  },
+  "asaasReadback": {
+    "checkedAt": "2026-10-23T19:10:47.793Z",
+    "scope": "Homologation; provider GET and read-only database transaction only",
+    "asaas": {
+      "enabled": true,
+      "interrupted": false,
+      "sendType": "SEQUENTIALLY",
+      "destination": "https://continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app/api/webhooks/asaas"
+    },
+    "database": {
+      "inbox": [
+        {
+          "status": "COMPLETED",
+          "count": 30,
+          "latest_received_at": "2026-10-15T15:47:56.735Z",
+          "latest_completed_at": "2026-10-15T16:31:04.049Z"
+        },
+        {
+          "status": "READY",
+          "count": 1,
+          "latest_received_at": "2026-10-17T07:01:24.694Z",
+          "latest_completed_at": null
+        }
+      ],
+      "recentInbox": [
+        {
+          "received_since_vercel_probe": 0
+        }
+      ],
+      "outbox": [
+        {
+          "status": "COMPLETED",
+          "count": 22
+        },
+        {
+          "status": "DEAD_LETTER",
+          "count": 1
+        }
+      ]
+    },
+    "result": "READBACK_COMPLETE"
+  },
+  "gcp": {
+    "source": "User-supplied Vanderlei screenshot",
+    "reportedAt": "2026-10-23T17:40:00Z",
+    "reportedStatus": "Resumed; 42 probes passed; no job executed; checkout and financial processing remain disabled",
+    "independentlyVerified": false
+  },
+  "limitations": [
+    "Malformed JSON rejection verifies authentication and endpoint reachability, not durable event persistence or financial processing.",
+    "No inbox entries received since the Vercel probe. Provider delivery backlog/logs have not been independently inspected.",
+    "One READY inbox entry predates resumption (2026-10-17). One DEAD_LETTER outbox entry requires separate review; it was not replayed.",
+    "No payment processing job, financial event, stock update or provider mutation was executed by these checks.",
+    "Cloudflare was not changed by this resumption procedure."
+  ],
+  "relatedEvidence": "L-NUVEMSHOP-APLICACAO-VINCULOS-2026-10-23.json"
+}

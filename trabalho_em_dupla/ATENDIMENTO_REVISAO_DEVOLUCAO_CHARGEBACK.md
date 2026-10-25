@@ -1,5 +1,7 @@
 # G3 — Atendimento de revisão financeira, devolução e chargeback
 
+**Distinção de G2 — 21/10, 12:52 BRT:** as duas referências dos pedidos #29/#30 da origem legada foram identificadas como simulações locais (`ASAAS_SIMULATOR`), com identidade/valor correlacionados. [Evidência](evidencias/L-G2-REFERENCIAS-SIMULADAS-2026-10-21.json). Não são os pedidos #3–#8 de homologação, não comprovam recebimento no Asaas e não devem gerar estorno ou conciliação remota. Nenhuma chamada ao provedor foi feita nessa leitura. Os cenários reais de aceite de G3 abaixo continuam pendentes; nenhuma obrigação externa foi declarada globalmente inexistente.
+
 **Próximo ensaio preparado em 21/10:** [roteiro de aceite financeiro G3](ROTEIRO_ACEITE_FINANCEIRO_G3.md) e [modelo de execução](modelos/ACEITE_FINANCEIRO_G3.json), baseados na integração `9495ff9`. Contêm pré-requisitos de publicação/consumidores, resultados esperados, evidências e critérios de interrupção para PIX, boleto, retorno físico e chargeback. Estado NOT_EXECUTED; não autorizam estornos ou reaproveitamento dos pedidos antigos. O fluxo de boleto está integrado, mas permanece sem aceite na conta/destino.
 
 ## Implementação de boleto pago — 21/10/2026, ainda sem publicação

@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-22T19:36:03.283Z",
+  "status": "FIREWALL_PREVIEW_BLOQUEIO_CONFIRMADO_NOS_ENDERECOS_CONSULTADOS_AGUARDA_GCP_E_DRENAGEM",
+  "asaas": {
+    "environment": "SANDBOX",
+    "operator": "Vinicius, alteracao no painel relatada pelo usuario",
+    "verification": "GET autenticado /v3/webhooks?limit=100&offset=0, HTTP 200, hasMore=false",
+    "webhookId": "5d452f63-7272-4cea-93f1-b15bf6251e32",
+    "destinationWithoutQuery": "https://continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app/api/webhooks/asaas",
+    "enabled": true,
+    "interrupted": true,
+    "apiVersion": 3,
+    "sendType": "SEQUENTIALLY",
+    "events": [
+      "PAYMENT_REFUNDED",
+      "PAYMENT_OVERDUE",
+      "PAYMENT_CONFIRMED",
+      "PAYMENT_RECEIVED"
+    ],
+    "comparison": "Antes: enabled=true/interrupted=false. Depois: enabled=true/interrupted=true. Destino sem query, versao, tipo e eventos permanecem iguais; segredo e query nao comparados nem registrados.",
+    "limitation": "Nao comprova ausencia de requisicoes em voo nem idade ou quantidade dos eventos pendentes.",
+    "resume": "Manter pausada durante a janela. Reativar a fila somente apos liberacao coordenada e verificar entregas pendentes e ausencia de efeitos duplicados."
+  },
+  "vercel": {
+    "evidence": "Capturas e relato do usuario",
+    "variable": "APP_MAINTENANCE_MODE",
+    "valueReported": "true",
+    "environment": "Preview",
+    "branch": "homologacao_teste",
+    "saved": true,
+    "redeployConfirmed": true,
+    "limitation": "Deployment antigo agora retorna 403 nas sondas com bypass. Permanecem pendentes GCP, confirmacao de escritores diretos e verificacao final de drenagem.",
+    "redeployConfirmationBasis": "Relato e captura do usuario, seguido de GETs no alias com marcadores de manutencao. Novo ID de deployment ainda nao coletado.",
+    "probes": {
+      "at": "2026-10-22T19:41:32.209Z",
+      "base": "https://continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+      "bypassUsed": true,
+      "results": [
+        {
+          "path": "/",
+          "method": "GET",
+          "status": 503,
+          "maintenanceMarker": "MAINTENANCE_HTML",
+          "retryAfter": null
+        },
+        {
+          "path": "/admin",
+          "method": "GET",
+          "status": 503,
+          "maintenanceMarker": "MAINTENANCE_HTML",
+          "retryAfter": null
+        },
+        {
+          "path": "/api/products",
+          "method": "GET",
+          "status": 503,
+          "maintenanceMarker": "APP_MAINTENANCE",
+          "retryAfter": null
+        },
+        {
+          "path": "/api/webhooks/asaas",
+          "method": "GET",
+          "status": 503,
+          "maintenanceMarker": "APP_MAINTENANCE",
+          "retryAfter": null
+        }
+      ]
+    },
+    "oldDeploymentProbe": {
+      "at": "2026-10-22T19:41:48.087Z",
+      "base": "https://continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+      "source": "Previous deployment URL transcribed from user screenshot",
+      "method": "GET",
+      "status": 200,
+      "maintenanceHtml": false,
+      "vercelError": null
+    },
+    "firewall": {
+      "name": "manutencao-temporaria-preview",
+      "condition": "Environment Equals Preview",
+      "action": "Deny",
+      "configurationEvidence": "Formulario em captura do usuario; publicacao relatada pelo usuario",
+      "publishedReported": true,
+      "probes": {
+        "at": "2026-10-22T20:04:23.869Z",
+        "results": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/",
+            "method": "GET",
+            "bypassUsed": false,
+            "status": 302,
+            "vercelError": null,
+            "maintenanceHtml": false,
+            "firewallMarker": false
+          },
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "vercelError": null,
+            "maintenanceHtml": false,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+            "path": "/",
+            "method": "GET",
+            "bypassUsed": false,
+            "status": 302,
+            "vercelError": null,
+            "maintenanceHtml": false,
+            "firewallMarker": false
+          },
+          {
+            "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+            "path": "/",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "vercelError": null,
+            "maintenanceHtml": false,
+            "firewallMarker": true
+          }
+        ]
+      },
+      "limits": [
+        "Sem bypass: HTTP 302 nao tratado como prova de bloqueio pelo firewall. Com bypass: HTTP 403 e marcador de bloqueio nos dois hosts consultados.",
+        "Nao houve inventario autenticado de todos os deployments nem consulta administrativa da ordem das regras.",
+        "Nao foram executadas requisicoes POST ou operacoes financeiras; nao comprova drenagem de execucoes preexistentes.",
+        "Regra por ambiente cobre Preview; configuracao de Production nao alterada pelo assistente nem testada nesta consulta."
+      ]
+    }
+  },
+  "assistantRemoteMutations": false,
+  "financialOperationsExecuted": false,
+  "databaseBindingsApplied": false,
+  "globalMaintenanceConfirmed": false,
+  "latestCheckedAt": "2026-10-22T20:04:50.554Z",
+  "latestReadOnlyRecheck": {
+    "at": "2026-10-22T20:04:50.554Z",
+    "results": [
+      {
+        "kind": "vercel",
+        "checks": [
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/admin",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/products",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+            "path": "/admin",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+            "path": "/api/products",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          },
+          {
+            "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+            "path": "/api/webhooks/asaas",
+            "method": "GET",
+            "bypassUsed": true,
+            "status": 403,
+            "firewallMarker": true
+          }
+        ]
+      },
+      {
+        "kind": "asaas",
+        "status": 200,
+        "hasMore": false,
+        "webhooks": [
+          {
+            "id": "5d452f63-7272-4cea-93f1-b15bf6251e32",
+            "enabled": true,
+            "interrupted": true
+          }
+        ]
+      },
+      {
+        "kind": "cloudflare",
+        "checks": [
+          {
+            "endpoint": "schedules",
+            "status": 200,
+            "success": true,
+            "schedules": []
+          },
+          {
+            "endpoint": "settings",
+            "status": 200,
+            "success": true,
+            "flags": [
+              {
+                "name": "HML_RUN_UNTIL_UTC",
+                "value": "2026-10-08T15:59:45.2888162Z"
+              },
+              {
+                "name": "HML_SCHEDULER_ENABLED",
+                "value": "false"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remaining": [
+    "Confirmacao de Vanderlei sobre contencao e drenagem do GCP",
+    "Confirmacao de Vinicius e demais responsaveis sobre scripts, SQL e edicoes administrativas",
+    "Conferencia final de sessoes, transacoes, leases e bloqueios antes do backup e do lote"
+  ]
+}

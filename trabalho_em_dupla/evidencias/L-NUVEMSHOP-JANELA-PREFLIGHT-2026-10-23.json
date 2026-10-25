@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-23T17:06:10.817Z",
+  "gcp": {
+    "source": "User supplied screenshot of Vanderlei report",
+    "reportedVerifiedAt": "2026-10-23T15:04:00Z",
+    "status": "GCP CONTIDO E DRENADO PARA A JANELA",
+    "reported": {
+      "maintenanceProbes": 56,
+      "jobsNeutralized": 2,
+      "consumerAccountDisabled": true,
+      "executions": 0,
+      "databaseChecks": 3,
+      "otherSessionsTransactionsLocksLeases": 0,
+      "localWritersFound": false,
+      "wslStopped": true
+    },
+    "limitation": "Hyper-V administrative inventory denied; no active VM processes reported. Full linked reports not available in fetched origin/homologacao_teste."
+  },
+  "checks": [
+    {
+      "kind": "vercel",
+      "host": "continental-prototipo-git-homologacaoteste-vinimoias-projects.vercel.app",
+      "status": 403
+    },
+    {
+      "kind": "vercel",
+      "host": "continental-prototipo-5dzgyt2qt-vinimoias-projects.vercel.app",
+      "status": 403
+    },
+    {
+      "kind": "asaas",
+      "status": 200,
+      "enabled": true,
+      "interrupted": true
+    },
+    {
+      "kind": "cloudflareSchedules",
+      "count": 0
+    },
+    {
+      "kind": "cloudflareEnabled",
+      "value": "false"
+    }
+  ],
+  "databaseSamples": [
+    {
+      "at": "2026-10-23T17:06:18.161Z",
+      "sessions": {
+        "other_clients": 0,
+        "hidden_state": 0,
+        "transactions": 0
+      },
+      "locks": {
+        "other_catalog_locks": 0
+      },
+      "leases": {
+        "CommerceOutbox": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentAttempt": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentInbox": {
+          "active": 0,
+          "owned": 0
+        }
+      }
+    },
+    {
+      "at": "2026-10-23T17:06:24.043Z",
+      "sessions": {
+        "other_clients": 0,
+        "hidden_state": 0,
+        "transactions": 0
+      },
+      "locks": {
+        "other_catalog_locks": 0
+      },
+      "leases": {
+        "CommerceOutbox": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentAttempt": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentInbox": {
+          "active": 0,
+          "owned": 0
+        }
+      }
+    },
+    {
+      "at": "2026-10-23T17:06:29.920Z",
+      "sessions": {
+        "other_clients": 0,
+        "hidden_state": 0,
+        "transactions": 0
+      },
+      "locks": {
+        "other_catalog_locks": 0
+      },
+      "leases": {
+        "CommerceOutbox": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentAttempt": {
+          "active": 0,
+          "owned": 0
+        },
+        "PaymentInbox": {
+          "active": 0,
+          "owned": 0
+        }
+      }
+    }
+  ],
+  "status": "PREFLIGHT_PASSED",
+  "finishedAt": "2026-10-23T17:06:30.003Z",
+  "sourceRevision": "9d57dc14e9b1b895a0350c47897018db26577eeb",
+  "originMainConsulted": "7f9b26e062ec2654420fecffb6dd78ad3ba1e017",
+  "note": "Contencao GCP baseada na devolutiva de Vanderlei fornecida pelo usuario; demais consultas executadas neste workspace. Retrato temporal, manter controles durante aplicacao."
+}
