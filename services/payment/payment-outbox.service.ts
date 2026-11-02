@@ -4,7 +4,11 @@ import { emailService, renderOrderPaymentConfirmedEmail } from '@/lib/email';
 import { buyerSelect, orderCustomer, snapshotDeliveryAddress } from '@/lib/commerce/order-buyer';
 import { paymentNow } from './payment-evidence.service';
 import { claimWork, fenceWork, completeWork, retryWork } from './durable-work.service';
-import { exportOrderToNuvemshop, type NuvemshopOrderSyncCaller } from '@/lib/integrations/nuvemshop-order-sync';
+import {
+  exportOrderToNuvemshop,
+  cancelOrderInNuvemshop,
+  type NuvemshopOrderSyncCaller,
+} from '@/lib/integrations/nuvemshop-order-sync';
 import type { Prisma } from '@prisma/client';
 
 const emailSchema = z.object({ deliveryStartedAt: z.string().datetime(),
@@ -39,6 +43,11 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
             await tx.commerceOutbox.upsert({ where: { effectKey: nuvemshopEffectKey }, create: { effectKey: nuvemshopEffectKey, commandType: 'NUVEMSHOP_ORDER_SYNC', aggregateId: entry.aggregateId,
               payload: { schemaVersion: 1, orderId: entry.aggregateId } }, update: {} });
           }
+          if (entry.commandType === 'ORDER_STATUS_CHANGED' && payload.to === 'CANCELLED' && payload.changeType !== 'TRACKING') {
+            const cancelKey = 'nuvemshop-order-cancel:' + entry.aggregateId;
+            await tx.commerceOutbox.upsert({ where: { effectKey: cancelKey }, create: { effectKey: cancelKey, commandType: 'NUVEMSHOP_ORDER_CANCEL', aggregateId: entry.aggregateId,
+              payload: { schemaVersion: 1, orderId: entry.aggregateId } }, update: {} });
+          }
           await completeWork(tx, 'CommerceOutbox', id, batch.owner);
         }); summary.completed++; continue;
       }
@@ -52,6 +61,20 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
           summary.review++;
         } else {
           await retryWork('CommerceOutbox', id, batch.owner, 'NUVEMSHOP_ORDER_SYNC_RETRY');
+          summary.retried++;
+        }
+        continue;
+      }
+      if (entry.commandType === 'NUVEMSHOP_ORDER_CANCEL') {
+        const cancelResult = await cancelOrderInNuvemshop(entry.aggregateId, { caller: nuvemshopCaller });
+        if (cancelResult.status === 'CANCELLED_REMOTELY' || cancelResult.status === 'SKIPPED') {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner));
+          summary.completed++;
+        } else if (cancelResult.status === 'REVIEW_REQUIRED') {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner, true));
+          summary.review++;
+        } else {
+          await retryWork('CommerceOutbox', id, batch.owner, 'NUVEMSHOP_ORDER_CANCEL_RETRY');
           summary.retried++;
         }
         continue;

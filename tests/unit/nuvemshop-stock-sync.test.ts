@@ -220,3 +220,4 @@ describe('Nuvemshop Stock Reconciliation', () => {
     expect(prisma.stockSyncLog.create).not.toHaveBeenCalled();
   });
 });
+

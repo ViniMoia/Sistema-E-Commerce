@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportOrderToNuvemshop, type NuvemshopOrderSyncCaller } from '@/lib/integrations/nuvemshop-order-sync';
+import {
+  exportOrderToNuvemshop,
+  cancelOrderInNuvemshop,
+  type NuvemshopOrderSyncCaller,
+} from '@/lib/integrations/nuvemshop-order-sync';
 import prisma from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
@@ -8,6 +12,9 @@ vi.mock('@/lib/prisma', () => ({
     order: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
     },
     $queryRaw: vi.fn(),
   },
@@ -84,6 +91,7 @@ beforeEach(() => {
 
   vi.mocked(prisma.order.findUnique).mockResolvedValue(structuredClone(mockOrder) as never);
   vi.mocked(prisma.order.update).mockResolvedValue({} as never);
+  vi.mocked(prisma.auditLog.create).mockResolvedValue({} as never);
 });
 
 afterEach(() => {
@@ -279,5 +287,104 @@ describe('Nuvemshop Order Outbound Sync', () => {
         syncAttempts: { increment: 1 },
       },
     });
+  });
+});
+
+describe('Nuvemshop Order Cancellation and Compensation', () => {
+  it('skips cancellation if order has no nuvemshopOrderId', async () => {
+    const result = await cancelOrderInNuvemshop('order-uuid-1');
+    expect(result.status).toBe('SKIPPED');
+    expect(result.reason).toBe('NO_REMOTE_ORDER');
+  });
+
+  it('skips cancellation if order is not marked CANCELLED locally', async () => {
+    const exportedPaidOrder = {
+      ...mockOrder,
+      status: 'PAID',
+      nuvemshopOrderId: '778899',
+    };
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce(exportedPaidOrder as never);
+
+    const caller: NuvemshopOrderSyncCaller = {
+      createOrder: vi.fn(),
+      closeOrder: vi.fn(),
+    };
+
+    const result = await cancelOrderInNuvemshop('order-uuid-1', { caller });
+    expect(result.status).toBe('SKIPPED');
+    expect(result.reason).toBe('ORDER_NOT_CANCELLED_LOCALLY');
+    expect(caller.closeOrder).not.toHaveBeenCalled();
+  });
+
+  it('successfully cancels order in Nuvemshop when cancelled locally and records audit', async () => {
+    const exportedCancelledOrder = {
+      ...mockOrder,
+      status: 'CANCELLED',
+      nuvemshopOrderId: '778899',
+    };
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce(exportedCancelledOrder as never);
+
+    const caller: NuvemshopOrderSyncCaller = {
+      createOrder: vi.fn(),
+      closeOrder: vi.fn().mockResolvedValue({ success: true, status: 200 }),
+    };
+
+    const result = await cancelOrderInNuvemshop('order-uuid-1', { caller, reason: 'customer', restock: false });
+    expect(result.status).toBe('CANCELLED_REMOTELY');
+    expect(result.nuvemshopOrderId).toBe('778899');
+
+    expect(caller.closeOrder).toHaveBeenCalledTimes(1);
+    expect(caller.closeOrder).toHaveBeenCalledWith(
+      '8179726',
+      'test-access-token',
+      '778899',
+      { reason: 'customer', restock: false },
+      'TestUserAgent/1.0'
+    );
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'ORDER_CANCELLED_IN_NUVEMSHOP',
+          entity: 'Order',
+          entityId: 'order-uuid-1',
+        }),
+      })
+    );
+  });
+
+  it('marks REVIEW_REQUIRED when remote close returns a fatal 4xx error (other than 400)', async () => {
+    const exportedCancelledOrder = {
+      ...mockOrder,
+      status: 'CANCELLED',
+      nuvemshopOrderId: '778899',
+    };
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce(exportedCancelledOrder as never);
+
+    const caller: NuvemshopOrderSyncCaller = {
+      createOrder: vi.fn(),
+      closeOrder: vi.fn().mockResolvedValue({ success: false, status: 404, error: 'Order not found' }),
+    };
+
+    const result = await cancelOrderInNuvemshop('order-uuid-1', { caller });
+    expect(result.status).toBe('REVIEW_REQUIRED');
+    expect(result.reason).toBe('Order not found');
+  });
+
+  it('returns RETRY_REQUIRED when remote close returns a 5xx or network timeout', async () => {
+    const exportedCancelledOrder = {
+      ...mockOrder,
+      status: 'CANCELLED',
+      nuvemshopOrderId: '778899',
+    };
+    vi.mocked(prisma.order.findUnique).mockResolvedValueOnce(exportedCancelledOrder as never);
+
+    const caller: NuvemshopOrderSyncCaller = {
+      createOrder: vi.fn(),
+      closeOrder: vi.fn().mockResolvedValue({ success: false, status: 500, error: 'Internal Server Error' }),
+    };
+
+    const result = await cancelOrderInNuvemshop('order-uuid-1', { caller });
+    expect(result.status).toBe('RETRY_REQUIRED');
   });
 });

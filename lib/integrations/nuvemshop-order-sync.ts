@@ -10,6 +10,11 @@ export interface NuvemshopOrderSyncCaller {
     status?: number;
     error?: string;
   }>;
+  closeOrder?(storeId: string, accessToken: string, remoteOrderId: string, payload?: unknown, userAgent?: string): Promise<{
+    success: boolean;
+    status?: number;
+    error?: string;
+  }>;
 }
 
 export const defaultNuvemshopCaller: NuvemshopOrderSyncCaller = {
@@ -43,6 +48,34 @@ export const defaultNuvemshopCaller: NuvemshopOrderSyncCaller = {
         // Fallback to status
       }
       return { success: false, status, error: errorMsg };
+    } catch (err) {
+      clearTimeout(timer);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      return { success: false, status: isAbort ? 408 : 500, error: isAbort ? 'TIMEOUT' : 'NETWORK_ERROR' };
+    }
+  },
+
+  async closeOrder(storeId: string, accessToken: string, remoteOrderId: string, payload: unknown = {}, userAgent?: string) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(`https://api.nuvemshop.com.br/v1/${storeId}/orders/${remoteOrderId}/close`, {
+        method: 'POST',
+        headers: {
+          'Authentication': `bearer ${accessToken}`,
+          'User-Agent': userAgent || process.env.NUVEMSHOP_USER_AGENT || 'Continental-Ecommerce (contato@continentalestetica.com.br)',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (response.ok || response.status === 400) {
+        return { success: true, status: response.status };
+      }
+
+      return { success: false, status: response.status, error: `HTTP_${response.status}` };
     } catch (err) {
       clearTimeout(timer);
       const isAbort = err instanceof Error && err.name === 'AbortError';
@@ -258,6 +291,153 @@ export async function exportOrderToNuvemshop(
 
     logger.warn('Falha na sincronização de pedido Nuvemshop.', {
       action: 'NUVEMSHOP_ORDER_SYNC_FAILED',
+      orderId,
+      status: response.status,
+      isFatal,
+    });
+
+    if (isFatal) {
+      return { status: 'REVIEW_REQUIRED', reason: errorMessage };
+    }
+    return { status: 'RETRY_REQUIRED', reason: errorMessage };
+  });
+}
+
+export interface CancelOrderOptions {
+  caller?: NuvemshopOrderSyncCaller;
+  reason?: string;
+  restock?: boolean;
+}
+
+export interface CancelOrderResult {
+  status: 'CANCELLED_REMOTELY' | 'SKIPPED' | 'REVIEW_REQUIRED' | 'RETRY_REQUIRED';
+  nuvemshopOrderId?: string;
+  reason?: string;
+}
+
+/**
+ * Cancels an order in Nuvemshop when it is cancelled locally.
+ * Only attempts remote cancellation if the order was previously exported (nuvemshopOrderId exists).
+ * Network I/O is performed outside database locks.
+ */
+export async function cancelOrderInNuvemshop(
+  orderId: string,
+  options: CancelOrderOptions = {}
+): Promise<CancelOrderResult> {
+  const caller = options.caller ?? defaultNuvemshopCaller;
+  const syncEnabled = process.env.NUVEMSHOP_SYNC_ENABLED === 'true' || options.caller !== undefined;
+  if (!syncEnabled) {
+    return { status: 'SKIPPED', reason: 'NUVEMSHOP_SYNC_DISABLED' };
+  }
+
+  // 1. Snapshot Phase under Order Lock
+  const prepared = await prisma.$transaction(async tx => {
+    const locks = new CommerceLocks(tx);
+    await locks.acquire('order', [orderId]);
+
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        loja: { select: { nuvemshopStoreId: true, nuvemshopAccessToken: true, nuvemshopUserAgent: true } },
+      },
+    });
+
+    if (!order) {
+      throw new Error('ORDER_NOT_FOUND');
+    }
+
+    if (!order.nuvemshopOrderId) {
+      return { outcome: 'SKIPPED' as const, reason: 'NO_REMOTE_ORDER' };
+    }
+
+    if (order.status !== 'CANCELLED') {
+      return { outcome: 'SKIPPED' as const, reason: 'ORDER_NOT_CANCELLED_LOCALLY' };
+    }
+
+    const storeId = order.loja.nuvemshopStoreId || process.env.NUVEMSHOP_STORE_ID;
+    const accessToken = order.loja.nuvemshopAccessToken || process.env.NUVEMSHOP_ACCESS_TOKEN;
+    const userAgent = order.loja.nuvemshopUserAgent || process.env.NUVEMSHOP_USER_AGENT;
+
+    if (!storeId || !accessToken) {
+      return { outcome: 'REVIEW_REQUIRED' as const, reason: 'NUVEMSHOP_CREDENTIALS_MISSING' };
+    }
+
+    return {
+      outcome: 'READY_TO_CANCEL' as const,
+      storeId,
+      accessToken,
+      userAgent,
+      nuvemshopOrderId: order.nuvemshopOrderId,
+    };
+  });
+
+  if (prepared.outcome === 'SKIPPED') {
+    return { status: 'SKIPPED', reason: prepared.reason };
+  }
+  if (prepared.outcome === 'REVIEW_REQUIRED') {
+    return { status: 'REVIEW_REQUIRED', reason: prepared.reason };
+  }
+
+  // 2. Dispatch Remote Cancellation (NO LOCK HELD)
+  if (!caller.closeOrder) {
+    return { status: 'SKIPPED', reason: 'CALLER_CLOSE_NOT_SUPPORTED' };
+  }
+
+  const restock = options.restock ?? (process.env.NUVEMSHOP_CANCEL_RESTOCK === 'true');
+  const response = await caller.closeOrder(
+    prepared.storeId,
+    prepared.accessToken,
+    prepared.nuvemshopOrderId,
+    { reason: options.reason || 'customer', restock },
+    prepared.userAgent
+  );
+
+  // 3. Reconcile Outcome Phase under Lock
+  return await prisma.$transaction(async tx => {
+    const locks = new CommerceLocks(tx);
+    await locks.acquire('order', [orderId]);
+
+    if (response.success) {
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          lastSyncError: null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorType: 'SYSTEM',
+          systemActor: 'NUVEMSHOP_SYNC',
+          action: 'ORDER_CANCELLED_IN_NUVEMSHOP',
+          entity: 'Order',
+          entityId: orderId,
+          effectKey: `nuvemshop-cancel:${orderId}`,
+          metadata: { nuvemshopOrderId: prepared.nuvemshopOrderId, restock },
+        },
+      });
+
+      logger.info('Pedido cancelado com sucesso na Nuvemshop.', {
+        action: 'NUVEMSHOP_ORDER_CANCELLED',
+        orderId,
+        nuvemshopOrderId: prepared.nuvemshopOrderId,
+      });
+
+      return { status: 'CANCELLED_REMOTELY', nuvemshopOrderId: prepared.nuvemshopOrderId };
+    }
+
+    const isFatal = response.status !== undefined && response.status >= 400 && response.status < 500 && response.status !== 429;
+    const errorMessage = response.error || `HTTP_${response.status ?? 500}`;
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        lastSyncError: errorMessage,
+      },
+    });
+
+    logger.warn('Falha no cancelamento remoto de pedido Nuvemshop.', {
+      action: 'NUVEMSHOP_ORDER_CANCEL_FAILED',
       orderId,
       status: response.status,
       isFatal,
