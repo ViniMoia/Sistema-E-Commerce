@@ -4,12 +4,13 @@ import { emailService, renderOrderPaymentConfirmedEmail } from '@/lib/email';
 import { buyerSelect, orderCustomer, snapshotDeliveryAddress } from '@/lib/commerce/order-buyer';
 import { paymentNow } from './payment-evidence.service';
 import { claimWork, fenceWork, completeWork, retryWork } from './durable-work.service';
+import { exportOrderToNuvemshop, type NuvemshopOrderSyncCaller } from '@/lib/integrations/nuvemshop-order-sync';
 import type { Prisma } from '@prisma/client';
 
 const emailSchema = z.object({ deliveryStartedAt: z.string().datetime(),
   options: z.object({ to: z.string().email(), from: z.string().min(1), subject: z.string().min(1), html: z.string(), text: z.string() }).strict() }).strict();
 
-export async function drainPaymentOutbox(limit = 10, send = emailService.sendEmail) {
+export async function drainPaymentOutbox(limit = 10, send = emailService.sendEmail, nuvemshopCaller?: NuvemshopOrderSyncCaller) {
   const batch = await claimWork('CommerceOutbox', Math.max(1, Math.min(50, Math.trunc(limit))));
   const summary = { claimed: batch.ids.length, completed: 0, retried: 0, review: 0 };
   for (const id of batch.ids) {
@@ -33,9 +34,27 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
             const effectKey = 'payment-confirmation:' + entry.aggregateId;
             await tx.commerceOutbox.upsert({ where: { effectKey }, create: { effectKey, commandType: 'PAYMENT_CONFIRMATION_EMAIL', aggregateId: entry.aggregateId,
               payload: { schemaVersion: 1, orderId: entry.aggregateId } }, update: {} });
+
+            const nuvemshopEffectKey = 'nuvemshop-order-sync:' + entry.aggregateId;
+            await tx.commerceOutbox.upsert({ where: { effectKey: nuvemshopEffectKey }, create: { effectKey: nuvemshopEffectKey, commandType: 'NUVEMSHOP_ORDER_SYNC', aggregateId: entry.aggregateId,
+              payload: { schemaVersion: 1, orderId: entry.aggregateId } }, update: {} });
           }
           await completeWork(tx, 'CommerceOutbox', id, batch.owner);
         }); summary.completed++; continue;
+      }
+      if (entry.commandType === 'NUVEMSHOP_ORDER_SYNC') {
+        const syncResult = await exportOrderToNuvemshop(entry.aggregateId, { caller: nuvemshopCaller });
+        if (syncResult.status === 'SYNCED' || syncResult.status === 'ALREADY_SYNCED' || syncResult.status === 'SKIPPED') {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner));
+          summary.completed++;
+        } else if (syncResult.status === 'REVIEW_REQUIRED') {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner, true));
+          summary.review++;
+        } else {
+          await retryWork('CommerceOutbox', id, batch.owner, 'NUVEMSHOP_ORDER_SYNC_RETRY');
+          summary.retried++;
+        }
+        continue;
       }
       if (entry.commandType !== 'PAYMENT_CONFIRMATION_EMAIL') {
         await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner, true)); summary.review++; continue;
@@ -80,4 +99,8 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
     } catch { await retryWork('CommerceOutbox', id, batch.owner, 'PAYMENT_OUTBOX_RETRY'); summary.retried++; }
   }
   return summary;
+}
+
+export async function drainNuvemshopOutbox(limit = 10, caller?: NuvemshopOrderSyncCaller) {
+  return drainPaymentOutbox(limit, emailService.sendEmail, caller);
 }
