@@ -1,0 +1,82 @@
+{
+  "kind": "ENSAIO_PONTA_A_PONTA_NUVEMSHOP_ETAPA6",
+  "executedAt": "2026-11-04T14:28:04Z",
+  "environment": "homologacao_teste",
+  "gitRevision": "39612c0",
+  "pullRequest": 16,
+  "scope": {
+    "storeId": "3a82b33c-3646-4272-9a89-80bb1ba327a5",
+    "storeSlug": "continental-homologacao",
+    "remoteStoreId": "8179726",
+    "remoteStoreDomain": "distribuidoracontinental2.lojavirtualnuvem.com.br",
+    "paymentAccountScope": "sandbox-hml"
+  },
+  "testProduct": {
+    "localProductId": "a26fdbc1-d8c3-4173-b114-f759654b9ca4",
+    "remoteProductId": "378735493",
+    "name": "Aspirador de Pó automotivo [TESTE]",
+    "unitPrice": 5.00,
+    "variants": [
+      {
+        "localVariantId": "c9422a68-9be8-4fdc-bc5f-5ee7689401d2",
+        "remoteVariantId": "1632420322",
+        "size": "Pequeno",
+        "color": "Vermelho",
+        "remoteValues": ["P", "Vermelho"],
+        "stock": 3
+      },
+      {
+        "localVariantId": "d392d80a-43ec-46b3-99ed-9905f45c204d",
+        "remoteVariantId": "1632420323",
+        "size": "Médio",
+        "color": "Azul",
+        "remoteValues": ["M", "Azul"],
+        "stock": 3
+      }
+    ]
+  },
+  "orderLifecycle": {
+    "checkout": {
+      "orderId": "3d09de8b-05a0-4380-a497-f4daf647977d",
+      "orderNumber": 9,
+      "items": [
+        {
+          "variantId": "c9422a68-9be8-4fdc-bc5f-5ee7689401d2",
+          "remoteVariantId": "1632420322",
+          "quantity": 1,
+          "price": 5.00
+        }
+      ],
+      "total": 5.00,
+      "paymentMethod": "PIX",
+      "deliveryType": "PICKUP"
+    },
+    "payment": {
+      "attemptId": "2374eba5-3c7d-46b4-9dfd-9053a2c5a921",
+      "chargeId": "pay_842s29m3s2ade3ah",
+      "invoiceNumber": "20247728",
+      "status": "RECEIVED",
+      "financialFacts": ["AUTHORIZED", "SETTLED"],
+      "loyaltyPointsCredited": 2
+    },
+    "nuvemshopSync": {
+      "dispatchedVia": "CommerceOutbox",
+      "commandType": "NUVEMSHOP_ORDER_SYNC",
+      "nuvemshopOrderId": "2111768757",
+      "nuvemshopOrderNumber": 101,
+      "remoteStatus": "open",
+      "remotePaymentStatus": "paid",
+      "syncStatus": "SYNCED"
+    },
+    "compensatoryCancellation": {
+      "reason": "Ensaio de cancelamento compensatório homologação",
+      "evidenceStatus": "REFUNDED",
+      "localStatus": "CANCELLED",
+      "outboxCommand": "NUVEMSHOP_ORDER_CANCEL",
+      "remoteEndpointCalled": "POST /v1/8179726/orders/2111768757/close",
+      "remoteFinalStatus": "closed",
+      "closedAt": "2026-11-04T14:28:02+0000"
+    }
+  },
+  "verdict": "APPROVED_STAGE_6_PHASE_1"
+}
