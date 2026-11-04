@@ -38,16 +38,17 @@ export async function prepareCheckout(tx: Prisma.TransactionClient, params: Crea
     if (!Number.isInteger(input.quantity) || input.quantity < 1 || input.quantity > 99) throw new Error('CHECKOUT_QUANTITY_INVALID');
     const product = await tx.product.findUnique({ where: { id: input.productId }, include: { productVariants: true } });
     if (!product || product.lojaID !== params.lojaID || product.retiredAt) throw new Error('CHECKOUT_PRODUCT_UNAVAILABLE');
+    const buffer = Math.max(0, product.stockBuffer ?? 1);
     const candidates = input.variantId ? product.productVariants.filter(v => v.id === input.variantId) : product.productVariants;
-    const variant = resolveCatalogVariant(candidates, input.size, input.color);
+    const variant = resolveCatalogVariant(candidates, input.size, input.color, buffer);
     if (!variant || variant.retiredAt) throw new Error('CHECKOUT_VARIANT_UNAVAILABLE');
-    if (!input.variantId && candidates.filter(v => !v.retiredAt && v.stock > 0 && getVariantCombinationKey(v) === getVariantCombinationKey(variant)).length !== 1) throw new Error('CHECKOUT_VARIANT_AMBIGUOUS');
+    if (!input.variantId && candidates.filter(v => !v.retiredAt && (v.stock - buffer) > 0 && getVariantCombinationKey(v) === getVariantCombinationKey(variant)).length !== 1) throw new Error('CHECKOUT_VARIANT_AMBIGUOUS');
     const existing = items.find(i => i.variantId === variant.id);
     const quantity = input.quantity + (existing?.quantity ?? 0);
-    if (quantity > 99 || variant.stock < quantity) throw new Error('Estoque insuficiente para a variação selecionada.');
+    if (quantity > 99 || (variant.stock - buffer) < quantity) throw new Error('Estoque insuficiente para a variação selecionada.');
     const productQuantity = input.quantity + (quantities.get(product.id) ?? 0);
     quantities.set(product.id, productQuantity);
-    if (product.stock < productQuantity) throw new Error('Estoque insuficiente para o produto.');
+    if ((product.stock - buffer) < productQuantity) throw new Error('Estoque insuficiente para o produto.');
     if (existing) existing.quantity = quantity;
     else items.push({ productId: product.id, variantId: variant.id, quantity, name: product.name,
       color: canonicalizeVariant(variant).color, size: canonicalizeVariant(variant).size, price: product.price, catalogVersion: product.catalogVersion });

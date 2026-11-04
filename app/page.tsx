@@ -25,6 +25,7 @@ export default async function EcommerceHomepage() {
     description: prod.description,
     imageUrl: prod.imageUrl,
     stock: prod.stock,
+    stockBuffer: prod.stockBuffer ?? 1,
     galleryUrls: prod.galleryUrls,
     brandName: prod.brand?.name || null,
     brandSlug: prod.brand?.slug || null,

@@ -18,7 +18,7 @@ function quantity(value: number) {
   return value;
 }
 const cartInclude = { items: { include: {
-  product: { select: { lojaID: true, price: true, name: true, imageUrl: true, loja: { select: { slug: true } } } }, variant: true,
+  product: { select: { lojaID: true, price: true, name: true, imageUrl: true, stockBuffer: true, loja: { select: { slug: true } } } }, variant: true,
 } } } satisfies Prisma.CartInclude;
 type Cart = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
 function validateCart(cart: Cart, userID: string, lojaID: string) {
@@ -107,8 +107,9 @@ export async function addToCart(userID: string, data: { productID: string; varia
     await locks.acquire('product', [data.productID]);
     const product = await tx.product.findUnique({ where: { id: data.productID }, include: { productVariants: true } });
     if (!product || product.lojaID !== user.lojaID || product.retiredAt) throw new CartError('Produto inválido ou não pertence a esta loja.');
+    const buffer = Math.max(0, product.stockBuffer ?? 1);
     const variants = product.productVariants.filter(variant => !variant.retiredAt);
-    const selected = data.variantID ? variants.find(variant => variant.id === data.variantID) : resolveCatalogVariant(variants);
+    const selected = data.variantID ? variants.find(variant => variant.id === data.variantID) : resolveCatalogVariant(variants, null, null, buffer);
     if (!selected) throw new CartError('Selecione uma variante válida e disponível do produto.');
     await locks.acquire('variant', [selected.id]);
     const variant = await tx.productVariants.findUniqueOrThrow({ where: { id: selected.id } });
@@ -116,7 +117,7 @@ export async function addToCart(userID: string, data: { productID: string; varia
     const item = cart.items.find(item => item.variantID === variant.id);
     const nextQuantity = quantity((item?.quantity ?? 0) + data.quantity);
     const productDemand = nextQuantity + cart.items.filter(row => row.productID === product.id && row.variantID !== variant.id).reduce((sum, row) => sum + row.quantity, 0);
-    if (variant.stock < nextQuantity || product.stock < productDemand) throw new CartError('Insufficient stock');
+    if ((variant.stock - buffer) < nextQuantity || (product.stock - buffer) < productDemand) throw new CartError('Insufficient stock');
     if (item) await tx.cartItem.update({ where: { id: item.id }, data: { quantity: nextQuantity, price: product.price } });
     else await tx.cartItem.create({ data: { cartID: cart.id, lojaID: user.lojaID, productID: product.id, variantID: variant.id,
       quantity: nextQuantity, color: variant.color, size: variant.size, price: product.price, productName: product.name, imageUrl: product.imageUrl } });
@@ -136,8 +137,9 @@ async function mutate(userID: string, variantID: string, lojaID: string | undefi
       await locks.acquire('product', [item.productID]); await locks.acquire('variant', [variantID]);
       const variant = await tx.productVariants.findUniqueOrThrow({ where: { id: variantID }, include: { product: true } });
       if (variant.ProductID !== item.productID || variant.product.lojaID !== user.lojaID || variant.retiredAt || variant.product.retiredAt) throw new CartError('Produto ou variante indisponível.');
+      const buffer = Math.max(0, variant.product.stockBuffer ?? 1);
       const productDemand = newQuantity + cart.items.filter(row => row.productID === item.productID && row.variantID !== variantID).reduce((sum, row) => sum + row.quantity, 0);
-      if (variant.stock < newQuantity || variant.product.stock < productDemand) throw new CartError('Insufficient stock');
+      if ((variant.stock - buffer) < newQuantity || (variant.product.stock - buffer) < productDemand) throw new CartError('Insufficient stock');
       await tx.cartItem.update({ where: { id: item.id }, data: { quantity: newQuantity, price: variant.product.price } });
     } else await tx.cartItem.delete({ where: { id: item.id } });
     return complete(tx, context, kind);

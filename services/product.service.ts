@@ -41,6 +41,7 @@ export interface CreateProductInput {
   imageUrl: string;
   galleryUrls?: string[];
   stock: number;
+  stockBuffer?: number;
   lojaID: string;
   userID: string;
   variants: Array<{
@@ -58,6 +59,7 @@ export interface UpdateProductInput {
   imageUrl?: string;
   galleryUrls?: string[];
   stock?: number;
+  stockBuffer?: number;
   variants?: Array<{
     id?: string;
     size: string;
@@ -165,6 +167,7 @@ export async function createProduct(data: CreateProductInput) {
     const createdProduct = await tx.product.create({
       data: {
         ...productData,
+        stockBuffer: productData.stockBuffer !== undefined ? Math.max(0, productData.stockBuffer) : 1,
         price: decimalPrice,
         productVariants: {
           create: variants && variants.length > 0
@@ -236,6 +239,7 @@ export async function updateProduct(
       ...(data.description !== undefined ? { description: data.description } : {}),
       ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
       ...(data.galleryUrls !== undefined ? { galleryUrls: data.galleryUrls } : {}),
+      ...(data.stockBuffer !== undefined ? { stockBuffer: Math.max(0, data.stockBuffer) } : {}),
       catalogVersion: { increment: 1 },
       ...(variants !== undefined ? { inventoryVersion: { increment: 1 } } : {}),
       ...(decimalPrice ? { price: decimalPrice } : {}),

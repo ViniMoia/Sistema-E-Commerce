@@ -52,6 +52,7 @@ export const createProductSchema = z.object({
   imageUrl: externalImageUrlSchema,
   galleryUrls: z.array(externalImageUrlSchema).optional().default([]),
   stock: z.number().int().min(0),
+  stockBuffer: z.number().int().min(0, "Buffer de estoque não pode ser negativo").optional().default(1),
   lojaID: z.string().uuid("ID da loja inválido").optional(),
   variants: productVariantsSchema,
 });

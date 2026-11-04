@@ -10,12 +10,14 @@ export interface FilterableProduct {
   description: string;
   imageUrl: string;
   stock: number;
+  stockBuffer?: number;
   galleryUrls?: string[];
   productVariants?: Array<{
     id: string;
     size: string;
     color: string;
     stock: number;
+  stockBuffer?: number;
   }>;
   brandName?: string | null;
   brandSlug?: string | null;

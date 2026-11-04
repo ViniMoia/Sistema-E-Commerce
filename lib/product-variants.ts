@@ -62,15 +62,21 @@ export function matchesVariantTerm(value: string, selected: string): boolean {
   return normalizeVariantDimension(value) === normalizeVariantDimension(selected);
 }
 
+export function isVariantAvailable(variant: VariantInput, stockBuffer: number = 0): boolean {
+  return !variant.retiredAt && (variant.stock - Math.max(0, stockBuffer)) > 0;
+}
+
 export function resolveCatalogVariant<T extends CatalogVariant>(
   variants: readonly T[],
   selectedSize: string | null = null,
   selectedColor: string | null = null,
+  stockBuffer: number = 0,
 ): T | null {
   const { hasRealSizes, hasRealColors } = getVariantOptions(variants);
   if ((hasRealSizes && !selectedSize) || (hasRealColors && !selectedColor)) return null;
+  const effectiveBuffer = Math.max(0, stockBuffer);
   return variants.find((variant) =>
-    !variant.retiredAt && variant.stock > 0 &&
+    !variant.retiredAt && (variant.stock - effectiveBuffer) > 0 &&
     (!hasRealSizes || matchesVariantTerm(variant.size, selectedSize!)) &&
     (!hasRealColors || matchesVariantTerm(variant.color, selectedColor!))
   ) ?? null;

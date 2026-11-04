@@ -58,6 +58,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             price: Number(product.price),
             imageUrl: product.imageUrl,
             stock: product.stock,
+            stockBuffer: product.stockBuffer ?? 1,
             catalogVersion: product.catalogVersion,
             galleryUrls: product.galleryUrls,
             productVariants: product.productVariants,

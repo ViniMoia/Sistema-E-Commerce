@@ -53,6 +53,21 @@ const Icons = {
   )
 };
 
+export function getProductStockSummary(prod: Product) {
+  const buffer = Math.max(0, prod.stockBuffer ?? 1);
+  const variants = prod.productVariants || [];
+  const hasVariants = variants.length > 0;
+  const totalPhysical = hasVariants
+    ? variants.reduce((sum, v) => sum + Math.max(0, v.stock), 0)
+    : Math.max(0, prod.stock);
+  const availableOnline = hasVariants
+    ? variants.reduce((sum, v) => sum + Math.max(0, v.stock - buffer), 0)
+    : Math.max(0, prod.stock - buffer);
+  const isExclusivePhysical = availableOnline <= 0 && totalPhysical > 0;
+  const isOutOfStock = totalPhysical <= 0;
+  return { buffer, totalPhysical, availableOnline, isExclusivePhysical, isOutOfStock };
+}
+
 export default function HomeClient({
   initialProducts,
   initialBrands = [],
@@ -144,6 +159,24 @@ export default function HomeClient({
     if (useCartStore.getState().isMutating) return;
     const prod = product || selectedProduct;
     if (!prod) return;
+
+    const stockSummary = getProductStockSummary(prod);
+    if (stockSummary.isOutOfStock) {
+      toast({
+        title: "Produto indisponível",
+        description: "Este produto está sem estoque.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (stockSummary.isExclusivePhysical) {
+      toast({
+        title: "Disponível na Loja Física",
+        description: "A última unidade deste produto está reservada para compra presencial na loja física.",
+      });
+      return;
+    }
+
     const variants = prod.productVariants || [];
     const options = getVariantOptions(variants);
     // Os cards resolvem a variante do próprio produto, sem reutilizar seleções da tela anterior.
@@ -155,6 +188,7 @@ export default function HomeClient({
       variants,
       product ? null : selectedSize,
       product ? null : selectedColor,
+      stockSummary.buffer,
     );
     if (options.hasRealVariants && !variant) {
       const missing = [
@@ -165,13 +199,13 @@ export default function HomeClient({
         title: "Selecione uma opção",
         description: missing.length > 0
           ? "Selecione " + missing.join(" e ") + " para continuar."
-          : "Esta combinação está indisponível. Escolha outra opção.",
+          : "Esta combinação está indisponível para compra online.",
         variant: "destructive",
       });
       return;
     }
     if (variants.length > 0 && !variant) {
-      toast({ title: "Produto indisponível", description: "Este produto está sem estoque.", variant: "destructive" });
+      toast({ title: "Produto indisponível online", description: "Este produto está reservado para a loja física ou sem estoque.", variant: "destructive" });
       return;
     }
     try {
@@ -189,6 +223,9 @@ export default function HomeClient({
 
   // --- PRODUCT DETAILED VIEW ---
   if (selectedProduct) {
+    const selectedSummary = getProductStockSummary(selectedProduct);
+    const selectedBuffer = selectedSummary.buffer;
+
     return (
       <div className="min-h-screen bg-catalog-bg text-catalog-text px-6 pt-24 pb-6 md:px-12 md:pt-28 md:pb-12 fade-in selection:bg-catalog-gold/30">
         <div className="max-w-7xl mx-auto">
@@ -283,7 +320,8 @@ export default function HomeClient({
                       <legend className="text-sm font-bold text-catalog-muted uppercase tracking-widest mb-3">Selecione o Tamanho</legend>
                       <div className="flex flex-wrap gap-3">
                         {variantOptions.sizes.map((size) => {
-                          const isAvailable = selectedVariants.some((v) => matchesVariantTerm(v.size, size) && v.stock > 0);
+                          const isAvailable = selectedVariants.some((v) => matchesVariantTerm(v.size, size) && (v.stock - selectedBuffer) > 0);
+                          const isPhysicalOnly = !isAvailable && selectedVariants.some((v) => matchesVariantTerm(v.size, size) && v.stock > 0);
                           return (
                             <button
                               key={size}
@@ -293,10 +331,11 @@ export default function HomeClient({
                                 setSelectedSize(size);
                                 if (selectedColor && !selectedVariants.some((v) =>
                                   matchesVariantTerm(v.size, size) &&
-                                  matchesVariantTerm(v.color, selectedColor) && v.stock > 0
+                                  matchesVariantTerm(v.color, selectedColor) && (v.stock - selectedBuffer) > 0
                                 )) setSelectedColor(null);
                               }}
                               disabled={!isAvailable}
+                              title={isPhysicalOnly ? "Disponível apenas na loja física" : undefined}
                               className={"px-5 py-2 rounded-full border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold " + (
                                 selectedSize === size
                                   ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text'
@@ -318,6 +357,10 @@ export default function HomeClient({
                       <div className="flex flex-wrap gap-3">
                         {variantOptions.colors.map((color) => {
                           const isAvailable = selectedVariants.some((v) =>
+                            matchesVariantTerm(v.color, color) && (v.stock - selectedBuffer) > 0 &&
+                            (!variantOptions.hasRealSizes || !selectedSize || matchesVariantTerm(v.size, selectedSize))
+                          );
+                          const isPhysicalOnly = !isAvailable && selectedVariants.some((v) =>
                             matchesVariantTerm(v.color, color) && v.stock > 0 &&
                             (!variantOptions.hasRealSizes || !selectedSize || matchesVariantTerm(v.size, selectedSize))
                           );
@@ -328,6 +371,7 @@ export default function HomeClient({
                               aria-pressed={selectedColor === color}
                               onClick={() => setSelectedColor(color)}
                               disabled={!isAvailable}
+                              title={isPhysicalOnly ? "Disponível apenas na loja física" : undefined}
                               className={"px-5 py-2 rounded-full border text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold " + (
                                 selectedColor === color
                                   ? 'border-catalog-gold bg-catalog-gold/20 text-catalog-text'
@@ -368,12 +412,34 @@ export default function HomeClient({
                 </button>
               </div>
 
+              {selectedSummary.isExclusivePhysical && (
+                <div className="space-y-4 pt-2">
+                  <div className="p-4 rounded-2xl border border-amber-400/50 bg-amber-400/10 text-amber-300 text-sm font-medium flex items-center gap-3">
+                    <span className="text-2xl">🏪</span>
+                    <div>
+                      <p className="font-bold text-base text-amber-200">Disponível exclusivamente na Loja Física</p>
+                      <p className="text-xs text-catalog-muted mt-0.5">A última unidade deste item está reservada no balcão presencial para pronta entrega.</p>
+                    </div>
+                  </div>
+                  {lojaInfo?.whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${lojaInfo.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Gostaria de consultar a disponibilidade presencial do produto "${selectedProduct.name}" na loja física.`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-catalog-gold/50 bg-catalog-gold/15 text-catalog-gold hover:bg-catalog-gold/25 transition-all text-xs uppercase tracking-widest font-mono font-bold"
+                    >
+                      <span>Consultar no WhatsApp da Loja</span>
+                    </a>
+                  )}
+                </div>
+              )}
+
               {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) */}
               <div className="pt-2">
                 <ProductFreightCalculator
-                  key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor)?.id ?? 'selection-pending')}
+                  key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id ?? 'selection-pending')}
                   productId={selectedProduct.id}
-                  variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor)?.id}
+                  variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id}
                   price={selectedProduct.price}
                   lojaID={selectedProduct.lojaID}
                 />
@@ -447,7 +513,9 @@ export default function HomeClient({
                 {filteredProducts.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
-                      {paginatedProducts.map((prod, index) => (
+                      {paginatedProducts.map((prod, index) => {
+                        const summary = getProductStockSummary(prod);
+                        return (
                         <div 
                           key={prod.id}  
                           onClick={() => openProduct(prod)}
@@ -463,9 +531,19 @@ export default function HomeClient({
                           </div>
                           
                           <div className="flex flex-col flex-1 justify-end relative">
-                            <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                              Produto
-                            </span>
+                            {summary.isExclusivePhysical ? (
+                              <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold mb-3 border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                Exclusivo Loja Física
+                              </span>
+                            ) : summary.isOutOfStock ? (
+                              <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                Esgotado
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                Produto
+                              </span>
+                            )}
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
@@ -478,14 +556,18 @@ export default function HomeClient({
                                   handleBuy(e, prod);
                                 }}
                                 className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                                title="Adicionar ao Carrinho"
+                                title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
                               >
-                                <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                {summary.isExclusivePhysical ? (
+                                  <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
+                                ) : (
+                                  <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                )}
                               </button>
                             </div>
                           </div>
                         </div>
-                      ))}
+                      );})}
                     </div>
 
                     {/* Componente Visual de Paginação Dark & Gold (100% Centralizado) */}
@@ -547,7 +629,9 @@ export default function HomeClient({
                 {filteredProducts.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 md:gap-7">
-                      {paginatedProducts.map((prod, index) => (
+                      {paginatedProducts.map((prod, index) => {
+                        const summary = getProductStockSummary(prod);
+                        return (
                         <div 
                           key={prod.id}  
                           onClick={() => openProduct(prod)}
@@ -563,9 +647,19 @@ export default function HomeClient({
                           </div>
                           
                           <div className="flex flex-col flex-1 justify-end relative">
-                            <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                              Produto
-                            </span>
+                            {summary.isExclusivePhysical ? (
+                              <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold mb-3 border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                Exclusivo Loja Física
+                              </span>
+                            ) : summary.isOutOfStock ? (
+                              <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                Esgotado
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                Produto
+                              </span>
+                            )}
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
@@ -578,14 +672,18 @@ export default function HomeClient({
                                   handleBuy(e, prod);
                                 }}
                                 className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                                title="Adicionar ao Carrinho"
+                                title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
                               >
-                                <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                {summary.isExclusivePhysical ? (
+                                  <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
+                                ) : (
+                                  <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                )}
                               </button>
                             </div>
                           </div>
                         </div>
-                      ))}
+                      );})}
                     </div>
 
                     {/* Componente Visual de Paginação Dark & Gold */}

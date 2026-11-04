@@ -30,6 +30,7 @@ export class InventoryService {
   /**
    * Reserva estoque de forma atômica durante o checkout (status PENDING).
    * Decrementa simetricamente tanto o produto pai quanto a variante dentro da transação.
+   * Aplica salvaguarda de estoque de segurança (stockBuffer) para prioridade de balcão da loja física.
    */
   static async reserveStock(
     items: InventoryItemInput[],
@@ -74,7 +75,7 @@ export class InventoryService {
 
       const quantity = item.quantity;
 
-      // Decremento atômico no produto pai com salvaguarda contra estoque negativo / condição de corrida (AUD-003)
+      // Decremento atômico no produto pai com salvaguarda contra estoque negativo e violação do stockBuffer (AUD-003 / OMNI-BUFFER)
       const updatedProduct = await tx.product.update({
         where: { id: item.productId, lojaID, retiredAt: null },
         data: {
@@ -83,14 +84,18 @@ export class InventoryService {
         },
       });
 
-      if (updatedProduct && typeof updatedProduct.stock === 'number' && updatedProduct.stock < 0) {
+      const buffer = updatedProduct?.stockBuffer !== undefined ? Math.max(0, updatedProduct.stockBuffer) : 0;
+
+      if (updatedProduct && typeof updatedProduct.stock === 'number' && updatedProduct.stock < buffer) {
         throw new InventoryError(
           'INSUFFICIENT_STOCK',
-          `Estoque insuficiente para o produto "${updatedProduct.name || item.productId}". Disponibilidade esgotada concorrentemente.`
+          buffer > 0 && updatedProduct.stock >= 0
+            ? `A última unidade do produto "${updatedProduct.name || item.productId}" está reservada para compra presencial na loja física.`
+            : `Estoque insuficiente para o produto "${updatedProduct.name || item.productId}". Disponibilidade esgotada concorrentemente.`
         );
       }
 
-      // Decremento atômico na variante (se especificada) com salvaguarda de concorrência (AUD-003)
+      // Decremento atômico na variante (se especificada) com salvaguarda simétrica de buffer (AUD-003 / OMNI-BUFFER)
       if (item.variantId) {
         const updatedVariant = await tx.productVariants.update({
           where: { id: item.variantId, ProductID: item.productId, retiredAt: null },
@@ -100,10 +105,12 @@ export class InventoryService {
           },
         });
 
-        if (updatedVariant && typeof updatedVariant.stock === 'number' && updatedVariant.stock < 0) {
+        if (updatedVariant && typeof updatedVariant.stock === 'number' && updatedVariant.stock < buffer) {
           throw new InventoryError(
             'INSUFFICIENT_STOCK',
-            `Estoque insuficiente para a variação selecionada. Disponibilidade esgotada concorrentemente.`
+            buffer > 0 && updatedVariant.stock >= 0
+              ? `A última unidade da variação selecionada está reservada para compra presencial na loja física.`
+              : `Estoque insuficiente para a variação selecionada. Disponibilidade esgotada concorrentemente.`
           );
         }
       }

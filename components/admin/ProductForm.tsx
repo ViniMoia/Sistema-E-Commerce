@@ -27,6 +27,7 @@ const productSchema = z.object({
   price: z.number().min(0.01, "Preço deve ser maior que R$ 0,00"),
   imageUrl: externalImageUrlSchema,
   stock: z.number().int().min(0, "Estoque inválido"),
+  stockBuffer: z.number().int().min(0, "Buffer de estoque inválido"),
   variants: productVariantsSchema,
   galleryUrls: z.array(z.object({ url: externalImageUrlSchema })),
 });
@@ -41,6 +42,7 @@ interface ProductInitialData {
   price: number | string | { toNumber?: () => number };
   imageUrl: string;
   stock: number;
+  stockBuffer?: number;
   galleryUrls?: string[];
   productVariants?: Array<{
     id?: string;
@@ -79,6 +81,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       price: formattedInitialPrice,
       imageUrl: initialData?.imageUrl ?? "",
       stock: initialData?.stock ?? 0,
+      stockBuffer: initialData?.stockBuffer ?? 1,
       variants:
         initialData?.productVariants && initialData.productVariants.length > 0
           ? initialData.productVariants.filter(v => !v.retiredAt).map((v) => ({
@@ -128,6 +131,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl,
+        stockBuffer: data.stockBuffer,
         ...(!isEditing ? { stock: data.stock } : { expectedCatalogVersion: initialData?.catalogVersion }),
         lojaID: lojaID,
         variants: data.variants.map((v) => ({
@@ -153,26 +157,26 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       if (!res.ok) {
         if (res.status === 409 && json.code) throw new Error('O catálogo foi alterado em outra operação. Seu rascunho foi preservado; compare com os dados atuais antes de salvar novamente.');
         let errorDetails = "";
-        if (json.details?.fieldErrors) {
+        if (json.details && json.details.fieldErrors) {
           const errors = Object.entries(json.details.fieldErrors)
             .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
             .join(" | ");
-          if (errors) errorDetails = ` (${errors})`;
+          errorDetails = ` (${errors})`;
         }
-        throw new Error((json.error || json.message || "Falha ao salvar produto") + errorDetails);
+        throw new Error(json.error || `Erro ao salvar o produto${errorDetails}`);
       }
 
       toast({
-        title: isEditing ? "Produto atualizado" : "Produto cadastrado",
-        description: `O produto "${data.name}" foi salvo com sucesso no catálogo.`,
+        title: isEditing ? "Produto atualizado com sucesso!" : "Produto criado com sucesso!",
+        description: `${data.name} já está disponível no catálogo com as novas definições.`,
       });
 
       router.push("/admin/products");
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
-        title: "Erro ao salvar",
-        description: error.message || "Ocorreu um erro ao comunicar com a API.",
+        title: "Erro ao processar",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao salvar o produto. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -189,60 +193,65 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         method: "DELETE",
       });
 
+      const json = await res.json();
+
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.error || json.message || "Falha ao excluir produto");
+        throw new Error(json.error || "Não foi possível excluir o produto");
       }
 
       toast({
-        title: "Produto excluído",
-        description: `O produto "${form.getValues("name") || initialData?.name || ""}" foi removido com sucesso.`,
+        title: "Produto removido",
+        description: "O produto foi excluído com sucesso do catálogo.",
       });
 
-      setShowDeleteConfirm(false);
       router.push("/admin/products");
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
-        title: "Erro ao excluir",
-        description: error.message || "Ocorreu um erro ao comunicar com a API.",
+        title: "Erro na exclusão",
+        description: error instanceof Error ? error.message : "Não foi possível excluir o produto.",
         variant: "destructive",
       });
     } finally {
       setIsDeletingProduct(false);
+      setShowDeleteConfirm(false);
     }
   };
 
   return (
     <Form {...form}>
-      {isEditing && productId && <InventoryPanel key={productId} productId={productId} onInventoryRead={onInventoryRead} />}
+      {isEditing && productId && (
+        <div className="mb-8">
+          <InventoryPanel productId={productId} onInventoryRead={onInventoryRead} />
+        </div>
+      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Seção 1: Dados Cadastrais Principais */}
+        {/* Seção 1: Dados Vitais */}
         <div className="bg-catalog-card border border-catalog-gold/30 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl backdrop-blur-xl">
           <div className="border-b border-catalog-gold/20 pb-4 flex items-center justify-between">
             <h3 className="text-base font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-catalog-gold" />
-              <span>Identificação & Formulação Técnica</span>
+              <span>Especificações Principais</span>
             </h3>
             <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
               Geral
             </span>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                    Nome Comercial do Produto
+                    Título Comercial
                   </FormLabel>
                   <FormControl>
                     <input
-                      placeholder="Ex: V-LUB LUBRIFICANTE PARA CLAY BAR 500ML VONIXX"
+                      placeholder="Ex: Cera Líquida Premium Ultra Brilho 500ml"
                       {...field}
-                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold transition-all"
+                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-mono text-red-400" />
@@ -256,14 +265,14 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                    Descrição Técnica & Instruções de Aplicação
+                    Descrição Detalhada & Modo de Uso
                   </FormLabel>
                   <FormControl>
                     <textarea
-                      placeholder="Descreva a finalidade técnica, modo de uso, superfícies indicadas e rendimento..."
                       rows={4}
+                      placeholder="Descreva as propriedades técnicas, superfícies indicadas e benefícios do produto..."
                       {...field}
-                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl p-4 focus:outline-none focus:border-catalog-gold transition-all resize-none font-mono"
+                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all resize-y"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-mono text-red-400" />
@@ -271,7 +280,7 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="price"
@@ -313,6 +322,31 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
                         className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
                       />
                     </FormControl>
+                    <FormMessage className="text-xs font-mono text-red-400" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="stockBuffer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                      Buffer Loja Física
+                    </FormLabel>
+                    <FormControl>
+                      <input
+                        type="number"
+                        placeholder="1"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-500 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono transition-all"
+                      />
+                    </FormControl>
+                    <p className="text-[10px] text-gray-400 font-mono mt-1">
+                      Reserva balcão (padrão: 1)
+                    </p>
                     <FormMessage className="text-xs font-mono text-red-400" />
                   </FormItem>
                 )}
