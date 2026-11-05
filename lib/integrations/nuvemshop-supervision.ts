@@ -220,3 +220,105 @@ export async function reconcileNuvemshopStockBatch(
 
   return summary;
 }
+
+export interface ProvisionWebhooksResult {
+  storeId: string;
+  checked: string[];
+  created: string[];
+  alreadyExisting: string[];
+  status: 'SUCCESS' | 'SKIPPED' | 'ERROR';
+  error?: string;
+}
+
+export async function ensureNuvemshopWebhooksProvisioned(
+  options: {
+    storeId?: string;
+    accessToken?: string;
+    webhookUrl?: string;
+    fetcher?: typeof fetch;
+  } = {}
+): Promise<ProvisionWebhooksResult> {
+  const storeId = options.storeId ?? process.env.NUVEMSHOP_STORE_ID;
+  const accessToken = options.accessToken ?? process.env.NUVEMSHOP_ACCESS_TOKEN;
+  const webhookUrl = options.webhookUrl ?? process.env.NUVEMSHOP_WEBHOOK_URL ?? `${process.env.NEXT_PUBLIC_APP_URL || 'https://continentalestetica.com.br'}/api/webhooks/nuvemshop`;
+  const fetcher = options.fetcher ?? globalThis.fetch;
+
+  const targetEvents = ['product/created', 'product/updated', 'product/deleted'];
+
+  if (!storeId || !accessToken) {
+    return {
+      storeId: storeId || 'unknown',
+      checked: targetEvents,
+      created: [],
+      alreadyExisting: [],
+      status: 'SKIPPED',
+      error: 'CREDENTIALS_MISSING',
+    };
+  }
+
+  try {
+    const listRes = await fetcher(`https://api.nuvemshop.com.br/v1/${storeId}/webhooks`, {
+      method: 'GET',
+      headers: {
+        'Authentication': `bearer ${accessToken}`,
+        'User-Agent': process.env.NUVEMSHOP_USER_AGENT || 'Continental-Ecommerce (contato@continentalestetica.com.br)',
+      },
+    });
+
+    if (!listRes.ok) {
+      return {
+        storeId,
+        checked: targetEvents,
+        created: [],
+        alreadyExisting: [],
+        status: 'ERROR',
+        error: `HTTP_${listRes.status}`,
+      };
+    }
+
+    const existingWebhooks = (await listRes.json()) as Array<{ id: number; event: string; url: string }>;
+    const created: string[] = [];
+    const alreadyExisting: string[] = [];
+
+    for (const event of targetEvents) {
+      const match = Array.isArray(existingWebhooks) && existingWebhooks.find(w => w.event === event && w.url === webhookUrl);
+      if (match) {
+        alreadyExisting.push(event);
+      } else {
+        const createRes = await fetcher(`https://api.nuvemshop.com.br/v1/${storeId}/webhooks`, {
+          method: 'POST',
+          headers: {
+            'Authentication': `bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'User-Agent': process.env.NUVEMSHOP_USER_AGENT || 'Continental-Ecommerce (contato@continentalestetica.com.br)',
+          },
+          body: JSON.stringify({
+            event,
+            url: webhookUrl,
+          }),
+        });
+
+        if (createRes.ok) {
+          created.push(event);
+        }
+      }
+    }
+
+    return {
+      storeId,
+      checked: targetEvents,
+      created,
+      alreadyExisting,
+      status: 'SUCCESS',
+    };
+  } catch (err) {
+    return {
+      storeId,
+      checked: targetEvents,
+      created: [],
+      alreadyExisting: [],
+      status: 'ERROR',
+      error: err instanceof Error ? err.message : 'NETWORK_ERROR',
+    };
+  }
+}

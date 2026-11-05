@@ -116,6 +116,27 @@ export async function receiveNuvemshopWebhook(
       },
     });
 
+    const PRODUCT_EVENTS = ['product/created', 'product/updated', 'product/deleted'];
+    if (PRODUCT_EVENTS.includes(payload.event) && tx.commerceOutbox) {
+      const effectKey = `nuvemshop-product-ingest:${payload.store_id}:${payload.id}:${bodyDigest.slice(0, 16)}`;
+      await tx.commerceOutbox.upsert({
+        where: { effectKey },
+        create: {
+          effectKey,
+          commandType: 'NUVEMSHOP_PRODUCT_INGEST',
+          aggregateId: payload.id,
+          payload: {
+            schemaVersion: 1,
+            storeId: payload.store_id,
+            productId: payload.id,
+            event: payload.event,
+            receivedAt: new Date().toISOString(),
+          },
+        },
+        update: {},
+      });
+    }
+
     return { isDuplicate: false };
   });
 

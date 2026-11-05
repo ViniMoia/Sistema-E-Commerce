@@ -14,6 +14,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
     },
+    commerceOutbox: {
+      upsert: vi.fn(),
+    },
   },
 }));
 
@@ -285,6 +288,34 @@ describe('Nuvemshop Webhook Route Handler (POST)', () => {
       resourceId: '12345678',
       isDuplicate: false,
     });
+  });
+
+  it('enqueues NUVEMSHOP_PRODUCT_INGEST command into commerceOutbox on product events', async () => {
+    const productPayload = {
+      store_id: 8179726,
+      event: 'product/created',
+      id: 998877,
+    };
+    const req = buildRequest(productPayload);
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    expect(prisma.commerceOutbox.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          effectKey: expect.stringMatching(/^nuvemshop-product-ingest:8179726:998877:/),
+        }),
+        create: expect.objectContaining({
+          commandType: 'NUVEMSHOP_PRODUCT_INGEST',
+          aggregateId: '998877',
+          payload: expect.objectContaining({
+            storeId: '8179726',
+            productId: '998877',
+            event: 'product/created',
+          }),
+        }),
+      })
+    );
   });
 
   it('returns 503 if database persistence throws', async () => {

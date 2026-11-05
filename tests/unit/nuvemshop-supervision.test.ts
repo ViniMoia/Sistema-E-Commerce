@@ -3,6 +3,7 @@ import { GET } from '@/app/api/cron/nuvemshop/status/route';
 import {
   getNuvemshopIntegrationHealth,
   reconcileNuvemshopStockBatch,
+  ensureNuvemshopWebhooksProvisioned,
 } from '@/lib/integrations/nuvemshop-supervision';
 import * as stockSyncModule from '@/lib/integrations/nuvemshop-stock-sync';
 import prisma from '@/lib/prisma';
@@ -143,5 +144,42 @@ describe('Nuvemshop Supervision Route Handler (GET)', () => {
     const body = await res.json();
     expect(body.orders.synced).toBe(42);
     expect(body.variants.linkedCount).toBe(517);
+  });
+});
+
+describe('ensureNuvemshopWebhooksProvisioned', () => {
+  it('skips provision when credentials are not configured', async () => {
+    vi.stubEnv('NUVEMSHOP_STORE_ID', '');
+    vi.stubEnv('NUVEMSHOP_ACCESS_TOKEN', '');
+    const res = await ensureNuvemshopWebhooksProvisioned({ storeId: '', accessToken: '' });
+    expect(res.status).toBe('SKIPPED');
+  });
+
+  it('provisions missing webhooks via POST and detects already registered ones', async () => {
+    const mockFetcher = vi.fn()
+      // First call: GET list of webhooks
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { id: 1, event: 'product/created', url: 'https://test.com/api/webhooks/nuvemshop' },
+        ],
+      })
+      // Second call: POST product/updated
+      .mockResolvedValueOnce({ ok: true })
+      // Third call: POST product/deleted
+      .mockResolvedValueOnce({ ok: true });
+
+    const res = await ensureNuvemshopWebhooksProvisioned({
+      storeId: '8179726',
+      accessToken: 'test-token',
+      webhookUrl: 'https://test.com/api/webhooks/nuvemshop',
+      fetcher: mockFetcher as never,
+    });
+
+    expect(res.status).toBe('SUCCESS');
+    expect(res.alreadyExisting).toContain('product/created');
+    expect(res.created).toContain('product/updated');
+    expect(res.created).toContain('product/deleted');
+    expect(mockFetcher).toHaveBeenCalledTimes(3);
   });
 });

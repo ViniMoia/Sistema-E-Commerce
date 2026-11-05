@@ -9,12 +9,22 @@ import {
   cancelOrderInNuvemshop,
   type NuvemshopOrderSyncCaller,
 } from '@/lib/integrations/nuvemshop-order-sync';
+import {
+  ingestProductFromNuvemshop,
+  type IngestProductPayload,
+} from '@/lib/integrations/nuvemshop-product-ingestion';
+import type { NuvemshopProductReaderCaller } from '@/lib/integrations/nuvemshop-stock-sync';
 import type { Prisma } from '@prisma/client';
 
 const emailSchema = z.object({ deliveryStartedAt: z.string().datetime(),
   options: z.object({ to: z.string().email(), from: z.string().min(1), subject: z.string().min(1), html: z.string(), text: z.string() }).strict() }).strict();
 
-export async function drainPaymentOutbox(limit = 10, send = emailService.sendEmail, nuvemshopCaller?: NuvemshopOrderSyncCaller) {
+export async function drainPaymentOutbox(
+  limit = 10,
+  send = emailService.sendEmail,
+  nuvemshopCaller?: NuvemshopOrderSyncCaller,
+  nuvemshopProductCaller?: NuvemshopProductReaderCaller
+) {
   const batch = await claimWork('CommerceOutbox', Math.max(1, Math.min(50, Math.trunc(limit))));
   const summary = { claimed: batch.ids.length, completed: 0, retried: 0, review: 0 };
   for (const id of batch.ids) {
@@ -79,6 +89,27 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
         }
         continue;
       }
+      if (entry.commandType === 'NUVEMSHOP_PRODUCT_INGEST') {
+        const payload = entry.payload as unknown as IngestProductPayload;
+        const ingestResult = await ingestProductFromNuvemshop(payload, { caller: nuvemshopProductCaller });
+        if (
+          ingestResult.status === 'INGESTED' ||
+          ingestResult.status === 'UPDATED' ||
+          ingestResult.status === 'QUARANTINE' ||
+          ingestResult.status === 'RETIRED' ||
+          ingestResult.status === 'SKIPPED'
+        ) {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner));
+          summary.completed++;
+        } else if (ingestResult.status === 'NOT_FOUND') {
+          await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner, true));
+          summary.review++;
+        } else {
+          await retryWork('CommerceOutbox', id, batch.owner, 'NUVEMSHOP_PRODUCT_INGEST_RETRY');
+          summary.retried++;
+        }
+        continue;
+      }
       if (entry.commandType !== 'PAYMENT_CONFIRMATION_EMAIL') {
         await prisma.$transaction(tx => completeWork(tx, 'CommerceOutbox', id, batch.owner, true)); summary.review++; continue;
       }
@@ -124,6 +155,10 @@ export async function drainPaymentOutbox(limit = 10, send = emailService.sendEma
   return summary;
 }
 
-export async function drainNuvemshopOutbox(limit = 10, caller?: NuvemshopOrderSyncCaller) {
-  return drainPaymentOutbox(limit, emailService.sendEmail, caller);
+export async function drainNuvemshopOutbox(
+  limit = 10,
+  caller?: NuvemshopOrderSyncCaller,
+  productCaller?: NuvemshopProductReaderCaller
+) {
+  return drainPaymentOutbox(limit, emailService.sendEmail, caller, productCaller);
 }
