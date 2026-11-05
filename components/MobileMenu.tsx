@@ -286,6 +286,7 @@ export function MobileMenu({
 
                         <Link
                           href="/profile"
+                          prefetch={true}
                           onClick={closeMenu}
                           className="flex items-center justify-between px-3.5 py-3 rounded-xl text-neutral-200 hover:text-white hover:bg-white/[0.05] transition-colors group min-h-[44px]"
                         >

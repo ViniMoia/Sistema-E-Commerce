@@ -53,6 +53,7 @@ export async function Header() {
 
               <Link
                 href="/profile"
+                prefetch={true}
                 className="nav-trace-link flex items-center gap-2 text-white/90 hover:text-white text-xs sm:text-sm font-semibold tracking-wide"
               >
                 <div className="w-7 h-7 rounded-full bg-brand-yellow/10 border border-brand-yellow/40 flex items-center justify-center overflow-hidden">

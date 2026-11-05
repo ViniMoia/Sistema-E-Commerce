@@ -457,7 +457,7 @@ describe('Worker Outbox - Integração do Comando NUVEMSHOP_PRODUCT_INGEST', () 
 
   it('drena comando NUVEMSHOP_PRODUCT_INGEST com sucesso no outbox', async () => {
     const { claimWork, completeWork } = await import('@/services/payment/durable-work.service');
-    vi.mocked(claimWork).mockResolvedValueOnce({ ids: ['outbox-1'], owner: 'test-worker' });
+    vi.mocked(claimWork).mockResolvedValueOnce({ ids: ['outbox-1'], owner: '00000000-0000-0000-0000-000000000001' });
 
     vi.mocked(prisma.commerceOutbox.findUniqueOrThrow).mockResolvedValue({
       id: 'outbox-1',
@@ -496,6 +496,6 @@ describe('Worker Outbox - Integração do Comando NUVEMSHOP_PRODUCT_INGEST', () 
     const summary = await drainNuvemshopOutbox(10, undefined, mockProductCaller);
 
     expect(summary.completed).toBe(1);
-    expect(completeWork).toHaveBeenCalledWith(expect.anything(), 'CommerceOutbox', 'outbox-1', 'test-worker');
+    expect(completeWork).toHaveBeenCalledWith(expect.anything(), 'CommerceOutbox', 'outbox-1', '00000000-0000-0000-0000-000000000001');
   });
 });

@@ -33,6 +33,7 @@ export function ContinentalLogo({
   return (
     <Link
       href={href}
+      prefetch={true}
       onClick={onClick}
       className="inline-flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow/60 rounded-sm"
       aria-label="Continental Produtos Estéticos Automotivos - Página Inicial"

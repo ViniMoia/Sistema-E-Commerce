@@ -29,6 +29,7 @@ export default async function ProfilePage() {
         {/* Botão de Retorno / Voltar às Compras */}
         <Link
           href="/"
+          prefetch={true}
           className="inline-flex items-center text-catalog-muted hover:text-white transition-colors group w-fit cursor-pointer"
         >
           <span className="group-hover:-translate-x-1 transition-transform duration-300">
