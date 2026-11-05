@@ -59,7 +59,7 @@ export const defaultNuvemshopCaller: NuvemshopOrderSyncCaller = {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(`https://api.nuvemshop.com.br/v1/${storeId}/orders/${remoteOrderId}/close`, {
+      const response = await fetch(`https://api.nuvemshop.com.br/v1/${storeId}/orders/${remoteOrderId}/cancel`, {
         method: 'POST',
         headers: {
           'Authentication': `bearer ${accessToken}`,
@@ -383,7 +383,7 @@ export async function cancelOrderInNuvemshop(
     return { status: 'SKIPPED', reason: 'CALLER_CLOSE_NOT_SUPPORTED' };
   }
 
-  const restock = options.restock ?? (process.env.NUVEMSHOP_CANCEL_RESTOCK === 'true');
+  const restock = options.restock ?? (process.env.NUVEMSHOP_CANCEL_RESTOCK !== 'false');
   const response = await caller.closeOrder(
     prepared.storeId,
     prepared.accessToken,
