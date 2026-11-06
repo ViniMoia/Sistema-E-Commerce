@@ -1,48 +1,110 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const DESKTOP_VIDEO_URL =
   "https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790881130/Porsche_911_product_film_lighting_20261001155806_s4mbls.mp4";
 const MOBILE_VIDEO_URL =
   "https://res.cloudinary.com/dpt3zi8kx/video/upload/v1790795810/Automotive_film_production_guide_1080p_20260930161505_e6suze.mp4";
 
+// Headlights ignition threshold in seconds (~1.1s is the exact point of illumination)
+const HEADLIGHTS_TIME_SECONDS = 1.1;
+// Safety fallback maximum wait time (guarantees reveal even with slow 3G or autoplay block)
+const SAFETY_FALLBACK_MS = 2200;
+
 export default function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSrc, setVideoSrc] = useState<string>();
+  const [isRevealed, setIsRevealed] = useState(false);
+  const hasTriggeredRef = useRef(false);
+
+  const triggerReveal = useCallback(() => {
+    if (hasTriggeredRef.current) return;
+    hasTriggeredRef.current = true;
+    setIsRevealed(true);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hero-car-illuminated"));
+    }
+  }, []);
 
   useEffect(() => {
     const mobile = window.matchMedia("(max-width: 767px)");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setVideoSrc(reducedMotion.matches ? undefined : mobile.matches ? MOBILE_VIDEO_URL : DESKTOP_VIDEO_URL);
+
+    // If user prefers reduced motion, reveal instantly
+    if (reducedMotion.matches) {
+      triggerReveal();
+    }
+
+    const update = () =>
+      setVideoSrc(
+        reducedMotion.matches
+          ? undefined
+          : mobile.matches
+          ? MOBILE_VIDEO_URL
+          : DESKTOP_VIDEO_URL
+      );
+
     update();
     mobile.addEventListener("change", update);
     reducedMotion.addEventListener("change", update);
+
+    // Safety fallback timer
+    const fallbackTimer = setTimeout(() => {
+      triggerReveal();
+    }, SAFETY_FALLBACK_MS);
+
     return () => {
       mobile.removeEventListener("change", update);
       reducedMotion.removeEventListener("change", update);
+      clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [triggerReveal]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (videoSrc) void video.play().catch(() => { /* The poster and content remain available. */ });
-    else { video.pause(); video.load(); }
-  }, [videoSrc]);
+
+    if (videoSrc) {
+      void video.play().catch(() => {
+        // If autoplay is blocked by browser policy, reveal content gracefully
+        triggerReveal();
+      });
+    } else {
+      video.pause();
+      video.load();
+    }
+  }, [videoSrc, triggerReveal]);
+
+  const handleTimeUpdate = () => {
+    if (hasTriggeredRef.current) return;
+    const video = videoRef.current;
+    if (video && video.currentTime >= HEADLIGHTS_TIME_SECONDS) {
+      triggerReveal();
+    }
+  };
 
   const scrollToCatalog = (event: React.MouseEvent) => {
     const catalog = document.getElementById("catalogo");
     if (!catalog) return;
     event.preventDefault();
-    catalog.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    catalog.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
   };
 
   const scrollToLocation = (event: React.MouseEvent) => {
     const location = document.getElementById("localizacao");
     if (!location) return;
     event.preventDefault();
-    location.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    location.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
   };
 
   return (
@@ -55,7 +117,10 @@ export default function HeroVideo() {
         autoPlay
         muted
         playsInline
-        preload="none"
+        preload="auto"
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={triggerReveal}
+        onError={triggerReveal}
         aria-hidden="true"
         tabIndex={-1}
         className="absolute inset-0 w-full h-full object-cover object-center z-0 pointer-events-none"
@@ -79,7 +144,11 @@ export default function HeroVideo() {
       >
         {/* Hero Title (H1) with text-reveal-wrapper lines */}
         <h1
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold tracking-tight text-white leading-[1.08] mb-6"
+          className={`text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold tracking-tight text-white leading-[1.08] mb-6 transition-all duration-1000 ease-out transform motion-reduce:transform-none motion-reduce:transition-none ${
+            isRevealed
+              ? "opacity-100 translate-y-0 filter-none"
+              : "opacity-0 translate-y-6 blur-[1px]"
+          }`}
         >
           <span className="text-reveal-wrapper block">
             <span className="text-reveal-content block">ESTÉTICA</span>
@@ -96,13 +165,23 @@ export default function HeroVideo() {
 
         {/* Auxiliary Text */}
         <p
-          className="text-sm sm:text-base md:text-lg text-slate-300/90 font-light leading-relaxed max-w-lg mb-8"
+          className={`text-sm sm:text-base md:text-lg text-slate-300/90 font-light leading-relaxed max-w-lg mb-8 transition-all duration-1000 ease-out delay-150 transform motion-reduce:transform-none motion-reduce:transition-none ${
+            isRevealed
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-6"
+          }`}
         >
           Formulação de alto padrão desenvolvida para proteção prolongada, brilho profundo e acabamento impecável em cada superfície do seu veículo.
         </p>
 
         {/* Action CTAs */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div
+          className={`flex flex-wrap items-center gap-4 transition-all duration-1000 ease-out delay-300 transform motion-reduce:transform-none motion-reduce:transition-none ${
+            isRevealed
+              ? "opacity-100 translate-y-0 pointer-events-auto"
+              : "opacity-0 translate-y-6 pointer-events-none"
+          }`}
+        >
           <a
             href="#catalogo"
             onClick={scrollToCatalog}
