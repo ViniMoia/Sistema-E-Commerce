@@ -174,6 +174,12 @@ export async function createOrder(params: CreateOrderParams): Promise<CreateOrde
       deliveryAddress: addresses.shippingAddress ? { ...addresses.shippingAddress } : undefined,
       billingAddress: addresses.billingAddress ? { ...addresses.billingAddress } : undefined,
       recoveryTokenHash: guest?.hash, recoveryExpiresAt: guest ? new Date(now.getTime() + 7 * 86400000) : undefined }, select: buyerSelect });
+    if (intent.userID && prepared.normalized.customer.cpfCnpj) {
+      await tx.user.updateMany({
+        where: { id: intent.userID, lojaID: params.lojaID, cpfCnpj: null },
+        data: { cpfCnpj: prepared.normalized.customer.cpfCnpj },
+      });
+    }
     await InventoryService.reserveStock(items, tx, params.lojaID);
     const created = await tx.order.create({ data: { lojaID: params.lojaID, userID: intent.userID, buyerID: buyer.id,
       checkoutIntentID: intent.id, sourceCartID: intent.cartID, status: 'PENDING',

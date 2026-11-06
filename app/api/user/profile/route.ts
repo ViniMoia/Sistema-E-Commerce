@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
+import prisma from "@/lib/prisma";
 import { updateProfileSchema } from "@/lib/validators/customer.validators";
 import { updateUserProfile } from "@/services/customer.service";
 import { ok, err } from "@/lib/api-response";
@@ -12,7 +13,38 @@ export async function GET() {
     return err("Não autorizado", 401, "UNAUTHORIZED");
   }
 
-  return ok(user);
+  let address = null;
+  try {
+    const foundAddress = await prisma.address.findFirst({
+      where: { userID: user.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        cep: true,
+        state: true,
+        city: true,
+        district: true,
+        street: true,
+        number: true,
+        complement: true,
+      },
+    });
+    if (foundAddress) {
+      address = {
+        cep: foundAddress.cep,
+        state: foundAddress.state,
+        city: foundAddress.city,
+        neighborhood: foundAddress.district,
+        street: foundAddress.street,
+        number: foundAddress.number,
+        complement: foundAddress.complement,
+      };
+    }
+  } catch {}
+
+  return ok({
+    ...user,
+    address,
+  });
 }
 
 export async function PUT(req: Request) {

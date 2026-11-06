@@ -56,6 +56,22 @@ export interface CartItem {
 
 export type CheckoutResult = import('@/services/checkout.service').CreateOrderResult['order']
 
+export interface InitialCustomerData {
+  name?: string
+  email?: string
+  phone?: string | null
+  cpfCnpj?: string | null
+  address?: {
+    cep?: string
+    state?: string
+    city?: string
+    neighborhood?: string
+    street?: string
+    number?: string
+    complement?: string | null
+  } | null
+}
+
 export interface CheckoutFormProps {
   lojaID: string
   pixKey: string
@@ -65,6 +81,7 @@ export interface CheckoutFormProps {
   sourcePending?: boolean
   sourceUnavailable?: boolean
   items?: CartItem[]
+  initialCustomer?: InitialCustomerData | null
   onOrderCreated: (result: CheckoutResult) => void
 }
 
@@ -80,6 +97,7 @@ export function CheckoutForm({
   sourcePending = false,
   sourceUnavailable = false,
   items = [],
+  initialCustomer,
   onOrderCreated,
 }: CheckoutFormProps) {
   const [review, setReview] = useState<ReturnType<typeof proposalDTO> | null>(null)
@@ -175,6 +193,54 @@ export function CheckoutForm({
       cep: '',
     },
   }))
+
+  const cpfInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (initialCustomer) {
+      setFormData((prev) => {
+        const updated = { ...prev }
+        if (!prev.name && initialCustomer.name) updated.name = initialCustomer.name
+        if (!prev.email && initialCustomer.email) updated.email = initialCustomer.email
+        if (!prev.phone && initialCustomer.phone) {
+          let val = initialCustomer.phone.replace(/\D/g, '')
+          if (val.length > 11) val = val.slice(0, 11)
+          if (val.length > 6) {
+            val = `(${val.slice(0, 2)}) ${val.slice(2, 7)}-${val.slice(7)}`
+          } else if (val.length > 2) {
+            val = `(${val.slice(0, 2)}) ${val.slice(2)}`
+          }
+          updated.phone = val
+        }
+        if (!prev.cpfCnpj && initialCustomer.cpfCnpj) {
+          updated.cpfCnpj = formatCpfCnpj(initialCustomer.cpfCnpj)
+        }
+        if (initialCustomer.address) {
+          const addr = initialCustomer.address
+          const addressUpdated = { ...prev.address }
+          if (!addressUpdated.cep && addr.cep) addressUpdated.cep = addr.cep
+          if (!addressUpdated.state && addr.state) addressUpdated.state = addr.state
+          if (!addressUpdated.city && addr.city) addressUpdated.city = addr.city
+          if (!addressUpdated.neighborhood && addr.neighborhood) addressUpdated.neighborhood = addr.neighborhood
+          if (!addressUpdated.street && addr.street) addressUpdated.street = addr.street
+          if (!addressUpdated.number && addr.number) addressUpdated.number = addr.number
+          if (!addressUpdated.complement && addr.complement) addressUpdated.complement = addr.complement
+          updated.address = addressUpdated
+        }
+        return updated
+      })
+
+      if (initialCustomer.address?.cep) {
+        try { sessionStorage.setItem('freight_quote_cep', initialCustomer.address.cep) } catch {}
+      }
+
+      if (initialCustomer.name && initialCustomer.email && !initialCustomer.cpfCnpj) {
+        setTimeout(() => {
+          cpfInputRef.current?.focus()
+        }, 150)
+      }
+    }
+  }, [initialCustomer])
 
   useEffect(() => {
     if (isWhatsAppOnly && formData.deliveryType === 'DELIVERY') {
@@ -669,6 +735,18 @@ export function CheckoutForm({
                 </span>
               </div>
 
+              {initialCustomer?.name && (
+                <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-white font-mono flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-emerald-300 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    Identidade verificada da sua conta
+                  </span>
+                  <span className="text-[11px] text-catalog-muted hidden sm:inline">
+                    Dados carregados com sucesso
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
                   Nome Completo
@@ -718,6 +796,7 @@ export function CheckoutForm({
                   CPF ou CNPJ
                 </label>
                 <input
+                  ref={cpfInputRef}
                   type="text"
                   name="cpfCnpj"
                   value={formData.cpfCnpj}

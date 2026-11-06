@@ -14,6 +14,13 @@ export default function CheckoutPage() {
   const { cart, fetchCart, loadState, error: cartError, context, isLoading } = useCartStore()
   const items = cart?.items || []
   const [loja, setLoja] = useState<{ id: string; name?: string; pixKey?: string; whatsappNumber?: string } | null>(null)
+  const [customerProfile, setCustomerProfile] = useState<{
+    name?: string
+    email?: string
+    phone?: string | null
+    cpfCnpj?: string | null
+    address?: any
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
@@ -30,6 +37,13 @@ export default function CheckoutPage() {
         const data = await response.json()
         if (typeof data?.id !== 'string') throw new Error('Loja inválida')
         await fetchCart()
+        try {
+          const profileRes = await fetch('/api/user/profile', { cache: 'no-store', signal: controller.signal })
+          if (profileRes.ok) {
+            const profileJson = await profileRes.json()
+            if (!disposed && profileJson?.data) setCustomerProfile(profileJson.data)
+          }
+        } catch {}
         if (!disposed) { setLoja(data); setLoading(false) }
       } catch { if (!disposed) { setError('Erro ao carregar configurações da loja'); setLoading(false) } }
     }
@@ -173,12 +187,13 @@ export default function CheckoutPage() {
               sourcePending={isLoading || loadState !== 'ready'}
               sourceUnavailable={loadState === 'error' || !cart || !context?.userID ||
                 cart.lojaID !== loja.id || cart.lojaID !== context.lojaID || cart.userID !== context.userID}
-        cartID={cart?.id}
-        cartVersion={cart?.version}
+              cartID={cart?.id}
+              cartVersion={cart?.version}
               lojaID={loja.id}
               pixKey={loja.pixKey || ''}
               whatsappNumber={loja.whatsappNumber || ''}
               items={items}
+              initialCustomer={customerProfile}
               onOrderCreated={handleOrderCreated}
             />
           </main>
