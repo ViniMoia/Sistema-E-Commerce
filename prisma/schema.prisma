@@ -152,6 +152,7 @@ model Product {
   widthCm             Int?              @default(11)
   heightCm            Int?              @default(4)
   freeShipping        Boolean           @default(false)
+  shippingMode        String            @default("AUTOMATIC")
   lojaID              String
   loja                Loja              @relation(fields: [lojaID], references: [id], onDelete: Cascade)
   userID              String

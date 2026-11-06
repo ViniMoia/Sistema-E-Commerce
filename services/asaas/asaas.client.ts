@@ -38,7 +38,7 @@ export class AsaasClient {
     this.baseUrl = (
       apiUrl || process.env.ASAAS_API_URL || 'https://api-sandbox.asaas.com/v3'
     ).replace(/\/$/, '');
-    this.apiKey = apiKey !== undefined ? apiKey : (process.env.ASAAS_API_KEY || '');
+    this.apiKey = (apiKey !== undefined ? apiKey : (process.env.ASAAS_API_KEY || '')).replace(/^\\/, '');
 
     // Bloqueio preventivo de segurança: Chave de produção nunca deve apontar para Sandbox
     if (this.apiKey.startsWith('$aact_prod_') && /(?:api-|\/\/)sandbox\.asaas\.com/.test(this.baseUrl)) {

@@ -9,6 +9,9 @@ export const freightClientResponseSchema = z.object({ success: z.literal(true), 
   options: z.array(z.object({ providerId: z.string().min(1), serviceCode: z.string().min(1), serviceName: z.string().min(1),
     price: z.number().finite().nonnegative(), deliveryTimeInDays: z.number().int().nonnegative(),
     freightQuoteToken: z.string().min(1), freightQuoteId: z.string().min(1), expiresAt: z.string().datetime({ offset: true }),
-    description: z.string().optional(), isRecommended: z.boolean().optional() })) }) });
+    description: z.string().optional(), isRecommended: z.boolean().optional() })),
+  deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']).optional(),
+  shippingMode: z.enum(['AUTOMATIC', 'WHATSAPP_ONLY']).optional(),
+  packageDetails: z.object({ weightInGrams: z.number().optional(), dimensions: z.string().optional() }).optional() }) });
 export type FreightClientRequest = z.infer<typeof freightClientRequestSchema>;
 export type FreightClientResponse = z.infer<typeof freightClientResponseSchema>;

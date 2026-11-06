@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Truck, MapPin, Store, Clock, ChevronRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Truck, MapPin, Store, Clock, ChevronRight, AlertCircle, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
 import { FreightOption } from '@/types/freight';
 
 interface ProductFreightCalculatorProps {
@@ -285,34 +285,39 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
       {!isLoading && hasCalculated && options.length > 0 && (
         <div className="mt-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
           {options.map((option, index) => {
+            const isNone = option.providerId === 'NONE';
             const isPickup = option.providerId === 'STORE_PICKUP' || option.serviceCode === 'PICKUP';
             const isJt = option.providerId === 'JT_EXPRESS';
-            const isFree = option.price === 0;
-            const isLowest = !isFree && option.price === lowestPriceNonZero;
+            const isFree = !isNone && option.price === 0;
+            const isLowest = !isFree && !isNone && option.price === lowestPriceNonZero;
 
             return (
               <div
                 key={`${option.providerId}-${option.serviceCode}-${index}`}
                 className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                  isFree
-                    ? 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
-                    : isLowest || option.isRecommended
-                      ? 'bg-catalog-gold/10 border-catalog-gold/40 hover:border-catalog-gold/60'
-                      : 'bg-[#050B14]/60 border-neutral-800 hover:border-catalog-gold/20'
+                  isNone
+                    ? 'bg-amber-950/20 border-amber-500/30 hover:border-amber-500/50'
+                    : isFree
+                      ? 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
+                      : isLowest || option.isRecommended
+                        ? 'bg-catalog-gold/10 border-catalog-gold/40 hover:border-catalog-gold/60'
+                        : 'bg-[#050B14]/60 border-neutral-800 hover:border-catalog-gold/20'
                 }`}
               >
                 {/* Ícone e Nome do Serviço */}
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={`p-2 rounded-lg shrink-0 ${
-                      isFree
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : isJt
-                          ? 'bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30'
-                          : 'bg-neutral-800 text-neutral-300'
+                      isNone
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : isFree
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : isJt
+                            ? 'bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30'
+                            : 'bg-neutral-800 text-neutral-300'
                     }`}
                   >
-                    {isPickup ? <Store className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
+                    {isNone ? <MessageCircle className="w-4 h-4" /> : isPickup ? <Store className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
                   </div>
 
                   <div className="min-w-0">
@@ -322,6 +327,12 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
                       </span>
 
                       {/* Badges de Destaque */}
+                      {isNone && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          A Combinar
+                        </span>
+                      )}
+
                       {isFree && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           Grátis
@@ -344,11 +355,13 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
                     <div className="flex items-center gap-1.5 text-xs text-catalog-muted mt-0.5">
                       <Clock className="w-3.5 h-3.5 shrink-0" />
                       <span>
-                        {isPickup
-                          ? 'Retirada imediata no balcão'
-                          : option.deliveryTimeInDays === 1
-                            ? 'Em até 1 dia útil'
-                            : `Em até ${option.deliveryTimeInDays} dias úteis`}
+                        {isNone
+                          ? 'Envio a combinar via WhatsApp'
+                          : isPickup
+                            ? 'Retirada imediata no balcão'
+                            : option.deliveryTimeInDays === 1
+                              ? 'Em até 1 dia útil'
+                              : `Em até ${option.deliveryTimeInDays} dias úteis`}
                       </span>
                     </div>
                   </div>
@@ -356,7 +369,9 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
 
                 {/* Preço */}
                 <div className="text-right shrink-0">
-                  {isFree ? (
+                  {isNone ? (
+                    <span className="text-xs font-bold text-amber-400 uppercase">A Combinar</span>
+                  ) : isFree ? (
                     <span className="text-sm font-bold text-emerald-400">R$ 0,00</span>
                   ) : (
                     <span className="text-sm font-bold text-catalog-text">

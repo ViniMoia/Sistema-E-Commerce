@@ -30,6 +30,7 @@ export default async function EcommerceHomepage() {
     brandName: prod.brand?.name || null,
     brandSlug: prod.brand?.slug || null,
     tags: prod.tagsSearchCache || [],
+    shippingMode: prod.shippingMode || 'AUTOMATIC',
     productVariants: prod.productVariants.map((v) => ({
       id: v.id,
       size: v.size,

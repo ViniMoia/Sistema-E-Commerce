@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface CartSummaryProps {
   subtotal: number;
@@ -8,9 +9,10 @@ interface CartSummaryProps {
   onCheckout?: () => void;
   onContinueShopping?: () => void;
   disabled?: boolean;
+  isSyncing?: boolean;
 }
 
-function AnimatedCheckoutButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+function AnimatedCheckoutButton({ onClick, disabled, isSyncing }: { onClick?: () => void; disabled?: boolean; isSyncing?: boolean }) {
   return (
     <div className="group relative scale-100">
       {/* Glow Behind */}
@@ -33,7 +35,14 @@ function AnimatedCheckoutButton({ onClick, disabled }: { onClick?: () => void; d
             <span className="absolute top-0 left-0 h-full w-full -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:animate-shimmer group-hover:opacity-100" />
           </span>
           <span className="relative z-10 flex items-center gap-2">
-            <span className="text-sm font-bold tracking-widest text-white uppercase">Finalizar Compra</span>
+            {isSyncing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-neutral-300" />
+                <span className="text-sm font-bold tracking-widest text-neutral-200 uppercase">Confirmando itens...</span>
+              </>
+            ) : (
+              <span className="text-sm font-bold tracking-widest text-white uppercase">Finalizar Compra</span>
+            )}
           </span>
         </span>
       </button>
@@ -46,6 +55,7 @@ export function CartSummary({
   total,
   onCheckout,
   disabled,
+  isSyncing,
   onContinueShopping
 }: CartSummaryProps) {
   return (
@@ -67,7 +77,7 @@ export function CartSummary({
       </div>
 
       <div className="space-y-3">
-        <AnimatedCheckoutButton onClick={onCheckout} disabled={disabled} />
+        <AnimatedCheckoutButton onClick={onCheckout} disabled={disabled} isSyncing={isSyncing} />
 
         <Button 
           variant="outline" 

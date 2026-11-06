@@ -91,6 +91,7 @@ export interface FreightDimensionsResult {
   widthCm: number;
   heightCm: number;
   isSpecialFreight: boolean;
+  shippingMode: 'AUTOMATIC' | 'WHATSAPP_ONLY';
 }
 
 /**
@@ -151,12 +152,23 @@ export function calculateFreightDimensions(
   // Check if exceeds Correios max limit (30kg or sum > 200cm)
   const isSpecialFreight = weightInGrams > 30000 || (lengthCm + widthCm + heightCm) > 200;
 
+  // Classify shippingMode:
+  const rawMeasurementsPresent = (
+    rawWeightKg !== null && rawWeightKg !== undefined && Number(String(rawWeightKg).replace(',', '.')) > 0 &&
+    rawDepth !== null && rawDepth !== undefined && Number(String(rawDepth).replace(',', '.')) > 0 &&
+    rawWidth !== null && rawWidth !== undefined && Number(String(rawWidth).replace(',', '.')) > 0 &&
+    rawHeight !== null && rawHeight !== undefined && Number(String(rawHeight).replace(',', '.')) > 0
+  );
+  const hasRegexMatch = Boolean(match);
+  const shippingMode: 'AUTOMATIC' | 'WHATSAPP_ONLY' = (rawMeasurementsPresent || hasRegexMatch) ? 'AUTOMATIC' : 'WHATSAPP_ONLY';
+
   return {
     weightInGrams,
     lengthCm,
     widthCm,
     heightCm,
     isSpecialFreight,
+    shippingMode,
   };
 }
 
@@ -493,6 +505,7 @@ export async function ingestProductFromNuvemshop(
           lengthCm: freight.lengthCm,
           widthCm: freight.widthCm,
           heightCm: freight.heightCm,
+          shippingMode: freight.shippingMode,
           lojaID,
           userID: adminUserId,
           retiredAt: null,
@@ -515,6 +528,7 @@ export async function ingestProductFromNuvemshop(
           lengthCm: freight.lengthCm,
           widthCm: freight.widthCm,
           heightCm: freight.heightCm,
+          shippingMode: freight.shippingMode,
           retiredAt: null, // Un-retire
           catalogVersion: { increment: 1 },
         },

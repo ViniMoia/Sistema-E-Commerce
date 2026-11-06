@@ -6,6 +6,7 @@ import { PackagePackingService } from '@/services/freight/packing.service';
 import type { FreightDestination } from './destination';
 import { destinationSchema } from './destination';
 import { freightClientItemsSchema } from '@/lib/commerce/freight-contract';
+import { classifyProductShippingMode, type ShippingMode } from '@/lib/freight/shipping-mode';
 
 export const freightItemsSchema = freightClientItemsSchema;
 export type FreightItems = z.infer<typeof freightItemsSchema>;
@@ -37,10 +38,20 @@ export async function loadFreightAuthority(tx: Prisma.TransactionClient, lojaID:
     const quantity = (productQuantities.get(product.id) ?? 0) + item.quantity; productQuantities.set(product.id, quantity);
     if (product.stock < quantity) throw new Error('FREIGHT_PRODUCT_UNAVAILABLE');
     const dimension = (n: number | null, fallback: number) => n === null ? fallback : n;
+    const itemShippingMode = classifyProductShippingMode({
+      name: product.name,
+      description: product.description,
+      weightInGrams: product.weightInGrams,
+      lengthCm: product.lengthCm,
+      widthCm: product.widthCm,
+      heightCm: product.heightCm,
+      shippingMode: product.shippingMode,
+    });
     const result = { productId: product.id, variantId: variant.id, quantity: item.quantity, name: product.name,
       price: new Prisma.Decimal(product.price).toFixed(2), catalogVersion: product.catalogVersion,
       weightInGrams: dimension(product.weightInGrams, 300), lengthCm: dimension(product.lengthCm, 16),
-      widthCm: dimension(product.widthCm, 11), heightCm: dimension(product.heightCm, 4) };
+      widthCm: dimension(product.widthCm, 11), heightCm: dimension(product.heightCm, 4),
+      shippingMode: itemShippingMode };
     if ([result.weightInGrams, result.lengthCm, result.widthCm, result.heightCm].some(n => !Number.isFinite(n) || n <= 0)) throw new Error('FREIGHT_DIMENSIONS_INVALID');
     return result;
   }).sort((a, b) => `${a.productId}:${a.variantId}` < `${b.productId}:${b.variantId}` ? -1 : 1);
@@ -53,6 +64,9 @@ export async function loadFreightAuthority(tx: Prisma.TransactionClient, lojaID:
     origin: [loja.originCep, loja.originState, loja.originCity], configurationVersion: loja.configurationVersion,
     tariffVersion: revision[0].version });
   const [clock] = await tx.$queryRaw<{ now: Date }[]>`SELECT clock_timestamp() AS now`;
+  const cartShippingMode: ShippingMode = canonical.some(item => item.shippingMode === 'WHATSAPP_ONLY')
+    ? 'WHATSAPP_ONLY'
+    : 'AUTOMATIC';
   return { loja, providerItems, packages, cartTotal, itemsCount: canonical.reduce((sum, item) => sum + item.quantity, 0),
-    contentHash, destinationHash, fingerprint, destination, now: clock.now };
+    contentHash, destinationHash, fingerprint, destination, now: clock.now, shippingMode: cartShippingMode };
 }

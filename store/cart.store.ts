@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { z } from 'zod';
 const itemSchema = z.object({ id: z.string(), cartID: z.string(), productID: z.string(), variantID: z.string(),
   quantity: z.number().int().min(1).max(99), productName: z.string(), price: z.number().finite().nonnegative(),
-  color: z.string(), size: z.string(), imageUrl: z.string() });
+  color: z.string(), size: z.string(), imageUrl: z.string(), shippingMode: z.string().optional() });
 const cartSchema = z.object({ id: z.string(), userID: z.string(), lojaID: z.string(), status: z.literal('ACTIVE'),
   version: z.number().int().nonnegative(), items: z.array(itemSchema) });
 export type CartItemType = z.infer<typeof itemSchema>;
@@ -20,6 +20,7 @@ interface CartStore {
   removeItem: (variantID: string) => Promise<void>;
   consumeCart: (id: string, version: number) => Promise<void>;
   clearCart: () => void;
+  waitForIdle: () => Promise<void>;
 }
 function announce() { if (typeof window !== 'undefined') window.dispatchEvent(new Event('commerce-cart-changed')); }
 const pendingCommandSchema = z.object({
@@ -113,6 +114,26 @@ export function createCartStore(transport: typeof fetch = (input, init) => fetch
         loadState: 'ready', error: null });
     };
     const mutate = (method: 'POST' | 'PATCH' | 'DELETE', parameters: PendingCommand['parameters']) => {
+      // Mutação otimista local imediata (0ms de latência percebida)
+      const currentCart = get().cart;
+      if (currentCart && method === 'DELETE' && 'variantID' in parameters) {
+        set({
+          cart: {
+            ...currentCart,
+            items: currentCart.items.filter(i => i.variantID !== parameters.variantID),
+          },
+        });
+      } else if (currentCart && method === 'PATCH' && 'variantID' in parameters && 'quantity' in parameters) {
+        set({
+          cart: {
+            ...currentCart,
+            items: currentCart.items.map(i =>
+              i.variantID === parameters.variantID ? { ...i, quantity: parameters.quantity } : i
+            ),
+          },
+        });
+      }
+
       // A read requested after a write must observe the write's result.
       pendingRead = null;
       return enqueue(async (current, signal) => {
@@ -209,6 +230,7 @@ export function createCartStore(transport: typeof fetch = (input, init) => fetch
       addToCart: (variantID, productID, quantity) => mutate('POST', { variantID, productID, quantity }),
       updateQuantity: (variantID, quantity) => mutate('PATCH', { variantID, quantity }),
       removeItem: variantID => mutate('DELETE', { variantID }),
+      waitForIdle: () => queue.then(() => {}),
       consumeCart: async (id, version) => {
         const cart = get().cart;
         reset(get().context, cart?.id === id && cart.version <= version + 1 ? null : cart);

@@ -823,7 +823,9 @@ export function CheckoutForm({
                                 </div>
                               </div>
                               <span className="font-mono font-bold text-sm text-white">
-                                {opt.price === 0 ? (
+                                {opt.providerId === 'NONE' ? (
+                                  <span className="text-amber-400 font-bold text-xs uppercase">A Combinar</span>
+                                ) : opt.price === 0 ? (
                                   <span className="text-emerald-400 font-bold">Grátis</span>
                                 ) : (
                                   `R$ ${opt.price.toFixed(2)}`
@@ -833,6 +835,15 @@ export function CheckoutForm({
                           )
                         })}
                       </div>
+                      {selectedFreight?.providerId === 'NONE' && (
+                        <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs flex gap-2.5 items-start mt-2">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold text-amber-300 block mb-0.5">Frete a combinar via WhatsApp:</span>
+                            O frete deste pedido <strong>não está incluso</strong> no total a ser pago agora. Após a confirmação da compra dos produtos, o frete será cotado e acertado diretamente com a loja pelo WhatsApp antes do envio.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

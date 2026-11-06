@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { formatBoletoDueDate, purchaseClientSchema, purchaseView, type PurchaseClient } from '@/lib/commerce/purchase-client'
 import { useCartStore } from '@/store/cart.store'
 import { buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/utils/whatsapp'
+import { buildWhatsAppFreightUrl } from '@/lib/freight/shipping-mode'
 import { ContinentalLogo } from '@/components/brand/ContinentalLogo'
 import { PaymentCopyButton } from '@/components/checkout/PaymentCopyButton'
 import {
@@ -22,6 +23,7 @@ import {
   ArrowRight,
   ArrowLeft,
   MessageCircle,
+  AlertCircle,
 } from 'lucide-react'
 
 const verificationMaxAgeMs = 30_000
@@ -323,6 +325,40 @@ export default function CheckoutConfirmationPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Alerta de Frete a Combinar via WhatsApp */}
+        {order.deliveryType === 'NONE' && (
+          <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 mb-6 text-left flex gap-3.5 items-start">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1.5 text-xs text-amber-200">
+              <span className="font-bold text-amber-300 text-sm block">Frete a combinar via WhatsApp</span>
+              <p className="leading-relaxed">
+                A compra dos seus produtos foi registrada! Os itens deste pedido exigem cotação de envio personalizada.
+                Toque no botão abaixo para cotar o frete para o seu CEP diretamente com nossa equipe.
+              </p>
+              {order.whatsappNumber && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = buildWhatsAppFreightUrl({
+                        phone: order.whatsappNumber || '',
+                        orderNumber: order.orderNumber,
+                        cep: order.address?.cep,
+                        customerName: order.customer.name,
+                      });
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="w-full py-3.5 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(37,211,102,0.25)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-black" />
+                    <span>Combinar Frete do Pedido #{order.orderNumber} via WhatsApp</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

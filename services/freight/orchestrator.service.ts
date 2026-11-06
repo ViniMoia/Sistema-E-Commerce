@@ -36,9 +36,18 @@ export class FreightOrchestratorService {
   async calculate(params: CalculateFreightParams) {
     assertFreightSigningReady();
     if (!/^(u:[a-zA-Z0-9_-]{1,128}|g:[a-f0-9]{64})$/.test(params.ownerKey)) throw new Error('FREIGHT_OWNER_REQUIRED');
-    const deliveryType = params.deliveryType ?? 'DELIVERY';
-    const destination = deliveryType === 'DELIVERY' ? destinationSchema.parse(await this.destinationResolver(params.destinationCep ?? '')) : null;
-    const context = await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, destination));
+    const requestedDeliveryType = params.deliveryType ?? 'DELIVERY';
+    const initialDestination = requestedDeliveryType === 'DELIVERY' ? destinationSchema.parse(await this.destinationResolver(params.destinationCep ?? '')) : null;
+    const initialContext = await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, initialDestination));
+
+    // Regra 2: Regra de Contágio do Carrinho Misto (PLANO_PROTECAO_FRETE_E_MEDIDAS_WHATSAPP.md)
+    const isWhatsAppContagion = initialContext.shippingMode === 'WHATSAPP_ONLY' && requestedDeliveryType !== 'PICKUP';
+    const deliveryType: DeliveryType = isWhatsAppContagion ? 'NONE' : requestedDeliveryType;
+    const destination = deliveryType === 'DELIVERY' ? initialDestination : null;
+    const context = destination !== initialDestination
+      ? await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, destination))
+      : initialContext;
+
     const key = 'freight-v2:' + context.fingerprint + ':' + deliveryType;
     const now = context.now.getTime();
     for (const [id, value] of this.cache) if (value.expiresAt <= now) this.cache.delete(id);
@@ -87,7 +96,9 @@ export class FreightOrchestratorService {
         return { ...option, freightQuoteId: row.id, freightQuoteToken: signFreightQuote({ quoteId: row.id,
           bindingHash: freightQuoteBinding(row), expiresAt: row.expiresAt.getTime() }), expiresAt: row.expiresAt.toISOString() };
       }));
-      return { options, serverTime: current.now.toISOString(), merchandiseSubtotal: current.cartTotal, packageDetails: { weightInGrams: current.packages.weightInGrams,
+      return { options, serverTime: current.now.toISOString(), merchandiseSubtotal: current.cartTotal,
+        deliveryType, shippingMode: current.shippingMode,
+        packageDetails: { weightInGrams: current.packages.weightInGrams,
         dimensions: [current.packages.lengthCm, current.packages.widthCm, current.packages.heightCm].join('x') + ' cm' } };
     });
   }

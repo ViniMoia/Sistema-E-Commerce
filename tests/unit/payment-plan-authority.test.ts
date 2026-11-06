@@ -69,6 +69,8 @@ describe('WF-12: exact authoritative amounts and explicit capacity', () => {
     expect(dto.maximumInstallments).toBe(3);
   });
   it('uses the captured actual key, not a later environment mutation', () => {
+    delete process.env.PAYMENT_DEPLOYMENT_ENVIRONMENT;
+    delete process.env.ASAAS_ACCOUNT_SCOPE;
     const client = new AsaasClient('https://api-sandbox.asaas.com/v3', '');
     vi.stubEnv('ASAAS_API_KEY', '$aact_hml_later_key'); expect(client.configurationReady()).toBe(false);
     expect(new AsaasClient('https://other.example.invalid/v3', '$aact_hml_key').configurationReady()).toBe(false);

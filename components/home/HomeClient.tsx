@@ -531,19 +531,26 @@ export default function HomeClient({
                           </div>
                           
                           <div className="flex flex-col flex-1 justify-end relative">
-                            {summary.isExclusivePhysical ? (
-                              <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold mb-3 border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
-                                Exclusivo Loja Física
-                              </span>
-                            ) : summary.isOutOfStock ? (
-                              <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                                Esgotado
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                                Produto
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                              {summary.isExclusivePhysical ? (
+                                <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                  Exclusivo Loja Física
+                                </span>
+                              ) : summary.isOutOfStock ? (
+                                <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                  Esgotado
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                  Produto
+                                </span>
+                              )}
+                              {(prod as any).shippingMode === 'WHATSAPP_ONLY' && (
+                                <span className="text-[10px] text-amber-300 uppercase tracking-[0.15em] font-mono font-bold border border-amber-500/30 bg-amber-500/10 inline-block w-fit whitespace-nowrap px-2 py-0.5 rounded">
+                                  Frete a Combinar
+                                </span>
+                              )}
+                            </div>
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
@@ -647,19 +654,26 @@ export default function HomeClient({
                           </div>
                           
                           <div className="flex flex-col flex-1 justify-end relative">
-                            {summary.isExclusivePhysical ? (
-                              <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold mb-3 border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
-                                Exclusivo Loja Física
-                              </span>
-                            ) : summary.isOutOfStock ? (
-                              <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                                Esgotado
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-3 border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
-                                Produto
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                              {summary.isExclusivePhysical ? (
+                                <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                  Exclusivo Loja Física
+                                </span>
+                              ) : summary.isOutOfStock ? (
+                                <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                  Esgotado
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                  Produto
+                                </span>
+                              )}
+                              {(prod as any).shippingMode === 'WHATSAPP_ONLY' && (
+                                <span className="text-[10px] text-amber-300 uppercase tracking-[0.15em] font-mono font-bold border border-amber-500/30 bg-amber-500/10 inline-block w-fit whitespace-nowrap px-2 py-0.5 rounded">
+                                  Frete a Combinar
+                                </span>
+                              )}
+                            </div>
                             <h4 className="text-catalog-text font-medium text-sm sm:text-base leading-snug line-clamp-2 mb-4 group-hover:text-white transition-colors uppercase break-words [overflow-wrap:anywhere]">
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>

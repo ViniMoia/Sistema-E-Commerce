@@ -10,7 +10,7 @@ export const purchaseClientSchema = z.object({
   paymentMethod: z.enum(['PIX','WHATSAPP_PIX','BOLETO','CREDIT_CARD']), orderNumber: z.number().int(),
   customer: z.object({ name: z.string(), phone: z.string() }),
   items: z.array(z.object({ name: z.string(), quantity: z.number().int().positive(), price: z.number().finite().nonnegative(), color: z.string().optional(), size: z.string().optional() })),
-  deliveryType: z.string(), address: z.object({ street: z.string(), number: z.string(), city: z.string(), state: z.string() }).optional(),
+  deliveryType: z.string(), address: z.object({ street: z.string(), number: z.string(), city: z.string(), state: z.string(), cep: z.string().optional() }).optional(),
   shippingProvider: nullableText, shippingServiceName: nullableText,
   total: z.number().finite().nonnegative(), financialTotal: z.number().finite().nonnegative(), freightValue: z.number().nullable(),
   pixKey: nullableText, pixPayload: nullableText, pixQrCode: nullableText, whatsappNumber: nullableText,
