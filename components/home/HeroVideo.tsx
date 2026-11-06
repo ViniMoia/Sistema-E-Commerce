@@ -38,6 +38,13 @@ export default function HeroVideo() {
     catalog.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   };
 
+  const scrollToLocation = (event: React.MouseEvent) => {
+    const location = document.getElementById("localizacao");
+    if (!location) return;
+    event.preventDefault();
+    location.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  };
+
   return (
     <section className="relative w-full h-[100dvh] md:h-screen overflow-hidden flex items-center justify-start bg-black">
       {/* Background Video (Desktop ou Mobile de acordo com o breakpoint) */}
@@ -105,8 +112,8 @@ export default function HeroVideo() {
           </a>
 
           <a
-            href="#catalogo"
-            onClick={scrollToCatalog}
+            href="#localizacao"
+            onClick={scrollToLocation}
             className="px-6 py-3.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs sm:text-sm tracking-widest uppercase border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 cursor-pointer"
           >
             Conhecer a Linha
