@@ -116,7 +116,7 @@ export default function HeroVideo() {
             onClick={scrollToLocation}
             className="px-6 py-3.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs sm:text-sm tracking-widest uppercase border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 cursor-pointer"
           >
-            Conhecer a Linha
+            Onde Estamos
           </a>
         </div>
       </div>
