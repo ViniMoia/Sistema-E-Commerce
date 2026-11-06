@@ -27,6 +27,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Package,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PaymentConfig } from '@/lib/config/payment.config'
@@ -761,47 +762,57 @@ export function CheckoutForm({
                     Forma de Envio
                   </label>
                   {isWhatsAppOnly && (
-                    <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-                      <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" />
-                      Cotação manual obrigatória
+                    <span className="text-[11px] font-mono text-catalog-gold bg-catalog-gold/10 border border-catalog-gold/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 font-bold">
+                      <Sparkles className="w-3 h-3 text-catalog-gold shrink-0" />
+                      Envio Sob Medida
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    {
-                      id: 'DELIVERY',
-                      label: 'Receber em Casa',
-                      desc: isWhatsAppOnly ? 'Correios ou J&T (Indisponível)' : 'Correios ou J&T Express',
-                      icon: Truck,
-                      disabled: isWhatsAppOnly,
-                      disabledBadge: 'Indisponível',
-                    },
-                    {
-                      id: 'NONE',
-                      label: isWhatsAppOnly ? 'Entrega em Domicílio' : 'A Combinar',
-                      desc: isWhatsAppOnly ? 'Frete a combinar via WhatsApp' : 'Acertar via WhatsApp',
-                      icon: MessageSquare,
-                      disabled: false,
-                      badge: isWhatsAppOnly ? 'Recomendado' : undefined,
-                    },
-                    {
-                      id: 'PICKUP',
-                      label: 'Retirar na Loja',
-                      desc: 'Grátis no Balcão',
-                      icon: Store,
-                      disabled: false,
-                    },
-                  ].map((type) => {
+                <div className={`grid grid-cols-1 ${isWhatsAppOnly ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3`}>
+                  {(isWhatsAppOnly
+                    ? [
+                        {
+                          id: 'NONE',
+                          label: 'Receber em Casa',
+                          desc: 'Frete a combinar via WhatsApp',
+                          icon: Truck,
+                          badge: 'Sob Medida',
+                        },
+                        {
+                          id: 'PICKUP',
+                          label: 'Retirar na Loja',
+                          desc: 'Grátis no Balcão',
+                          icon: Store,
+                        },
+                      ]
+                    : [
+                        {
+                          id: 'DELIVERY',
+                          label: 'Receber em Casa',
+                          desc: 'Correios ou J&T Express',
+                          icon: Truck,
+                        },
+                        {
+                          id: 'PICKUP',
+                          label: 'Retirar na Loja',
+                          desc: 'Grátis no Balcão',
+                          icon: Store,
+                        },
+                        {
+                          id: 'NONE',
+                          label: 'A Combinar',
+                          desc: 'Acertar via WhatsApp',
+                          icon: MessageSquare,
+                        },
+                      ]
+                  ).map((type) => {
                     const isSelected = formData.deliveryType === type.id
                     const IconComponent = type.icon
                     return (
                       <button
                         key={type.id}
                         type="button"
-                        disabled={type.disabled}
                         onClick={() => {
-                          if (type.disabled) return
                           invalidateFreight()
                           invalidateReview()
                           cepRevision.current.invalidate()
@@ -809,12 +820,10 @@ export function CheckoutForm({
                           setFormData((prev) => ({ ...prev, deliveryType: type.id as any }))
                           if (type.id !== 'DELIVERY') setSelectedFreight(null)
                         }}
-                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between relative ${
-                          type.disabled
-                            ? 'opacity-40 cursor-not-allowed bg-[#0B132B]/30 border-catalog-gold/10 text-catalog-muted'
-                            : isSelected
+                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between relative cursor-pointer ${
+                          isSelected
                             ? 'bg-catalog-gold/20 border-catalog-gold text-white shadow-[0_0_15px_rgba(240,180,14,0.2)]'
-                            : 'bg-[#0B132B]/50 border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white cursor-pointer'
+                            : 'bg-[#0B132B]/50 border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -823,11 +832,6 @@ export function CheckoutForm({
                           {type.badge && !isSelected && (
                             <span className="text-[9px] font-mono uppercase tracking-wider text-catalog-gold bg-catalog-gold/10 px-1.5 py-0.5 rounded border border-catalog-gold/20 font-bold">
                               {type.badge}
-                            </span>
-                          )}
-                          {type.disabledBadge && (
-                            <span className="text-[9px] font-mono uppercase tracking-wider text-gray-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                              {type.disabledBadge}
                             </span>
                           )}
                         </div>
