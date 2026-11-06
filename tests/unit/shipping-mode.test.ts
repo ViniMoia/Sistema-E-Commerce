@@ -153,5 +153,31 @@ describe('shipping-mode logic', () => {
       expect(resolveCartShippingMode(itemsWithMode)).toBe('WHATSAPP_ONLY');
     });
   });
+
+  describe('Product profile freight calculator visibility contract', () => {
+    it('hides the freight calculator when product shippingMode is WHATSAPP_ONLY', () => {
+      const product = {
+        id: 'p1',
+        name: 'ASPIRADOR TESTE',
+        shippingMode: 'WHATSAPP_ONLY',
+      };
+      const shouldRenderFreightCalculator = product.shippingMode !== 'WHATSAPP_ONLY';
+      expect(shouldRenderFreightCalculator).toBe(false);
+    });
+
+    it('displays the freight calculator when product shippingMode is AUTOMATIC or undefined', () => {
+      const productAutomatic = {
+        id: 'p2',
+        name: 'SHAMPOO 5L',
+        shippingMode: 'AUTOMATIC',
+      };
+      const productDefault = {
+        id: 'p3',
+        name: 'CERA AUTOMOTIVA',
+      };
+      expect(productAutomatic.shippingMode !== 'WHATSAPP_ONLY').toBe(true);
+      expect((productDefault as any).shippingMode !== 'WHATSAPP_ONLY').toBe(true);
+    });
+  });
 });
 

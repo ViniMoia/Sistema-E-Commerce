@@ -72,3 +72,4 @@ describe("Hero Video Headlight Synchronization Contract Suite", () => {
     expect(locationCtaHref).toBe("#localizacao");
   });
 });
+

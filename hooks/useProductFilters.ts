@@ -23,6 +23,7 @@ export interface FilterableProduct {
   brandSlug?: string | null;
   tags?: string[];
   lojaID?: string;
+  shippingMode?: string;
 }
 
 export const DEFAULT_PAGE_SIZE = 12;

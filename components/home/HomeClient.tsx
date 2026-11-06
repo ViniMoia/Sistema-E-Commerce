@@ -434,16 +434,19 @@ export default function HomeClient({
                 </div>
               )}
 
-              {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) */}
-              <div className="pt-2">
-                <ProductFreightCalculator
-                  key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id ?? 'selection-pending')}
-                  productId={selectedProduct.id}
-                  variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id}
-                  price={selectedProduct.price}
-                  lojaID={selectedProduct.lojaID}
-                />
-              </div>
+              {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) - Ocultada para produtos sem peso/medidas (WHATSAPP_ONLY) */}
+              {selectedProduct.shippingMode !== 'WHATSAPP_ONLY' && (
+                <div className="pt-2">
+                  <ProductFreightCalculator
+                    key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id ?? 'selection-pending')}
+                    productId={selectedProduct.id}
+                    variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id}
+                    price={selectedProduct.price}
+                    lojaID={selectedProduct.lojaID}
+                    shippingMode={selectedProduct.shippingMode}
+                  />
+                </div>
+              )}
             </div>
           </div>
 

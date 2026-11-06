@@ -10,6 +10,7 @@ interface ProductFreightCalculatorProps {
   price?: number;
   lojaID?: string;
   className?: string;
+  shippingMode?: string;
 }
 
 interface LocationInfo {
@@ -23,7 +24,11 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
   variantId,
   lojaID,
   className = '',
+  shippingMode,
 }) => {
+  if (shippingMode === 'WHATSAPP_ONLY') {
+    return null;
+  }
   const [cep, setCep] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
