@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PaymentConfig } from '@/lib/config/payment.config'
+import { resolveCartShippingMode } from '@/lib/freight/shipping-mode'
 
 export interface CartItem {
   productId?: string
@@ -44,6 +45,12 @@ export interface CartItem {
   size?: string
   imageUrl?: string
   image?: string
+  shippingMode?: string
+  weightInGrams?: number | null
+  lengthCm?: number | null
+  widthCm?: number | null
+  heightCm?: number | null
+  description?: string | null
 }
 
 export type CheckoutResult = import('@/services/checkout.service').CreateOrderResult['order']
@@ -135,12 +142,28 @@ export function CheckoutForm({
   })
   const [selectedInstallment, setSelectedInstallment] = useState<number>(1)
 
-  const [formData, setFormData] = useState({
+  const cartShippingMode = useMemo(() => {
+    return resolveCartShippingMode(
+      items.map((i) => ({
+        name: i.productName || i.name || '',
+        shippingMode: (i as any).shippingMode,
+        weightInGrams: (i as any).weightInGrams,
+        lengthCm: (i as any).lengthCm,
+        widthCm: (i as any).widthCm,
+        heightCm: (i as any).heightCm,
+        description: (i as any).description,
+      }))
+    )
+  }, [items])
+
+  const isWhatsAppOnly = cartShippingMode === 'WHATSAPP_ONLY'
+
+  const [formData, setFormData] = useState(() => ({
     name: '',
     email: '',
     phone: '',
     cpfCnpj: '',
-    deliveryType: 'DELIVERY' as 'DELIVERY' | 'PICKUP' | 'NONE',
+    deliveryType: (isWhatsAppOnly ? 'NONE' : 'DELIVERY') as 'DELIVERY' | 'PICKUP' | 'NONE',
     address: {
       state: '',
       city: '',
@@ -150,7 +173,13 @@ export function CheckoutForm({
       complement: '',
       cep: '',
     },
-  })
+  }))
+
+  useEffect(() => {
+    if (isWhatsAppOnly && formData.deliveryType === 'DELIVERY') {
+      setFormData((prev) => ({ ...prev, deliveryType: 'NONE' }))
+    }
+  }, [isWhatsAppOnly, formData.deliveryType])
 
   const subtotal = useMemo(
     () => Math.round(items.reduce((acc, item) => acc + item.price * item.quantity, 0) * 100) / 100,
@@ -241,6 +270,9 @@ export function CheckoutForm({
     invalidateFreight(); invalidateReview(); editedAddressFields.current.clear()
     setIsFetchingCep(raw.length === 8)
     setFormData(prev => ({ ...prev, address: { ...prev.address, cep: formatted, state: '', city: '', street: '', neighborhood: '' } }))
+    if (raw.length === 8) {
+      try { sessionStorage.setItem('freight_quote_cep', formatted) } catch {}
+    }
     if (raw.length !== 8) return
     try {
       const res = await fetch('https://viacep.com.br/ws/' + raw + '/json/', { signal: request.signal })
@@ -253,6 +285,19 @@ export function CheckoutForm({
         const derived = { state: data.uf, city: data.localidade, neighborhood: data.bairro ?? '', street: data.logradouro ?? '' }
         for (const key of ['state','city','neighborhood','street'] as const) if (!editedAddressFields.current.has(key)) address[key] = derived[key]
         return { ...prev, address }
+      })
+      setBillingAddress(prev => {
+        if (!prev.cep) {
+          return {
+            ...prev,
+            cep: formatted,
+            state: data.uf,
+            city: data.localidade,
+            neighborhood: data.bairro ?? '',
+            street: data.logradouro ?? '',
+          }
+        }
+        return prev
       })
     } catch (error) { if (request.current()) setError(error instanceof Error ? error.message : 'Não foi possível consultar o CEP.') }
     finally { if (request.current()) setIsFetchingCep(false) }
@@ -351,6 +396,10 @@ export function CheckoutForm({
 
   const validateStep2 = () => {
     if (formData.deliveryType === 'DELIVERY') {
+      if (isWhatsAppOnly) {
+        setError('Itens com dimensões especiais não suportam entrega automática pelos Correios/J&T. Selecione "Entrega em Domicílio (A Combinar)" ou "Retirar na Loja".')
+        return false
+      }
       if (!checkoutAddressSchema.safeParse(formData.address).success) { setError('Preencha o endereço de entrega completo, com CEP e UF válidos.'); return false }
       const cleanCep = cleanDigits(formData.address.cep)
       if (cleanCep.length !== 8) {
@@ -370,6 +419,15 @@ export function CheckoutForm({
         return false
       }
     }
+
+    if (formData.deliveryType === 'NONE') {
+      const cleanCep = cleanDigits(formData.address.cep)
+      if (cleanCep.length > 0 && cleanCep.length !== 8) {
+        setError('Por favor, informe um CEP válido com 8 dígitos para a cotação no WhatsApp.')
+        return false
+      }
+    }
+
     setError(null)
     return true
   }
@@ -698,14 +756,42 @@ export function CheckoutForm({
 
               {/* Seletor de Tipo de Envio */}
               <div className="space-y-2">
-                <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                  Forma de Envio
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                    Forma de Envio
+                  </label>
+                  {isWhatsAppOnly && (
+                    <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                      <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                      Cotação manual obrigatória
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { id: 'DELIVERY', label: 'Receber em Casa', desc: 'Correios ou J&T Express', icon: Truck },
-                    { id: 'PICKUP', label: 'Retirar na Loja', desc: 'Grátis no Balcão', icon: Store },
-                    { id: 'NONE', label: 'A Combinar', desc: 'Acertar via WhatsApp', icon: MessageSquare },
+                    {
+                      id: 'DELIVERY',
+                      label: 'Receber em Casa',
+                      desc: isWhatsAppOnly ? 'Correios ou J&T (Indisponível)' : 'Correios ou J&T Express',
+                      icon: Truck,
+                      disabled: isWhatsAppOnly,
+                      disabledBadge: 'Indisponível',
+                    },
+                    {
+                      id: 'NONE',
+                      label: isWhatsAppOnly ? 'Entrega em Domicílio' : 'A Combinar',
+                      desc: isWhatsAppOnly ? 'Frete a combinar via WhatsApp' : 'Acertar via WhatsApp',
+                      icon: MessageSquare,
+                      disabled: false,
+                      badge: isWhatsAppOnly ? 'Recomendado' : undefined,
+                    },
+                    {
+                      id: 'PICKUP',
+                      label: 'Retirar na Loja',
+                      desc: 'Grátis no Balcão',
+                      icon: Store,
+                      disabled: false,
+                    },
                   ].map((type) => {
                     const isSelected = formData.deliveryType === type.id
                     const IconComponent = type.icon
@@ -713,20 +799,37 @@ export function CheckoutForm({
                       <button
                         key={type.id}
                         type="button"
+                        disabled={type.disabled}
                         onClick={() => {
-                          invalidateFreight(); invalidateReview(); cepRevision.current.invalidate(); setIsFetchingCep(false)
+                          if (type.disabled) return
+                          invalidateFreight()
+                          invalidateReview()
+                          cepRevision.current.invalidate()
+                          setIsFetchingCep(false)
                           setFormData((prev) => ({ ...prev, deliveryType: type.id as any }))
                           if (type.id !== 'DELIVERY') setSelectedFreight(null)
                         }}
-                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
-                          isSelected
+                        className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col justify-between relative ${
+                          type.disabled
+                            ? 'opacity-40 cursor-not-allowed bg-[#0B132B]/30 border-catalog-gold/10 text-catalog-muted'
+                            : isSelected
                             ? 'bg-catalog-gold/20 border-catalog-gold text-white shadow-[0_0_15px_rgba(240,180,14,0.2)]'
-                            : 'bg-[#0B132B]/50 border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white'
+                            : 'bg-[#0B132B]/50 border-catalog-gold/20 text-catalog-muted hover:border-catalog-gold/50 hover:text-white cursor-pointer'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <IconComponent className={`w-5 h-5 ${isSelected ? 'text-catalog-gold' : 'text-catalog-muted'}`} />
                           {isSelected && <span className="w-2 h-2 rounded-full bg-catalog-gold shadow-[0_0_6px_#F0B40E]" />}
+                          {type.badge && !isSelected && (
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-catalog-gold bg-catalog-gold/10 px-1.5 py-0.5 rounded border border-catalog-gold/20 font-bold">
+                              {type.badge}
+                            </span>
+                          )}
+                          {type.disabledBadge && (
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-gray-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                              {type.disabledBadge}
+                            </span>
+                          )}
                         </div>
                         <span className="font-bold text-xs uppercase font-mono tracking-wider block">{type.label}</span>
                         <span className="text-[11px] text-catalog-muted mt-1 font-mono leading-tight">{type.desc}</span>
@@ -920,6 +1023,74 @@ export function CheckoutForm({
                       className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
                       placeholder="Apto, Bloco, Galpão..."
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Modalidade A Combinar via WhatsApp: Coleta Rápida de CEP */}
+              {formData.deliveryType === 'NONE' && (
+                <div className="space-y-4 pt-3 border-t border-catalog-gold/20 animate-in fade-in duration-300">
+                  <div className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs flex gap-3 items-start">
+                    <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-bold text-amber-300 block text-sm">
+                        {isWhatsAppOnly
+                          ? 'Produtos com Cotação de Envio Sob Medida'
+                          : 'Frete a Combinar via WhatsApp'}
+                      </span>
+                      <p className="leading-relaxed">
+                        O valor do frete para entrega no seu endereço <strong>não é cobrado agora</strong>. Informe seu CEP abaixo apenas para agilizar: sua mensagem do WhatsApp já será gerada com sua localização para cotação rápida com a loja após a confirmação dos produtos!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                        CEP de Destino para Cotação (Opcional)
+                      </label>
+                      {isFetchingCep && (
+                        <span className="text-xs text-catalog-gold font-mono flex items-center gap-1.5">
+                          <Spinner className="h-3 w-3" /> Localizando cidade...
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      name="address.cep"
+                      value={formData.address.cep}
+                      onChange={handleCepChange}
+                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold font-mono transition-all"
+                      placeholder="00000-000"
+                      maxLength={9}
+                    />
+                  </div>
+
+                  {formData.address.city && formData.address.state && (
+                    <div className="p-3.5 rounded-xl border border-catalog-gold/25 bg-[#0B132B]/60 text-xs text-white font-mono flex items-center justify-between">
+                      <span className="text-catalog-muted uppercase">Destino Identificado:</span>
+                      <span className="font-bold text-catalog-gold">
+                        {formData.address.neighborhood ? `${formData.address.neighborhood}, ` : ''}
+                        {formData.address.city} - {formData.address.state}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Modalidade Retirar na Loja */}
+              {formData.deliveryType === 'PICKUP' && (
+                <div className="space-y-4 pt-3 border-t border-catalog-gold/20 animate-in fade-in duration-300">
+                  <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-xs flex gap-3 items-start">
+                    <Store className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-bold text-emerald-300 block text-sm">
+                        Retirada Grátis no Balcão
+                      </span>
+                      <p className="leading-relaxed">
+                        Seu pedido ficará disponível para retirada diretamente na loja física assim que o pagamento for aprovado. Não há cobrança de taxa de envio.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -132,5 +132,26 @@ describe('shipping-mode logic', () => {
       expect(url).toContain('66000-000');
       expect(url).toContain('Vin%C3%ADcius');
     });
+
+    it('constructs a valid WhatsApp URL without CEP when destination is not provided', () => {
+      const url = buildWhatsAppFreightUrl({
+        phone: '(91) 98080-4717',
+        orderNumber: 1043,
+        customerName: 'Cliente Especial',
+      });
+      expect(url).toContain('https://wa.me/91980804717?text=');
+      expect(url).toContain('1043');
+      expect(url).not.toContain('para o meu CEP');
+      expect(url).toContain('Cliente%20Especial');
+    });
+
+    it('resolves cart mode when items have shippingMode property directly', () => {
+      const itemsWithMode = [
+        { name: 'Produto Cadastrado', shippingMode: 'WHATSAPP_ONLY' },
+        { name: 'Produto Comum', shippingMode: 'AUTOMATIC' },
+      ];
+      expect(resolveCartShippingMode(itemsWithMode)).toBe('WHATSAPP_ONLY');
+    });
   });
 });
+

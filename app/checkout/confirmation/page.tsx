@@ -343,10 +343,13 @@ export default function CheckoutConfirmationPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      const destinationCep =
+                        order.address?.cep ||
+                        (typeof window !== 'undefined' ? sessionStorage.getItem('freight_quote_cep') : null);
                       const url = buildWhatsAppFreightUrl({
                         phone: order.whatsappNumber || '',
                         orderNumber: order.orderNumber,
-                        cep: order.address?.cep,
+                        cep: destinationCep,
                         customerName: order.customer.name,
                       });
                       window.open(url, '_blank', 'noopener,noreferrer');
