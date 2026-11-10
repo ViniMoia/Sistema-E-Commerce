@@ -133,6 +133,49 @@ describe('Pipeline Canônico de Checkout Autoritativo (SEC-002, DB-002)', () => 
     expect(result.order.items[0].price).toBe(150)
   })
 
+  it('deve aplicar pixPrice no cálculo autoritativo quando o método for WHATSAPP_PIX ou PIX', async () => {
+    vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
+      id: 'loja-1',
+      name: 'Loja Teste',
+      pixKey: 'minha-chave-pix',
+      whatsappNumber: '11999999999',
+    } as any)
+
+    // Preço Cartão é R$ 150.00, mas Preço PIX é R$ 135.00
+    vi.mocked(prisma.product.findUnique).mockResolvedValue({
+      id: 'prod-100',
+      name: 'Tênis Premium',
+      price: new Prisma.Decimal('150.00'),
+      pixPrice: new Prisma.Decimal('135.00'),
+      stock: 10,
+      lojaID: 'loja-1',
+      productVariants: [{ id: 'fixture-neutral-variant', size: 'Único', color: 'Padrão', stock: 100 }],
+    } as any)
+
+    vi.mocked(prisma.user.upsert).mockResolvedValueOnce({
+      id: 'user-1',
+      name: 'Cliente Teste',
+      phone: '41999999999',
+    } as any)
+
+    const result = await createOrder({
+      paymentMethod: 'WHATSAPP_PIX',
+      lojaID: 'loja-1',
+      customer: {
+        name: 'Cliente Teste',
+        email: 'cliente@teste.com',
+        phone: '41999999999',
+        cpfCnpj: '12345678901',
+      },
+      items: [{ productId: 'prod-100', quantity: 2 }],
+      deliveryType: 'PICKUP',
+    })
+
+    // Subtotal esperado: 2 * 135.00 = 270.00
+    expect(result.order.total).toBe(270)
+    expect(result.order.items[0].price).toBe(135)
+  })
+
   it('deve rejeitar pedido se o produto pertencer a outra loja', async () => {
     vi.mocked(prisma.loja.findUnique).mockResolvedValueOnce({
       id: 'loja-A',

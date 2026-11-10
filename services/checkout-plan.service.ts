@@ -49,9 +49,12 @@ export async function prepareCheckout(tx: Prisma.TransactionClient, params: Crea
     const productQuantity = input.quantity + (quantities.get(product.id) ?? 0);
     quantities.set(product.id, productQuantity);
     if ((product.stock - buffer) < productQuantity) throw new Error('Estoque insuficiente para o produto.');
+    const isPixMethod = selectedMethod === 'PIX' || selectedMethod === 'WHATSAPP_PIX';
+    const effectivePrice = isPixMethod && product.pixPrice ? product.pixPrice : product.price;
+
     if (existing) existing.quantity = quantity;
     else items.push({ productId: product.id, variantId: variant.id, quantity, name: product.name,
-      color: canonicalizeVariant(variant).color, size: canonicalizeVariant(variant).size, price: product.price, catalogVersion: product.catalogVersion });
+      color: canonicalizeVariant(variant).color, size: canonicalizeVariant(variant).size, price: effectivePrice, catalogVersion: product.catalogVersion });
   }
   items.sort((a, b) => `${a.productId}:${a.variantId}` < `${b.productId}:${b.variantId}` ? -1 : 1);
   await locks.acquire('variant', items.map(i => i.variantId));

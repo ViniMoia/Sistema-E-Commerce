@@ -60,6 +60,8 @@ model Loja {
   loyaltyMinPointsRedeem  Int                  @default(100)                    // Saldo mínimo para permitir resgate
   loyaltyMaxDiscountPct   Decimal              @default(50.0) @db.Decimal(5, 2) // Limite de % de desconto no subtotal
   loyaltyPointsExpiryDays Int?                 @default(365)                    // Validade dos pontos em dias (ex: 365 dias)
+  pixDiscountPct          Decimal              @default(5.00) @db.Decimal(5, 2) // % de desconto caso o produto não tenha promotional_price na SMB Store
+  heroSlides              Json?                // Array de artes e links do Carrossel Hero
   loyaltyWallets          LoyaltyWallet[]
   loyaltyTransactions     LoyaltyTransaction[]
   checkoutIntents         CheckoutIntent[]
@@ -140,6 +142,9 @@ model Product {
   name                String
   description         String
   price               Decimal           @db.Decimal(10, 2)
+  pixPrice            Decimal?          @db.Decimal(10, 2)
+  isFeaturedHero      Boolean           @default(false)
+  heroBannerUrl       String?
   imageUrl            String
   galleryUrls         String[]          @default([])
   stock               Int

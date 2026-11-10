@@ -7,6 +7,7 @@ import {
   retireProductCascade,
   reconcileCategoriesAndTags,
   nuvemshopCanonicalProductSchema,
+  resolveNuvemshopDualPrices,
 } from '@/lib/integrations/nuvemshop-product-ingestion';
 import { drainNuvemshopOutbox } from '@/services/payment/payment-outbox.service';
 
@@ -497,5 +498,62 @@ describe('Worker Outbox - Integração do Comando NUVEMSHOP_PRODUCT_INGEST', () 
 
     expect(summary.completed).toBe(1);
     expect(completeWork).toHaveBeenCalledWith(expect.anything(), 'CommerceOutbox', 'outbox-1', '00000000-0000-0000-0000-000000000001');
+  });
+
+  describe('resolveNuvemshopDualPrices', () => {
+    it('retorna cardPrice e pixPrice quando ambos vem preenchidos e promo < regular', () => {
+      const parsed = nuvemshopCanonicalProductSchema.parse({
+        id: '101',
+        name: 'Produto Teste Precos Duplos',
+        price: '54.99',
+        promotional_price: '49.99',
+        variants: [{ id: 'v101', price: '54.99', promotional_price: '49.99' }],
+      });
+
+      const result = resolveNuvemshopDualPrices(parsed, 5);
+      expect(result.cardPrice).toBe(54.99);
+      expect(result.pixPrice).toBe(49.99);
+    });
+
+    it('deriva pixPrice aplicando o desconto da loja quando apenas um preco esta presente', () => {
+      const parsed = nuvemshopCanonicalProductSchema.parse({
+        id: '102',
+        name: 'Produto Preco Unico',
+        price: '100.00',
+        variants: [{ id: 'v102', price: '100.00' }],
+      });
+
+      const result = resolveNuvemshopDualPrices(parsed, 10);
+      expect(result.cardPrice).toBe(100.00);
+      expect(result.pixPrice).toBe(90.00);
+    });
+
+    it('encontra os menores precos validos entre multiplas variantes', () => {
+      const parsed = nuvemshopCanonicalProductSchema.parse({
+        id: '103',
+        name: 'Produto Multiplas Variantes',
+        price: '80.00',
+        variants: [
+          { id: 'v1', price: '90.00', promotional_price: '75.00' },
+          { id: 'v2', price: '70.00', promotional_price: '60.00' },
+        ],
+      });
+
+      const result = resolveNuvemshopDualPrices(parsed, 5);
+      expect(result.cardPrice).toBe(70.00);
+      expect(result.pixPrice).toBe(60.00);
+    });
+
+    it('retorna 0 e 0 quando nenhum preco valido e fornecido', () => {
+      const parsed = nuvemshopCanonicalProductSchema.parse({
+        id: '104',
+        name: 'Produto Gratuito ou Invalido',
+        variants: [{ id: 'v104' }],
+      });
+
+      const result = resolveNuvemshopDualPrices(parsed, 5);
+      expect(result.cardPrice).toBe(0);
+      expect(result.pixPrice).toBe(0);
+    });
   });
 });

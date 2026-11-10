@@ -38,6 +38,7 @@ export const nuvemshopCanonicalProductSchema = z.object({
   id: remoteId,
   name: localizedString,
   description: localizedOptional,
+  brand: z.string().nullable().optional(),
   price: z.union([z.number(), z.string()]).nullable().optional(),
   promotional_price: z.union([z.number(), z.string()]).nullable().optional(),
   attributes: z.array(z.record(z.string(), z.string())).default([]),
@@ -172,6 +173,54 @@ export function calculateFreightDimensions(
   };
 }
 
+/**
+ * Resolução determinística de preços duplos (Cartão em destaque vs. PIX à vista).
+ * Captura regular/promotional de variantes ou calcula o PIX através do desconto da loja.
+ */
+export function resolveNuvemshopDualPrices(
+  remote: NuvemshopCanonicalProduct,
+  storePixDiscountPct = 5
+): { cardPrice: number; pixPrice: number } {
+  const baseRegular = parseFloat(String(remote.price || 0));
+  const basePromo = parseFloat(String(remote.promotional_price || 0));
+
+  const regularCandidates = remote.variants
+    .map(v => parseFloat(String(v.price || baseRegular || 0)))
+    .filter(p => Number.isFinite(p) && p > 0);
+
+  const promoCandidates = remote.variants
+    .map(v => parseFloat(String(v.promotional_price || basePromo || 0)))
+    .filter(p => Number.isFinite(p) && p > 0);
+
+  const lowestRegular = regularCandidates.length > 0
+    ? Math.min(...regularCandidates)
+    : (Number.isFinite(baseRegular) && baseRegular > 0 ? baseRegular : 0);
+
+  const lowestPromo = promoCandidates.length > 0
+    ? Math.min(...promoCandidates)
+    : (Number.isFinite(basePromo) && basePromo > 0 ? basePromo : 0);
+
+  // Caso 1: A Nuvemshop enviou ambos os preços e promo < regular
+  if (lowestRegular > 0 && lowestPromo > 0 && lowestPromo < lowestRegular) {
+    return {
+      cardPrice: Number(lowestRegular.toFixed(2)),
+      pixPrice: Number(lowestPromo.toFixed(2)),
+    };
+  }
+
+  // Caso 2: Apenas um preço veio preenchido -> usa como Cartão e deriva PIX pelo desconto da Loja
+  const effectiveCardPrice = lowestRegular > 0 ? lowestRegular : lowestPromo;
+  if (effectiveCardPrice <= 0) return { cardPrice: 0, pixPrice: 0 };
+
+  const factor = (100 - Math.min(99, Math.max(0, storePixDiscountPct))) / 100;
+  const computedPixPrice = Math.round(effectiveCardPrice * factor * 100) / 100;
+
+  return {
+    cardPrice: Number(effectiveCardPrice.toFixed(2)),
+    pixPrice: Number(computedPixPrice.toFixed(2)),
+  };
+}
+
 const tenantAdminCache = new Map<string, { userId: string; expiresAt: number }>();
 
 export async function getTenantAdminId(tx: Prisma.TransactionClient, lojaID: string): Promise<string> {
@@ -210,16 +259,16 @@ export async function resolveStoreTenant(
   tx: Prisma.TransactionClient,
   storeId: string,
   configuredStoreId?: string
-): Promise<{ id: string; nuvemshopStoreId: string | null }> {
+): Promise<{ id: string; nuvemshopStoreId: string | null; pixDiscountPct?: Prisma.Decimal | null }> {
   const matched = await tx.loja.findFirst({
     where: { nuvemshopStoreId: storeId },
-    select: { id: true, nuvemshopStoreId: true },
+    select: { id: true, nuvemshopStoreId: true, pixDiscountPct: true },
   });
   if (matched) return matched;
 
   const activeLojas = await tx.loja.findMany({
     take: 2,
-    select: { id: true, nuvemshopStoreId: true },
+    select: { id: true, nuvemshopStoreId: true, pixDiscountPct: true },
   });
 
   if (activeLojas.length === 1) {
@@ -230,7 +279,7 @@ export async function resolveStoreTenant(
         data: { nuvemshopStoreId: storeId },
       });
     }
-    return { id: loja.id, nuvemshopStoreId: storeId };
+    return { id: loja.id, nuvemshopStoreId: storeId, pixDiscountPct: loja.pixDiscountPct };
   }
 
   if (configuredStoreId && storeId === configuredStoreId && activeLojas.length > 0) {
@@ -460,15 +509,13 @@ export async function ingestProductFromNuvemshop(
       firstVariant?.height
     );
 
-    // Check Status Gate & Quarantine
-    const productBasePrice = parseFloat(String(remote.promotional_price || remote.price || 0));
-    const priceCandidates = remote.variants
-      .map(v => parseFloat(String(v.promotional_price || v.price || productBasePrice || 0)))
-      .filter(p => Number.isFinite(p) && p > 0);
-    const lowestPrice = priceCandidates.length > 0 ? Math.min(...priceCandidates) : (Number.isFinite(productBasePrice) && productBasePrice > 0 ? productBasePrice : 0);
+    // Resolve Dual Prices (Card Price vs PIX Price)
+    const storePixDiscount = tenant.pixDiscountPct ? Number(tenant.pixDiscountPct) : 5;
+    const { cardPrice, pixPrice } = resolveNuvemshopDualPrices(remote, storePixDiscount);
 
+    // Check Status Gate & Quarantine
     const isQuarantine =
-      lowestPrice <= 0 ||
+      cardPrice <= 0 ||
       remote.name.length < 2 ||
       remote.visibility !== 'visible' ||
       !remote.published;
@@ -494,7 +541,8 @@ export async function ingestProductFromNuvemshop(
         data: {
           name: remote.name,
           description: safeDescription,
-          price: new Prisma.Decimal(lowestPrice.toFixed(2)),
+          price: new Prisma.Decimal(cardPrice.toFixed(2)),
+          pixPrice: new Prisma.Decimal(pixPrice.toFixed(2)),
           stock: 0, // will be updated from variants
           stockBuffer,
           sku: firstVariant?.sku || null,
@@ -519,7 +567,8 @@ export async function ingestProductFromNuvemshop(
         data: {
           name: remote.name,
           description: safeDescription,
-          price: new Prisma.Decimal(lowestPrice.toFixed(2)),
+          price: new Prisma.Decimal(cardPrice.toFixed(2)),
+          pixPrice: new Prisma.Decimal(pixPrice.toFixed(2)),
           stockBuffer,
           sku: firstVariant?.sku || product.sku,
           imageUrl,
