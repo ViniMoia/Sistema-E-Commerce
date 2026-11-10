@@ -40,13 +40,10 @@ export class FreightOrchestratorService {
     const initialDestination = requestedDeliveryType === 'DELIVERY' ? destinationSchema.parse(await this.destinationResolver(params.destinationCep ?? '')) : null;
     const initialContext = await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, initialDestination));
 
-    // Regra 2: Regra de Contágio do Carrinho Misto (PLANO_PROTECAO_FRETE_E_MEDIDAS_WHATSAPP.md)
-    const isWhatsAppContagion = initialContext.shippingMode === 'WHATSAPP_ONLY' && requestedDeliveryType !== 'PICKUP';
-    const deliveryType: DeliveryType = isWhatsAppContagion ? 'NONE' : requestedDeliveryType;
+    // Desativação definitiva do contágio para 'NONE' (solicitação do lojista para cotação 100% online)
+    const deliveryType: DeliveryType = requestedDeliveryType;
     const destination = deliveryType === 'DELIVERY' ? initialDestination : null;
-    const context = destination !== initialDestination
-      ? await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, destination))
-      : initialContext;
+    const context = initialContext;
 
     const key = 'freight-v2:' + context.fingerprint + ':' + deliveryType;
     const now = context.now.getTime();

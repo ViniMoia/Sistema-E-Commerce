@@ -8,7 +8,7 @@ export class NoneOptionProvider implements IFreightProvider {
     if (storeSettings?.enableNoFreight !== undefined) {
       return Boolean(storeSettings.enableNoFreight);
     }
-    return true;
+    return false;
   }
 
   public async calculateQuotes(request: FreightQuoteRequest): Promise<FreightOption[]> {

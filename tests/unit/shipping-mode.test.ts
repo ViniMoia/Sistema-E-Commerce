@@ -3,6 +3,7 @@ import {
   classifyProductShippingMode,
   resolveCartShippingMode,
   buildWhatsAppFreightUrl,
+  isHeavyOrLargeProduct,
 } from '@/lib/freight/shipping-mode';
 
 describe('shipping-mode logic', () => {
@@ -24,7 +25,7 @@ describe('shipping-mode logic', () => {
       ).toBe('AUTOMATIC');
     });
 
-    it('classifies unmeasured products with default fallback as WHATSAPP_ONLY', () => {
+    it('classifies unmeasured products with default fallback as AUTOMATIC (Correios fallback)', () => {
       expect(
         classifyProductShippingMode({
           name: 'Aspirador de Pó automotivo',
@@ -33,10 +34,10 @@ describe('shipping-mode logic', () => {
           widthCm: 11,
           heightCm: 4,
         })
-      ).toBe('WHATSAPP_ONLY');
+      ).toBe('AUTOMATIC');
     });
 
-    it('rescues products via Tier 1 regex when capacity is in name or description', () => {
+    it('classifies products with capacity or machinery without explicit measurements as AUTOMATIC', () => {
       expect(
         classifyProductShippingMode({
           name: 'EXTRACTUS 5L',
@@ -49,29 +50,6 @@ describe('shipping-mode logic', () => {
 
       expect(
         classifyProductShippingMode({
-          name: 'Cera Líquida Grafeno',
-          description: 'Embalagem de 500ml de alto rendimento',
-          weightInGrams: 300,
-          lengthCm: 16,
-          widthCm: 11,
-          heightCm: 4,
-        })
-      ).toBe('AUTOMATIC');
-
-      expect(
-        classifyProductShippingMode({
-          name: 'Cera em Pasta 1kg Nobrecar',
-          weightInGrams: 300,
-          lengthCm: 16,
-          widthCm: 11,
-          heightCm: 4,
-        })
-      ).toBe('AUTOMATIC');
-    });
-
-    it('classifies heavy machinery without volume mentions as WHATSAPP_ONLY', () => {
-      expect(
-        classifyProductShippingMode({
           name: 'LAVADORA EXTRATORA E ASPIRADOR LAVA PRO LITE 1200W IPC',
           description: 'Potência 1200W profissional 110V',
           weightInGrams: 300,
@@ -79,7 +57,34 @@ describe('shipping-mode logic', () => {
           widthCm: 11,
           heightCm: 4,
         })
-      ).toBe('WHATSAPP_ONLY');
+      ).toBe('AUTOMATIC');
+    });
+  });
+
+  describe('isHeavyOrLargeProduct', () => {
+    it('detects product by weight >= 15kg', () => {
+      expect(isHeavyOrLargeProduct({ name: 'Produto Pesado', weightInGrams: 15000 })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Produto Muito Pesado', weightInGrams: 22000 })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Produto Médio', weightInGrams: 14999 })).toBe(false);
+    });
+
+    it('detects product by dimension sum > 120cm', () => {
+      expect(isHeavyOrLargeProduct({ name: 'Caixa Grande', lengthCm: 50, widthCm: 40, heightCm: 35 })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Caixa Padrão', lengthCm: 30, widthCm: 20, heightCm: 10 })).toBe(false);
+    });
+
+    it('detects industrial machinery and large gallons by keyword in name or description', () => {
+      expect(isHeavyOrLargeProduct({ name: 'LAVADORA EXTRATORA IPC 1200W' })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'COMPRESSOR DE AR DIRETO' })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'POLITRIZ ROTO ORBITAL 15MM' })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Detergente Concentrado', description: 'Bombona de 20L profissional' })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Desengraxante 20 LITROS' })).toBe(true);
+      expect(isHeavyOrLargeProduct({ name: 'Tambor 50L' })).toBe(true);
+    });
+
+    it('returns false for standard detailing products', () => {
+      expect(isHeavyOrLargeProduct({ name: 'Cera Carnaúba 200g', weightInGrams: 200, lengthCm: 10, widthCm: 10, heightCm: 5 })).toBe(false);
+      expect(isHeavyOrLargeProduct({ name: 'Shampoo Automotivo 500ml', weightInGrams: 500 })).toBe(false);
     });
   });
 
@@ -92,11 +97,12 @@ describe('shipping-mode logic', () => {
       expect(resolveCartShippingMode(items)).toBe('AUTOMATIC');
     });
 
-    it('returns WHATSAPP_ONLY when at least one item is WHATSAPP_ONLY (Contagion Rule)', () => {
+    it('returns WHATSAPP_ONLY when at least one item is explicitly WHATSAPP_ONLY (Contagion Rule)', () => {
       const items = [
         { name: 'Cera 500ml', weightInGrams: 500, lengthCm: 10, widthCm: 10, heightCm: 15 },
         {
           name: 'LAVADORA EXTRATORA 1200W',
+          shippingMode: 'WHATSAPP_ONLY',
           weightInGrams: 300,
           lengthCm: 16,
           widthCm: 11,
@@ -106,10 +112,10 @@ describe('shipping-mode logic', () => {
       expect(resolveCartShippingMode(items)).toBe('WHATSAPP_ONLY');
     });
 
-    it('returns WHATSAPP_ONLY when all items are WHATSAPP_ONLY', () => {
+    it('returns WHATSAPP_ONLY when all items are explicitly WHATSAPP_ONLY', () => {
       const items = [
-        { name: 'Esponja Lava Carros', weightInGrams: 300, lengthCm: 16, widthCm: 11, heightCm: 4 },
-        { name: 'Aspirador de Pó', weightInGrams: 300, lengthCm: 16, widthCm: 11, heightCm: 4 },
+        { name: 'Esponja Lava Carros', shippingMode: 'WHATSAPP_ONLY', weightInGrams: 300, lengthCm: 16, widthCm: 11, heightCm: 4 },
+        { name: 'Aspirador de Pó', shippingMode: 'WHATSAPP_ONLY', weightInGrams: 300, lengthCm: 16, widthCm: 11, heightCm: 4 },
       ];
       expect(resolveCartShippingMode(items)).toBe('WHATSAPP_ONLY');
     });

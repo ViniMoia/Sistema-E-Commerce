@@ -23,8 +23,23 @@ export const FREIGHT_TIER1_REGEX =
   /(?:peso|capacidade|conteúdo|conteudo)?\s*(\d+(?:[.,]\d+)?)\s*(kg|kilo|kilos|g|grama|gramas|l|litro|litros|ml)\b/i;
 
 /**
- * Classifica um produto entre AUTOMATIC (cálculo por Correios/J&T)
- * ou WHATSAPP_ONLY (frete a combinar via WhatsApp para evitar prejuízo).
+ * Identifica se um produto é pesado (>= 15kg), volumoso (soma > 120cm)
+ * ou maquinário industrial que exige veículo próprio / prazo especial.
+ */
+export function isHeavyOrLargeProduct(p: ProductDimensionsLike): boolean {
+  if (typeof p.weightInGrams === 'number' && p.weightInGrams >= 15000) return true;
+  const sum = (p.lengthCm ?? 16) + (p.widthCm ?? 11) + (p.heightCm ?? 4);
+  if (sum > 120) return true;
+  const text = `${p.name} ${p.description || ''}`;
+  return /\b(EXTRATORA|COMPRESSOR|LAVADORA|ASPIRADOR INDUSTRIAL|POLITRIZ|20L|20 LITROS|50L)\b/i.test(text);
+}
+
+/**
+ * Classifica um produto entre AUTOMATIC (cálculo por Correios/J&T/Tabela)
+ * ou WHATSAPP_ONLY.
+ * O lojista determinou que todo produto sem medidas explícitas na SMB Store
+ * recebe fallback padrão dos Correios (300g, 16x11x4 cm) e modo AUTOMATIC,
+ * encerrando o fallback de WhatsApp para garantir cotação 100% online.
  */
 export function classifyProductShippingMode(
   p: ProductDimensionsLike,
@@ -36,36 +51,8 @@ export function classifyProductShippingMode(
     if (p.shippingMode === 'AUTOMATIC') return 'AUTOMATIC';
   }
 
-  // 2. Verificar se possui dimensões reais cadastradas (não o puro fallback 300g e 16x11x4)
-  const isFallbackDefault =
-    p.weightInGrams === 300 &&
-    p.lengthCm === 16 &&
-    p.widthCm === 11 &&
-    p.heightCm === 4;
-
-  const hasGenuineMeasurements =
-    !isFallbackDefault &&
-    typeof p.weightInGrams === 'number' &&
-    p.weightInGrams >= 50 &&
-    typeof p.lengthCm === 'number' &&
-    p.lengthCm >= 5 &&
-    typeof p.widthCm === 'number' &&
-    p.widthCm >= 5 &&
-    typeof p.heightCm === 'number' &&
-    p.heightCm >= 2;
-
-  if (hasGenuineMeasurements) {
-    return 'AUTOMATIC';
-  }
-
-  // 3. Tier 1: Resgate por Regex no nome e descrição
-  const fullText = (p.name + ' ' + (p.description || '')).toLowerCase();
-  if (FREIGHT_TIER1_REGEX.test(fullText)) {
-    return 'AUTOMATIC';
-  }
-
-  // 4. Se não tem medidas reais nem resgate seguro, cai na proteção WhatsApp
-  return 'WHATSAPP_ONLY';
+  // 2. Fallback seguro dos Correios: todos os produtos recebem cálculo automático
+  return 'AUTOMATIC';
 }
 
 /**

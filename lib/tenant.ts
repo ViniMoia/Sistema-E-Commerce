@@ -146,11 +146,16 @@ export const TENANT_SELECT_FIELDS = {
  */
 const getCachedLojaBySlugOrDomain = unstable_cache(
   async (cleanHost: string) => {
+    const domainWithoutWww = cleanHost.startsWith("www.") ? cleanHost.replace(/^www\./, "") : cleanHost;
+    const domainWithWww = cleanHost.startsWith("www.") ? cleanHost : `www.${cleanHost}`;
+
     return await prisma.loja.findFirst({
       where: {
         OR: [
           { slug: cleanHost },
           { customDomain: cleanHost },
+          { customDomain: domainWithoutWww },
+          { customDomain: domainWithWww },
         ],
       },
       select: TENANT_SELECT_FIELDS,
@@ -239,8 +244,10 @@ export const getLojaFromHeaders = cacheFn(async (): Promise<TenantContext | null
     const platformDomain = process.env.PLATFORM_DOMAIN || "plataforma.com";
     if (cleanHost.endsWith(`.${platformDomain}`)) {
       const slug = cleanHost.replace(`.${platformDomain}`, "");
-      const loja = await getCachedLojaBySlug(slug);
-      if (loja) return loja as TenantContext | null;
+      if (slug && slug !== "www") {
+        const loja = await getCachedLojaBySlug(slug);
+        if (loja) return loja as TenantContext | null;
+      }
     }
 
     // 3. Domínio Vercel de preview, staging ou deployment (ex: loja1.vercel.app ou projeto-git-*.vercel.app)
