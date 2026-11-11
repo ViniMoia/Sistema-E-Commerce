@@ -190,7 +190,7 @@ export function LoyaltyPointsWidget({
           <div>
             <h4 className="text-sm font-bold text-white font-mono uppercase tracking-wider flex items-center gap-2">
               Programa de Fidelidade
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-catalog-gold/20 text-catalog-gold font-mono font-bold border border-catalog-gold/40">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-catalog-gold/20 text-catalog-gold font-mono font-bold border border-catalog-gold/40">
                 VIP
               </span>
             </h4>

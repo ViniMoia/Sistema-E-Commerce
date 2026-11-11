@@ -25,6 +25,14 @@ const BRANDS = [
   { slug: "ipc", name: "IPC Brasil", description: "Líder mundial em extratoras profissionais de estofados e aspiradores industriais." },
   { slug: "karcher", name: "Kärcher", description: "Pioneirismo em hidrolavadoras de alta pressão e engenharia alemã." },
   { slug: "wap", name: "WAP", description: "Líder em lavadoras de pressão, aspiradores e equipamentos residenciais." },
+  { slug: "autoamerica", name: "Autoamerica", description: "Compostos polidores, boinas especiais e acessórios de alta performance." },
+  { slug: "meguiars", name: "Meguiar's", description: "Lenda mundial em acabamento automotivo e cuidados premium." },
+  { slug: "nasiol", name: "Nasiol", description: "Líder em nanoproteção e revestimentos cerâmicos hidrofóbicos." },
+  { slug: "protelim", name: "Protelim", description: "Química profissional para desengraxe, chassi e limpeza técnica automotiva." },
+  { slug: "sandet", name: "Sandet", description: "Detergentes concentrados e químicos pesados para frotas e lava-rápidos." },
+  { slug: "sigma-tools", name: "Sigma Tools", description: "Ferramental profissional, politrizes rotativas e roto-orbitais SGT." },
+  { slug: "soft99", name: "Soft99", description: "Excelência japonesa em ceras Glaco e repelentes de água ultra-duráveis." },
+  { slug: "sonax", name: "Sonax", description: "Tecnologia alemã de ponta para limpeza, detalhamento e proteção da pintura." },
 ];
 
 // Regras de correspondência semântica por expressão regular
@@ -53,6 +61,14 @@ const BRAND_RULES: Record<string, RegExp> = {
   "ipc": /\b(IPC|ECOCLEAN|CARPET)\b/i,
   "karcher": /\b(KARCHER|KÄRCHER)\b/i,
   "wap": /\b(WAP)\b/i,
+  "autoamerica": /\b(AUTOAMERICA|AUTO AMERICA)\b/i,
+  "meguiars": /\b(MEGUIARS|MEGUIAR S|MEGUIAR)\b/i,
+  "nasiol": /\b(NASIOL)\b/i,
+  "protelim": /\b(PROTELIM)\b/i,
+  "sandet": /\b(SANDET)\b/i,
+  "sigma-tools": /\b(SIGMA TOOLS|SIGMA|SGT)\b/i,
+  "soft99": /\b(SOFT99|SOFT 99|GLACO|FUSSO)\b/i,
+  "sonax": /\b(SONAX)\b/i,
 };
 
 async function seed() {

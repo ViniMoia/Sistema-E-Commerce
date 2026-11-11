@@ -84,12 +84,6 @@ export function CartDrawer() {
         </ScrollArea>
 
         {error && loadState !== 'error' && <p role="alert" className="px-6 text-red-400">{error}</p>}
-        {items.some(i => i.shippingMode === 'WHATSAPP_ONLY') && (
-          <div className="mx-6 mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2.5">
-            <span className="font-mono text-amber-300 font-bold uppercase text-[10px] px-2 py-0.5 rounded bg-amber-400/20 border border-amber-400/40 shrink-0">WhatsApp</span>
-            <span>Itens no carrinho com frete a combinar via WhatsApp.</span>
-          </div>
-        )}
         {items.length > 0 && (
           <div className="shrink-0 border-t border-white/10 p-6 bg-black/40 backdrop-blur-md">
             <CartSummary 

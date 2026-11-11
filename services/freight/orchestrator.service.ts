@@ -13,6 +13,7 @@ import { JtExpressProvider } from './providers/jt-express.provider';
 
 export interface CalculateFreightParams {
   lojaID: string; ownerKey: string; destinationCep?: string; items: FreightItems; deliveryType?: DeliveryType;
+  neighborhood?: string;
 }
 const optionSchema = z.object({ providerId: z.string().min(1).max(32), serviceCode: z.string().min(1).max(120),
   serviceName: z.string().min(1).max(120), price: z.number().finite().min(0).max(99999999.99),
@@ -37,7 +38,10 @@ export class FreightOrchestratorService {
     assertFreightSigningReady();
     if (!/^(u:[a-zA-Z0-9_-]{1,128}|g:[a-f0-9]{64})$/.test(params.ownerKey)) throw new Error('FREIGHT_OWNER_REQUIRED');
     const requestedDeliveryType = params.deliveryType ?? 'DELIVERY';
-    const initialDestination = requestedDeliveryType === 'DELIVERY' ? destinationSchema.parse(await this.destinationResolver(params.destinationCep ?? '')) : null;
+    let initialDestination = requestedDeliveryType === 'DELIVERY' ? destinationSchema.parse(await this.destinationResolver(params.destinationCep ?? '')) : null;
+    if (initialDestination && params.neighborhood && !initialDestination.neighborhood) {
+      initialDestination = destinationSchema.parse({ ...initialDestination, neighborhood: params.neighborhood.trim() });
+    }
     const initialContext = await prisma.$transaction(tx => loadFreightAuthority(tx, params.lojaID, params.items, initialDestination));
 
     // Desativação definitiva do contágio para 'NONE' (solicitação do lojista para cotação 100% online)

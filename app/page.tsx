@@ -47,6 +47,7 @@ export default async function EcommerceHomepage() {
     description: activeLoja.description,
     coverImageUrl: activeLoja.coverImageUrl,
     whatsappNumber: activeLoja.whatsappNumber,
+    heroSlides: (activeLoja as any).heroSlides ?? null,
   };
 
   return (

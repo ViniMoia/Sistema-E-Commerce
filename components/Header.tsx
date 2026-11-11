@@ -64,7 +64,7 @@ export async function Header() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-brand-yellow text-[10px] font-bold">
+                    <span className="text-brand-yellow text-xs font-bold">
                       {user.name.substring(0, 2).toUpperCase()}
                     </span>
                   )}

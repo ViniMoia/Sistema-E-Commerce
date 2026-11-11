@@ -124,7 +124,7 @@ export default function CheckoutPage() {
               <span className="block text-sm font-bold tracking-widest text-white uppercase group-hover:text-catalog-gold transition-colors font-mono">
                 {loja?.name || 'Continental Estética'}
               </span>
-              <span className="block text-[10px] font-mono tracking-wider text-catalog-gold uppercase">
+              <span className="block text-xs font-mono tracking-wider text-catalog-gold uppercase font-semibold">
                 Checkout Seguro Oficial
               </span>
             </Link>
@@ -204,7 +204,7 @@ export default function CheckoutPage() {
       <footer className="relative z-10 w-full border-t border-catalog-gold/15 bg-[#000000]/80 py-6 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs font-mono text-catalog-muted">
           <p>© {new Date().getFullYear()} {loja?.name || 'Continental'}. Todos os direitos reservados.</p>
-          <p className="text-[11px] text-catalog-gold">Estética Automotiva de Alta Precisão</p>
+          <p className="text-xs font-mono text-catalog-gold font-semibold">Estética Automotiva de Alta Precisão</p>
         </div>
       </footer>
     </div>

@@ -9,6 +9,16 @@
   --text-main: #e5e5e5;
 }
 
+html {
+  font-size: 106.25%; /* 17px no mobile para clientes com baixa visão */
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 112.5%; /* 18px no desktop */
+  }
+}
+
 html, body {
   background-color: var(--bg-deep) !important;
   color: var(--text-main) !important;

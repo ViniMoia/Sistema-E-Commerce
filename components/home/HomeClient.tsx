@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
 import { getOptimizedImageUrl, formatProductTitle } from "@/lib/utils";
-import HeroVideo from "./HeroVideo";
+import HeroCarousel from "./HeroCarousel";
 import { BrandMinimalistCarousel } from "@/components/catalog/BrandMinimalistCarousel";
 import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
@@ -390,13 +390,29 @@ export default function HomeClient({
                 </div>
               )}
 
-              <div className="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-catalog-gold/30 pb-8">
-                <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-catalog-text drop-shadow-md whitespace-nowrap">
-                  {catalogCurrency.format(selectedProduct.price)}
+              <div className="pt-4 flex flex-col gap-1.5 border-b border-catalog-gold/30 pb-6">
+                <span className="text-xs uppercase tracking-widest text-catalog-muted font-mono font-bold">
+                  Preço no Cartão de Crédito
                 </span>
-                <div className="flex items-center gap-2 text-catalog-gold">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                  <span className="font-bold text-lg">5.0 <span className="text-catalog-muted font-normal text-sm">(Novo)</span></span>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-catalog-text drop-shadow-md whitespace-nowrap">
+                    {catalogCurrency.format(selectedProduct.price)}
+                  </span>
+                  <div className="flex items-center gap-2 text-catalog-gold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span className="font-bold text-lg">5.0 <span className="text-catalog-muted font-normal text-sm">(Novo)</span></span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="text-sm sm:text-base font-semibold text-slate-300">À vista no PIX:</span>
+                  <span className="text-xl sm:text-2xl font-extrabold text-emerald-400">
+                    {catalogCurrency.format(selectedProduct.pixPrice ?? selectedProduct.price)}
+                  </span>
+                  {selectedProduct.pixPrice && selectedProduct.price > selectedProduct.pixPrice && (
+                    <span className="text-xs font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                      Economia de {catalogCurrency.format(selectedProduct.price - selectedProduct.pixPrice)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -434,19 +450,17 @@ export default function HomeClient({
                 </div>
               )}
 
-              {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) - Ocultada para produtos sem peso/medidas (WHATSAPP_ONLY) */}
-              {selectedProduct.shippingMode !== 'WHATSAPP_ONLY' && (
-                <div className="pt-2">
-                  <ProductFreightCalculator
-                    key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id ?? 'selection-pending')}
-                    productId={selectedProduct.id}
-                    variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id}
-                    price={selectedProduct.price}
-                    lojaID={selectedProduct.lojaID}
-                    shippingMode={selectedProduct.shippingMode}
-                  />
-                </div>
-              )}
+              {/* Calculadora de Frete no Perfil do Produto (100% Deslogado) */}
+              <div className="pt-2">
+                <ProductFreightCalculator
+                  key={selectedProduct.id + ':' + (resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id ?? 'selection-pending')}
+                  productId={selectedProduct.id}
+                  variantId={resolveCatalogVariant(selectedVariants, selectedSize, selectedColor, selectedBuffer)?.id}
+                  price={selectedProduct.price}
+                  lojaID={selectedProduct.lojaID}
+                  shippingMode={selectedProduct.shippingMode}
+                />
+              </div>
             </div>
           </div>
 
@@ -460,8 +474,15 @@ export default function HomeClient({
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30">
       
-      {/* Hero: content remains independent of media */}
-      <HeroVideo />
+      {/* Hero Carousel: Artes em destaque, preços duplos e CTAs */}
+      <HeroCarousel
+        products={initialProducts}
+        lojaInfo={lojaInfo}
+        onSelectProduct={openProduct}
+        onBuyProduct={(prod) => {
+          void handleBuy({ stopPropagation: () => {} } as any, prod);
+        }}
+      />
 
       {/* Product List Showcase */}
       <section id="catalogo" ref={catalogSectionRef} className="py-10 md:py-16 bg-catalog-bg relative z-20">
@@ -522,7 +543,7 @@ export default function HomeClient({
                         <div 
                           key={prod.id}  
                           onClick={() => openProduct(prod)}
-                          className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
+                          className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between min-h-[530px] h-[530px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
                           style={{ animationDelay: `${(index % 8) * 0.05}s` }}
                         >
                           <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
@@ -536,21 +557,16 @@ export default function HomeClient({
                           <div className="flex flex-col flex-1 justify-end relative">
                             <div className="flex items-center gap-2 mb-3 flex-wrap">
                               {summary.isExclusivePhysical ? (
-                                <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
                                   Exclusivo Loja Física
                                 </span>
                               ) : summary.isOutOfStock ? (
-                                <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                                   Esgotado
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                                   Produto
-                                </span>
-                              )}
-                              {(prod as any).shippingMode === 'WHATSAPP_ONLY' && (
-                                <span className="text-[10px] text-amber-300 uppercase tracking-[0.15em] font-mono font-bold border border-amber-500/30 bg-amber-500/10 inline-block w-fit whitespace-nowrap px-2 py-0.5 rounded">
-                                  Frete a Combinar
                                 </span>
                               )}
                             </div>
@@ -558,22 +574,34 @@ export default function HomeClient({
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
                             
-                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">{catalogCurrency.format(prod.price)}</span>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBuy(e, prod);
-                                }}
-                                className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                                title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
-                              >
-                                {summary.isExclusivePhysical ? (
-                                  <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
-                                ) : (
-                                  <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                )}
-                              </button>
+                            <div className="flex flex-col mt-auto pt-4 border-t border-catalog-gold/30">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="text-xs uppercase tracking-wider text-catalog-muted font-mono font-medium block">
+                                    No Cartão
+                                  </span>
+                                  <span className="text-2xl sm:text-3xl font-bold text-catalog-text tracking-tight">
+                                    {catalogCurrency.format(prod.price)}
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleBuy(e, prod);
+                                  }}
+                                  className="w-12 h-12 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm shrink-0 cursor-pointer"
+                                  title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
+                                >
+                                  {summary.isExclusivePhysical ? (
+                                    <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
+                                  ) : (
+                                    <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                  )}
+                                </button>
+                              </div>
+                              <span className="text-xs sm:text-sm font-semibold text-emerald-400 mt-1">
+                                ou {catalogCurrency.format(prod.pixPrice ?? prod.price)} no PIX
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -645,7 +673,7 @@ export default function HomeClient({
                         <div 
                           key={prod.id}  
                           onClick={() => openProduct(prod)}
-                          className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between h-[480px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
+                          className="bg-catalog-card border border-catalog-gold/45 rounded-2xl p-5 flex flex-col justify-between min-h-[530px] h-[530px] hover:border-catalog-gold/70 transition-all duration-300 cursor-pointer group animate-in shadow-sm"
                           style={{ animationDelay: `${(index % 8) * 0.05}s` }}
                         >
                           <div className="h-60 mb-5 p-5 bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-all duration-300">
@@ -659,21 +687,16 @@ export default function HomeClient({
                           <div className="flex flex-col flex-1 justify-end relative">
                             <div className="flex items-center gap-2 mb-3 flex-wrap">
                               {summary.isExclusivePhysical ? (
-                                <span className="text-[10px] text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-amber-400 uppercase tracking-[0.15em] font-mono font-bold border border-amber-400/40 bg-amber-400/10 inline-block w-fit whitespace-nowrap px-2.5 py-1 rounded">
                                   Exclusivo Loja Física
                                 </span>
                               ) : summary.isOutOfStock ? (
-                                <span className="text-[10px] text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-neutral-400 uppercase tracking-[0.2em] font-mono font-bold border border-neutral-700 bg-neutral-900 inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                                   Esgotado
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
+                                <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 bg-transparent inline-block w-min whitespace-nowrap px-2.5 py-1 rounded">
                                   Produto
-                                </span>
-                              )}
-                              {(prod as any).shippingMode === 'WHATSAPP_ONLY' && (
-                                <span className="text-[10px] text-amber-300 uppercase tracking-[0.15em] font-mono font-bold border border-amber-500/30 bg-amber-500/10 inline-block w-fit whitespace-nowrap px-2 py-0.5 rounded">
-                                  Frete a Combinar
                                 </span>
                               )}
                             </div>
@@ -681,22 +704,34 @@ export default function HomeClient({
                               <button type="button" aria-label={`Ver detalhes de ${prod.name}`} onClick={(event) => { event.stopPropagation(); openProduct(prod); }} className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-catalog-gold">{formatProductTitle(prod.name)}</button>
                             </h4>
                             
-                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-catalog-gold/30">
-                              <span className="text-xl sm:text-2xl font-bold text-catalog-text tracking-tight">{catalogCurrency.format(prod.price)}</span>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleBuy(e, prod);
-                                }}
-                                className="w-11 h-11 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm"
-                                title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
-                              >
-                                {summary.isExclusivePhysical ? (
-                                  <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
-                                ) : (
-                                  <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                )}
-                              </button>
+                            <div className="flex flex-col mt-auto pt-4 border-t border-catalog-gold/30">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="text-xs uppercase tracking-wider text-catalog-muted font-mono font-medium block">
+                                    No Cartão
+                                  </span>
+                                  <span className="text-2xl sm:text-3xl font-bold text-catalog-text tracking-tight">
+                                    {catalogCurrency.format(prod.price)}
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleBuy(e, prod);
+                                  }}
+                                  className="w-12 h-12 rounded-full border border-catalog-gold/45 bg-transparent hover:bg-catalog-gold/15 flex items-center justify-center text-catalog-gold transition-colors shadow-sm shrink-0 cursor-pointer"
+                                  title={summary.isExclusivePhysical ? "Disponível na Loja Física" : "Adicionar ao Carrinho"}
+                                >
+                                  {summary.isExclusivePhysical ? (
+                                    <span className="text-base" role="img" aria-label="Loja Física">🏪</span>
+                                  ) : (
+                                    <Icons.ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                  )}
+                                </button>
+                              </div>
+                              <span className="text-xs sm:text-sm font-semibold text-emerald-400 mt-1">
+                                ou {catalogCurrency.format(prod.pixPrice ?? prod.price)} no PIX
+                              </span>
                             </div>
                           </div>
                         </div>

@@ -49,7 +49,7 @@ export function StoreLocationSection({
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 relative z-10">
         {/* Cabeçalho da Seção */}
         <div className="max-w-3xl mx-auto text-center mb-12 md:mb-16">
-          <span className="text-[10px] text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/5 px-3 py-1.5 rounded-full inline-block mb-4 shadow-[0_0_15px_rgba(240,180,14,0.08)]">
+          <span className="text-xs text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/5 px-3.5 py-1.5 rounded-full inline-block mb-4 shadow-[0_0_15px_rgba(240,180,14,0.08)]">
             Loja Física & Atendimento
           </span>
 
@@ -75,7 +75,7 @@ export function StoreLocationSection({
                   <MapPin className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-1.5 block">
+                  <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-1.5 block">
                     Endereço Oficial
                   </span>
                   <h3 className="text-white font-bold text-base sm:text-lg leading-snug mb-1">
@@ -120,7 +120,7 @@ export function StoreLocationSection({
                   <Clock className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-1.5 block">
+                  <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-1.5 block">
                     Horários de Atendimento
                   </span>
                   <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export function StoreLocationSection({
                   </div>
                   <span className="text-white font-bold text-sm">5.0</span>
                 </div>
-                <span className="text-[10px] text-catalog-gold font-mono uppercase tracking-wider border border-catalog-gold/30 px-2 py-0.5 rounded">
+                <span className="text-xs text-catalog-gold font-mono uppercase tracking-wider border border-catalog-gold/30 px-2 py-0.5 rounded">
                   95 avaliações
                 </span>
               </div>
@@ -187,7 +187,7 @@ export function StoreLocationSection({
               >
                 <Phone className="w-4 h-4 text-catalog-gold" />
                 <span>(91) 98131-6801</span>
-                <span className="text-[10px] text-emerald-400 font-mono lowercase ml-1">
+                <span className="text-xs text-emerald-400 font-mono lowercase ml-1 font-semibold">
                   (whatsapp)
                 </span>
               </a>

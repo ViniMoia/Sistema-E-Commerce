@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/session';
 import { getLojaFromHeaders } from '@/lib/tenant';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { freightClientResponseSchema } from '@/lib/commerce/freight-contract';
-const schema = z.object({ lojaID: z.string().optional(), destinationCep: z.string().optional(),
+const schema = z.object({ lojaID: z.string().optional(), destinationCep: z.string().optional(), neighborhood: z.string().max(150).optional(),
   deliveryType: z.enum(['DELIVERY', 'PICKUP', 'NONE']).default('DELIVERY'), items: freightItemsSchema });
 export async function POST(request: Request) {
   const limited = checkRateLimit(request, 'freight_quote', 30, 60000); if (limited) return limited;

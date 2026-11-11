@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { z } from 'zod';
 const itemSchema = z.object({ id: z.string(), cartID: z.string(), productID: z.string(), variantID: z.string(),
   quantity: z.number().int().min(1).max(99), productName: z.string(), price: z.number().finite().nonnegative(),
+  pixPrice: z.number().finite().nonnegative().nullish(),
   color: z.string(), size: z.string(), imageUrl: z.string(), shippingMode: z.string().optional() });
 const cartSchema = z.object({ id: z.string(), userID: z.string(), lojaID: z.string(), status: z.literal('ACTIVE'),
   version: z.number().int().nonnegative(), items: z.array(itemSchema) });

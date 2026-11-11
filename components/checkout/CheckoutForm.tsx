@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner'
 import type { PaymentConfig } from '@/lib/config/payment.config'
 import { resolveCartShippingMode } from '@/lib/freight/shipping-mode'
+import { BELEM_ANANINDEUA_NEIGHBORHOODS } from '@/lib/freight/belem-ananindeua-neighborhoods'
 
 export interface CartItem {
   productId?: string
@@ -42,6 +43,7 @@ export interface CartItem {
   productName?: string
   quantity: number
   price: number
+  pixPrice?: number | null
   color?: string
   size?: string
   imageUrl?: string
@@ -182,7 +184,7 @@ export function CheckoutForm({
     email: '',
     phone: '',
     cpfCnpj: '',
-    deliveryType: (isWhatsAppOnly ? 'NONE' : 'DELIVERY') as 'DELIVERY' | 'PICKUP' | 'NONE',
+    deliveryType: 'DELIVERY' as 'DELIVERY' | 'PICKUP',
     address: {
       state: '',
       city: '',
@@ -242,19 +244,22 @@ export function CheckoutForm({
     }
   }, [initialCustomer])
 
-  useEffect(() => {
-    if (isWhatsAppOnly && formData.deliveryType === 'DELIVERY') {
-      setFormData((prev) => ({ ...prev, deliveryType: 'NONE' }))
-    }
-  }, [isWhatsAppOnly, formData.deliveryType])
-
   const subtotal = useMemo(
-    () => Math.round(items.reduce((acc, item) => acc + item.price * item.quantity, 0) * 100) / 100,
-    [items]
+    () =>
+      Math.round(
+        items.reduce((acc, item) => {
+          const effectivePrice =
+            paymentMethod === 'PIX' && typeof item.pixPrice === 'number' && item.pixPrice > 0
+              ? item.pixPrice
+              : item.price
+          return acc + effectivePrice * item.quantity
+        }, 0) * 100
+      ) / 100,
+    [items, paymentMethod]
   )
 
   const calculatedFreightCost = useMemo(() => {
-    if (formData.deliveryType === 'PICKUP' || formData.deliveryType === 'NONE') {
+    if (formData.deliveryType === 'PICKUP') {
       return 0
     }
     return selectedFreight ? selectedFreight.price : 0
@@ -382,8 +387,13 @@ export function CheckoutForm({
     setFreightState('loading'); setIsFetchingFreight(true)
     const timer = setTimeout(async () => {
       try {
-        const payload = freightClientRequestSchema.parse({ lojaID, destinationCep: cep, deliveryType: 'DELIVERY',
-          items: items.map(i => ({ productId: i.productId || i.productID, variantId: i.variantId || i.variantID, quantity: i.quantity })) })
+        const payload = freightClientRequestSchema.parse({
+          lojaID,
+          destinationCep: cep,
+          neighborhood: formData.address.neighborhood?.trim() || undefined,
+          deliveryType: 'DELIVERY',
+          items: items.map(i => ({ productId: i.productId || i.productID, variantId: i.variantId || i.variantID, quantity: i.quantity }))
+        })
         const requestStartedAt = performance.now()
         const res = await fetch('/api/freight/calculate', { method: 'POST', signal: request.signal,
           headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -463,10 +473,6 @@ export function CheckoutForm({
 
   const validateStep2 = () => {
     if (formData.deliveryType === 'DELIVERY') {
-      if (isWhatsAppOnly) {
-        setError('Itens com dimensões especiais não suportam entrega automática pelos Correios/J&T. Selecione "Entrega em Domicílio (A Combinar)" ou "Retirar na Loja".')
-        return false
-      }
       if (!checkoutAddressSchema.safeParse(formData.address).success) { setError('Preencha o endereço de entrega completo, com CEP e UF válidos.'); return false }
       const cleanCep = cleanDigits(formData.address.cep)
       if (cleanCep.length !== 8) {
@@ -483,14 +489,6 @@ export function CheckoutForm({
       }
       if (freightState !== 'ready' || !selectedFreight?.freightQuoteToken || (quoteDeadlines.current.get(selectedFreight.freightQuoteToken) ?? 0) <= performance.now()) {
         setError('Por favor, selecione uma modalidade de frete.')
-        return false
-      }
-    }
-
-    if (formData.deliveryType === 'NONE') {
-      const cleanCep = cleanDigits(formData.address.cep)
-      if (cleanCep.length > 0 && cleanCep.length !== 8) {
-        setError('Por favor, informe um CEP válido com 8 dígitos para a cotação no WhatsApp.')
         return false
       }
     }
@@ -730,7 +728,7 @@ export function CheckoutForm({
                     Informações para nota fiscal eletrônica e envio do pedido.
                   </p>
                 </div>
-                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
+                <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
                   Etapa 01/03
                 </span>
               </div>
@@ -829,7 +827,7 @@ export function CheckoutForm({
                     Escolha como deseja receber ou retirar seus produtos.
                   </p>
                 </div>
-                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
+                <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
                   Etapa 02/03
                 </span>
               </div>
@@ -847,44 +845,21 @@ export function CheckoutForm({
                     </span>
                   )}
                 </div>
-                <div className={`grid grid-cols-1 ${isWhatsAppOnly ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3`}>
-                  {(isWhatsAppOnly
-                    ? [
-                        {
-                          id: 'NONE',
-                          label: 'Receber em Casa',
-                          desc: 'Frete a combinar via WhatsApp',
-                          icon: Truck,
-                          badge: 'Sob Medida',
-                        },
-                        {
-                          id: 'PICKUP',
-                          label: 'Retirar na Loja',
-                          desc: 'Grátis no Balcão',
-                          icon: Store,
-                        },
-                      ]
-                    : [
-                        {
-                          id: 'DELIVERY',
-                          label: 'Receber em Casa',
-                          desc: 'Correios ou J&T Express',
-                          icon: Truck,
-                        },
-                        {
-                          id: 'PICKUP',
-                          label: 'Retirar na Loja',
-                          desc: 'Grátis no Balcão',
-                          icon: Store,
-                        },
-                        {
-                          id: 'NONE',
-                          label: 'A Combinar',
-                          desc: 'Acertar via WhatsApp',
-                          icon: MessageSquare,
-                        },
-                      ]
-                  ).map((type) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      id: 'DELIVERY',
+                      label: 'Receber em Casa',
+                      desc: 'Correios, J&T ou Entrega Local',
+                      icon: Truck,
+                    },
+                    {
+                      id: 'PICKUP',
+                      label: 'Retirar na Loja',
+                      desc: 'Grátis no Balcão',
+                      icon: Store,
+                    },
+                  ].map((type) => {
                     const isSelected = formData.deliveryType === type.id
                     const IconComponent = type.icon
                     return (
@@ -908,11 +883,6 @@ export function CheckoutForm({
                         <div className="flex items-center justify-between mb-2">
                           <IconComponent className={`w-5 h-5 ${isSelected ? 'text-catalog-gold' : 'text-catalog-muted'}`} />
                           {isSelected && <span className="w-2 h-2 rounded-full bg-catalog-gold shadow-[0_0_6px_#F0B40E]" />}
-                          {type.badge && !isSelected && (
-                            <span className="text-[9px] font-mono uppercase tracking-wider text-catalog-gold bg-catalog-gold/10 px-1.5 py-0.5 rounded border border-catalog-gold/20 font-bold">
-                              {type.badge}
-                            </span>
-                          )}
                         </div>
                         <span className="font-bold text-xs uppercase font-mono tracking-wider block">{type.label}</span>
                         <span className="text-[11px] text-catalog-muted mt-1 font-mono leading-tight">{type.desc}</span>
@@ -952,7 +922,7 @@ export function CheckoutForm({
                     <button type="button" onClick={() => setFreightRefresh(value => value + 1)}>Calcular frete novamente</button>
                   </div>}
                   <div className="space-y-1 pt-2">
-                    <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
+                    <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-catalog-gold font-bold">
                       Modalidade de frete
                     </h3>
                     <p className="text-xs text-catalog-muted">
@@ -996,7 +966,7 @@ export function CheckoutForm({
                                       {opt.serviceName}
                                     </span>
                                     {opt.isRecommended && (
-                                      <span className="text-[10px] text-catalog-gold uppercase tracking-wider font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/15 px-2 py-0.5 rounded-full">
+                                      <span className="text-xs text-catalog-gold uppercase tracking-wider font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/15 px-2.5 py-0.5 rounded-full">
                                         Recomendado
                                       </span>
                                     )}
@@ -1009,9 +979,7 @@ export function CheckoutForm({
                                 </div>
                               </div>
                               <span className="font-mono font-bold text-sm text-white">
-                                {opt.providerId === 'NONE' ? (
-                                  <span className="text-amber-400 font-bold text-xs uppercase">A Combinar</span>
-                                ) : opt.price === 0 ? (
+                                {opt.price === 0 ? (
                                   <span className="text-emerald-400 font-bold">Grátis</span>
                                 ) : (
                                   `R$ ${opt.price.toFixed(2)}`
@@ -1021,15 +989,6 @@ export function CheckoutForm({
                           )
                         })}
                       </div>
-                      {selectedFreight?.providerId === 'NONE' && (
-                        <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs flex gap-2.5 items-start mt-2">
-                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-bold text-amber-300 block mb-0.5">Frete a combinar via WhatsApp:</span>
-                            O frete deste pedido <strong>não está incluso</strong> no total a ser pago agora. Após a confirmação da compra dos produtos, o frete será cotado e acertado diretamente com a loja pelo WhatsApp antes do envio.
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -1060,15 +1019,24 @@ export function CheckoutForm({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Bairro</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">Bairro</label>
+                      <span className="text-xs text-catalog-muted font-mono">Sugestões de Belém/Ananindeua disponíveis</span>
+                    </div>
                     <input
                       type="text"
                       name="address.neighborhood"
+                      list="belem-bairros"
                       value={formData.address.neighborhood}
                       onChange={handleInputChange}
                       className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold font-mono"
                       placeholder="Bairro"
                     />
+                    <datalist id="belem-bairros">
+                      {BELEM_ANANINDEUA_NEIGHBORHOODS.map((n) => (
+                        <option key={n.id} value={n.name}>{`${n.name} (${n.municipality})`}</option>
+                      ))}
+                    </datalist>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
@@ -1110,57 +1078,6 @@ export function CheckoutForm({
                 </div>
               )}
 
-              {/* Modalidade A Combinar via WhatsApp: Coleta Rápida de CEP */}
-              {formData.deliveryType === 'NONE' && (
-                <div className="space-y-4 pt-3 border-t border-catalog-gold/20 animate-in fade-in duration-300">
-                  <div className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs flex gap-3 items-start">
-                    <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <span className="font-bold text-amber-300 block text-sm">
-                        {isWhatsAppOnly
-                          ? 'Produtos com Cotação de Envio Sob Medida'
-                          : 'Frete a Combinar via WhatsApp'}
-                      </span>
-                      <p className="leading-relaxed">
-                        O valor do frete para entrega no seu endereço <strong>não é cobrado agora</strong>. Informe seu CEP abaixo apenas para agilizar: sua mensagem do WhatsApp já será gerada com sua localização para cotação rápida com a loja após a confirmação dos produtos!
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
-                        CEP de Destino para Cotação (Opcional)
-                      </label>
-                      {isFetchingCep && (
-                        <span className="text-xs text-catalog-gold font-mono flex items-center gap-1.5">
-                          <Spinner className="h-3 w-3" /> Localizando cidade...
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      name="address.cep"
-                      value={formData.address.cep}
-                      onChange={handleCepChange}
-                      className="w-full bg-[#0B132B]/70 border border-catalog-gold/30 text-white placeholder-gray-400 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-catalog-gold focus:ring-1 focus:ring-catalog-gold font-mono transition-all"
-                      placeholder="00000-000"
-                      maxLength={9}
-                    />
-                  </div>
-
-                  {formData.address.city && formData.address.state && (
-                    <div className="p-3.5 rounded-xl border border-catalog-gold/25 bg-[#0B132B]/60 text-xs text-white font-mono flex items-center justify-between">
-                      <span className="text-catalog-muted uppercase">Destino Identificado:</span>
-                      <span className="font-bold text-catalog-gold">
-                        {formData.address.neighborhood ? `${formData.address.neighborhood}, ` : ''}
-                        {formData.address.city} - {formData.address.state}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Modalidade Retirar na Loja */}
               {formData.deliveryType === 'PICKUP' && (
                 <div className="space-y-4 pt-3 border-t border-catalog-gold/20 animate-in fade-in duration-300">
@@ -1192,7 +1109,7 @@ export function CheckoutForm({
                     Ambiente criptografado com tecnologia oficial do Banco Central.
                   </p>
                 </div>
-                <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
+                <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold border border-catalog-gold/45 px-2.5 py-1 rounded">
                   Etapa 03/03
                 </span>
               </div>
@@ -1214,9 +1131,7 @@ export function CheckoutForm({
                   Escolha o Método de Pagamento
                 </label>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {paymentCapabilities?.methods.includes('WHATSAPP_PIX') && <button type="button" onClick={() => setPaymentMethod('WHATSAPP_PIX')}
-                    className="rounded-xl p-4 border border-catalog-gold/30 text-xs text-white">PIX manual via WhatsApp<br />Confirmação pela loja</button>}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {/* Aba 1: PIX */}
                   <button
                     type="button"
@@ -1231,7 +1146,7 @@ export function CheckoutForm({
                   >
                     <QrCode className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">PIX</span>
-                    <span className="text-[10px] font-mono text-emerald-400">Imediato</span>
+                    <span className="text-xs font-mono text-emerald-400 font-medium">Imediato</span>
                   </button>
 
                   {/* Aba 2: Cartão de Crédito */}
@@ -1248,7 +1163,7 @@ export function CheckoutForm({
                   >
                     <CreditCard className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">Cartão</span>
-                    <span className="text-[10px] font-mono text-catalog-muted">Até {paymentCapabilities?.maximumInstallments ?? 1}x</span>
+                    <span className="text-xs font-mono text-catalog-muted">Até {paymentCapabilities?.maximumInstallments ?? 1}x</span>
                   </button>
 
                   {/* Aba 3: Boleto Bancário */}
@@ -1265,7 +1180,7 @@ export function CheckoutForm({
                   >
                     <FileText className="w-6 h-6 text-catalog-gold" />
                     <span className="font-bold text-xs uppercase font-mono tracking-wider">Boleto</span>
-                    <span className="text-[10px] font-mono text-catalog-muted">D+1</span>
+                    <span className="text-xs font-mono text-catalog-muted">D+1</span>
                   </button>
                 </div>
               </div>
@@ -1277,7 +1192,6 @@ export function CheckoutForm({
                 </label>}
                 {!(billingSameAsShipping && formData.deliveryType === 'DELIVERY') && <BillingAddressFields value={billingAddress} onChange={value => { invalidateReview(); setBillingAddress(value) }} />}
               </section>}
-              {paymentMethod === 'WHATSAPP_PIX' && <p className="text-sm text-catalog-muted">Pagamento manual com a chave da loja. A confirmação depende da conferência da loja.</p>}
               {!paymentCapabilities && !error && <p className="text-sm text-catalog-muted">Verificando os meios de pagamento...</p>}
               {paymentCapabilities && !paymentCapabilities.methods.length && <p className="text-sm text-red-400">Nenhum meio de pagamento disponível nesta loja.</p>}
               {/* CONTEÚDO DA ABA SELECIONADA */}
@@ -1304,7 +1218,7 @@ export function CheckoutForm({
                       <span className="text-xs font-mono text-catalog-muted uppercase">Ambiente Seguro PCI-DSS</span>
                     </div>
                     {detectedCardBrand && (
-                      <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${detectedCardBrand.color}`}>
+                      <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${detectedCardBrand.color}`}>
                         {detectedCardBrand.name}
                       </span>
                     )}
@@ -1401,7 +1315,7 @@ export function CheckoutForm({
                 <Package className="w-4 h-4 text-catalog-gold" />
                 <span>Resumo do Pedido</span>
               </h3>
-              <span className="text-[10px] text-catalog-gold uppercase tracking-wider font-mono font-bold border border-catalog-gold/45 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs text-catalog-gold uppercase tracking-wider font-mono font-bold border border-catalog-gold/45 px-2.5 py-0.5 rounded-full">
                 {items.reduce((acc, i) => acc + i.quantity, 0)} {items.reduce((acc, i) => acc + i.quantity, 0) === 1 ? 'item' : 'itens'}
               </span>
             </div>
@@ -1446,7 +1360,9 @@ export function CheckoutForm({
             {/* Linhas Contábeis */}
             <div className="space-y-2.5 pt-4 border-t border-catalog-gold/20 text-xs font-mono">
               <div className="flex justify-between items-center">
-                <span className="text-catalog-muted uppercase">Subtotal dos Produtos</span>
+                <span className="text-catalog-muted uppercase">
+                  Subtotal dos Produtos {paymentMethod === 'PIX' && items.some(i => typeof i.pixPrice === 'number' && i.pixPrice < i.price) ? '(Desconto PIX)' : '(Base)'}
+                </span>
                 <span className="text-white font-semibold">R$ {subtotal.toFixed(2)}</span>
               </div>
 
@@ -1464,8 +1380,6 @@ export function CheckoutForm({
                 <span className="font-semibold text-white">
                   {deliveryQuoteMissing ? (
                     <span className="text-catalog-muted">{isFetchingFreight ? 'Calculando...' : 'A calcular'}</span>
-                  ) : formData.deliveryType === 'NONE' ? (
-                    'A combinar'
                   ) : calculatedFreightCost === 0 ? (
                     <span className="text-emerald-400 font-bold uppercase">Grátis</span>
                   ) : (
@@ -1477,11 +1391,11 @@ export function CheckoutForm({
               {/* Total Geral com Destaque Dourado */}
               <div className="pt-3 border-t border-catalog-gold/30 flex justify-between items-baseline">
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-catalog-gold block font-bold">
+                  <span className="text-xs font-mono uppercase tracking-[0.2em] text-catalog-gold block font-bold">
                     {deliveryQuoteMissing ? 'Subtotal sem frete' : 'Total do Pedido'}
                   </span>
                   {!deliveryQuoteMissing && paymentMethod === 'CREDIT_CARD' && selectedInstallmentDetail && selectedInstallmentDetail.count > 1 && (
-                    <span className="text-[11px] text-catalog-muted font-mono block">
+                    <span className="text-xs text-catalog-muted font-mono block">
                       {selectedInstallmentDetail.label}
                     </span>
                   )}
@@ -1571,7 +1485,7 @@ export function CheckoutForm({
             </div>
 
             {/* Selo de Segurança */}
-            <div className="pt-2 border-t border-catalog-gold/15 flex items-center justify-center gap-2 text-[10px] font-mono text-catalog-muted uppercase tracking-wider text-center">
+            <div className="pt-2 border-t border-catalog-gold/15 flex items-center justify-center gap-2 text-xs font-mono text-catalog-muted uppercase tracking-wider text-center">
               <ShieldCheck className="w-3.5 h-3.5 text-catalog-gold shrink-0" />
               <span>Checkout 100% Criptografado & Protegido</span>
             </div>

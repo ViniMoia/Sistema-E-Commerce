@@ -25,7 +25,7 @@ export interface FreightQuoteRequest {
   cartTotal: number;
   itemsCount: number;
   items?: FreightCartItemInput[];
-  destination?: { cep: string; state: string; city: string; municipalityCode: string } | null;
+  destination?: { cep: string; state: string; city: string; municipalityCode: string; neighborhood?: string } | null;
   storeSettings?: {
     additionalDays?: number;
     enableCorreios?: boolean;

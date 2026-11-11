@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Truck, MapPin, Store, Clock, ChevronRight, AlertCircle, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
+import { Truck, MapPin, Store, Clock, ChevronRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { FreightOption } from '@/types/freight';
+import { BELEM_ANANINDEUA_NEIGHBORHOODS, normalizeText } from '@/lib/freight/belem-ananindeua-neighborhoods';
 
 interface ProductFreightCalculatorProps {
   productId: string;
@@ -26,23 +27,21 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
   className = '',
   shippingMode,
 }) => {
-  if (shippingMode === 'WHATSAPP_ONLY') {
-    return null;
-  }
   const [cep, setCep] = useState<string>('');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [options, setOptions] = useState<FreightOption[]>([]);
   const [location, setLocation] = useState<LocationInfo | null>(null);
   const [hasCalculated, setHasCalculated] = useState<boolean>(false);
   const cepRef = useRef('');
+  const neighborhoodRef = useRef('');
   const requestRef = useRef<{ version: number; controller?: AbortController }>({ version: 0 });
 
   const invalidateQuote = useCallback(() => {
     requestRef.current.controller?.abort();
     requestRef.current = { version: requestRef.current.version + 1 };
     setOptions([]);
-    setLocation(null);
     setError(null);
     setHasCalculated(false);
     setIsLoading(false);
@@ -65,11 +64,25 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         const data = await res.json();
         if (version !== requestRef.current.version || signal.aborted) return;
         if (!data.erro) {
-          setLocation({
+          const loc = {
             city: data.localidade,
             state: data.uf,
             neighborhood: data.bairro,
-          });
+          };
+          setLocation(loc);
+          if (data.bairro) {
+            const normalized = normalizeText(data.bairro);
+            const matched = BELEM_ANANINDEUA_NEIGHBORHOODS.find((n) =>
+              n.aliases.some((a) => a === normalized || normalized.includes(a))
+            );
+            if (matched) {
+              setSelectedNeighborhood(matched.name);
+              neighborhoodRef.current = matched.name;
+            } else {
+              setSelectedNeighborhood(data.bairro);
+              neighborhoodRef.current = data.bairro;
+            }
+          }
           return;
         }
       }
@@ -81,7 +94,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
 
   // Executa o cálculo de frete
   const handleCalculate = useCallback(
-    async (targetCep?: string) => {
+    async (targetCep?: string, targetNeighborhood?: string) => {
       const rawCep = targetCep ?? cepRef.current;
       const cleanCep = rawCep.replace(/\D/g, '');
       invalidateQuote();
@@ -101,6 +114,9 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         // Dispara busca paralela de cidade/UF
         void fetchLocation(cleanCep, version, controller.signal);
 
+        const activeNeighborhood =
+          targetNeighborhood ?? neighborhoodRef.current ?? selectedNeighborhood;
+
         const response = await fetch('/api/freight/calculate', {
           method: 'POST',
           signal: controller.signal,
@@ -108,6 +124,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
           body: JSON.stringify({
             lojaID,
             destinationCep: cleanCep,
+            neighborhood: activeNeighborhood?.trim() || undefined,
             items: [
               {
                 productId,
@@ -145,7 +162,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
         if (isCurrent()) setIsLoading(false);
       }
     },
-    [productId, variantId, lojaID, invalidateQuote, fetchLocation]
+    [productId, variantId, lojaID, selectedNeighborhood, invalidateQuote, fetchLocation]
   );
 
   // Carrega CEP salvo do localStorage na inicialização e calcula automaticamente se já houver CEP
@@ -268,6 +285,39 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
             </span>
           )}
         </div>
+
+        {/* Seletor de Bairro para Região Metropolitana de Belém */}
+        {Boolean(
+          (location?.state === 'PA' && ['belem', 'ananindeua', 'marituba'].some(c => normalizeText(location.city).includes(c))) ||
+          cep.replace(/\D/g, '').startsWith('66') ||
+          cep.replace(/\D/g, '').startsWith('67')
+        ) && (
+          <div className="mt-3 space-y-1.5 p-3 rounded-xl bg-[#050B14]/80 border border-catalog-gold/25">
+            <label className="text-xs font-medium text-catalog-gold flex items-center justify-between">
+              <span>Bairro (Belém / Ananindeua / Marituba):</span>
+              {selectedNeighborhood && (
+                <span className="text-xs text-emerald-400 font-mono font-medium">Taxa Fixa Aplicada</span>
+              )}
+            </label>
+            <select
+              value={selectedNeighborhood}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedNeighborhood(val);
+                neighborhoodRef.current = val;
+                handleCalculate(cep, val);
+              }}
+              className="w-full bg-[#0B132B] border border-catalog-gold/30 focus:border-catalog-gold rounded-xl px-3 py-2 text-xs text-catalog-text focus:outline-none focus:ring-1 focus:ring-catalog-gold transition-all"
+            >
+              <option value="">Selecione seu bairro para calcular taxa exata...</option>
+              {BELEM_ANANINDEUA_NEIGHBORHOODS.map((n) => (
+                <option key={n.id} value={n.name}>
+                  {n.name} ({n.municipality}) — R$ {n.price.toFixed(2).replace('.', ',')}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Erro */}
@@ -290,39 +340,37 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
       {!isLoading && hasCalculated && options.length > 0 && (
         <div className="mt-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
           {options.map((option, index) => {
-            const isNone = option.providerId === 'NONE';
             const isPickup = option.providerId === 'STORE_PICKUP' || option.serviceCode === 'PICKUP';
             const isJt = option.providerId === 'JT_EXPRESS';
-            const isFree = !isNone && option.price === 0;
-            const isLowest = !isFree && !isNone && option.price === lowestPriceNonZero;
+            const isCustomTable = option.providerId === 'CUSTOM_TABLE';
+            const isFree = option.price === 0;
+            const isLowest = !isFree && option.price === lowestPriceNonZero;
 
             return (
               <div
                 key={`${option.providerId}-${option.serviceCode}-${index}`}
                 className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                  isNone
-                    ? 'bg-amber-950/20 border-amber-500/30 hover:border-amber-500/50'
-                    : isFree
-                      ? 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
-                      : isLowest || option.isRecommended
-                        ? 'bg-catalog-gold/10 border-catalog-gold/40 hover:border-catalog-gold/60'
-                        : 'bg-[#050B14]/60 border-neutral-800 hover:border-catalog-gold/20'
+                  isFree
+                    ? 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
+                    : isLowest || option.isRecommended
+                      ? 'bg-catalog-gold/10 border-catalog-gold/40 hover:border-catalog-gold/60'
+                      : 'bg-[#050B14]/60 border-neutral-800 hover:border-catalog-gold/20'
                 }`}
               >
                 {/* Ícone e Nome do Serviço */}
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={`p-2 rounded-lg shrink-0 ${
-                      isNone
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : isFree
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      isFree
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : isCustomTable || isLowest
+                          ? 'bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30'
                           : isJt
-                            ? 'bg-catalog-gold/15 text-catalog-gold border border-catalog-gold/30'
+                            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                             : 'bg-neutral-800 text-neutral-300'
                     }`}
                   >
-                    {isNone ? <MessageCircle className="w-4 h-4" /> : isPickup ? <Store className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
+                    {isPickup ? <Store className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
                   </div>
 
                   <div className="min-w-0">
@@ -332,26 +380,20 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
                       </span>
 
                       {/* Badges de Destaque */}
-                      {isNone && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          A Combinar
-                        </span>
-                      )}
-
                       {isFree && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           Grátis
                         </span>
                       )}
 
                       {isLowest && !isFree && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-catalog-gold/20 text-catalog-gold border border-catalog-gold/40">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-catalog-gold/20 text-catalog-gold border border-catalog-gold/40">
                           Mais Econômico
                         </span>
                       )}
 
                       {isJt && !isLowest && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           Entrega Rápida
                         </span>
                       )}
@@ -360,13 +402,11 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
                     <div className="flex items-center gap-1.5 text-xs text-catalog-muted mt-0.5">
                       <Clock className="w-3.5 h-3.5 shrink-0" />
                       <span>
-                        {isNone
-                          ? 'Envio a combinar via WhatsApp'
-                          : isPickup
-                            ? 'Retirada imediata no balcão'
-                            : option.deliveryTimeInDays === 1
-                              ? 'Em até 1 dia útil'
-                              : `Em até ${option.deliveryTimeInDays} dias úteis`}
+                        {isPickup
+                          ? 'Retirada imediata no balcão'
+                          : option.deliveryTimeInDays === 1
+                            ? 'Em até 1 dia útil'
+                            : `Em até ${option.deliveryTimeInDays} dias úteis`}
                       </span>
                     </div>
                   </div>
@@ -374,9 +414,7 @@ export const ProductFreightCalculator: React.FC<ProductFreightCalculatorProps> =
 
                 {/* Preço */}
                 <div className="text-right shrink-0">
-                  {isNone ? (
-                    <span className="text-xs font-bold text-amber-400 uppercase">A Combinar</span>
-                  ) : isFree ? (
+                  {isFree ? (
                     <span className="text-sm font-bold text-emerald-400">R$ 0,00</span>
                   ) : (
                     <span className="text-sm font-bold text-catalog-text">

@@ -2,6 +2,7 @@ import { z } from 'zod';
 export const freightClientItemsSchema = z.array(z.object({ productId: z.string().min(1).max(128), variantId: z.string().min(1).max(128).optional(),
   quantity: z.number().int().min(1).max(99) })).min(1).max(100);
 export const freightClientRequestSchema = z.object({ lojaID: z.string().min(1), destinationCep: z.string().regex(/^\d{8}$/),
+  neighborhood: z.string().max(150).optional(),
   deliveryType: z.literal('DELIVERY'), items: freightClientItemsSchema });
 export const freightClientResponseSchema = z.object({ success: z.literal(true), data: z.object({
   serverTime: z.string().datetime({ offset: true }),

@@ -74,11 +74,11 @@ export function BrandMinimalistCarousel({
                 type="button"
                 onClick={() => onSelectBrand(isSelected ? null : brand.slug)}
                 title={brand.name}
-                className="group relative flex-shrink-0 w-1/5 min-w-[160px] sm:min-w-[180px] lg:min-w-[200px] h-20 sm:h-24 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer focus:outline-none px-4"
+                className="group relative flex-shrink-0 w-1/5 min-w-[160px] sm:min-w-[180px] lg:min-w-[200px] h-24 sm:h-28 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer focus:outline-none px-4"
               >
                 {/* Logo Solta com Efeito de Hover e Ativo */}
                 <div
-                  className={`relative w-full h-12 sm:h-14 flex items-center justify-center transition-all duration-300 ${
+                  className={`relative w-full h-16 sm:h-20 flex items-center justify-center transition-all duration-300 ${
                     isSelected
                       ? "scale-110 drop-shadow-[0_0_16px_rgba(184,160,106,0.6)]"
                       : "opacity-80 hover:opacity-100 hover:scale-105 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]"
@@ -87,8 +87,8 @@ export function BrandMinimalistCarousel({
                   <Image
                     src={logoPath}
                     alt={`Logo da marca ${brand.name}`}
-                    width={180}
-                    height={56}
+                    width={200}
+                    height={80}
                     className="max-h-full max-w-[90%] object-contain pointer-events-none"
                     priority={index < 5}
                   />

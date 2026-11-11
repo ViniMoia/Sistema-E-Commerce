@@ -25,7 +25,7 @@ const config: Config = {
           card: "#0F172A",
           gold: "#B8A06A",
           text: "#F5F5F5",
-          muted: "#94A3B8",
+          muted: "#CBD5E1",
         },
       },
       animation: {

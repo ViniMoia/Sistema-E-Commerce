@@ -181,7 +181,7 @@ export function StorePresentationSection({
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-10 relative z-10">
         {/* Cabeçalho da Seção */}
         <div className="max-w-3xl mx-auto text-center mb-12 md:mb-16">
-          <span className="text-[10px] text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/5 px-3 py-1.5 rounded-full inline-block mb-4 shadow-[0_0_15px_rgba(240,180,14,0.08)]">
+          <span className="text-xs text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold border border-catalog-gold/45 bg-catalog-gold/5 px-3.5 py-1.5 rounded-full inline-block mb-4 shadow-[0_0_15px_rgba(240,180,14,0.08)]">
             Apresentação Exclusiva
           </span>
 
@@ -291,7 +291,7 @@ export function StorePresentationSection({
                 </div>
 
                 {/* Tempo Atual */}
-                <span className="text-[10px] sm:text-[11px] font-mono text-neutral-300 select-none shrink-0">
+                <span className="text-xs font-mono text-neutral-300 select-none shrink-0 font-medium">
                   {formatTime(currentTime)}
                 </span>
 
@@ -358,7 +358,7 @@ export function StorePresentationSection({
                   <div className="w-12 h-12 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold flex items-center justify-center mb-3.5 shadow-sm">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-2.5 border border-catalog-gold/45 bg-transparent inline-block px-2.5 py-0.5 rounded">
+                  <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-2.5 border border-catalog-gold/45 bg-transparent inline-block px-2.5 py-0.5 rounded">
                     {pillar.tag}
                   </span>
                   <h3 className="text-white font-bold text-base sm:text-lg tracking-tight uppercase leading-snug max-w-[200px]">
@@ -374,7 +374,7 @@ export function StorePresentationSection({
                       : "opacity-0 scale-95 pointer-events-none"
                   }`}
                 >
-                  <span className="text-[10px] text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold mb-3 border-b border-catalog-gold/30 pb-1">
+                  <span className="text-xs text-catalog-gold uppercase tracking-[0.25em] font-mono font-bold mb-3 border-b border-catalog-gold/30 pb-1">
                     {pillar.tag}
                   </span>
                   <p className="text-catalog-text font-light text-sm sm:text-base leading-relaxed max-w-md mx-auto">
@@ -407,7 +407,7 @@ export function StorePresentationSection({
                   <div className="w-12 h-12 rounded-xl bg-catalog-gold/10 border border-catalog-gold/25 text-catalog-gold flex items-center justify-center mb-3">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="text-[10px] text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-2 border border-catalog-gold/45 bg-transparent inline-block px-2.5 py-0.5 rounded">
+                  <span className="text-xs text-catalog-gold uppercase tracking-[0.2em] font-mono font-bold mb-2 border border-catalog-gold/45 bg-transparent inline-block px-2.5 py-0.5 rounded">
                     {pillar.tag}
                   </span>
                   <h3 className="text-white font-bold text-base tracking-tight uppercase leading-snug">

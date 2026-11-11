@@ -7,6 +7,9 @@ export interface FilterableProduct {
   id: string;
   name: string;
   price: number;
+  pixPrice?: number | null;
+  isFeaturedHero?: boolean;
+  heroBannerUrl?: string | null;
   description: string;
   imageUrl: string;
   stock: number;

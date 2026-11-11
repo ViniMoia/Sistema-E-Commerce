@@ -18,7 +18,7 @@ function quantity(value: number) {
   return value;
 }
 const cartInclude = { items: { include: {
-  product: { select: { lojaID: true, price: true, name: true, imageUrl: true, stockBuffer: true, shippingMode: true, loja: { select: { slug: true } } } }, variant: true,
+  product: { select: { lojaID: true, price: true, pixPrice: true, name: true, imageUrl: true, stockBuffer: true, shippingMode: true, loja: { select: { slug: true } } } }, variant: true,
 } } } satisfies Prisma.CartInclude;
 type Cart = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
 function validateCart(cart: Cart, userID: string, lojaID: string) {
@@ -35,7 +35,9 @@ async function activeCart(tx: Prisma.TransactionClient, userID: string, lojaID: 
 function serialize(cart: Cart, replay = false) {
   return { ...cart, replay, shippingCost: cart.shippingCost === null ? null : Number(cart.shippingCost),
     items: cart.items.map(item => { const { variant: _variant, ...data } = item; return { ...data,
-      price: Number(item.product.price ?? item.price), productName: item.product.name ?? item.productName, imageUrl: item.product.imageUrl ?? item.imageUrl,
+      price: Number(item.product.price ?? item.price),
+      pixPrice: item.product.pixPrice ? Number(item.product.pixPrice) : null,
+      productName: item.product.name ?? item.productName, imageUrl: item.product.imageUrl ?? item.imageUrl,
       shippingMode: item.product.shippingMode || 'AUTOMATIC' }; }) };
 }
 export async function getCart(userID: string, lojaID?: string) {

@@ -100,7 +100,7 @@ export function CatalogToolbar({
 
             {/* Badge de Contagem Dinâmica */}
             {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-black text-catalog-gold text-[10px] font-bold flex items-center justify-center border border-catalog-gold/50 shadow-inner">
+              <span className="w-5 h-5 rounded-full bg-black text-catalog-gold text-xs font-bold flex items-center justify-center border border-catalog-gold/50 shadow-inner">
                 {activeFiltersCount}
               </span>
             )}
@@ -152,7 +152,7 @@ export function CatalogToolbar({
           </div>
 
           {/* Contador Mobile */}
-          <span className="md:hidden shrink-0 text-[11px] font-mono text-gray-400">
+          <span className="md:hidden shrink-0 text-xs font-mono text-gray-400">
             {filteredProductsCount} itens
           </span>
         </div>
@@ -161,7 +161,7 @@ export function CatalogToolbar({
       {/* ─── LINHA DE CHIPS DOS FILTROS ATIVOS (VISIBILIDADE IMEDIATA) ─── */}
       {hasAnyFilter && (
         <div className="flex flex-wrap items-center gap-2 pt-1 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
-          <span className="text-[11px] font-mono text-catalog-gold uppercase tracking-wider mr-1">
+          <span className="text-xs font-mono text-catalog-gold uppercase tracking-wider mr-1">
             Filtros ativos:
           </span>
 
@@ -245,7 +245,7 @@ export function CatalogToolbar({
           <button
             type="button"
             onClick={onClearAll}
-            className="text-[11px] font-mono text-red-400 hover:text-red-300 underline underline-offset-4 ml-1 transition-colors"
+            className="text-xs font-mono font-semibold text-red-400 hover:text-red-300 underline underline-offset-4 ml-1 transition-colors"
           >
             Limpar todos
           </button>
