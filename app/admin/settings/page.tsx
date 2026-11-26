@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { correiosCredentialChanges, lojaSettingsFormChanges } from '@/lib/loja-dto';
+import { HeroSlidesManager } from '@/components/admin/HeroSlidesManager';
 import {
   Settings,
   QrCode,
@@ -651,6 +652,9 @@ export default function AdminSettingsPage() {
           </div>
         </form>
       )}
+
+      {/* SEÇÃO 6: PAINÉIS DA HERO (CARROSSEL) */}
+      <HeroSlidesManager />
     </div>
   );
 }

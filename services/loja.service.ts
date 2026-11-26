@@ -1,7 +1,9 @@
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { revalidateTag } from 'next/cache'
 import { tenantCache } from '@/lib/cache'
 import { adminLojaSelect, publicLojaSelect, toAdminLojaDTO, toPublicLojaDTO, type AdminLojaDTO, type PublicLojaDTO } from '@/lib/loja-dto'
+import type { HeroSlideConfig } from '@/lib/validators/hero-slides'
 
 export interface UpdateLojaSettingsParams {
   enableManualPix?: boolean
@@ -134,6 +136,65 @@ export async function getLojaBySlug(slug: string): Promise<PublicLojaDTO | null>
     return loja ? toPublicLojaDTO(loja) : null
   } catch {
     console.error('[GET_LOJA_BY_SLUG]', 'Falha ao acessar configurações da loja')
+    return null
+  }
+}
+
+/**
+ * Atualiza os painéis da Hero da loja com auditoria e invalidação do cache tenant-aware.
+ */
+export async function updateLojaHeroSlides(
+  lojaID: string,
+  heroSlides: HeroSlideConfig[],
+  actorId: string
+): Promise<LojaSettings | null> {
+  try {
+    const updated = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "Loja" WHERE id = ${lojaID} FOR UPDATE`
+      const actor = await tx.user.findUnique({ where: { id: actorId } })
+      if (!actor || actor.lojaID !== lojaID || actor.status !== 'ACTIVE' || actor.role !== 'ADMIN') {
+        throw new Error('HERO_SLIDES_ACTOR_FORBIDDEN')
+      }
+
+      const previous = await tx.loja.findUnique({
+        where: { id: lojaID },
+        select: { heroSlides: true },
+      })
+
+      const loja = await tx.loja.update({
+        where: { id: lojaID },
+        data: {
+          heroSlides: heroSlides as unknown as Prisma.InputJsonValue,
+        },
+        select: adminLojaSelect,
+      })
+
+      await tx.auditLog.create({
+        data: {
+          action: 'LOJA_HERO_SLIDES_UPDATED',
+          actorId,
+          targetId: actorId,
+          entity: 'Loja',
+          entityId: lojaID,
+          previousValue: { heroSlides: previous?.heroSlides ?? null },
+          newValue: { heroSlides: heroSlides as unknown as Prisma.InputJsonValue },
+          metadata: { lojaID, slideCount: heroSlides.length },
+        },
+      })
+
+      return loja
+    })
+
+    tenantCache.invalidateTenant(lojaID, 'settings')
+    try {
+      revalidateTag('tenant-settings', { expire: 0 })
+    } catch {
+      // no-op fora de contexto HTTP
+    }
+
+    return toAdminLojaDTO(updated)
+  } catch {
+    console.error('[UPDATE_LOJA_HERO_SLIDES]', 'Falha ao atualizar painéis da Hero')
     return null
   }
 }

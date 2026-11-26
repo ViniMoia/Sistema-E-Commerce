@@ -10,11 +10,9 @@ export default function HomeLoading() {
     >
       <span className="sr-only">Carregando catálogo de produtos...</span>
       <div className="space-y-8 motion-safe:animate-pulse">
-        {/* Hero Video / Banner Skeleton */}
-        <div className="w-full h-64 sm:h-80 md:h-[420px] rounded-3xl bg-neutral-900/80 border border-catalog-gold/20 flex flex-col justify-end p-6 md:p-12 space-y-3">
-          <div className="h-4 w-40 rounded bg-catalog-gold/30" />
-          <div className="h-8 md:h-12 w-3/4 max-w-lg rounded bg-neutral-800" />
-          <div className="h-4 w-1/2 max-w-md rounded bg-neutral-800/60" />
+        {/* Hero Painéis Carousel Skeleton (~95% da tela com altura responsiva) */}
+        <div className="w-full h-[58vh] min-h-[340px] max-h-[580px] md:h-[calc(100dvh-5rem)] md:min-h-[540px] md:max-h-[960px] rounded-2xl bg-neutral-900/80 border border-catalog-gold/20 flex flex-col justify-end p-6 md:p-10 space-y-3">
+          <div className="h-3 w-36 rounded bg-catalog-gold/25 mx-auto" />
         </div>
 
         {/* Carousel de Marcas Skeleton */}

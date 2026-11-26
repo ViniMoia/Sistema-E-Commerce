@@ -40,6 +40,8 @@ export interface CreateProductInput {
   price: number | Prisma.Decimal;
   imageUrl: string;
   galleryUrls?: string[];
+  isFeaturedHero?: boolean;
+  heroBannerUrl?: string | null;
   stock: number;
   stockBuffer?: number;
   lojaID: string;
@@ -58,6 +60,8 @@ export interface UpdateProductInput {
   price?: number | Prisma.Decimal;
   imageUrl?: string;
   galleryUrls?: string[];
+  isFeaturedHero?: boolean;
+  heroBannerUrl?: string | null;
   stock?: number;
   stockBuffer?: number;
   variants?: Array<{
@@ -239,6 +243,8 @@ export async function updateProduct(
       ...(data.description !== undefined ? { description: data.description } : {}),
       ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
       ...(data.galleryUrls !== undefined ? { galleryUrls: data.galleryUrls } : {}),
+      ...(data.isFeaturedHero !== undefined ? { isFeaturedHero: data.isFeaturedHero } : {}),
+      ...(data.heroBannerUrl !== undefined ? { heroBannerUrl: data.heroBannerUrl } : {}),
       ...(data.stockBuffer !== undefined ? { stockBuffer: Math.max(0, data.stockBuffer) } : {}),
       catalogVersion: { increment: 1 },
       ...(variants !== undefined ? { inventoryVersion: { increment: 1 } } : {}),

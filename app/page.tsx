@@ -3,6 +3,7 @@ import { getLojaFromHeaders } from "@/lib/tenant";
 import { getProducts } from "@/services/product.service";
 import { getBrandsWithProductCount } from "@/services/brand.service";
 import HomeClient from "@/components/home/HomeClient";
+import { resolveHeroSlides } from "@/lib/hero/resolve-hero-slides";
 import { notFound } from "next/navigation";
 
 export default async function EcommerceHomepage() {
@@ -47,14 +48,17 @@ export default async function EcommerceHomepage() {
     description: activeLoja.description,
     coverImageUrl: activeLoja.coverImageUrl,
     whatsappNumber: activeLoja.whatsappNumber,
-    heroSlides: (activeLoja as any).heroSlides ?? null,
+    heroSlides: activeLoja.heroSlides ?? null,
   };
+
+  const resolvedHeroSlides = resolveHeroSlides(activeLoja.heroSlides, formattedProducts);
 
   return (
     <HomeClient
       initialProducts={formattedProducts}
       initialBrands={brands}
       lojaInfo={lojaInfo}
+      resolvedHeroSlides={resolvedHeroSlides}
     />
   );
 }

@@ -17,6 +17,7 @@ export interface TenantContext {
   pixKey?: string | null;
   pixKeyType?: string | null;
   whatsappNumber?: string | null;
+  heroSlides?: unknown;
 }
 
 /**
@@ -139,6 +140,7 @@ export const TENANT_SELECT_FIELDS = {
   pixKey: true,
   pixKeyType: true,
   whatsappNumber: true,
+  heroSlides: true,
 } as const;
 
 /**

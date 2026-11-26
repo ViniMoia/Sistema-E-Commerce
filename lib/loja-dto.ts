@@ -4,6 +4,7 @@ export const publicLojaSelect = {
   id: true, name: true, slug: true, description: true, coverImageUrl: true,
   pixKey: true, pixKeyType: true, whatsappNumber: true,
   primaryColor: true, secondaryColor: true, customDomain: true,
+  heroSlides: true,
   enableCorreios: true, enablePickup: true, enableNoFreight: true, additionalDays: true,
   enableManualPix: true, enablePix: true, enableCreditCard: true, enableBoleto: true,
 } as const satisfies Prisma.LojaSelect

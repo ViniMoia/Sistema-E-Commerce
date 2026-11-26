@@ -57,6 +57,8 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             description: product.description,
             price: Number(product.price),
             imageUrl: product.imageUrl,
+            isFeaturedHero: Boolean(product.isFeaturedHero),
+            heroBannerUrl: product.heroBannerUrl,
             stock: product.stock,
             stockBuffer: product.stockBuffer ?? 1,
             catalogVersion: product.catalogVersion,

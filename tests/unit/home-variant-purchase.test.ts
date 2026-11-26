@@ -32,6 +32,7 @@ vi.mock("@/hooks/useProductFilters", () => ({ useProductFilters: () => ({
   totalCount: harness.products.length, filteredCount: harness.products.length, brandsWithCounts: [],
 }) }));
 vi.mock("@/components/home/HeroVideo", () => ({ default: () => null }));
+vi.mock("@/components/home/HeroCarousel", () => ({ default: () => null }));
 vi.mock("@/components/catalog/ProductFreightCalculator", () => ({ ProductFreightCalculator: () => null }));
 
 const variant = (id: string, size = "Único", color = "Padrão", stock = 10) => ({ id, size, color, stock });

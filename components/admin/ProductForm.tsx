@@ -26,6 +26,8 @@ const productSchema = z.object({
   description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
   price: z.number().min(0.01, "Preço deve ser maior que R$ 0,00"),
   imageUrl: externalImageUrlSchema,
+  isFeaturedHero: z.boolean(),
+  heroBannerUrl: z.union([z.literal(""), externalImageUrlSchema]).optional(),
   stock: z.number().int().min(0, "Estoque inválido"),
   stockBuffer: z.number().int().min(0, "Buffer de estoque inválido"),
   variants: productVariantsSchema,
@@ -41,6 +43,8 @@ interface ProductInitialData {
   description: string;
   price: number | string | { toNumber?: () => number };
   imageUrl: string;
+  isFeaturedHero?: boolean;
+  heroBannerUrl?: string | null;
   stock: number;
   stockBuffer?: number;
   galleryUrls?: string[];
@@ -80,6 +84,8 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
       description: initialData?.description ?? "",
       price: formattedInitialPrice,
       imageUrl: initialData?.imageUrl ?? "",
+      isFeaturedHero: Boolean(initialData?.isFeaturedHero),
+      heroBannerUrl: initialData?.heroBannerUrl ?? "",
       stock: initialData?.stock ?? 0,
       stockBuffer: initialData?.stockBuffer ?? 1,
       variants:
@@ -131,6 +137,8 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl,
+        isFeaturedHero: Boolean(data.isFeaturedHero),
+        heroBannerUrl: data.heroBannerUrl?.trim() ? data.heroBannerUrl.trim() : null,
         stockBuffer: data.stockBuffer,
         ...(!isEditing ? { stock: data.stock } : { expectedCatalogVersion: initialData?.catalogVersion }),
         lojaID: lojaID,
@@ -383,6 +391,52 @@ export function ProductForm({ lojaID, productId, initialData }: ProductFormProps
               </FormItem>
             )}
           />
+
+          <div className="pt-4 border-t border-catalog-gold/20 space-y-4">
+            <FormField
+              control={form.control}
+              name="isFeaturedHero"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-xl bg-[#0B132B]/50 border border-catalog-gold/20 px-4 py-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-xs font-mono font-bold tracking-wider text-catalog-gold uppercase">
+                      Destacar no Carrossel Hero
+                    </FormLabel>
+                    <p className="text-[11px] text-catalog-muted">
+                      Utilizado quando a loja não possui painéis personalizados ativos.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(field.value)}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="h-4 w-4 rounded accent-[#DDAF02] cursor-pointer"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("isFeaturedHero") && (
+              <FormField
+                control={form.control}
+                name="heroBannerUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ProductImageUrl
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        label="Arte Panorâmica do Painel Hero (Opcional)"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-mono text-red-400" />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
         </div>
 
         {/* Seção 3: Grade de Variantes (Tamanho, Volume, Cor, Estoque) */}

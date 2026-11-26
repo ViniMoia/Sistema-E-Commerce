@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useCartStore } from "@/store/cart.store";
 import { useCart } from "@/components/providers/CartProvider";
 import { getOptimizedImageUrl, formatProductTitle } from "@/lib/utils";
-import HeroCarousel from "./HeroCarousel";
+import HeroCarousel, { type HeroCatalogFilterTarget } from "./HeroCarousel";
+import type { ResolvedHeroSlide } from "@/lib/hero/resolve-hero-slides";
 import { BrandMinimalistCarousel } from "@/components/catalog/BrandMinimalistCarousel";
 import { CatalogFreeSidebar } from "@/components/catalog/CatalogFreeSidebar";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
@@ -35,6 +36,7 @@ interface LojaInfo {
   description: string;
   coverImageUrl?: string;
   whatsappNumber?: string | null;
+  heroSlides?: unknown;
 }
 
 // SVG Icons
@@ -71,11 +73,13 @@ export function getProductStockSummary(prod: Product) {
 export default function HomeClient({
   initialProducts,
   initialBrands = [],
-  lojaInfo
+  lojaInfo,
+  resolvedHeroSlides,
 }: {
   initialProducts: Product[];
   initialBrands?: BrandSummary[];
   lojaInfo: LojaInfo | null;
+  resolvedHeroSlides?: ResolvedHeroSlide[];
 }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -474,13 +478,22 @@ export default function HomeClient({
   return (
     <div className="min-h-screen bg-catalog-bg text-catalog-text overflow-x-hidden selection:bg-catalog-gold/30">
       
-      {/* Hero Carousel: Artes em destaque, preços duplos e CTAs */}
+      {/* Hero Carousel: Painéis com arte dos produtos/marcas e navegação segura */}
       <HeroCarousel
+        slides={resolvedHeroSlides}
         products={initialProducts}
         lojaInfo={lojaInfo}
         onSelectProduct={openProduct}
         onBuyProduct={(prod) => {
           void handleBuy({ stopPropagation: () => {} } as any, prod);
+        }}
+        onFilterCatalog={(filter: HeroCatalogFilterTarget) => {
+          if (filter.brandSlug) {
+            setSelectedBrand(filter.brandSlug);
+          }
+          if (filter.tagSlug) {
+            handleToggleTag(filter.tagSlug);
+          }
         }}
       />
 
